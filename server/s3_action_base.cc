@@ -33,7 +33,7 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
   setup_steps();
 }
 
-S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__); }
+S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, "", "%s\n", __func__); }
 
 void S3Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
@@ -78,6 +78,7 @@ void S3Action::check_authorization_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   if (request->client_connected()) {
     std::string error_code = auth_client->get_error_code();
+    std::string error_message = auth_client->get_error_message();
     if (error_code == "InvalidAccessKeyId") {
       s3_stats_inc("authorization_failed_invalid_accesskey_count");
     } else if (error_code == "SignatureDoesNotMatch") {
@@ -96,8 +97,12 @@ void S3Action::check_authorization_failed() {
     }
     s3_log(S3_LOG_ERROR, request_id, "Authorization failure: %s\n",
            error_code.c_str());
-    request->respond_error(error_code);
+    request->respond_error(error_code, {}, error_message);
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3Action::resume_action_step() {
+  // Implement in derived classes
 }

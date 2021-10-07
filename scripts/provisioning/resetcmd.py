@@ -20,8 +20,6 @@
 
 import sys
 import os
-import shutil
-import glob
 import time
 import re
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
@@ -30,7 +28,7 @@ from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from setupcmd import SetupCmd
 from ldapaccountaction import LdapAccountAction
 
-services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver", "slapd"]
+services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
 
 class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""
@@ -40,46 +38,52 @@ class ResetCmd(SetupCmd):
     """Constructor."""
     try:
       super(ResetCmd, self).__init__(config)
+      self.get_ldap_root_credentials()
+      self.get_iam_admin_credentials()
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
+    self.validate_config_files(self.name)
+    self.logger.info("validations completed")
 
     try:
-      sys.stdout.write('INFO: Removing LDAP Accounts and Users.\n')
+      self.logger.info('Remove LDAP Accounts and Users started')
       self.DeleteLdapAccountsUsers()
-      sys.stdout.write('INFO: LDAP Accounts and Users Cleanup successful.\n')
+      self.logger.info('Remove LDAP Accounts and Users completed')
     except Exception as e:
-      sys.stderr.write(f'Failed to cleanup LDAP Accounts and Users, error: {e}\n')
+      self.logger.error(f'ERROR:Failed to cleanup LDAP Accounts and Users, error: {e}')
       raise e
 
     try:
-      sys.stdout.write("Shutting down s3 services...\n")
+      self.logger.info("Shutdown S3 services started")
       self.shutdown_services(services_list)
+      self.logger.info("Shutdown S3 services completed")
     except Exception as e:
-      sys.stderr.write(f'Failed to stop s3services, error: {e}\n')
+      self.logger.error(f'ERROR:Failed to stop s3services, error: {e}')
       raise e
 
     try:
-      sys.stdout.write('INFO: Cleaning up log files.\n')
+      self.logger.info('Cleanup log file started')
       self.CleanupLogs()
-      sys.stdout.write('INFO:Log files cleanup successful.\n')
+      self.logger.info('Cleanup log file completed')
 
       # purge messages from message bus
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        sys.stdout.write('INFO: Purging messages from message bus.\n')
+        self.logger.info('purge messages from message bus started')
         self.purge_messages(bgdeleteconfig.get_msgbus_producer_id(),
                             bgdeleteconfig.get_msgbus_topic(),
                             bgdeleteconfig.get_msgbus_producer_delivery_mechanism(),
                             bgdeleteconfig.get_purge_sleep_time())
-        sys.stdout.write('INFO:Purge message successful.\n')
+        self.logger.info('purge messages from message bus completed')
 
     except Exception as e:
-      sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
+      self.logger.error(f'ERROR: Failed to cleanup log directories or files, error: {e}')
       raise e
 
 
@@ -95,15 +99,16 @@ class ResetCmd(SetupCmd):
     #Slapd -> /var/log/slapd.log
     #S3 Crash dumps -> /var/log/crash/core-s3server.*.gz
 
-    logFolders = ["/var/log/seagate/s3",
+    logDirs = ["/var/log/seagate/s3",
                   "/var/log/seagate/auth"]
+    # Skipping s3deployment.log file directory as we dont need to remove it as part of log cleanup
+    skipDirs = ["/var/log/seagate/s3/s3deployment"]
 
-    for logFolder in logFolders:
-      self.DeleteDirContents(logFolder)
+    for logDir in logDirs:
+      self.DeleteDirContents(logDir, skipDirs)
 
     logFiles = ["/var/log/haproxy.log",
-                "/var/log/haproxy-status.log",
-                "/var/log/slapd.log"]
+                "/var/log/haproxy-status.log"]
     for logFile in logFiles:
       self.DeleteFile(logFile)
 
@@ -113,88 +118,46 @@ class ResetCmd(SetupCmd):
     for path in logRegexPath:
       self.DeleteFileOrDirWithRegex(path, logRegexPath[path])
 
-  def DeleteDirContents(self, dirname: str):
-    """Delete files and directories inside given directory."""
-    if os.path.exists(dirname):
-      for filename in os.listdir(dirname):
-        filepath = os.path.join(dirname, filename)
-        try:
-          if os.path.isfile(filepath):
-            os.remove(filepath)
-          elif os.path.isdir(filepath):
-            shutil.rmtree(filepath)
-        except Exception as e:
-          sys.stderr.write(f'ERROR: DeleteDirContents(): Failed to delete: {filepath}, error: {str(e)}\n')
-          raise e
+    # truncate slapd logs
+    self.logger.info("truncate slapd log file started")
+    slapd_log="/var/log/slapd.log"
+    if os.path.isfile(slapd_log):
+      fslapd = open(slapd_log, "w")
+      fslapd.truncate()
+      fslapd.close()
+      self.logger.info("truncate slapd log file completed")
 
-  def DeleteFile(self, filepath: str):
-    """Delete file."""
-    if os.path.exists(filepath):
-      try:
-        os.remove(filepath)
-      except Exception as e:
-        sys.stderr.write(f'ERROR: DeleteFile(): Failed to delete file: {filepath}, error: {str(e)}\n')
-        raise e
-
-  def DeleteFileOrDirWithRegex(self, path: str, regex: str):
-    """Delete files and directories inside given directory for which regex matches."""
-    if os.path.exists(path):
-      filepath = os.path.join(path, regex)
-      files = glob.glob(filepath)
-      for file in files:
-        try:
-          if os.path.isfile(file):
-            os.remove(file)
-          elif os.path.isdir(file):
-            shutil.rmtree(file)
-        except Exception as e:
-          sys.stderr.write(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
-          raise e
 
   def purge_messages(self, producer_id: str, msg_type: str, delivery_mechanism: str, sleep_time: int):
     """purge messages on message bus."""
     try:
       s3MessageBus = S3CortxMsgBus()
-      s3MessageBus.connect()
       s3MessageBus.setup_producer(producer_id, msg_type, delivery_mechanism)
       try:
         s3MessageBus.purge()
         #Insert a delay of 1 min after purge, so that the messages are deleted
         time.sleep(sleep_time)
       except:
-        sys.stdout.write('Exception during purge. May be there are no messages to purge\n')
+        self.logger.info('Exception during purge. May be there are no messages to purge')
     except Exception as e:
       raise e
 
   def DeleteLdapAccountsUsers(self):
-    """Deletes all LDAP accounts and users."""
-    os.system('slapcat -n 3 -l conf_backup.ldif')
-    line_number = 0
-    for line in open("conf_backup.ldif"):
-      if re.match("dn: o=.*",line) != None:
-        break
-      line_number += 1
-    os.system('sed -i \'' + str(line_number) + ',$ d\' conf_backup.ldif')
-    self.delete_mdb_files()
-    self.restart_services(['slapd'])
-    os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l conf_backup.ldif')
+    """Deletes all LDAP data entries e.g. accounts, users, access keys using admin credentials."""
     try:
-      os.remove('conf_backup.ldif')
+      # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=s3,dc=seagate,dc=com tree"
+      LdapAccountAction(self.ldap_root_user, self.rootdn_passwd).delete_s3_ldap_data()
     except Exception as e:
-      sys.stderr.write(f'ERROR: No such file! , error: {str(e)}\n')
+      self.logger.error(f'ERROR: Failed to delete s3 records exists in ldap, error: {e}')
       raise e
+
     try:
       # Recreate background delete account after LDAP reset
-      self.read_ldap_credentials()
-      bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
-                                  'account_id': "67891",
-                                  'canonical_id': "C67891",
-                                  'mail': "s3-background-delete-svc@seagate.com",
-                                  's3_user_id': "450",
-                                  'const_cipher_secret_str': "s3backgroundsecretkey",
-                                  'const_cipher_access_str': "s3backgroundaccesskey"
-                                }
+      bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
-      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
-      raise e
+      if "Already exists" not in str(e):
+        self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
+        raise(e)
+      else:
+        self.logger.warning("backgrounddelete service account already exist")

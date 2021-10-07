@@ -1,0 +1,114 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: aws s3api upload-part --bucket <your_bucket> --key \<key> --part-number 1 --body \<part>
+  title: S3 API - Upload Part
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  /{bucket_name}/{object_name}:
+    put:
+      tags:
+        - Upload part
+      parameters:
+        - name: bucket_name
+          in: path
+          type: string
+          required: true
+        - name: object_name
+          in: path
+          type: string
+          required: true
+        - name: partNumber
+          in: query
+          type: string
+          required: true
+        - name: uploadId
+          in: query
+          type: string
+          required: true
+        - name: User-Agent
+          in: header
+          description: Header to identify application, it's version number and programming language.
+          type: string
+          required: true
+        - name: Content-MD5
+          in: header
+          description: >-
+            This  header is used by servers to provide a message-integrity check
+            for the message body.
+          type: string
+          required: true
+        - name: Expect
+          in: header
+          description: This header is used to wait for acknowledgement to send request body.
+          type: string
+          required: true
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string
+          required: true
+        - name: X-Amz-Content-SHA256
+          in: header
+          description: This header value informs whether s3 request signed or not.
+          type: string
+          required: true
+        - name: Authorization
+          in: header
+          description: >-
+            This Header contains credentials to authorize a User-Agent with
+            server.
+          type: string
+          required: true
+        - name: Content-Length
+          in: header
+          description: This header indicates the size of the message body, in bytes, sent
+            to the recipient.
+          required: true
+          type: string
+        - name: X-Forwarded-For
+          in: header
+          description: This header identify the originating IP address of a client connecting to a web server.
+          type: string
+          required: true
+      produces:
+        - text/plain
+      responses:
+        200:
+          description: OK
+          schema:
+            type: string
+            example: null
+          headers:
+            ETag:
+              type: string
+            Content-Length:
+              type: integer
+            x-amz-request-id:
+              type: string
+            Server:
+              type: string
+        400:  
+          description: Request Timeout - The client did not produce a request within the time that the server was prepared to wait.
+        403:
+          description: |
+            Access Denied.
+
+            Invalid AccessKey Id - The AWS access key Id you provided does not exist in our records.
+        404:
+          description: | 
+            No Such Upload - The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed.
+
+            Invalid Part Order - The list of parts was not in ascending order. The parts list must be specified in order by part number.
+
+            Entity Too Small - Your proposed upload is smaller than the minimum allowed object size. Each part must be at least 5 MB in size, except the last part.
+        413:
+          description: Entity Too Large - Your proposed upload exceeds the maximum allowed size.
+        500:
+          description: Internal Error - We encountered an internal error. Please try again.
+        503: 
+          description: Service Unavailable - Reduce your request rate.
+        

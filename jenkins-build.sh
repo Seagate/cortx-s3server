@@ -31,6 +31,11 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                         [--generate_support_bundle]
                         [--job_id]
                         [--gid]
+                        [--restart_haproxy]
+                        [--remove_m0trace]
+                        [--collect_addb /path/to/output/dir/]
+                        [--bazel_cpu_usage_limit <max_cpu_percentage>]
+                        [--bazel_ram_usage_limit <max_ram_percentage>]
                         [--help | -h] [--help-short | -H]
 
 where:
@@ -101,6 +106,20 @@ where:
 
                           Value: Int
 
+--restart_haproxy         Restart haproxy
+
+--remove_m0trace          Remove motr m0trace.* files
+
+--collect_addb            Collect addb data before files are removed
+
+                          Value: /path/to/output/dir/
+
+--bazel_cpu_usage_limit   Specify max percentage of CPU (integer) to be consumed by bazel during bazel build process.
+                          Value Range: 1-99 (Default value : 70)
+
+--bazel_ram_usage_limit   Specify max percentage of RAM (integer) to be consumed by bazel during bazel build process.
+                          Value Range: 1-99 (Default value : 70)
+
 --help (-h)        Display help
 
 --help-short (-H)  Display short, abbreviated help with just a list of options."
@@ -128,7 +147,11 @@ generate_support_bundle=
 job_id=0
 gid=0
 ansible=0
-
+restart_haproxy=0
+remove_m0trace=0
+collect_addb=""
+bazel_cpu_limit=70
+bazel_ram_limit=70
 
 if [ $# -eq 0 ]
 then
@@ -253,6 +276,40 @@ else
                               ;;
       --automate_ansible ) ansible=1;
                            ;;
+      --restart_haproxy ) restart_haproxy=1;
+                          echo "haproxy will be restarted";
+                          ;;
+      --remove_m0trace ) remove_m0trace=1
+                         echo "m0trace.* files will be removed";
+                         ;;
+      --collect_addb ) shift;
+                       collect_addb=$(realpath -e $1)
+                       if [ -z "$collect_addb"]
+                       then
+                           echo "Path to existing dir should be provided"
+                           echo "$USAGE"
+                           exit 1
+                       fi
+                       echo "Collect addb data to $collect_addb dir";
+                       ;;
+      --bazel_cpu_usage_limit ) shift;
+                       if [ "$1" -ge 1 ] && [ "$1" -le 99 ]; then
+                           bazel_cpu_limit=$1;
+                       else
+                           echo "Please provide valid value for CPU usage for --bazel_cpu_usage_limit"
+                           echo "$Usage"
+                           exit 1
+                       fi
+                       ;;
+      --bazel_ram_usage_limit ) shift;
+                       if [ "$1" -ge 1 ] && [ "$1" -le 99 ]; then
+                           bazel_ram_limit=$1;
+                       else
+                           echo "Please provide valid value for RAM usage for --bazel_ram_usage_limit"
+                           echo "$Usage"
+                           exit 1
+                       fi
+                       ;;
       --help | -h )
           echo "$USAGE"
           exit 1
@@ -308,11 +365,13 @@ ulimit -c unlimited
 
 # Few assertions - prerun checks
 rpm -q haproxy
-rpm -q rabbitmq-server
 #rpm -q stx-s3-certs
 #rpm -q stx-s3-client-certs
 systemctl status haproxy
-systemctl status rabbitmq-server
+
+if [ $restart_haproxy -eq 1 ]; then
+    $USE_SUDO systemctl restart haproxy
+fi
 
 cd $S3_BUILD_DIR
 
@@ -348,6 +407,7 @@ then
     valgrind_flag="--valgrind_memcheck"
 fi
 
+
 if [ $skip_build -eq 0 ]
 then
     extra_opts=""
@@ -359,7 +419,7 @@ then
     then
         extra_opts+=" --no-java-tests"
     fi
-    ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag $extra_opts
+    ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag $extra_opts --bazel_cpu_usage_limit $bazel_cpu_limit --bazel_ram_usage_limit $bazel_ram_limit
 fi
 
 # Stop any old running S3 instances
@@ -374,14 +434,45 @@ echo "Stopping any old running motr services"
 $USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh stop || echo "Cannot stop motr services"
 cd $S3_BUILD_DIR
 
+if [ ! -z "$collect_addb" ]
+then
+    cd ./third_party/motr/addb2/
+
+    # motr addb
+    dump_s="/var/motr/systest-*/ios*/addb-stobs-*/o/100000000000000:2"
+    for d in $dump_s; do
+        pid=$(echo $d | sed -E 's/.*addb-stobs-([a-z0-9]*)[/].*/\1/')
+        echo 'mero '${pid}
+        ./m0addb2dump -f -- "$d" > "$collect_addb/dumps_${pid}.txt"
+    done
+
+    # s3server addb
+    dump_s="/var/log/seagate/motr/s3server-*/addb_*/o/100000000000000:2"
+    for d in $dump_s; do
+        pid=$(echo $d | sed -E 's/.*addb_([0-9]+)[/].*/\1/')
+        echo 's3server '${pid}
+        ./m0addb2dump -f -p /opt/seagate/cortx/s3/addb-plugin/libs3addbplugin.so -- "$d" > "$collect_addb/dumpc_${pid}.txt"
+    done
+
+    cd -
+fi
+
 # Clean up motr and S3 log and data dirs
 $USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/log/seagate/motr/* \
                  /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
-                 /var/log/seagate/auth/tools/* /var/crash/*
+                 /var/log/seagate/auth/tools/* /var/crash/* /var/motr/*
+
+if [ $remove_m0trace -eq 1 ]; then
+    $USE_SUDO find . -type f -name "m0trace.*" -exec rm -- '{}' +
+fi
 
 if [ $cleanup_only -eq 1 ]; then
   exit
 fi
+
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
 
 # Configuration setting for using HTTP connection
 if [ $use_http_client -eq 1 ]
@@ -447,62 +538,65 @@ $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/s
 
 $USE_SUDO systemctl restart s3authserver
 
-# Start S3 gracefully, with max 3 attempts
-echo "Starting new built s3 services"
-retry=1
-max_retries=3
-statuss3=0
-fake_params=""
-if [ $fake_kvs -eq 1 ]
-then
-    fake_params+=" --fake_kvs"
-fi
+function s3server_start() {
+    # Start S3 gracefully, with max 3 attempts
+    retry=1
+    max_retries=3
+    statuss3=0
+    echo "Starting new built s3 services"
+    fake_params=""
+    if [ $fake_kvs -eq 1 ]
+    then
+        fake_params+=" --fake_kvs"
+    fi
 
-if [ $local_redis_restart -eq 1 ]; then
-    rpm -q redis
-    set +e
-    $USE_SUDO kill -9 `pgrep redis`
-    set -e
-    redis-server --port 6379 &
-fi
+    if [ $local_redis_restart -eq 1 ]; then
+        rpm -q redis
+        set +e
+        $USE_SUDO kill -9 `pgrep redis`
+        set -e
+        redis-server --port 6379 &
+    fi
 
-if [ $redis_kvs -eq 1 ]
-then
-    fake_params+=" --redis_kvs"
-fi
+    if [ $redis_kvs -eq 1 ]
+    then
+        fake_params+=" --redis_kvs"
+    fi
 
-if [ $fake_obj -eq 1 ]
-then
-    fake_params+=" --fake_obj"
-fi
+    if [ $fake_obj -eq 1 ]
+    then
+        fake_params+=" --fake_obj"
+    fi
 
-while [[ $retry -le $max_retries ]]
-do
-  statuss3=0
-  $USE_SUDO ./dev-starts3.sh $num_instances $fake_params $callgraph_cmd $valgrind_memcheck_cmd
+    while [[ $retry -le $max_retries ]]
+    do
+        statuss3=0
+        $USE_SUDO ./dev-starts3.sh $num_instances $fake_params $callgraph_cmd $valgrind_memcheck_cmd
 
-  # Wait s3server to start
-  timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
-  statuss3=$?
+        # Wait s3server to start
+        timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
+        statuss3=$?
 
-  if [ "$statuss3" == "0" ]; then
-    echo "S3 service started successfully..."
-    break
-  else
-    # Sometimes if motr is not ready, S3 may fail to connect
-    # cleanup and restart
-    $USE_SUDO ./dev-stops3.sh $num_instances
-    sleep 1
-  fi
-  retry=$((retry+1))
-done
+        if [ "$statuss3" == "0" ]; then
+            echo "S3 service started successfully..."
+            break
+        else
+            # Sometimes if motr is not ready, S3 may fail to connect
+            # cleanup and restart
+            $USE_SUDO ./dev-stops3.sh $num_instances
+            sleep 1
+        fi
+        retry=$((retry+1))
+    done
 
-if [ "$statuss3" != "0" ]; then
-  echo "Cannot start S3 service"
-  tail -50 /var/log/seagate/s3/s3server.INFO
-  exit 1
-fi
+    if [ "$statuss3" != "0" ]; then
+        echo "Cannot start S3 service"
+        tail -50 /var/log/seagate/s3/s3server.INFO
+        exit 1
+    fi
+}
 
+s3server_start
 
 # Add certificate to keystore
 if [ $use_http_client -eq 0 ]
@@ -519,7 +613,7 @@ fi
 if [ $skip_tests -eq 1 ]
 then
     echo "Skip tests. S3server will not be stopped"
-    exit 1
+    exit 0
 fi
 
 # Stop S3 background services before tests are run
@@ -535,6 +629,13 @@ then
         basic_test_cmd_par="--basic-s3cmd-zero"
     fi
 fi
+
+function s3server_stop() {
+    $USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
+}
+
+# ensure extra python packets installed
+$USE_SUDO pip3 list | grep plumbum || $USE_SUDO pip3 install plumbum
 
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
@@ -555,7 +656,8 @@ fi
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
-$USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
+
+s3server_stop
 
 if [ $s3server_enable_ssl -eq 1 ]
 then

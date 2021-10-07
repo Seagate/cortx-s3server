@@ -39,7 +39,9 @@ class EvhtpInterface {
   virtual ~EvhtpInterface() {}
   virtual void http_request_pause(evhtp_request_t *request) = 0;
   virtual void http_request_resume(evhtp_request_t *request) = 0;
+  virtual void http_request_cancel(evhtp_request_t *request) = 0;
   virtual evhtp_proto http_request_get_proto(evhtp_request_t *request) = 0;
+
 
   virtual int http_kvs_for_each(evhtp_kvs_t *kvs, evhtp_kvs_iterator cb,
                                 void *arg) = 0;
@@ -59,7 +61,8 @@ class EvhtpInterface {
   virtual void http_send_reply_body(evhtp_request_t *request, evbuf_t *buf) = 0;
   virtual void http_send_reply_end(evhtp_request_t *request) = 0;
   virtual void close_connection_after_writing(evhtp_connection_t *) = 0;
-
+  virtual size_t http_response_outstanding_buffer_length(
+      evhtp_connection_t *conn) = 0;
   // Libevent wrappers
   virtual size_t evbuffer_get_length(const struct evbuffer *buf) = 0;
 };
@@ -68,6 +71,7 @@ class EvhtpWrapper : public EvhtpInterface {
  public:
   void http_request_pause(evhtp_request_t *request);
   void http_request_resume(evhtp_request_t *request);
+  void http_request_cancel(evhtp_request_t *request);
   evhtp_proto http_request_get_proto(evhtp_request_t *request);
 
   int http_kvs_for_each(evhtp_kvs_t *kvs, evhtp_kvs_iterator cb, void *arg);
@@ -85,7 +89,7 @@ class EvhtpWrapper : public EvhtpInterface {
   void http_send_reply_body(evhtp_request_t *request, evbuf_t *buf);
   void http_send_reply_end(evhtp_request_t *request);
   void close_connection_after_writing(evhtp_connection_t *) override;
-
+  size_t http_response_outstanding_buffer_length(evhtp_connection_t *conn);
   // Libevent wrappers
   size_t evbuffer_get_length(const struct evbuffer *buf);
 };

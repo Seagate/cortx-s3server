@@ -191,8 +191,30 @@ class CORTXS3Config(object):
     def get_cortx_s3_endpoint(self):
         """Return endpoint from config file or KeyError."""
         try:
-          cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>endpoint')
-          return cortx_s3_endpoint
+            cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>endpoint')
+            return cortx_s3_endpoint
+        except:
+            raise KeyError(
+                "Could not find cortx_s3 endpoint from config file " +
+                self._conf_file)
+
+    def get_cortx_s3_endpoint_for_consumer(self):
+        """Return endpoint from config file or KeyError."""
+        try:
+            #change from cortx_s3>endpoint to cortx_s3>consumer_endpoint
+            cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>consumer_endpoint')
+            return cortx_s3_endpoint
+        except:
+            raise KeyError(
+                "Could not find cortx_s3 endpoint from config file " +
+                self._conf_file)
+
+    def get_cortx_s3_endpoint_for_producer(self):
+        """Return endpoint from config file or KeyError."""
+        try:
+            #change from cortx_s3>endpoint to cortx_s3>producer_endpoint
+            cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>producer_endpoint')
+            return cortx_s3_endpoint
         except:
             raise KeyError(
                 "Could not find cortx_s3 endpoint from config file " +
@@ -244,95 +266,14 @@ class CORTXS3Config(object):
             #Return default mode as daemon mode i.e. "True"
             return True
 
-    def get_rabbitmq_username(self):
-        """Return username of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_username = self.s3confstore.get_config('rabbitmq>username')
-          self.logger.info("rabbitmq_username : " + rabbitmq_username)
-          return rabbitmq_username
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq username from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_password(self):
-        """Return password of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_password = self.s3confstore.get_config('rabbitmq>password')
-          return rabbitmq_password
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq password from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_host(self):
-        """Return host of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_host = self.s3confstore.get_config('rabbitmq>host')
-          return rabbitmq_host
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq host from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_queue_name(self):
-        """Return queue name of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_queue_name = self.s3confstore.get_config('rabbitmq>queue')
-          return rabbitmq_queue_name
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq queue from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_exchange(self):
-        """
-        Return exchange name of rabbitmq from config file.
-        The exchange parameter is the name of the exchange.
-        The empty string denotes the default or nameless exchange messages are
-        routed to the queue with the name specified by routing_key,if it exists
-        """
-        rabbitmq_exchange = self.s3confstore.get_config('rabbitmq>exchange')
-        return rabbitmq_exchange
-
-    def get_rabbitmq_exchange_type(self):
-        """Return exchange type of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_exchange_type = self.s3confstore.get_config('rabbitmq>exchange_type')
-          return rabbitmq_exchange_type
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq exchange_type from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_mode(self):
-        """Return mode of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_mode = self.s3confstore.get_config('rabbitmq>mode')
-          return int(rabbitmq_mode)
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq mode from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_durable(self):
-        """Return durable of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_durable = self.s3confstore.get_config('rabbitmq>durable')
-          return rabbitmq_durable
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq durable from config file " +
-                self._conf_file)
-
     def get_schedule_interval(self):
-        """Return schedule interval of rabbitmq from config file or KeyError."""
+        """Return schedule interval of object recovery scheduler from config file or KeyError."""
         try:
-          schedule_interval = self.s3confstore.get_config('rabbitmq>schedule_interval_secs')
+          schedule_interval = self.s3confstore.get_config('cortx_s3>scheduler_schedule_interval')
           return int(schedule_interval)
         except:
             raise KeyError(
-                "Could not parse rabbitmq schedule interval from config file " +
+                "Could not parse schedule interval for object recovery scheduler from config file " +
                 self._conf_file)
 
     def get_probable_delete_index_id(self):
@@ -348,18 +289,21 @@ class CORTXS3Config(object):
     def get_max_keys(self):
         """Return maximum number of keys from config file or KeyError."""
         max_keys = self.s3confstore.get_config('indexid>max_keys')
-        if max_keys:
+        if max_keys is not None:
             return int(max_keys)
         else:
-            return 1000
+            raise Exception(f'Failed to read indexid>max_keys: '
+                        f'{max_keys}\n')
 
     def get_threshold(self):
         """Return the threshold for max."""
         threshold = self.s3confstore.get_config('indexid>threshold')
-        if threshold:
+        if threshold is not None:
             return int(threshold)
         else:
-            return 500
+            raise Exception(f'Failed to read indexid>threshold: '
+                        f'{threshold}\n')
+                        
 
     def get_global_instance_index_id(self):
         """Return probable delete index-id from config file or KeyError."""

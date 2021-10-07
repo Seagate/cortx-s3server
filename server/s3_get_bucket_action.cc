@@ -24,6 +24,7 @@
 #include "s3_get_bucket_action.h"
 #include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_object_metadata.h"
 #include "s3_option.h"
 #include "s3_common_utilities.h"
@@ -152,9 +153,9 @@ void S3GetBucketAction::get_next_objects() {
     done();
     return;
   }
+  const auto& object_list_index_layout =
+      bucket_metadata->get_object_list_index_layout();
 
-  m0_uint128 object_list_index_oid =
-      bucket_metadata->get_object_list_index_oid();
   if (motr_kv_reader == nullptr) {
     motr_kv_reader = s3_motr_kvs_reader_factory->create_motr_kvs_reader(
         request, s3_motr_api);
@@ -169,6 +170,8 @@ void S3GetBucketAction::get_next_objects() {
   } else {
     max_record_count = S3Option::get_instance()->get_motr_idx_fetch_count();
   }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "max_record_count set to %zu\n",
+         max_record_count);
 
   if (max_keys == 0) {
     // as requested max_keys is 0
@@ -176,8 +179,7 @@ void S3GetBucketAction::get_next_objects() {
     fetch_successful = true;
     object_list->set_key_count(key_Count);
     send_response_to_s3_client();
-  } else if (object_list_index_oid.u_hi == 0ULL &&
-             object_list_index_oid.u_lo == 0ULL) {
+  } else if (zero(object_list_index_layout.oid)) {
     fetch_successful = true;
     object_list->set_key_count(key_Count);
     send_response_to_s3_client();
@@ -190,12 +192,12 @@ void S3GetBucketAction::get_next_objects() {
       b_first_next_keyval_call = false;
       last_key = request_prefix;
       motr_kv_reader->next_keyval(
-          object_list_index_oid, last_key, max_record_count,
+          object_list_index_layout, last_key, max_record_count,
           std::bind(&S3GetBucketAction::get_next_objects_successful, this),
           std::bind(&S3GetBucketAction::get_next_objects_failed, this), 0);
     } else {
       motr_kv_reader->next_keyval(
-          object_list_index_oid, last_key, max_record_count,
+          object_list_index_layout, last_key, max_record_count,
           std::bind(&S3GetBucketAction::get_next_objects_successful, this),
           std::bind(&S3GetBucketAction::get_next_objects_failed, this));
     }
@@ -216,7 +218,7 @@ void S3GetBucketAction::get_next_objects_successful() {
   retry_count = 0;
   s3_log(S3_LOG_DEBUG, request_id, "Found Object listing\n");
   m0_uint128 object_list_index_oid =
-      bucket_metadata->get_object_list_index_oid();
+      bucket_metadata->get_object_list_index_layout().oid;
   bool atleast_one_json_error = false;
   bool last_key_in_common_prefix = false;
   bool skip_no_further_prefix_match = false;
@@ -563,8 +565,7 @@ void S3GetBucketAction::get_next_objects_failed() {
   } else if (motr_kv_reader->get_state() ==
              S3MotrKVSReaderOpState::failed_e2big) {
     s3_log(S3_LOG_ERROR, request_id,
-           "Next keyval operation failed due rpc message size threshold, will "
-           "retry\n");
+           "Next keyval operation failed due rpc message size threshold\n");
     if (max_record_count <= 1) {
       set_s3_error("InternalError");
       fetch_successful = false;
@@ -573,7 +574,11 @@ void S3GetBucketAction::get_next_objects_failed() {
              "even with max record retrieval as one\n");
     } else {
       retry_count++;
+      s3_log(S3_LOG_INFO, request_id, "Retry next key val, retry count = %d\n",
+             retry_count);
       get_next_objects();
+      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+      return;
     }
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to find Object listing\n");
@@ -602,7 +607,14 @@ void S3GetBucketAction::send_response_to_s3_client() {
       request->set_out_header_value("Connection", "close");
     }
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {

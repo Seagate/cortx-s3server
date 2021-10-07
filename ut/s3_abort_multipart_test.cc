@@ -67,8 +67,8 @@ class S3AbortMultipartActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillOnce(Invoke(dummy_helpers_ufid_next));
 
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_motr_api);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
             ptr_mock_request, ptr_mock_s3_motr_api, upload_id);
@@ -125,7 +125,7 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest1) {
       bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout({oid});
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(1);
   action_under_test->get_multipart_metadata();
@@ -139,7 +139,7 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest2) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3BucketMetadataState::present));
-  action_under_test->bucket_metadata->set_multipart_index_oid(empty_oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout({empty_oid});
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(0);
 
@@ -240,7 +240,7 @@ TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataFailedToLaunchTest) {
 }
 
 TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsMissingIndexTest) {
-  action_under_test->part_index_oid = {0ULL, 0ULL};
+  action_under_test->part_index_layout = {};
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -252,7 +252,7 @@ TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsMissingIndexTest) {
 }
 
 TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest) {
-  action_under_test->part_index_oid = {0xffff, 0xffff};
+  action_under_test->part_index_layout = {{0xffff, 0xffff}};
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), remove_index(_, _))
       .Times(1);
   action_under_test->delete_part_index_with_parts();
@@ -285,7 +285,7 @@ TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailedToLaunch) {
 TEST_F(S3AbortMultipartActionTest, Send200SuccessToS3Client) {
   action_under_test->oid_str = S3M0Uint128Helper::to_string(old_object_oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
-      "oid_str", {0ULL, 0ULL}, "abc_obj", oid, new_layout_id,
+      "oid_str", {0ULL, 0ULL}, "abc_obj", oid, new_layout_id, "mock_pvid",
       object_list_indx_oid, objects_version_list_idx_oid,
       "" /* Version does not exists yet */, false /* force_delete */,
       true /* is_multipart */, part_list_idx_oid);

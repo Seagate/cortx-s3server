@@ -42,13 +42,13 @@ using ::testing::AtLeast;
   do {                                                                    \
     CREATE_BUCKET_METADATA;                                               \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_object_list_index_oid())                              \
+                get_object_list_index_layout())                           \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return(object_list_indx_oid));                    \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_objects_version_list_index_oid())                     \
+                get_objects_version_list_index_layout())                  \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return(objects_version_list_index_oid));          \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
         .Times(AtLeast(1));                                               \
     EXPECT_CALL(*(mock_request), http_verb())                             \
@@ -67,8 +67,7 @@ class S3HeadObjectActionTest : public testing::Test {
     bucket_name = "seagatebucket";
     object_name = "objname";
     oid = {0x1ffff, 0x1ffff};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_index_oid = {0x11fff, 0x1fff};
+    index_layout = {0x11fff, 0x1fff};
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
             S3Option::get_instance()->get_libevent_pool_buffer_size());
@@ -85,7 +84,7 @@ class S3HeadObjectActionTest : public testing::Test {
 
     object_meta_factory =
         std::make_shared<MockS3ObjectMetadataFactory>(mock_request);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
@@ -102,8 +101,7 @@ class S3HeadObjectActionTest : public testing::Test {
 
   std::shared_ptr<S3HeadObjectAction> action_under_test;
 
-  struct m0_uint128 object_list_indx_oid;
-  struct m0_uint128 objects_version_list_index_oid;
+  struct s3_motr_idx_layout index_layout;
   struct m0_uint128 oid;
   std::string bucket_name, object_name;
 };
@@ -196,10 +194,12 @@ TEST_F(S3HeadObjectActionTest, FetchObjectInfoFailedWithError) {
 
 TEST_F(S3HeadObjectActionTest, SendResponseWhenShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
-
+  int retry_after_period = S3Option::get_instance()->get_s3_retry_after_sec();
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, set_out_header_value(Eq("Retry-After"), Eq("1")))
+  EXPECT_CALL(*mock_request,
+              set_out_header_value(Eq("Retry-After"),
+                                   Eq(std::to_string(retry_after_period))))
       .Times(1);
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed503, _))
       .Times(AtLeast(1));
@@ -239,8 +239,7 @@ TEST_F(S3HeadObjectActionTest, SendSuccessResponse) {
               get_last_modified_gmt())
       .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              get_content_length_str())
-      .WillOnce(Return("512"));
+              get_content_length_str()).WillOnce(Return("512"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
@@ -257,4 +256,3 @@ TEST_F(S3HeadObjectActionTest, SendSuccessResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
-

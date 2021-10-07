@@ -255,6 +255,9 @@ public class AccountImpl implements AccountDAO {
         }
         if (ldapResults != null) {
           int maxLdapResults = AuthServerConfig.getLdapSearchResultsSizeLimit();
+          int internalAccountCount =
+              AuthServerConfig.getS3InternalAccounts().size();
+          int maxAllowedLdapResults = maxLdapResults + internalAccountCount;
           int resultCount = 0;
         while (ldapResults.hasMore()) {
             LDAPEntry ldapEntry;
@@ -285,8 +288,9 @@ public class AccountImpl implements AccountDAO {
                     .getStringValue());
             accounts.add(account);
             ++resultCount;
-            if (resultCount >= maxLdapResults) {
-              LOGGER.info("Fetched max records of accounts " + maxLdapResults);
+            if (resultCount >= maxAllowedLdapResults) {
+              LOGGER.info("Fetched max records of accounts " +
+                          maxAllowedLdapResults);
               break;
             }
         }
@@ -540,6 +544,37 @@ public class AccountImpl implements AccountDAO {
         }
 
         return account;
+    }
+
+
+    /**
+     * Delete account entry silently from ldap.
+     * if we get connection error then retry once.
+     */
+   public
+    void ldap_delete_account(Account account) throws DataAccessException {
+      String dn =
+          String.format("%s=%s,%s=accounts,%s", LDAPUtils.ORGANIZATIONAL_NAME,
+                        account.getName(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+                        LDAPUtils.BASE_DN);
+
+      try {
+        LDAPUtils.delete (dn);
+      }
+      catch (LDAPException ex) {
+        // Retry delete operation again if its connection error
+        if (ex.getResultCode() == LDAPException.CONNECT_ERROR) {
+          try {
+            LDAPUtils.delete (dn);
+          }
+          catch (LDAPException e) {
+            // Nothing can be done here
+          }
+          return;
+        } else {
+          throw new DataAccessException("Failed to delete account.\n" + ex);
+        }
+      }
     }
 }
 

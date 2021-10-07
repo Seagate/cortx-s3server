@@ -37,21 +37,14 @@ extern int shutdown_motr_teardown_called;
 
 S3MotrKVSReader::S3MotrKVSReader(std::shared_ptr<RequestObject> req,
                                  std::shared_ptr<MotrAPI> motr_api)
-    : request(req),
-      state(S3MotrKVSReaderOpState::start),
-      last_value(""),
-      iteration_index(0),
-      idx_ctx(nullptr),
-      key_ref_copy(nullptr) {
+    : request(std::move(req)) {
+
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
-  last_result_keys_values.clear();
-  if (motr_api) {
-    s3_motr_api = motr_api;
-  } else {
-    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
-  }
+
+  s3_motr_api =
+      motr_api ? std::move(motr_api) : std::make_shared<ConcreteMotrAPI>();
 }
 
 S3MotrKVSReader::~S3MotrKVSReader() { clean_up_contexts(); }
@@ -70,29 +63,27 @@ void S3MotrKVSReader::clean_up_contexts() {
   }
 }
 
-void S3MotrKVSReader::get_keyval(struct m0_uint128 oid, std::string key,
+void S3MotrKVSReader::get_keyval(const struct s3_motr_idx_layout &idx_lo,
+                                 const std::string &key,
                                  std::function<void(void)> on_success,
                                  std::function<void(void)> on_failed) {
   std::vector<std::string> keys;
   keys.push_back(key);
 
-  get_keyval(oid, keys, on_success, on_failed);
+  get_keyval(idx_lo, keys, std::move(on_success), std::move(on_failed));
 }
 
-void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
-                                 std::vector<std::string> keys,
+void S3MotrKVSReader::get_keyval(const struct s3_motr_idx_layout &idx_lo,
+                                 const std::vector<std::string> &keys,
                                  std::function<void(void)> on_success,
                                  std::function<void(void)> on_failed) {
-  int rc = 0;
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with oid %" SCNx64 " : %" SCNx64 " and %zu keys\n", __func__,
-         oid.u_hi, oid.u_lo, keys.size());
+         idx_lo.oid.u_hi, idx_lo.oid.u_lo, keys.size());
+
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
   }
-
-  id = oid;
-
   last_result_keys_values.clear();
   last_value = "";
 
@@ -102,8 +93,8 @@ void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
   }
   idx_ctx = create_idx_context(1);
 
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
+  this->handler_on_success = std::move(on_success);
+  this->handler_on_failed = std::move(on_failed);
 
   reader_context.reset(new S3MotrKVSReaderContext(
       request, std::bind(&S3MotrKVSReader::get_keyval_successful, this),
@@ -130,19 +121,23 @@ void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
   idx_op_ctx->cbs->oop_failed = s3_motr_op_failed;
 
   int i = 0;
-  for (auto key : keys) {
+  for (const auto &key : keys) {
     kvs_ctx->keys->ov_vec.v_count[i] = key.length();
     kvs_ctx->keys->ov_buf[i] = malloc(key.length());
     memcpy(kvs_ctx->keys->ov_buf[i], (void *)key.c_str(), key.length());
     ++i;
   }
 
-  s3_motr_api->motr_idx_init(&idx_ctx->idx[0], &motr_container.co_realm, &id);
+  s3_motr_api->motr_idx_init(&idx_ctx->idx[0], &motr_container.co_realm,
+                             &idx_lo.oid);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_motr_api->motr_idx_op(&idx_ctx->idx[0], M0_IC_GET, kvs_ctx->keys,
-                                kvs_ctx->values, kvs_ctx->rcs, 0,
-                                &(idx_op_ctx->ops[0]));
+  idx_ctx->idx->in_attr.idx_pver = idx_lo.pver;
+  idx_ctx->idx->in_attr.idx_layout_type = idx_lo.layout_type;
+
+  int rc = s3_motr_api->motr_idx_op(idx_ctx->idx, M0_IC_GET, kvs_ctx->keys,
+                                    kvs_ctx->values, kvs_ctx->rcs, 0,
+                                    idx_op_ctx->ops);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_idx_op failed\n");
     state = S3MotrKVSReaderOpState::failed_to_launch;
@@ -164,15 +159,12 @@ void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
   return;
 }
 
-void S3MotrKVSReader::lookup_index(struct m0_uint128 oid,
+void S3MotrKVSReader::lookup_index(const struct s3_motr_idx_layout &idx_lo,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
-  int rc = 0;
   s3_log(S3_LOG_INFO, stripped_request_id,
-         "%s Entry with oid %" SCNx64 " : %" SCNx64 "\n", __func__, oid.u_hi,
-         oid.u_lo);
-
-  id = oid;
+         "%s Entry with oid %" SCNx64 " : %" SCNx64 "\n", __func__,
+         idx_lo.oid.u_hi, idx_lo.oid.u_lo);
 
   if (idx_ctx) {
     // clean up any old allocations
@@ -202,11 +194,15 @@ void S3MotrKVSReader::lookup_index(struct m0_uint128 oid,
     idx_op_ctx->cbs->oop_failed = s3_motr_op_failed;
   }
 
-  s3_motr_api->motr_idx_init(&idx_ctx->idx[0], &motr_container.co_realm, &id);
+  s3_motr_api->motr_idx_init(&idx_ctx->idx[0], &motr_container.co_realm,
+                             &idx_lo.oid);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_motr_api->motr_idx_op(&idx_ctx->idx[0], M0_IC_LOOKUP, NULL, NULL,
-                                NULL, 0, &(idx_op_ctx->ops[0]));
+  idx_ctx->idx->in_attr.idx_pver = idx_lo.pver;
+  idx_ctx->idx->in_attr.idx_layout_type = idx_lo.layout_type;
+
+  int rc = s3_motr_api->motr_idx_op(idx_ctx->idx, M0_IC_LOOKUP, NULL, NULL,
+                                    NULL, 0, idx_op_ctx->ops);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_idx_op failed\n");
     state = S3MotrKVSReaderOpState::failed_to_launch;
@@ -313,21 +309,20 @@ void S3MotrKVSReader::get_keyval_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3MotrKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
-                                  size_t nr_kvp,
+void S3MotrKVSReader::next_keyval(const struct s3_motr_idx_layout &idx_lo,
+                                  const std::string &key, size_t nr_kvp,
                                   std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed,
                                   unsigned int flag) {
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with idx_oid = %" SCNx64 " : %" SCNx64
          " key = %s and count = %zu\n",
-         __func__, idx_oid.u_hi, idx_oid.u_lo, key.c_str(), nr_kvp);
-  id = idx_oid;
-  int rc = 0;
+         __func__, idx_lo.oid.u_hi, idx_lo.oid.u_lo, key.c_str(), nr_kvp);
+
   last_result_keys_values.clear();
 
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
+  this->handler_on_success = std::move(on_success);
+  this->handler_on_failed = std::move(on_failed);
 
   if (idx_ctx) {
     // clean up any old allocations
@@ -369,12 +364,15 @@ void S3MotrKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
   }
 
   s3_motr_api->motr_idx_init(&idx_ctx->idx[0], &motr_container.co_realm,
-                             &idx_oid);
+                             &idx_lo.oid);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_motr_api->motr_idx_op(&idx_ctx->idx[0], M0_IC_NEXT, kvs_ctx->keys,
-                                kvs_ctx->values, kvs_ctx->rcs, flag,
-                                &(idx_op_ctx->ops[0]));
+  idx_ctx->idx->in_attr.idx_pver = idx_lo.pver;
+  idx_ctx->idx->in_attr.idx_layout_type = idx_lo.layout_type;
+
+  int rc = s3_motr_api->motr_idx_op(idx_ctx->idx, M0_IC_NEXT, kvs_ctx->keys,
+                                    kvs_ctx->values, kvs_ctx->rcs, flag,
+                                    idx_op_ctx->ops);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_idx_op failed\n");
     state = S3MotrKVSReaderOpState::failed_to_launch;
@@ -407,6 +405,13 @@ void S3MotrKVSReader::next_keyval_successful() {
 
   std::string key;
   std::string val;
+  if (reader_context->get_errno_for(0) == -E2BIG) {
+    s3_log(S3_LOG_WARN, request_id,
+           "Motr failed to retrieve metadata as RPC threshold exceeded\n");
+    next_keyval_failed();
+    return;
+  }
+
   for (size_t i = 0; i < kvs_ctx->keys->ov_vec.v_nr; i++) {
     if (kvs_ctx->keys->ov_buf[i] == NULL) {
       break;

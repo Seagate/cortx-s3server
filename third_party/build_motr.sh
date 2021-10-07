@@ -1,9 +1,10 @@
 #!/bin/sh -xe
 # Script to build motr.
 # github repo: https://github.com/Seagate/cortx-motr
-# branch: master commit: 2a585e486eadaf659b246df921f2d5a96fca6f37
+# motr commit: 345023e777881895962e5af3d392722879423cbf (main branch)
 
 cd motr
+
 # Uncomment following line to compile motr with both KVS and Cassandra
 # export CONFIGURE_OPTS=--with-cassandra
 PROCESSORS_AVAILABLE=$(cat /proc/cpuinfo | grep '^processor' | wc -l)

@@ -109,15 +109,6 @@ step_3 () {
 }
 
 step_4 () {
-	# install and start rabbitmq server
-	yum localinstall https://bintray.com/rabbitmq-erlang/rpm/download_file?file_path=erlang%2F23%2Fel%2F7%2Fx86_64%2Ferlang-23.1.5-1.el7.x86_64.rpm || die_with_error "rabbitmq localinstall failed"
-	curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash || die_with_error "rabbitmq-server/script.rpm.sh failed"
-	yum install rabbitmq-server -y || die_with_error "rabbitmq-server install failed"
-	systemctl start rabbitmq-server || die_with_error "rabbitmq-server could not be started"
-	systemctl enable rabbitmq-server || die_with_error "rabbitmq-server could not be enabled"
-}
-
-step_5 () {
 	# Try to install rpm pkgs from s3 preqs file
 	json_prereqs_file="/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
 	rpms_list=$(jq '.post_install.rpms' $json_prereqs_file)
@@ -136,7 +127,7 @@ step_5 () {
 	done
 }
 
-step_6 () {
+step_5 () {
 	# update_haproxy_cfg
 	cfg_file="/etc/haproxy/haproxy.cfg"
 	if [ ! -e $cfg_file ];then
@@ -146,14 +137,14 @@ step_6 () {
 	sed -e '/ssl-default-server-ciphers PROFILE=SYSTEM/ s/^#*/#/' -i $cfg_file
 }
 
-step_7 () {
+step_6 () {
 	# TODO: Kafka (Future, needed when rabbit-mq dependency is removed)
 	echo "TODO: implement when kafka replaces rabbit-mq dependency"
-	# sh scripts/kafka/install-kafka.sh -c 1 -i $hostname
-	# sh scripts/kafka/create-topic.sh -c 1 -i $hostname
+	"sh scripts/kafka/install-kafka.sh -c 1 -i $hostname"
+	"sh scripts/kafka/create-topic.sh -c 1 -i $hostname"
 }
 
-step_8 () {
+step_7 () {
 	services_list=$(jq '.post_install.services' $json_prereqs_file)
 	services_list=$(echo "$services_list" | tr -d '[]"\r\n')
 	IFS=', ' read -r -a services <<< "$services_list"
@@ -170,13 +161,13 @@ step_8 () {
 	done
 }
 
-step_9 () {
+step_8 () {
 	# prepare the confstore related configs
 	myhostname=$(hostname -f)
 	myip=$(/sbin/ip -o -4 addr list eth2 | awk '{print $4}' | cut -d/ -f1)
-	key=$(s3cipher generate_key --const_key openldap)
-	iampasswd=$(s3cipher encrypt --data 'ldapadmin' --key "$key")
-	rootdnpasswd=$(s3cipher encrypt --data 'seagate' --key "$key")
+	key=$(s3cipher generate_key --const_key='openldap')
+	iampasswd=$(s3cipher encrypt --data="ldapadmin" --key="$key")
+	rootdnpasswd=$(s3cipher encrypt --data="seagate" --key="$key")
 	s3_conf_file="/tmp/s3_confstore.json"
 
 	s3instances=11
@@ -317,7 +308,7 @@ END
 
 }
 
-step_10 () {
+step_9 () {
 	# perform s3 mini-proviosner setup
 	bash -x /opt/seagate/cortx/s3/bin/s3_setup post_install --config "json://$s3_conf_file" || die_with_error "s3:post_install failed!"
 	echo "s3:post_install passed!"
@@ -335,7 +326,7 @@ step_10 () {
 	fi
 }
 
-step_11 () {
+step_10 () {
 	# perform single node IO setup for cluster
 	hctl status && die_with_error "IO setup already performed"
 	yum install -y --nogpgcheck cortx-motr || die_with_error "cortx-motr install failed"
@@ -471,15 +462,14 @@ if [ "$prerequisite" = "true" ];then
 	step_6
 	step_7
 	step_8
-	step_9
 fi
 
 if [ "$s3setup" = "true" ];then
-	step_10 "$cleanup"
+	step_9 "$cleanup"
 fi
 
 if [ "$iosetup" = true ];then
-		step_11
+		step_10
 fi	
 
 echo "All steps passed!"

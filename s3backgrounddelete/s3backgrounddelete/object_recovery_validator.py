@@ -27,6 +27,8 @@ from datetime import datetime
 from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
 from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_CONSUMER
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 import math
 
 #zero/null object oid in base64 encoded format
@@ -46,15 +48,15 @@ class ObjectRecoveryValidator:
         else:
             self._logger = logger
         if(objectapi is None):
-            self._objectapi = CORTXS3ObjectApi(self.config, logger=self._logger)
+            self._objectapi = CORTXS3ObjectApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
         else:
             self._objectapi = objectapi
         if(kvapi is None):
-            self._kvapi = CORTXS3KVApi(self.config, logger=self._logger)
+            self._kvapi = CORTXS3KVApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
         else:
             self._kvapi = kvapi
         if(indexapi is None):
-            self._indexapi = CORTXS3IndexApi(self.config, logger=self._logger)
+            self._indexapi = CORTXS3IndexApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
         else:
             self._indexapi = indexapi
 
@@ -69,9 +71,10 @@ class ObjectRecoveryValidator:
         timedelta_mns = math.floor(timedelta.total_seconds()/60)
         return (timedelta_mns >= older_in_mins)
 
-    def delete_object_from_storage(self, obj_oid, layout_id):
+    def delete_object_from_storage(self, obj_oid, layout_id, pvid_str):
         status = False
-        ret, response = self._objectapi.delete(obj_oid, layout_id)
+        self._logger.info("pvid_str : " + pvid_str)
+        ret, response = self._objectapi.delete(obj_oid, layout_id, pvid_str)
         if (ret):
             status = ret
             self._logger.info("Deleted obj " + obj_oid + " from motr store")
@@ -194,14 +197,14 @@ class ObjectRecoveryValidator:
                 obj_oid = versionInfo["motr_oid"]
                 layout_id = versionInfo["layout_id"]
                 #Delete version object from motr store
-                status = self.delete_object_from_storage(obj_oid, layout_id)
+                status = self.delete_object_from_storage(obj_oid, layout_id, self.pvid_str)
                 if (status):
                     self._logger.info("Deleted object version with oid " + obj_oid + " from motr store")
                 else:
                     self._logger.info("Failed to delete object version with oid [" + obj_oid + "] from motr store")
             else:
                 self._logger.info("The version key: " + versionKey + " does not exist. Delete motr object")
-                status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id)
+                status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id, self.pvid_str)
 
             if (status):
                 status = self.delete_key_from_index(versionListIndx, versionKey, "VERSION LIST DEL")
@@ -242,7 +245,7 @@ class ObjectRecoveryValidator:
             return False
 
     def process_results(self):
-        # Execute object leak algorithm by processing each of the entries from RabbitMQ
+        # Execute object leak algorithm by processing each of the entries from message_bus
         probable_delete_oid = self.probable_delete_records["Key"]
         probable_delete_value = self.probable_delete_records["Value"]
         
@@ -253,6 +256,7 @@ class ObjectRecoveryValidator:
             self.object_leak_info = json.loads(probable_delete_value)
             self.object_leak_id = probable_delete_oid[1:]
             self.object_leak_layout_id = self.object_leak_info["object_layout_id"]
+            self.pvid_str = self.object_leak_info["pv_id"]
 
         except ValueError as error:
             self._logger.error(
@@ -387,7 +391,7 @@ class ObjectRecoveryValidator:
                 oid = self.object_leak_id
                 self._logger.info("Object " + self.object_leak_id + " is for multipart request")
                 layout = self.object_leak_info["object_layout_id"]
-                status = self.delete_object_from_storage(oid, layout)
+                status = self.delete_object_from_storage(oid, layout, self.pvid_str)
                 if (status):
                     self._logger.info("Object for Leak entry " + self.object_leak_id + " deleted from store")
                     status = self.process_probable_delete_record(True, False)
@@ -428,7 +432,7 @@ class ObjectRecoveryValidator:
                         # delete entry from probable delete index.
                         oid = self.object_leak_id
                         layout = self.object_leak_info["object_layout_id"]
-                        status = self.delete_object_from_storage(oid, layout)
+                        status = self.delete_object_from_storage(oid, layout, self.pvid_str)
                         if (status):
                             self._logger.info("Object for Leak entry " + self.object_leak_id + " deleted from store")
                             status = self.process_probable_delete_record(True, False)

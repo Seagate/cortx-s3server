@@ -27,7 +27,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
-extern struct m0_uint128 bucket_metadata_list_index_oid;
+extern struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 #define BUCKET_KVS_FETCH_COUNT 12
 
 S3GetServiceAction::S3GetServiceAction(
@@ -95,7 +95,7 @@ void S3GetServiceAction::get_next_buckets() {
   motr_kv_reader =
       s3_motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   motr_kv_reader->next_keyval(
-      bucket_metadata_list_index_oid, last_key, count,
+      bucket_metadata_list_index_layout, last_key, count,
       std::bind(&S3GetServiceAction::get_next_buckets_successful, this),
       std::bind(&S3GetServiceAction::get_next_buckets_failed, this));
 
@@ -188,7 +188,14 @@ void S3GetServiceAction::send_response_to_s3_client() {
       request->set_out_header_value("Connection", "close");
     }
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
 
     request->send_response(error.get_http_status_code(), response_xml);

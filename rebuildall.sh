@@ -24,9 +24,10 @@ set -e
 usage() {
   echo 'Usage: ./rebuildall.sh [--no-motr-rpm][--use-build-cache][--no-check-code]'
   echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build][--no-s3mempoolmgrut-build]'
-  echo '                       [--no-s3server-build][--no-motrkvscli-build][--no-auth-build]'
+  echo '                       [--no-s3server-build][--no-motrkvscli-build][--no-base64-encoder-decoder-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-java-tests]'
   echo '                       [--no-install][--just-gen-build-file][--valgrind_memcheck]'
+  echo '                       [--bazel_cpu_usage_limit <max_cpu_percentage>][--bazel_ram_usage_limit <max_ram_percentage>]'
   echo '                       [--help]'
   echo 'Optional params as below:'
   echo '          --no-motr-rpm              : Use motr libs from source code (third_party/motr) location'
@@ -44,6 +45,7 @@ usage() {
   echo '          --no-s3mempoolmgrut-build  : Do not build Memory pool Manager UT, Default (false)'
   echo '          --no-s3server-build        : Do not build S3 Server, Default (false)'
   echo '          --no-motrkvscli-build    : Do not build motrkvscli tool, Default (false)'
+  echo '          --no-base64-encoder-decoder-build    : Do not build base64_encoder_decoder tool, Default (false)'
   echo '          --no-s3background-build    : Do not build s3background process, Default (false)'
   echo '          --no-s3msgbus-build    : Do not build s3msgbus, Default (false)'
   echo '          --no-s3cipher-build    : Do not build s3cipher, Default (false)'
@@ -57,6 +59,8 @@ usage() {
   echo '          --no-install               : Do not install binaries after build, Default (false)'
   echo '          --just-gen-build-file      : Do not do anything, only produce BUILD file'
   echo '          --valgrind_memcheck        : Compile with debug flags and zero optimization to support valgrind memcheck'
+  echo '          --bazel_cpu_usage_limit    : Specify max percentage of CPU that bazel can consume during s3 build (integer), Value Range: 1-99, Default is 70'
+  echo '          --bazel_rpm_usage_limit    : Specify max percentage of RAM that bazel can consume during s3 build (integer), Value Range: 1-99, Default is 70'
   echo '          --help (-h)                : Display help'
 }
 
@@ -143,6 +147,7 @@ no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
 no-motrkvscli-build,no-s3background-build,no-s3msgbus-build,no-s3cipher-build,no-s3confstoretool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
 no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,\
+bazel_cpu_usage_limit:,bazel_ram_usage_limit:,\
 help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
@@ -156,6 +161,7 @@ no_s3mempoolut_build=0
 no_s3mempoolmgrut_build=0
 no_s3server_build=0
 no_motrkvscli_build=0
+no_base64_encoder_decoder_build=0
 no_s3background_build=0
 no_s3msgbus_build=0
 no_s3cipher_build=0
@@ -169,6 +175,8 @@ no_java_tests=0
 no_install=0
 just_gen_build_file=0
 valgrind_memcheck=0
+bazel_cpu_limit=70
+bazel_ram_limit=70
 
 # extract options and their arguments into variables.
 while true; do
@@ -182,6 +190,7 @@ while true; do
     --no-s3mempoolmgrut-build) no_s3mempoolmgrut_build=1; shift ;;
     --no-s3server-build) no_s3server_build=1; shift ;;
     --no-motrkvscli-build) no_motrkvscli_build=1; shift ;;
+    --no-base64-encoder-decoder-build) no_base64_encoder_decoder_build=1; shift ;;
     --no-s3background-build) no_s3background_build=1; shift ;;
 	--no-s3msgbus-build) no_s3msgbus_build=1; shift ;;
     --no-s3cipher-build) no_s3cipher_build=1; shift ;;
@@ -195,6 +204,8 @@ while true; do
     --no-java-tests) no_java_tests=1; shift ;;
     --just-gen-build-file) just_gen_build_file=1; shift ;;
     --valgrind_memcheck) valgrind_memcheck=1; shift ;;
+    --bazel_cpu_usage_limit) bazel_cpu_limit=$2; shift 2 ;;
+    --bazel_ram_usage_limit) bazel_ram_limit=$2; shift 2 ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
     *) echo "Internal error!" ; exit 1 ;;
@@ -362,6 +373,7 @@ then
   if [[ $no_s3ut_build -eq 0   || \
       $no_s3server_build -eq 0 || \
       $no_motrkvscli_build -eq 0 || \
+      $no_base64_encoder_decoder_build -eq 0 || \
       $no_s3mempoolmgrut_build -eq 0 || \
       $no_s3mempoolut_build -eq 0 ]]
   then
@@ -371,24 +383,30 @@ then
 fi
 
 prepare_BUILD_file
+# Add max CPU and RAM usage percentage for bazel.
+# Default value will be 70 but user can change value from jenkins-build.sh script.
+cpu_limit_input=$(echo $bazel_cpu_limit | awk '{ printf "%.1f", $1/100 }')
+ram_limit_input=$(echo $bazel_ram_limit | awk '{ printf "%.1f", $1/100 }')
+cpu_resource_limit_param="--local_cpu_resources=HOST_CPUS*$cpu_limit_input"
+ram_resource_limit_param="--local_ram_resources=HOST_RAM*$ram_limit_input"
 
 if [ $no_s3ut_build -eq 0 ]
 then
   bazel build //:s3ut --cxxopt="-std=c++11" --define $MOTR_INC_ \
                       --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                       --spawn_strategy=standalone \
-                      --strip=never
+                      --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
 
   bazel build //:s3utdeathtests --cxxopt="-std=c++11" --define $MOTR_INC_ \
                                 --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                                 --spawn_strategy=standalone \
-                                --strip=never
+                                --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
 fi
 
 if [ $no_s3mempoolut_build -eq 0 ]
 then
   bazel build //:s3mempoolut --cxxopt="-std=c++11" --spawn_strategy=standalone \
-                             --strip=never
+                             --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
 fi
 
 if [ $no_s3mempoolmgrut_build -eq 0 ]
@@ -396,7 +414,7 @@ then
   bazel build //:s3mempoolmgrut --cxxopt="-std=c++11" --define $MOTR_INC_ \
                       --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                       --spawn_strategy=standalone \
-                      --strip=never
+                      --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
 fi
 
 assert_addb_plugin_autogenerated_sources_are_correct() {
@@ -418,7 +436,7 @@ then
   bazel build //:s3server --cxxopt="-std=c++11" --define $MOTR_INC_ \
                           --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                           --spawn_strategy=standalone \
-                          --strip=never
+                          --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
 fi
 
 if [ $no_s3addbplugin_build -eq 0 ]
@@ -427,7 +445,7 @@ then
   bazel build //:s3addbplugin --define $MOTR_INC_ \
                               --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                               --spawn_strategy=standalone \
-                              --strip=never
+                              --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
 fi
 
 if [ $no_motrkvscli_build -eq 0 ]
@@ -435,7 +453,15 @@ then
   bazel build //:motrkvscli --cxxopt="-std=c++11" --define $MOTR_INC_ \
                               --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                               --spawn_strategy=standalone \
-                              --strip=never
+                              --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
+fi
+
+if [ $no_base64_encoder_decoder_build -eq 0 ]
+then
+    bazel build //:base64_encoder_decoder --cxxopt="-std=c++11" --define $MOTR_INC_ \
+                              --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
+                              --spawn_strategy=standalone \
+                              --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
 fi
 
 # Just to free up resources
@@ -522,6 +548,7 @@ then
   cd -
 fi
 
+# This will handle the copying of sample file to config file
 if [ $no_install -eq 0 ]
 then
   if [[ $EUID -ne 0 ]]; then

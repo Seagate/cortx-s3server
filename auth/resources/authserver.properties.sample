@@ -26,6 +26,11 @@ httpsPort=28051
 defaultHost=0.0.0.0
 logFilePath=/var/log/seagate/auth/server
 samlMetadataFileName=saml-metadata.xml
+# Max limit of entries for account, iamuser and ldapsearch
+# operations can be configured using below three paramters.
+maxAccountLimit=1000
+maxIAMUserLimit=1000
+ldapSearchResultsSizeLimit=1000
 dataSource=ldap
 ldapHost=127.0.0.1
 ldapPort=389
@@ -33,13 +38,12 @@ ldapSSLPort=636
 enableSSLToLdap=false
 ldapMaxCons=100
 ldapMaxSharedCons=100
-ldapSearchResultsSizeLimit=1000
 ldapLoginDN=cn=sgiamadmin,dc=seagate,dc=com
 # ldapLoginPW value needs to be encrypted and updated here
 # Use AuthPassEncryptCLI.jar CLI to encrypt the password
 ldapLoginPW=Rofaa+mJRYLVbuA2kF+CyVUJBjPx5IIFDBQfajmrn23o5aEZHonQj1ikUU9iMBoC6p/dZtVXMO1KFGzHXX3y1A==
 # ldap_const_key to decrypt ldap password
-ldap_const_key=openldap
+ldap_const_key=cortx
 consoleURL=https://console.s3.seagate.com:9292/sso
 enable_https=false
 enable_http=true
@@ -62,6 +66,16 @@ logConfigFile=/opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 logLevel=INFO
 
 #comma separated list of s3 internal accounts
-s3InternalAccounts=s3-background-delete-svc,s3-recovery-svc
+s3InternalAccounts=s3-background-delete-svc
 #Authentication Cache Timeout Interval in seconds
 cacheTimeout=30
+
+# IEM Server details for sending Auth IEM alerts,
+IEMServerURL=http://127.0.0.1:28300/EventMessage/event
+
+# Rsyslog server details for sending IAM audit log,
+RsyslogHostname=127.0.0.1
+RsyslogPort=514
+# Rsyslog msgid to filter messages for S3AuthServer
+RsyslogMsgId=s3authserver-audit-logging
+

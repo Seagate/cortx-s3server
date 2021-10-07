@@ -25,8 +25,10 @@
 import sys
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
+
 CONFIG = CORTXS3Config()
-index_api = CORTXS3IndexApi(CONFIG)
+index_api = CORTXS3IndexApi(CONFIG, CONNECTION_TYPE_PRODUCER)
 response, data = index_api.list(sys.argv[1])
 if(response):
         list_index_response = data.get_index_content()

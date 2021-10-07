@@ -67,7 +67,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::string etag;
   std::map<std::string, std::string, S3NumStrComparator> parts;
   uint64_t object_size;
-  m0_uint128 multipart_index_oid;
+  struct s3_motr_idx_layout multipart_index_layout;
   bool delete_multipart_object;
   bool obj_metadata_updated;
   void parse_xml_str(std::string &xml_str);
@@ -81,6 +81,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   struct m0_uint128 old_object_oid;
   int old_layout_id;
   struct m0_uint128 new_object_oid;
+  struct m0_fid new_pvid;
   int layout_id;
 
   // Probable delete record for old object OID in case of overwrite
@@ -89,6 +90,9 @@ class S3PostCompleteAction : public S3ObjectAction {
   // Probable delete record for new object OID in case of current req failure
   std::string new_oid_str;  // Key for new probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+
+  std::map<unsigned int, std::string> part_etags;
+  std::string generate_etag();
 
  public:
   S3PostCompleteAction(

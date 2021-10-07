@@ -20,7 +20,9 @@
 
 import os
 import sys
+import socket
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+import logging
 
 class S3HaproxyConfig:
   """HAProxy configration for S3."""
@@ -30,15 +32,32 @@ class S3HaproxyConfig:
 
   def __init__(self, confstore: str):
     """Constructor."""
-    # Read machine-id of current node
-    with open('/etc/machine-id', 'r') as mcid_file:
-      self.machine_id = mcid_file.read().strip()
+
+    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+    self.logger = logging.getLogger(s3deployment_logger_name)
+    if self.logger.hasHandlers():
+      self.logger.info("Logger has valid handler")
+    else:
+      self.logger.setLevel(logging.DEBUG)
+      # create console handler with a higher log level
+      chandler = logging.StreamHandler(sys.stdout)
+      chandler.setLevel(logging.DEBUG)
+      s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      formatter = logging.Formatter(s3deployment_log_format)
+      # create formatter and add it to the handlers
+      chandler.setFormatter(formatter)
+      # add the handlers to the logger
+      self.logger.addHandler(chandler)
 
     if not confstore.strip():
-      sys.stderr.write(f'config url:[{confstore}] must be a valid url path\n')
+      self.logger.error(f'config url:[{confstore}] must be a valid url path')
       raise Exception('empty config URL path')
 
     self.provisioner_confstore = S3CortxConfStore(confstore, 'haproxy_config_index')
+
+    # Get machine-id of current node from constore
+    self.machine_id = self.provisioner_confstore.get_machine_id()
+    self.logger.info(f'Machine id : {self.machine_id}')
 
   def get_publicip(self):
     assert self.provisioner_confstore != None
@@ -46,7 +65,7 @@ class S3HaproxyConfig:
 
     return self.provisioner_confstore.get_config(
       self.local_confstore.get_config(
-        'CONFSTORE_PUBLIC_FQDN_KEY').format(self.machine_id))
+        'CONFIG>CONFSTORE_PUBLIC_FQDN_KEY').replace("machine-id", self.machine_id))
 
   def get_privateip(self):
     assert self.provisioner_confstore != None
@@ -54,15 +73,14 @@ class S3HaproxyConfig:
 
     return self.provisioner_confstore.get_config(
       self.local_confstore.get_config(
-        'CONFSTORE_PRIVATE_FQDN_KEY').format(self.machine_id))
+        'CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace("machine-id", self.machine_id))
 
   def get_s3instances(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
     return int(self.provisioner_confstore.get_config(
-      self.local_confstore.get_config(
-        'CONFSTORE_S3INSTANCES_KEY').format(self.machine_id)))
+      self.local_confstore.get_config('CONFIG>CONFSTORE_S3INSTANCES_KEY')))
 
   def process(self):
     """Main Processing function."""
@@ -170,7 +188,7 @@ backend s3-auth
 '''
 
     #Initialize port numbers
-    s3inport = 28081
+    s3inport = 28071
     s3auport = 28050
 
     #Add complete information to haproxy.cfg file
@@ -221,4 +239,4 @@ backend s3-auth
     os.system("rm -rf /etc/cron.daily/logrotate")
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate")
     os.system("systemctl restart rsyslog")
-    os.system("systemctl restart haproxy")
+

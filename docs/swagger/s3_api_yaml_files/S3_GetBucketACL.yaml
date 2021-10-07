@@ -1,0 +1,104 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: aws s3api get-bucket-acl --bucket <your_bucket>
+  title: S3 API - Get Bucket ACL
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  '/{bucket_name}':
+    get:
+      tags:
+        - Get Bucket ACL
+      parameters:
+        - name: bucket_name
+          in: path
+          type: string
+          required: true
+        - name: acl
+          in: query
+          type: string
+          required: true
+        - name: User-Agent
+          in: header
+          description: Header to identify application, it's version number and programming language.
+          type: string
+          required: true
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string
+          required: true
+        - name: X-Amz-Content-SHA256
+          in: header
+          description: This header value informs whether s3 request signed or not.
+          type: string
+          required: true
+        - name: Authorization
+          in: header
+          description: >-
+            This Header contains credentials to authorize a User-Agent with
+            server.
+          type: string
+          required: true
+        - name: X-Forwarded-For
+          in: header
+          description: This header identify the originating IP address of a client connecting to a web server.
+          type: string
+          required: true
+      produces:
+        - application/xml
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: AccessControlPolicy
+            properties:
+              Owner:
+                type: object
+                properties:
+                  ID:
+                    type: string
+                  DisplayName:
+                    type: string
+              AccessControlList:
+                type: object
+                properties:
+                  Grant:
+                    type: object
+                    properties:
+                      Grantee:
+                        type: object
+                        properties:
+                          ID:
+                            type: string
+                          DisplayName:
+                            type: string
+                      Permission:
+                        type: string
+          headers:
+            Content-Type:
+              type: string
+            Content-Length:
+              type: integer
+            x-amz-request-id:
+              type: string
+            Server:
+              type: string
+        400:  
+          description: Request Timeout - The client did not produce a request within the time that the server was prepared to wait.
+        403:
+          description: |
+            Access Denied.
+
+            Invalid AccessKey Id - The AWS access key Id you provided does not exist in our records.
+        404:
+          description: No Such Bucket - The specified bucket does not exist.
+        500:
+          description: Internal Error - We encountered an internal error. Please try again.
+        503: 
+          description: Service Unavailable - Reduce your request rate.

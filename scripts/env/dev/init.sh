@@ -37,29 +37,55 @@ ansible_automation=0
 is_open_source=false
 
 unsupported_os() {
-  echo "S3 currently supports only CentOS 7.7.1908, CentOS 7.8.2003 or RHEL 7.7" 1>&2;
+  echo "S3 currently supports only CentOS 7.8.2003 and CentOS 7.9.2009" 1>&2;
   exit 1;
 }
 
 check_supported_kernel() {
   kernel_version=$(uname -r)
-  if [[ "$kernel_version" != 3.10.0-1062.* && "$kernel_version" != 3.10.0-1127.* ]]
+  if [[ "$kernel_version" != 3.10.0-1127.* && "$kernel_version" != 3.10.0-1160.* ]]
   then
-    echo "S3 supports kernel version: [3.10.0-1062.el7.x86_64] or [3.10.0-1127.el7.x86_64] only." 1>&2;
+    echo "S3 supports kernel version: [3.10.0-1127.el7.x86_64] or [3.10.0-1160.el7.x86_64] only." 1>&2;
     exit 1
   fi
 }
 
 #function to install/upgrade cortx-py-utils rpm
 install_cortx_py_utils() {
-  #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
+  #install yum-utils
+  if rpm -q 'yum-utils' ; then
+    echo "yum-utils already present ... Skipping ..."
+  else
+    yum install yum-utils -y
+  fi
+
+  #install cpio
+  if rpm -q 'cpio' ; then
+    echo "cpio already present ... Skipping ..."
+  else
+    yum install cpio -y
+  fi
+
+  # cleanup
+  rm -rf "$PWD"/cortx-py-utils*
+  rm -rf "$PWD"/opt
+
+  # download cortx-py-utils.
+  yumdownloader --destdir="$PWD" cortx-py-utils
+
+  # extract requirements.txt
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.txt"
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
+
+  # install cortx-py-utils prerequisite
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt"
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
+
+  # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
     yum remove cortx-py-utils -y
   fi
   yum install cortx-py-utils -y
-
-  # install cortx-py-utils prerequisite
-  pip3 install -r /opt/seagate/cortx/utils/conf/requirements.txt --ignore-installed
 }
 
 # function to install all prerequisite for dev vm 
@@ -68,6 +94,9 @@ install_pre_requisites() {
   # install kafka server
   sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
   
+  #sleep for 60 secs to make sure all the services are up and running.
+  sleep 60
+
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
 
@@ -91,9 +120,9 @@ if [ ! -z "$centos_release" ]; then
   os_build_num=`echo $os_full_version | awk -F '.' '{ print $3 }'`
 
   if [ "$os_major_version" = "7" ]; then
-    if [[ "$os_minor_version" != "7" && "$os_minor_version" != "8" ]]; then
+    if [[ "$os_minor_version" != "8" && "$os_minor_version" != "9" ]]; then
       unsupported_os
-    elif [[ "$os_build_num" != "1908" && "$os_build_num" != "2003" ]]; then
+    elif [[ "$os_build_num" != "2003" && "$os_build_num" != "2009" ]]; then
       echo "CentOS build $os_build_num is currently not supported."
       exit 1
     else
@@ -102,19 +131,12 @@ if [ ! -z "$centos_release" ]; then
   else
     unsupported_os
   fi
-elif [ ! -z "$redhat_release" ]; then
-  os_full_version=`cat /etc/redhat-release | awk  '{ print $7 }'`
-  os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
-  os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
-
-  if [[ "$os_major_version" = "7" && "$os_minor_version" = "7" ]]; then
-    check_supported_kernel
-  else
-    unsupported_os
-  fi
 else
   unsupported_os
 fi
+
+# validate and configure lnet
+sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
 
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
@@ -126,7 +148,6 @@ else
           a)
               is_open_source=true
               yum install createrepo -y
-              easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
               # install configobj
@@ -172,7 +193,9 @@ cd $BASEDIR
 
 # Attempt ldap clean up since ansible openldap setup is not idempotent
 systemctl stop slapd 2>/dev/null || /bin/true
+# remove old openldap pkg if installed
 yum remove -y openldap-servers openldap-clients || /bin/true
+yum remove -y symas-openldap symas-openldap-servers symas-openldap-clients || /bin/true
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 rm -rf /var/lib/ldap/*
 rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
@@ -193,7 +216,7 @@ yum install -y openssl java-1.8.0-openjdk-headless
 
 # install the built certs
 #rpm -e stx-s3-certs stx-s3-client-certs || /bin/true
-#yum install openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
+#yum install symas-openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
 #yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
 #yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 # Coping the certificates
@@ -209,6 +232,17 @@ yum install -y ansible facter
 cd ${BASEDIR}/../../../ansible
 
 #Install motr build dependencies
+
+# install all rpms which requires gcc as dependency
+if [ "$is_open_source" = false ];
+then
+  echo "Installing ISA libraries"
+  if rpm -q 'isa-l' ; then
+  	echo "Library already present ... Skipping ..."
+  else
+  	yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-2.0.0-latest/motr_uploads/isa-l-2.30.0-1.el7.x86_64.rpm
+  fi
+fi
 
 # TODO Currently motr is not supported for CentOS 8, when support is there remove below check
 if [ "$os_major_version" = "7" ];
@@ -239,9 +273,9 @@ if [ $ansible_automation -eq 1 ]
 then
    OPENLDAP_PASSWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 6 | head -n 1)
    LDAPADMIN_PASSWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 7 | head -n 1)
-   ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos77_8.yml -v --extra-vars "s3_src=${S3_SRC_DIR} openldappasswd=$OPENLDAP_PASSWD ldapiamadminpasswd=$LDAPADMIN_PASSWD"
+   ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos7.yml -v --extra-vars "s3_src=${S3_SRC_DIR} openldappasswd=$OPENLDAP_PASSWD ldapiamadminpasswd=$LDAPADMIN_PASSWD"
 else
-   ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos77_8.yml -v -k --extra-vars "s3_src=${S3_SRC_DIR}"
+   ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos7.yml -v -k --extra-vars "s3_src=${S3_SRC_DIR}"
 fi
 
 rm -f ./hosts_local

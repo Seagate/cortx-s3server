@@ -25,7 +25,7 @@
 #include "s3_iem.h"
 #include "s3_account_delete_metadata_action.h"
 
-extern struct m0_uint128 bucket_metadata_list_index_oid;
+extern struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 
 S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
@@ -86,7 +86,7 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
       motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   bucket_account_id_key_prefix = account_id_from_uri + "/";
   motr_kv_reader->next_keyval(
-      bucket_metadata_list_index_oid, bucket_account_id_key_prefix, 1,
+      bucket_metadata_list_index_layout, bucket_account_id_key_prefix, 1,
       std::bind(&S3AccountDeleteMetadataAction::
                      fetch_first_bucket_metadata_successful,
                 this),
@@ -150,7 +150,14 @@ void S3AccountDeleteMetadataAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
 
     request->send_response(error.get_http_status_code(), response_xml);

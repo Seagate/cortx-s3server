@@ -145,7 +145,7 @@ TEST_F(S3MotrKVSWritterTest, Constructor) {
   EXPECT_EQ(S3MotrKVSWriterOpState::start, action_under_test->get_state());
   EXPECT_EQ(action_under_test->request, ptr_mock_request);
   EXPECT_TRUE(action_under_test->idx_ctx == nullptr);
-  EXPECT_EQ(0, action_under_test->oid_list.size());
+  EXPECT_EQ(0, action_under_test->idx_los.size());
 }
 
 TEST_F(S3MotrKVSWritterTest, CleanupContexts) {
@@ -177,7 +177,7 @@ TEST_F(S3MotrKVSWritterTest, CreateIndex) {
       "TestIndex", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
-  EXPECT_EQ(1, action_under_test->oid_list.size());
+  EXPECT_EQ(1, action_under_test->idx_los.size());
   EXPECT_TRUE(s3motrkvscallbackobj.success_called);
   EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
@@ -204,7 +204,7 @@ TEST_F(S3MotrKVSWritterTest, CreateIndexIdxPresent) {
       "TestIndex", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
-  EXPECT_EQ(1, action_under_test->oid_list.size());
+  EXPECT_EQ(1, action_under_test->idx_los.size());
   EXPECT_EQ(1, action_under_test->idx_ctx->idx_count);
   EXPECT_TRUE(s3motrkvscallbackobj.success_called);
   EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
@@ -219,6 +219,7 @@ TEST_F(S3MotrKVSWritterTest, CreateIndexSuccessful) {
       (struct m0_idx *)calloc(1, sizeof(struct m0_idx));
   action_under_test->idx_ctx->idx_count = 1;
   action_under_test->idx_ctx->n_initialized_contexts = 1;
+  action_under_test->idx_los.resize(1);
 
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj);
@@ -243,7 +244,7 @@ TEST_F(S3MotrKVSWritterTest, CreateIndexEntityCreateFailed) {
       "TestIndex", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
-  EXPECT_EQ(1, action_under_test->oid_list.size());
+  EXPECT_EQ(1, action_under_test->idx_los.size());
   EXPECT_FALSE(s3motrkvscallbackobj.success_called);
   EXPECT_TRUE(s3motrkvscallbackobj.fail_called);
   EXPECT_EQ(S3MotrKVSWriterOpState::failed_to_launch,
@@ -306,7 +307,7 @@ TEST_F(S3MotrKVSWritterTest, PutKeyVal) {
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->put_keyval(
-      oid, "3kfile",
+      {oid}, "3kfile",
       "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}",
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
@@ -347,7 +348,7 @@ TEST_F(S3MotrKVSWritterTest, PutKeyValFailed) {
   action_under_test->writer_context.reset(new S3AsyncMotrKVSWriterContext(
       ptr_mock_request, NULL, NULL, 1, ptr_mock_s3motr));
   action_under_test->put_keyval(
-      oid, "3kfile",
+      {oid}, "3kfile",
       "{\"ACL\":\"\",\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":"
       "\"3kfile\"}",
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
@@ -371,7 +372,8 @@ TEST_F(S3MotrKVSWritterTest, DelKeyVal) {
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->delete_keyval(
-      oid, "3kfile", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      {oid}, "3kfile",
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   EXPECT_TRUE(s3motrkvscallbackobj.success_called);
@@ -392,7 +394,8 @@ TEST_F(S3MotrKVSWritterTest, DelKeyValSuccess) {
       .WillRepeatedly(Invoke(s3_test_alloc_sync_op));
 
   action_under_test->delete_keyval(
-      oid, "3kfile", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      {oid}, "3kfile",
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
   action_under_test->delete_keyval_successful();
 
@@ -412,7 +415,8 @@ TEST_F(S3MotrKVSWritterTest, DelKeyValFailed) {
       .WillOnce(Invoke(s3_test_motr_op_launch_fail));
   EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-EPERM));
   action_under_test->delete_keyval(
-      oid, "3kfile", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      {oid}, "3kfile",
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   action_under_test->delete_keyval_failed();
@@ -434,7 +438,7 @@ TEST_F(S3MotrKVSWritterTest, DelIndex) {
   EXPECT_CALL(*ptr_mock_s3motr, motr_entity_open(_, _));
 
   action_under_test->delete_index(
-      oid, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      {oid}, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   EXPECT_TRUE(s3motrkvscallbackobj.success_called);
@@ -461,7 +465,7 @@ TEST_F(S3MotrKVSWritterTest, DelIndexIdxPresent) {
   EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(3);
 
   action_under_test->delete_index(
-      oid, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      {oid}, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   EXPECT_TRUE(s3motrkvscallbackobj.success_called);
@@ -477,7 +481,7 @@ TEST_F(S3MotrKVSWritterTest, DelIndexEntityDeleteFailed) {
   EXPECT_CALL(*ptr_mock_s3motr, motr_entity_open(_, _));
 
   action_under_test->delete_index(
-      oid, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      {oid}, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   EXPECT_FALSE(s3motrkvscallbackobj.success_called);

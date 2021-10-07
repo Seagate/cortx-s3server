@@ -24,6 +24,7 @@ the underlying messaging platform.
 #!/usr/bin/python3.6
 
 import os
+import errno
 import traceback
 import sched
 import time
@@ -38,11 +39,12 @@ import sys
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 #from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
-    """Scheduler which will add key value to rabbitmq message queue."""
+    """Scheduler which will add key value to message_bus queue."""
 
     def __init__(self, producer_name):
         """Initialise logger and configuration."""
@@ -79,7 +81,7 @@ class ObjectRecoveryScheduler(object):
             count = self.producer.get_count()
             self.logger.debug("Count of unread msgs is : " + str(count))
 
-            if int(count) < threshold:
+            if ((int(count) < threshold) or (threshold == 0)):
                 self.logger.debug("Count of unread messages is less than threshold value.Hence continuing...")
             else:
                 #do nothing
@@ -89,7 +91,7 @@ class ObjectRecoveryScheduler(object):
             #PurgeAPI Here
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
-                self.config, logger=self.logger).list(
+                self.config, connectionType=CONNECTION_TYPE_PRODUCER, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
             if result:
                 self.logger.info("Index listing result :" +
@@ -143,87 +145,9 @@ class ObjectRecoveryScheduler(object):
             self.logger.debug(
                 "traceback : {}".format(traceback.format_exc()))
 
-    def add_kv_to_queue(self, marker = None):
-        """Add object key value to object recovery queue."""
-        self.logger.info("Adding kv list to queue")
-        try:
-            from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
-
-            mq_client = ObjectRecoveryRabbitMq(
-                self.config,
-                self.config.get_rabbitmq_username(),
-                self.config.get_rabbitmq_password(),
-                self.config.get_rabbitmq_host(),
-                self.config.get_rabbitmq_exchange(),
-                self.config.get_rabbitmq_queue_name(),
-                self.config.get_rabbitmq_mode(),
-                self.config.get_rabbitmq_durable(),
-                self.logger)
-            # Cleanup all entries and enqueue only 1000 entries
-            mq_client.purge_queue(self.config.get_rabbitmq_queue_name())
-
-            result, index_response = CORTXS3IndexApi(
-                self.config, logger=self.logger).list(
-                    self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
-            if result:
-                self.logger.info("Index listing result :" +
-                                 str(index_response.get_index_content()))
-                probable_delete_json = index_response.get_index_content()
-                probable_delete_oid_list = probable_delete_json["Keys"]
-                is_truncated = probable_delete_json["IsTruncated"]
-                if (probable_delete_oid_list is not None):
-                    for record in probable_delete_oid_list:
-                        # Check if record is older than the pre-configured 'time to process' delay
-                        leak_processing_delay = self.config.get_leak_processing_delay_in_mins()
-                        try:
-                            objLeakVal = json.loads(record["Value"])
-                        except ValueError as error:
-                            self.logger.error(
-                            "Failed to parse JSON data for: " + str(record) + " due to: " + error)
-                            continue
-
-                        if (objLeakVal is None):
-                            self.logger.error("No value associated with " + str(record) + ". Skipping entry")
-                            continue
-
-                        # Check if object leak entry is older than 15mins or a preconfigured duration
-                        if (not ObjectRecoveryScheduler.isObjectLeakEntryOlderThan(objLeakVal, leak_processing_delay)):
-                            self.logger.info("Object leak entry " + record["Key"] +
-                                              " is NOT older than " + str(leak_processing_delay) +
-                                              "mins. Skipping entry")
-                            continue
-
-                        self.logger.info(
-                            "Object recovery queue sending data :" +
-                            str(record))
-                        ret, msg = mq_client.send_data(
-                            record, self.config.get_rabbitmq_queue_name())
-                        if not ret:
-                            #IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
-                            self.logger.error(
-                                "Object recovery queue send data "+ str(record) +
-                                " failed :" + msg)
-                        else:
-                            self.logger.info(
-                                "Object recovery queue send data successfully :" +
-                                str(record))
-                else:
-                    self.logger.info(
-                        "Index listing result empty. Ignoring adding entry to object recovery queue")
-                    pass
-            else:
-                self.logger.error("Failed to retrive Index listing:")
-        except BaseException:
-            self.logger.error(
-                "Object recovery queue send data exception:" + traceback.format_exc())
-        finally:
-            if mq_client:
-               self.logger.info("Closing the mqclient")
-               mq_client.close()
-
     def schedule_periodically(self):
-        """Schedule RabbitMQ producer to add key value to queue on hourly basis."""
-        # Run RabbitMQ producer periodically on hourly basis
+        """Schedule producer to add key value to message_bus queue on hourly basis."""
+        # Run producer periodically on hourly basis
         self.logger.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
 
@@ -231,11 +155,9 @@ class ObjectRecoveryScheduler(object):
             """Add key value to queue using scheduler."""
             if self.config.get_messaging_platform() == MESSAGE_BUS:
                 self.add_kv_to_msgbus()
-            elif self.config.get_messaging_platform() == RABBIT_MQ:
-                self.add_kv_to_queue()
             else:
                 self.logger.error(
-                "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")
+                "Invalid argument specified in messaging_platform use 'message_bus'")
                 return
 
             scheduled_run.enter(
@@ -274,9 +196,12 @@ class ObjectRecoveryScheduler(object):
         if not os.path.isdir(self._logger_directory):
             try:
                 os.mkdir(self._logger_directory)
-            except BaseException:
-                self.logger.error(
-                    "Unable to create log directory at " + self._logger_directory)
+            except OSError as e:
+                if e.errno == errno.EEXIST:
+                    pass
+                else:
+                    raise Exception(" Producer Logger Could not be created")
+
 
 if __name__ == "__main__":
     SCHEDULER = ObjectRecoveryScheduler(sys.argv[1])

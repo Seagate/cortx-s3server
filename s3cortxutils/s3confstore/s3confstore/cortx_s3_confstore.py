@@ -41,7 +41,8 @@ class S3CortxConfStore:
   @staticmethod
   def load_config(index: str = "default_s3confstore_index", config: str = ""):
     """Load Config into confstore."""
-    Conf.load(index, config)
+    # TODO recurse flag will be deprecated in future.
+    Conf.load(index, config, recurse = True)
 
   def get_config(self, key: str):
     """Get the key's config from confstore."""
@@ -56,7 +57,10 @@ class S3CortxConfStore:
 
   def get_all_keys(self):
     """Get all the key value pairs from confstore."""
-    return Conf.get_keys(self.default_index)
+    # TODO recurse flag will be deprecated in future.
+    # Do changes in all places wherever its applicable
+    # refer validate_config_files() and phase_keys_validate() in setupcmd.py
+    return Conf.get_keys(self.default_index, recurse = True)
 
   def delete_key(self, key: str, save: bool = False):
     """Deletes the specified key."""
@@ -70,11 +74,18 @@ class S3CortxConfStore:
     In-place replaces of keys specified in keys_to_include from source to destination.
     In case keys_to_include is empty all keys are replace in-place.
     """
-    Conf.copy(source_index, self.default_index, keys_to_include)
+    # TODO recurse flag will be deprecated in future.
+    # Do changes in all places wherever its applicable
+    # refer upgrade_config() in merge.py
+    Conf.copy(source_index, self.default_index, keys_to_include, recurse = True)
 
   def save_config(self):
     """Saves to config file."""
     Conf.save(self.default_index)
+
+  def get_machine_id(self):
+    """Get machine id from the constore"""
+    return Conf.machine_id
 
   @staticmethod
   def validate_configfile(configfile: str):

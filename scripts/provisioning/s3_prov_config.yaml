@@ -16,19 +16,63 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+# All the phases involved in setting up s3 server, irrespective of which
+# provisioner keys they use, must need to follow inheritance hierarchy. This
+# means any key used in a certain phase must be validated for all successive
+# phases. This basis for validating provisioner keys should be strictly
+# followed, or else will break the validation logic. The hierarchy
+# ends with the last phase of s3 setup and the remaining phases will
+# only be used for test, reset or cleanup. Unsolicited keys which are
+# not used in the setup phases should be added to the bottom of the file.
+# Also note, there are 3 token-strings used in this file :
+# "machine-id"- used to substitute machine id of the node
+# "cluster-id"- used to substitute cluster id of the setup, not to be confused
+#               with cluster_id which is component of a key.
+# "storage-set-count"- storage set count, not to be confused with
+#                      storage_set_count which is component of a key.
 
+POST_INSTALL:
+PREPARE:
+CONFIG:
+  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
+  CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
+  CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>software>openldap>root>secret"
+  CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>software>s3>io>max_units"
+  CONFSTORE_CLUSTER_ID_KEY: "server_node>machine-id>cluster_id"
+  CONFSTORE_S3INSTANCES_KEY: "cortx>software>s3>service>instances"
+  CONFSTORE_HOSTNAME_KEY: "server_node>machine-id>hostname"
+  CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>cluster-id>site>storage_set_count"
+  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>cluster-id>storage_set[storage-set-count]>server_nodes"
+  CONFSTORE_PUBLIC_FQDN_KEY: "server_node>machine-id>network>data>public_fqdn"
+  CONFSTORE_PRIVATE_FQDN_KEY: "server_node>machine-id>network>data>private_fqdn"
+INIT:
+# Inheritance hierarchy ends here.
+
+TEST:
+  TEST_CONFSTORE_LDAPADMIN_USER_KEY: "test>s3>iam_username"
+  TEST_CONFSTORE_LDAPADMIN_PASSWD_KEY: "test>s3>iam_password"
+  TEST_CONFSTORE_ENDPOINT_KEY: "test>s3>endpoint_url"
+
+#Default values of optional params
+
+DEFAULT_POST_INSTALL:
+DEFAULT_PREPARE:
+DEFAULT_CONFIG:
+  CONFSTORE_LDAPADMIN_USER_KEY: "sgiamadmin"
+  CONFSTORE_ROOTDN_USER_KEY: "admin"
+  CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "8"
+  CONFSTORE_S3INSTANCES_KEY: "1"
+  CONFSTORE_STORAGE_SET_COUNT_KEY: "1"
+DEFAULT_INIT:
+
+DEFAULT_TEST:
+  TEST_CONFSTORE_LDAPADMIN_USER_KEY: "sgiamadmin"
+  TEST_CONFSTORE_ENDPOINT_KEY: "s3.seagate.com"
+
+# Unsolicited Keys should be added to the bottom.
 LDAP_USER: "cn={},dc=seagate,dc=com"
 LDAP_URL: "ldapi:///"
 CONFSTORE_OPENLDAP_CONST_KEY: "cortx"
-CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
-CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
-CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
-CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>software>openldap>root>secret"
-CONFSTORE_CLUSTER_ID_KEY: "server_node>{}>cluster_id"                               # server_node>{machine-id}>cluster_id
-CONFSTORE_S3INSTANCES_KEY: "server_node>{}>s3_instances"                            # server_node>{machine-id}>s3_instances
-CONFSTORE_HOSTNAME_KEY: "server_node>{}>hostname"                                   # server_node>{machine-id}>hostname
-CONFSTORE_SITE_COUNT_KEY: "cluster>{}>site_count"                                   # cluster>{cluster-id}>site_count
-CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>{}>site>storage_set_count"                # cluster>{cluster-id}>site>storage_set_count
-CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>{}>storage_set[{}]>server_nodes"   # cluster>{cluster-id}>storage_set[N]>server_nodes
-CONFSTORE_PUBLIC_FQDN_KEY: server_node>{}>network>data>public_fqdn                  # server_node>{machine-id}>network>data>public_fqdn
-CONFSTORE_PRIVATE_FQDN_KEY: server_node>{}>network>data>private_fqdn                # server_node>{machine-id}>network>data>private_fqdn
+CONFSTORE_SITE_COUNT_KEY: "cluster>cluster-id>site_count"
+S3_CONFIG_FILE: "/opt/seagate/cortx/s3/conf/s3config.yaml"

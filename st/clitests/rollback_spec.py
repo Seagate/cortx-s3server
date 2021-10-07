@@ -87,8 +87,6 @@ def clean_18mb_multipart():
     if '18MBfile' in result.status.stdout:
         upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
         S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
-    else:
-        raise AssertionError("Failed to find multipart info.")
     return
 
 S3fiTest('s3cmd enable FI create index fail').enable_fi("enable", "always", "motr_idx_create_fail").execute_test().command_is_successful()
@@ -106,6 +104,10 @@ S3fiTest('s3cmd enable FI PUT KV').enable_fi_offnonm("enable", "motr_kv_put_fail
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_put_fail").execute_test().command_is_successful()
 clean_18mb_multipart()
+
+S3fiTest('Disable bucket metadata cache').\
+    enable_fi("enable", "", "disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
 
 S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "motr_kv_get_fail", "3", "99").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail()
@@ -126,6 +128,10 @@ S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "motr_kv_get_fail
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_get_fail").execute_test().command_is_successful()
 clean_18mb_multipart()
+
+S3fiTest('Enable bucket metadata cache').\
+    disable_fi("disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
 
 S3fiTest('s3cmd enable FI fail_save_part_mdata').enable_fi("enable", "always", "fail_save_part_mdata").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
@@ -270,9 +276,18 @@ S3fiTest('s3cmd enable FI GET KV').enable_fi("enable", "always", "motr_kv_get_fa
 result = S3cmdTest('S3cmd cannot list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_get_fail").execute_test().command_is_successful()
 
+S3fiTest('Disable bucket metadata cache').\
+    enable_fi("enable", "", "disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
+
 S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "motr_kv_get_fail", "4", "99").execute_test().command_is_successful()
 result = S3cmdTest('S3cmd cannot list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_get_fail").execute_test().command_is_successful()
+
+S3fiTest('Enable bucket metadata cache').\
+    disable_fi("disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
+
 S3fiTest('s3cmd enable FI GET KV').enable_fi("enable", "always", "motr_kv_get_fail").execute_test().command_is_successful()
 S3cmdTest('S3cmd cannot abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_get_fail").execute_test().command_is_successful()

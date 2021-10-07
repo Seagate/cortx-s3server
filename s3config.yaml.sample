@@ -19,6 +19,8 @@
 
 S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_MOTR_CONFIG, S3_THIRDPARTY_CONFIG, S3_VERSION_CONFIG]
 S3_SERVER_CONFIG:
+   S3_DI_DISABLE_DATA_CORRUPTION_IEM: false             # disable sending of IEM messages by s3server in case of data integrity checksum fails
+   S3_DI_DISABLE_METADATA_CORRUPTION_IEM: false         # disable sending of IEM messages by s3server in case of metadata corruption is detected
    S3_DAEMON_WORKING_DIR: "/var/log/seagate/motr/"      # S3 Daemon will run in the specified directory
    S3_DAEMON_DO_REDIRECTION: 0                          # Do redirection of stderr, stdout and stdin to /dev/null
    S3_LOG_DIR: "/var/log/seagate/s3"                    # S3 Log directory, for output to stderr have value as "" and set S3_DAEMON_DO_REDIRECTION to 0
@@ -27,6 +29,11 @@ S3_SERVER_CONFIG:
    S3_LOG_ENABLE_BUFFERING: false                        # DEBUG, INFO & WARN logs are buffered if buffering is enabled. ERROR and FATAL logs are always flushed. Default is true.
    S3_ENABLE_AUTH_SSL: false                             # Enable ssl communication between s3 server and auth server
    S3_REUSEPORT: false                                  # Enable reusing s3 server port
+   S3_WRITE_DATA_INTEGRITY_CHECK: false                  # TBD
+   S3_READ_DATA_INTEGRITY_CHECK: false                   # TBD
+   S3_METADATA_INTEGRITY_CHECK: true                    # TBD
+   S3_SALT_CHECKSUM: true                               # TBD 
+   S3_PI_TYPE: "PI_TYPE_MD5_INC_CONTEXT"                # TBD
    S3_MOTR_HTTP_REUSEPORT: true                         # Enable reusing motr http server port
    S3_IAM_CERT_FILE: "/etc/ssl/stx-s3/s3auth/s3authserver.crt" # IAM Auth certificate file
    S3_LOG_FLUSH_FREQUENCY: 30                           # Time in seconds, after which logs will be flushed. Valid only if S3_LOG_ENABLE_BUFFERING is true. Default is 30 seconds.
@@ -38,15 +45,19 @@ S3_SERVER_CONFIG:
    S3_AUDIT_LOGGER_PORT: 514                            # Port on which rsyslog or kafka webserver is listening
    S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"  # Rsyslog msgid to filter messages
    S3_AUDIT_LOGGER_KAFKA_WEB_PATH: "/topics/s3auditlogs" # URL path for POST requests
+   S3_IEM_HOST: "localhost"                              # host to connect for IEM
+   S3_IEM_PORT: 28300                                    # IEM rest server port
+   S3_IEM_PATH: "/EventMessage/event"                    # IEM URL path for POST requests
    S3_AUDIT_MAX_RETRY_COUNT: 5                          # Max retry count in case of audit log failure
    S3_SERVER_IPV4_BIND_ADDR: 0.0.0.0                    # S3 Server ipv4 bind address, 0.0.0.0 is default. ~ means option is ignored/not to listen on IPv4 address.
    S3_SERVER_IPV6_BIND_ADDR: "~"                        # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
-   S3_SERVER_BIND_PORT: 28081                           # S3 Server port number
+   S3_SERVER_BIND_PORT: 28071                           # S3 Server port number
    S3_SERVER_MOTR_HTTP_BIND_ADDR: 127.0.0.1             # S3 Server bind addresss to perform motr operations over HTTP, 127.0.0.1 is default.
    S3_SERVER_MOTR_HTTP_BIND_PORT: 28049                 # Port number to perform motr operations over HTTP.
    S3_SERVER_REGION_ENDPOINTS: [s3-us-west-2.seagate.com, s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
    S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
-   S3_SERVER_SHUTDOWN_GRACE_PERIOD: 7                  # S3 server shutdown grace period in seconds, default is 10 seconds.
+   S3_SERVER_SHUTDOWN_GRACE_PERIOD: 4                  # S3 server shutdown grace period in seconds, default is 10 seconds.
+   S3_RETRY_SHUTDOWN_AFTER_SEC: 30                      # Retry After in seconds
    S3_SERVER_SSL_ENABLE: false                          # Enable ssl in s3server
    S3_SERVER_CERT_FILE: "/etc/ssl/stx-s3/s3/ca.crt"     # s3server ssl cerificate file
    S3_SERVER_PEM_FILE: "/etc/ssl/stx-s3/s3/s3server.pem" # s3server ssl pem file
@@ -54,6 +65,8 @@ S3_SERVER_CONFIG:
    S3_ENABLE_PERF: 0                                    # S3 Performance metric collection, to enable have value 1, default is 0 (disabled)
    S3_PERF_LOG_FILENAME: "/var/log/seagate/s3/perf.log" # S3 Perf Log file name
    S3_READ_AHEAD_MULTIPLE: 1                            # Maximum units of size (S3_MOTR_UNIT_SIZE * S3_MOTR_MAX_UNITS_PER_REQUEST) to read ahead or buffer in-memory
+   S3_WRITE_BUFFER_MULTIPLE: 5                          # Maximum units of size (S3_MOTR_UNIT_SIZE * S3_MOTR_MAX_UNITS_PER_REQUEST) to put into libevent evbuffer
+   S3_GET_THROTTLE_TIME_MILLISEC: 500                   # Throttle S3 GET request for specified time (in milliseconds)
    S3_MAX_RETRY_COUNT: 3                                # Max retry count in case of failure
    S3_ENABLE_MURMURHASH_OID: false                      # Enable OID generation using Murmur Hash Alg. Default is to have unique OID generated by motr helper library.
    S3_RETRY_INTERVAL_MILLISEC: 500                      # Retry interval in milliseconds, total retry time = retry_count * retry_interval (RETRY1: 500, RETRY2: 1000, RETRY3: 1500)
@@ -70,6 +83,9 @@ S3_SERVER_CONFIG:
    S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD: 100          # Number of ETIMEDOUT errors per monitoring window before s3server restart
    S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC: 1               # Monitoring window for motr ETIMEDOUT errors in seconds
    S3_SERVER_ENABLE_ADDB_DUMP: true                     # If set to true, then addb dump will be collected
+   S3_BUCKET_METADATA_CACHE_MAX_SIZE: 1                 # Max count of entries in bucket MD cache
+   S3_BUCKET_METADATA_CACHE_EXPIRE_SEC: 5               # Expiration time for bucket metadata in cache
+   S3_BUCKET_METADATA_CACHE_REFRESH_SEC: 4              # Refresh timeout. After this timeout proactive MD re-load will happen.
 S3_AUTH_CONFIG:
    S3_AUTH_IP_ADDR: ipv4:127.0.0.1                      # Auth server IP address Should be in below format:
                                                         # ipv4 address format: ipv4:127.0.0.1
@@ -95,13 +111,15 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_CASS_CLUSTER_EP: 127.0.0.1                 # Cassandra cluster end point
    S3_MOTR_CASS_KEYSPACE: "motr_index_keyspace"     # Cassandra keyspace
    S3_MOTR_CASS_MAX_COL_FAMILY_NUM: 1                 # Cassandra max column family number, default is 1
-   S3_UNIT_SIZES_FOR_MEMORY_POOL: [4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576] # Memory pool will be created for each of these unit_size with following properties
-   S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT: 10        # 10 blocks, the initial pool size = multiple of S3_MOTR_UNIT_SIZE
+   S3_UNIT_SIZES_FOR_MEMORY_POOL: [16384]              # Memory pool will be created for each of these unit_size with following properties
+   S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT: 10         # 10 blocks, the initial pool size = multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_POOL_EXPANDABLE_COUNT: 50            # 50 blocks, pool's expandable size, multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_POOL_MAX_THRESHOLD: 524288000        # 500 MB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_MEMPOOL_ZERO_BUFFER: false           # Enable Motr Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_MOTR_OPERATION_WAIT_PERIOD: 90                 # 90 s, Maximum wait duration for sync motr operations.
    S3_MOTR_FIRST_READ_SIZE: 4                        # Size in MB of the First Read Request to MOTR
+   S3_MOTR_SLEEP_DURING_RECONNECT: 4                 # Time in seconds
+   S3_MOTR_RECONNECT_RETRY_COUNT: 15                 # No of times s3 will try to retry connection to motr.
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 16384                  # Pool buffer size, in case of S3_MOTR_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384
    S3_LIBEVENT_MAX_READ_SIZE: 16384                     # Maximum read in a single read operation, as per libevent documentation in code, user should not try to read more than this value

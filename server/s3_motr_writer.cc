@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include "s3_common.h"
 
+#include <string.h>
 #include "s3_motr_layout.h"
 #include "s3_motr_rw_common.h"
 #include "s3_motr_writer.h"
@@ -69,11 +70,10 @@ struct s3_motr_op_context *S3MotrWiterContext::get_motr_op_ctx() {
   return motr_op_context;
 }
 
-S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
+S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
                          std::shared_ptr<MotrAPI> motr_api)
     : request(std::move(req)),
       state(S3MotrWiterOpState::start),
-      last_index(offset),
       size_in_current_write(0),
       total_written(0),
       is_object_opened(false),
@@ -81,6 +81,7 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
 
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
+
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   struct m0_uint128 oid = {0ULL, 0ULL};
@@ -90,35 +91,42 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
+  s3_md5crypt = std::make_shared<MD5hash>(s3_motr_api);
 
   std::string uri_name;
+  is_first_write_part_segment = false;
   std::shared_ptr<S3RequestObject> s3_request =
       std::dynamic_pointer_cast<S3RequestObject>(request);
-  if (s3_request != nullptr) {
+
+  if (s3_request) {
     uri_name = s3_request->get_object_uri();
   } else {
     uri_name = request->c_get_full_path();
   }
   S3UriToMotrOID(s3_motr_api, uri_name.c_str(), request_id, &oid);
 
-  oid_list.clear();
   oid_list.push_back(oid);
   layout_ids.clear();
 
   place_holder_for_last_unit = NULL;
   last_op_was_write = false;
   unit_size_for_place_holder = -1;
+  is_s3_write_di_check_enabled =
+      S3Option::get_instance()->is_s3_write_di_check_enabled();
 }
 
 S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
-                         struct m0_uint128 object_id, uint64_t offset,
-                         std::shared_ptr<MotrAPI> motr_api)
-    : S3MotrWiter(std::move(req), offset, std::move(motr_api)) {
+                         struct m0_uint128 object_id, struct m0_fid pv_id,
+                         uint64_t offset, std::shared_ptr<MotrAPI> motr_api)
+    : S3MotrWiter(std::move(req), std::move(motr_api)) {
 
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   oid_list.clear();
   oid_list.push_back(object_id);
+
+  pv_ids.push_back(pv_id);
+  last_index = offset;
 }
 
 S3MotrWiter::~S3MotrWiter() {
@@ -180,7 +188,10 @@ int S3MotrWiter::open_objects() {
   struct s3_motr_op_context *ctx = open_context->get_motr_op_ctx();
 
   std::ostringstream oid_list_stream;
-  size_t ops_count = oid_list.size();
+  const size_t ops_count = oid_list.size();
+
+  assert(layout_ids.size() == ops_count);
+  assert(pv_ids.size() == ops_count);
 
   for (size_t i = 0; i < ops_count; ++i) {
     struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
@@ -203,7 +214,7 @@ int S3MotrWiter::open_objects() {
     } else {
       obj_ctx->n_initialized_contexts += 1;
     }
-
+    obj_ctx->objs[i].ob_entity.en_flags |= M0_ENF_META;
     int rc = s3_motr_api->motr_entity_open(&(obj_ctx->objs[i].ob_entity),
                                            &(ctx->ops[i]));
     if (rc != 0) {
@@ -213,9 +224,11 @@ int S3MotrWiter::open_objects() {
       s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
       return rc;
     }
-
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_motr_api->motr_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
+
+    memcpy(&obj_ctx->objs[i].ob_attr.oa_pver, &pv_ids[i],
+           sizeof(struct m0_fid));
   }
   s3_log(S3_LOG_INFO, stripped_request_id, "Motr API: openobj(oid: %s)\n",
          oid_list_stream.str().c_str());
@@ -269,8 +282,20 @@ void S3MotrWiter::open_objects_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3MotrWiter::set_oid(const struct m0_uint128 &id) {
+  is_object_opened = false;
+  oid_list.clear();
+  oid_list.push_back(id);
+}
+
+void S3MotrWiter::set_layout_id(int id) {
+  layout_ids.clear();
+  layout_ids.push_back(id);
+}
+
 void S3MotrWiter::create_object(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed,
+                                const struct m0_uint128 &object_id,
                                 int layoutid) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layoutid = %d\n",
          __func__, layoutid);
@@ -282,11 +307,9 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
     reset_buffers_if_any(unit_size_for_place_holder);
   }
   last_op_was_write = false;
-  layout_ids.clear();
-  layout_ids.push_back(layoutid);
-  is_object_opened = false;
 
-  assert(oid_list.size() == 1);
+  set_oid(object_id);
+  set_layout_id(layoutid);
 
   if (obj_ctx) {
     // clean up any old allocations
@@ -315,7 +338,11 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
   s3_motr_api->motr_obj_init(&obj_ctx->objs[0], &motr_uber_realm, &oid_list[0],
                              layout_ids[0]);
   obj_ctx->n_initialized_contexts = 1;
-
+  // Caller(S3) will save pv id and other attributes retuned by entity create
+  // API
+  // When M0_ENF_META flag is passed, Motr will not save pv id and other
+  // attributes in its backend metadata; it passes them to the caller.
+  obj_ctx->objs[0].ob_entity.en_flags |= M0_ENF_META;
   int rc = s3_motr_api->motr_entity_create(&(obj_ctx->objs[0].ob_entity),
                                            &(ctx->ops[0]));
   if (rc != 0) {
@@ -344,11 +371,13 @@ void S3MotrWiter::create_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   is_object_opened = true;  // created object is also open
   state = S3MotrWiterOpState::created;
-
+  struct m0_fid &pv_id = obj_ctx->objs->ob_attr.oa_pver;
   s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API Successful: createobj(oid: ("
-         "%" SCNx64 " : %" SCNx64 "))\n",
-         oid_list[0].u_hi, oid_list[0].u_lo);
+         "%" SCNx64 " : %" SCNx64
+         ")"
+         ", pvid: (%" SCNx64 " : %" SCNx64 "))\n",
+         oid_list[0].u_hi, oid_list[0].u_lo, pv_id.f_container, pv_id.f_key);
 
   handler_on_success();
 
@@ -419,7 +448,7 @@ void S3MotrWiter::write_content() {
 
   assert(is_object_opened);
 
-  const size_t motr_unit_size =
+  motr_unit_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_ids[0]);
   size_t motr_buf_count = buffer_sequence.size();
 
@@ -427,7 +456,15 @@ void S3MotrWiter::write_content() {
   s3_log(S3_LOG_DEBUG, request_id, "motr_buf_count without padding: %zu\n",
          motr_buf_count);
 
-  const size_t buffers_per_unit = motr_unit_size / size_of_each_buf;
+  // const size_t buffers_per_unit = (size_of_each_buf + motr_unit_size) /
+  // size_of_each_buf;
+  // motr_unit_size can be 4k, 8k, 16k... 1MB
+  size_t buffers_per_unit = motr_unit_size / size_of_each_buf;
+  if (buffers_per_unit == 0) {
+    // for motr unit size less than size_of_each_buf(16k)
+    // Atleast one buffer
+    buffers_per_unit = 1;
+  }
 
   if (buffers_per_unit > 1) {
     size_t buffers_in_last_unit =
@@ -443,7 +480,10 @@ void S3MotrWiter::write_content() {
       request, std::bind(&S3MotrWiter::write_content_successful, this),
       std::bind(&S3MotrWiter::write_content_failed, this)));
 
-  writer_context->init_write_op_ctx(motr_buf_count);
+  // After padding motr_buf_count, it will be an absolute multiple
+  // of buffers_per_unit
+
+  writer_context->init_write_op_ctx(motr_buf_count, buffers_per_unit);
 
   struct s3_motr_op_context *ctx = writer_context->get_motr_op_ctx();
 
@@ -462,11 +502,43 @@ void S3MotrWiter::write_content() {
 
   set_up_motr_data_buffers(rw_ctx, std::move(buffer_sequence), motr_buf_count);
 
+  // see also similar code in S3MotrReader::read_object_successful()
+  if (s3_di_fi_is_enabled("di_data_corrupted_on_write")) {
+    struct m0_bufvec *bv = rw_ctx->data;
+    if (rw_ctx->ext->iv_index[0] == first_offset) {
+      char first_byte = *(char *)bv->ov_buf[0];
+      s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d\n", __func__, first_byte);
+      switch (first_byte) {
+        case 'z':  // zero
+          corrupt_fill_zero = true;
+          break;
+        case 'f':  // first
+          // corrupt the first byte
+          *(char *)bv->ov_buf[0] = 0;
+          break;
+        case 'k':  // OK
+          break;
+      }
+    }
+    if (corrupt_fill_zero) {
+      for (uint32_t i = 0; i < bv->ov_vec.v_nr; ++i)
+        memset(bv->ov_buf[i], 0, bv->ov_vec.v_count[i]);
+    }
+  }
+
   last_op_was_write = true;
 
-  /* Create the write request */
-  rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
-                                rw_ctx->data, rw_ctx->attr, 0, 0, &ctx->ops[0]);
+  if (is_s3_write_di_check_enabled) {
+    /* Create the write request */
+    rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
+                                  rw_ctx->data, rw_ctx->attr, 0, 0,
+                                  &ctx->ops[0]);
+  } else {
+    /* Create the write request */
+    rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
+                                  rw_ctx->data, NULL, 0, 0, &ctx->ops[0]);
+  }
+
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Motr API: motr_obj_op failed with error code %d\n", rc);
@@ -515,24 +587,27 @@ void S3MotrWiter::write_content_failed() {
 
 void S3MotrWiter::delete_object(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed,
-                                int layoutid) {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layoutid = %d\n",
-         __func__, layoutid);
+                                const struct m0_uint128 &object_id,
+                                int layoutid, const struct m0_fid &pv_id) {
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with layoutid = %d, pvid: (%" SCNx64 " : %" SCNx64 ")\n",
+         __func__, layoutid, pv_id.f_container, pv_id.f_key);
+
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
 
-  assert(oid_list.size() == 1);
   if (last_op_was_write && !layout_ids.empty()) {
     reset_buffers_if_any(unit_size_for_place_holder);
   }
   last_op_was_write = false;
-  layout_ids.clear();
-  layout_ids.push_back(layoutid);
+
+  set_oid(object_id);
+  set_layout_id(layoutid);
+
+  pv_ids.clear();
+  pv_ids.push_back(pv_id);
 
   state = S3MotrWiterOpState::deleting;
-
-  // We should already have an OID
-  assert(oid_list.size() == 1);
 
   if (is_object_opened) {
     delete_objects();
@@ -567,7 +642,9 @@ void S3MotrWiter::delete_objects() {
     ctx->cbs[i].oop_executed = NULL;
     ctx->cbs[i].oop_stable = s3_motr_op_stable;
     ctx->cbs[i].oop_failed = s3_motr_op_failed;
-
+    memcpy(&obj_ctx->objs[i].ob_attr.oa_pver, &pv_ids[i],
+           sizeof(struct m0_fid));
+    obj_ctx->objs[i].ob_entity.en_flags |= M0_ENF_META;
     int rc = s3_motr_api->motr_entity_delete(&(obj_ctx->objs[i].ob_entity),
                                              &(ctx->ops[i]));
     if (rc != 0) {
@@ -580,7 +657,7 @@ void S3MotrWiter::delete_objects() {
 
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_motr_api->motr_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
-    oid_list_stream << "(" << oid_list[i].u_hi << " " << oid_list[i].u_lo
+    oid_list_stream << '(' << oid_list[i].u_hi << ' ' << oid_list[i].u_lo
                     << ") ";
   }
 
@@ -625,6 +702,7 @@ void S3MotrWiter::delete_objects_failed() {
 
 void S3MotrWiter::delete_objects(std::vector<struct m0_uint128> oids,
                                  std::vector<int> layoutids,
+                                 std::vector<struct m0_fid> pvids,
                                  std::function<void(void)> on_success,
                                  std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -634,6 +712,7 @@ void S3MotrWiter::delete_objects(std::vector<struct m0_uint128> oids,
 
   oid_list = std::move(oids);
   layout_ids = std::move(layoutids);
+  pv_ids = std::move(pvids);
 
   state = S3MotrWiterOpState::deleting;
 
@@ -658,79 +737,308 @@ int S3MotrWiter::get_op_ret_code_for_delete_op(int index) {
   return -ENOENT;
 }
 
-void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
-                                           S3BufferSequence buffer_sequence,
-                                           size_t motr_buf_count) {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+//
+// This function adds given buffer to motr rw_ctx, buffer is assumed
+// to be of size size_of_each_buf
+// Imp Param :
+// is_this_alignment_buffer : true in case of padding buffers,
+//                            false otherwise.
+//
+void S3MotrWiter::add_buffer_to_motr_structures(
+    struct s3_motr_rw_op_context *rw_ctx, void *pbuffer, size_t &buf_idx,
+    size_t &starting_checksum_buf_idx) {
+  assert(pbuffer != NULL);
+  assert(rw_ctx != NULL);
+  assert(buf_idx >= 0);
+  assert(starting_checksum_buf_idx >= 0);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
 
-  size_in_current_write = 0;
-  size_t buf_idx = 0;
+  // Give the buffer references to Motr
+  s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n", pbuffer,
+         buf_idx);
 
-  while (!buffer_sequence.empty()) {
+  rw_ctx->data->ov_buf[buf_idx] = pbuffer;
+  rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
 
-    const auto &ptr_n_len = buffer_sequence.front();
-    const size_t len_in_buf = ptr_n_len.second;
+  // Init motr buffer attrs.
+  rw_ctx->ext->iv_index[buf_idx] = last_index;
+  rw_ctx->ext->iv_vec.v_count[buf_idx] = /*data_len*/ size_of_each_buf;
+  last_index += /*data_len*/ size_of_each_buf;
 
-    // Give the buffer references to Motr
-    s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
-           ptr_n_len.first, buf_idx);
-    s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
-           len_in_buf, last_index);
+  rw_ctx->pi_bufvec->ov_buf[starting_checksum_buf_idx] = pbuffer;
+  rw_ctx->pi_bufvec->ov_vec.v_count[starting_checksum_buf_idx++] =
+      size_of_each_buf;
 
-    rw_ctx->data->ov_buf[buf_idx] = ptr_n_len.first;
-    rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
+  /* we don't want any attributes */
+  // rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
+  ++buf_idx;
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
 
-    // Here we use actual length to get md5
-    md5crypt.Update((const char *)ptr_n_len.first, len_in_buf);
+//
+// This function calls actual pi info calculation call
+// Imp params :
+// reset_initial_buffers : should be true in case calc is done on
+//                         boundary. false for unaligned buffers.
+// is_called_for_unaligned_buffers : should be true when called for
+//                                   unaligned case and false for
+//                                   aligned case.
+// is_finalize_call : should be true only when calculating ETAG for
+//                    unaligned case. false otherwise
+//
+void S3MotrWiter::calc_pi_info(
+    struct s3_motr_rw_op_context *rw_ctx, size_t &saved_last_index,
+    bool &initial_buffers_part_write, int &s3_checksum_flag,
+    size_t &chksum_buf_idx, size_t &unaligned_buf_idx_offset, size_t &buf_idx,
+    size_t &starting_checksum_buf_idx, bool &calculated_chksum_at_unit_boundary,
+    bool reset_initial_buffers, bool is_called_for_unaligned_buffers,
+    bool is_finalize_call) {
+  int rc = -1;
+  assert(rw_ctx != NULL);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
 
-    // Init motr buffer attrs.
-    rw_ctx->ext->iv_index[buf_idx] = last_index;
-    rw_ctx->ext->iv_vec.v_count[buf_idx] = /*data_len*/ size_of_each_buf;
-    last_index += /*data_len*/ size_of_each_buf;
+  // Calling init once
+  if ((saved_last_index == 0) || (initial_buffers_part_write)) {
+    // If the write is with offset as 0 or multipart part
+    // upload (offset wont be 0 for R1) for initial write
+    // we need to call init
+    s3_checksum_flag |= S3_FIRST_UNIT;
 
-    /* we don't want any attributes */
-    rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
-
-    ++buf_idx;
-    size_in_current_write += len_in_buf;
-    buffer_sequence.pop_front();
+    if (reset_initial_buffers) {
+      initial_buffers_part_write = false;
+    }
   }
+
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Calculating checksum (%zu), "
+         "seed_offset(%zu) chksum_buf_idx(%zu)\n",
+         size_in_current_write, saved_last_index, chksum_buf_idx);
+
+  if (is_finalize_call) {
+    // Update (with actual data length) + Finalize without seed (for ETAG)
+    rc = s3_md5crypt->s3_calculate_unaligned_buffs_pi(rw_ctx, s3_checksum_flag);
+    if (rc != 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "motr api motr_client_calculate_pi failed with return code %d\n",
+             rc);
+      // Should we stop here? what should we do?
+    }
+    assert(rc == 0);
+  } else {
+    if (!(s3_checksum_flag & S3_SEED_UNIT) && is_s3_write_di_check_enabled) {
+      s3_checksum_flag |= S3_SEED_UNIT;
+    }
+
+    rc = s3_md5crypt->s3_calculate_unit_pi(rw_ctx, chksum_buf_idx++,
+                                           saved_last_index, oid_list[0],
+                                           s3_checksum_flag);
+    if (rc != 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "motr api motr_client_calculate_pi failed with return code %d\n",
+             rc);
+      // Should we stop here? what should we do?
+    }
+    assert(rc == 0);
+  }
+
+  if (!is_called_for_unaligned_buffers) {
+    saved_last_index = last_index;
+    starting_checksum_buf_idx = 0;
+    unaligned_buf_idx_offset = buf_idx;
+    s3_checksum_flag &= ~S3_FIRST_UNIT;
+    calculated_chksum_at_unit_boundary = true;
+  }
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+//
+// if padding is required then this function finds
+// appropriate buffer size and allocates the buffer
+// from mempool.
+//
+void S3MotrWiter::find_and_allocate_placeholder_for_data_alignment(
+    size_t &buf_idx, size_t &motr_buf_count) {
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
 
   if (buf_idx < motr_buf_count) {
     // Allocate place_holder_for_last_unit only if its required.
     // Its required when writing last block of object.
-    reset_buffers_if_any(unit_size_for_place_holder);
     unit_size_for_place_holder =
-        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
-            layout_ids[0]);
+        g_option_instance->get_libevent_pool_buffer_size();
+    reset_buffers_if_any(unit_size_for_place_holder);
     place_holder_for_last_unit =
         (void *)S3MempoolManager::get_instance()->get_buffer_for_unit_size(
             unit_size_for_place_holder);
   }
 
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+//
+// if data buffers are unaligned this function aligns
+// them to the nearest motr unit size
+//
+void S3MotrWiter::align_data_to_motr_unit_size(
+    struct s3_motr_rw_op_context *rw_ctx, size_t &buf_idx,
+    size_t &motr_buf_count, size_t &starting_checksum_buf_idx) {
+  assert(rw_ctx != NULL);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
+
   while (buf_idx < motr_buf_count) {
-    s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
-           place_holder_for_last_unit, buf_idx);
-    s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
-           size_of_each_buf, last_index);
-
-    rw_ctx->data->ov_buf[buf_idx] = place_holder_for_last_unit;
-    rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
-
-    // Init motr buffer attrs.
-    rw_ctx->ext->iv_index[buf_idx] = last_index;
-    rw_ctx->ext->iv_vec.v_count[buf_idx] = /*data_len*/ size_of_each_buf;
-    last_index += /*data_len*/ size_of_each_buf;
-
-    /* we don't want any attributes */
-    rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
-
-    ++buf_idx;
+    add_buffer_to_motr_structures(rw_ctx, place_holder_for_last_unit, buf_idx,
+                                  starting_checksum_buf_idx);
   }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
+                                           S3BufferSequence buffer_sequence,
+                                           size_t motr_buf_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  size_in_current_write = 0;
+
+  // Buffer index within given write command
+  // For example say 5.3M write  - it will range from 0 to 64*5 +3 -1 assuming
+  // 16K write buffer size
+  // Updated at every write buffer processing.
+  size_t buf_idx = 0;
+
+  // Same as buf_idx - Difference is - it is updated only at motr size boundry
+  // (interval of 64 in above example)
+  // It acts as marker for unaligned block.
+  size_t unaligned_buf_idx_offset = 0;
+
+  // Index of attr/PI info.
+  // For example say 5.3M write  - it will range from 0 to 5 (0 to 4 for 0 to 5M
+  // and 5 value for last 0.3M )
+  // Updated at every checksum calculation.
+  size_t chksum_buf_idx = 0;
+
+  bool calculated_chksum_at_unit_boundary = false;
+
+  // Byte offset of the last write (Before this write).
+  // This will be progressed for current write as well in this function
+  size_t saved_last_index = last_index;
+
+  // This is first write of a part
+  bool initial_buffers_part_write = is_first_write_part_segment;
+
+  // It is buffer index within given given motr unit.
+  // For every 1M write in process this will range from 0 to 63 assuming 16K
+  // write buffer size
+  // and will be reset to 0 at motr unit boundry.
+  // It will have < 63 value for last unaligned portion (if any)
+  size_t starting_checksum_buf_idx = 0;
+
+  // Valid data length in buffer (<=16k)
+  size_t len_in_buf = 0;
+
+  size_t number_of_unit_unaligned = 0;
+  size_t last_data_buf_indx_for_pi = 0;
+
+  int s3_checksum_flag = 0;
+
+  while (!buffer_sequence.empty()) {
+    calculated_chksum_at_unit_boundary = false;
+    const auto &ptr_n_len = buffer_sequence.front();
+    len_in_buf = ptr_n_len.second;
+
+    s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
+           len_in_buf, (size_t)last_index);
+
+    // Append  One Read buffer (typically 16k) to motr data structures in rw_ctx
+    // Increment starting_checksum_buf_idx and buf_idx
+    add_buffer_to_motr_structures(rw_ctx, ptr_n_len.first, buf_idx,
+                                  starting_checksum_buf_idx);
+
+    size_in_current_write += len_in_buf;
+
+    // At motr unit boundry calculate PI info
+    // if 5.3Mb write payload (for a part or object) and 16k is write buffer
+    // size & 1M is motr unit size;
+    // Checksum will be called at every 1M offset interval (so 1M and 2M 3M...
+    // to write to motr
+    // as well as for ETAG)
+    // We will fall through for last 0.3M
+    if (size_in_current_write % motr_unit_size == 0) {
+      calc_pi_info(rw_ctx, saved_last_index, initial_buffers_part_write,
+                   s3_checksum_flag, chksum_buf_idx, unaligned_buf_idx_offset,
+                   buf_idx, starting_checksum_buf_idx,
+                   calculated_chksum_at_unit_boundary, true, false, false);
+    }
+
+    buffer_sequence.pop_front();
+  }
+
+  // Number of unaligned write buffers calculated here for checksum / PI
+  // calculation.
+  number_of_unit_unaligned = buf_idx - unaligned_buf_idx_offset;
+  if (number_of_unit_unaligned != 0) {
+    last_data_buf_indx_for_pi = starting_checksum_buf_idx - 1;
+  }
+
+  // Save current running checksum, as this will change after padding
+  // and its checksum calculation and we need
+  // this twice (once for ETAG and once for writing to motr)
+  if (s3_md5crypt->is_checksum_saved()) {
+    s3_md5crypt->save_motr_unit_checksum_for_unaligned_bufs(
+        (unsigned char *)s3_md5crypt->get_prev_write_checksum());
+  }
+
+  // Placeholder buffer allocation for padding
+  find_and_allocate_placeholder_for_data_alignment(buf_idx, motr_buf_count);
+
+  // Perform padding using above placeholder buffer
+  align_data_to_motr_unit_size(rw_ctx, buf_idx, motr_buf_count,
+                               starting_checksum_buf_idx);
+
+  // Checksum for unaligned + padded buffers to be saved in motr
+  if (is_s3_write_di_check_enabled && number_of_unit_unaligned != 0) {
+    s3_checksum_flag = S3_SEED_UNIT;
+
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Calculating checksum for unaligned and padded buffers "
+           "number_of_unit_unaligned(%zu)\n",
+           number_of_unit_unaligned);
+
+    calc_pi_info(rw_ctx, saved_last_index, initial_buffers_part_write,
+                 s3_checksum_flag, chksum_buf_idx, unaligned_buf_idx_offset,
+                 buf_idx, starting_checksum_buf_idx,
+                 calculated_chksum_at_unit_boundary, false, true, false);
+  }
+
   assert(buf_idx == motr_buf_count);
+
+  // In case of unaligned buffers, calculate checksums for
+  // those unaligned buffers and finalize for ETAG
+  if (!calculated_chksum_at_unit_boundary || (len_in_buf != size_of_each_buf)) {
+    s3_checksum_flag = 0;
+
+    // Let only unaligned buffers be taken into consideration
+    rw_ctx->pi_bufvec->ov_vec.v_nr = last_data_buf_indx_for_pi + 1;
+    // Set the last data buf length to the actual data size
+    rw_ctx->pi_bufvec->ov_vec.v_count[last_data_buf_indx_for_pi] = len_in_buf;
+
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Calculating checksum for actual unaligned data buffs "
+           "number of bufvec(%u) len_in_buf(%zu)\n",
+           rw_ctx->pi_bufvec->ov_vec.v_nr, len_in_buf);
+
+    calc_pi_info(rw_ctx, saved_last_index, initial_buffers_part_write,
+                 s3_checksum_flag, chksum_buf_idx, unaligned_buf_idx_offset,
+                 buf_idx, starting_checksum_buf_idx,
+                 calculated_chksum_at_unit_boundary, false, true, true);
+  }
 
   s3_log(S3_LOG_DEBUG, request_id, "size_in_current_write = %zu\n",
          size_in_current_write);
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+struct m0_fid *S3MotrWiter::get_ppvid() const {
+  return obj_ctx && obj_ctx->n_initialized_contexts && obj_ctx->objs
+             ? &obj_ctx->objs->ob_attr.oa_pver
+             : nullptr;
 }

@@ -131,38 +131,6 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     result_data = s3confstore.get_all_keys()
     self.assertTrue('dummy_allkeys_return' in result_data)
 
-  @mock.patch.object(Conf, 'delete')
-  def test_mock_delete(self, mock_delete_return):
-    index = "dummy_idx_delete"
-    filename = "/tmp/dummy1"
-    self.make_dummy_conf(filename)
-    s3confstore = S3CortxConfStore("yaml://" + filename, index)
-    mock_delete_return.return_value = None
-    s3confstore.set_config("dummykey1", "Test1", False)
-    s3confstore.set_config("dummykey2", "Test2", False)
-    s3confstore.delete_key("dummykey1", False)
-    result = s3confstore.get_all_keys()
-    self.assertFalse("dummykey1" in result)
-
-  @mock.patch.object(Conf, 'copy')
-  def test_mock_copy(self, mock_copy_return):
-    index1 = "dummy_idx_copy_1"
-    index2 = "dummy_idx_copy_2"
-    filename1 = "/tmp/dummy1"
-    filename2 = "/tmp/dummy2"
-    self.make_dummy_conf(filename1)
-    self.make_dummy_conf(filename2)
-    s3confstore1 = S3CortxConfStore("yaml://" + filename1, index1)
-    s3confstore2 = S3CortxConfStore("yaml://" + filename2, index2)
-    mock_copy_return.return_value = None
-    s3confstore1.set_config("dummykey1", "Test1", False)
-    s3confstore2.set_config("dummykey2", "Test2", False)
-    s3confstore2.set_config("dummykey1", "Test3", False)
-    s3confstore1.merge_config("dummy3")
-    result = s3confstore1.get_all_keys()
-    resultdata = s3confstore1.get_config("dummykey1")
-    self.assertFalse(("dummykey2" in result) and ("dummykey1" in result) and (result_data == "Test3"))
-
   @mock.patch.object(Conf, 'load')
   @mock.patch.object(Conf, 'get')
   @mock.patch.object(Conf, 'set')
@@ -207,5 +175,36 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     confurl = "/s3confstoreut-unsupportedfileformat.txt"
     with self.assertRaises(SystemExit) as cm:
       S3CortxConfStore(confurl, "dummy_index_8")
-
     self.assertEqual(cm.exception.code, 1)
+
+  #ST for delete key
+  def test_delete(self):
+    index = "dummy_idx_delete"
+    filename = "/tmp/dummy1"
+    self.make_dummy_conf(filename)
+    s3confstore = S3CortxConfStore("yaml://" + filename, index)
+    s3confstore.set_config("dummykey1", "Test1", False)
+    s3confstore.set_config("dummykey2", "Test2", False)
+    s3confstore.delete_key("dummykey1", False)
+    result = s3confstore.get_all_keys()
+    self.assertFalse("dummykey1" in result)
+
+  #ST for copy key from one index to another
+  def test_copy(self):
+    index1 = "dummy_idx_copy_1"
+    index2 = "dummy_idx_copy_2"
+    filename1 = "/tmp/dummy1"
+    filename2 = "/tmp/dummy2"
+    self.make_dummy_conf(filename1)
+    self.make_dummy_conf(filename2)
+    s3confstore1 = S3CortxConfStore("yaml://" + filename1, index1)
+    s3confstore2 = S3CortxConfStore("yaml://" + filename2, index2)
+    s3confstore1.set_config("dummykey1", "Test1", False)
+    s3confstore2.set_config("dummykey2", "Test2", False)
+    s3confstore2.set_config("dummykey1", "Test3", False)
+    s3confstore1.merge_config("dummy_idx_copy_2")
+    result = s3confstore1.get_all_keys()
+    resultdata = s3confstore1.get_config("dummykey1")
+    print("Result: " + str(result))
+    print("resultdata: " + str(resultdata))
+    self.assertTrue(("dummykey2" in result) and ("dummykey1" in result) and (resultdata == "Test3"))

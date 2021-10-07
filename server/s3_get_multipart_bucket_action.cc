@@ -24,6 +24,7 @@
 #include "s3_get_multipart_bucket_action.h"
 #include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_object_metadata.h"
 #include "s3_option.h"
 
@@ -137,8 +138,9 @@ void S3GetMultipartBucketAction::get_next_objects() {
 
   s3_log(S3_LOG_DEBUG, request_id,
          "Fetching next set of multipart uploads listing\n");
-  struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
-  if (indx_oid.u_hi == 0ULL && indx_oid.u_lo == 0ULL) {
+  const auto& mp_idx_lo = bucket_metadata->get_multipart_index_layout();
+
+  if (zero(mp_idx_lo.oid)) {
     fetch_successful = true;
     send_response_to_s3_client();
   } else {
@@ -146,7 +148,7 @@ void S3GetMultipartBucketAction::get_next_objects() {
     motr_kv_reader = s3_motr_kvs_reader_factory->create_motr_kvs_reader(
         request, s3_motr_api);
     motr_kv_reader->next_keyval(
-        bucket_metadata->get_multipart_index_oid(), last_key, count,
+        bucket_metadata->get_multipart_index_layout(), last_key, count,
         std::bind(&S3GetMultipartBucketAction::get_next_objects_successful,
                   this),
         std::bind(&S3GetMultipartBucketAction::get_next_objects_failed, this));
@@ -160,7 +162,7 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
     return;
   }
   s3_log(S3_LOG_DEBUG, request_id, "Found multipart uploads listing\n");
-  struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
+  const auto& mp_idx_lo = bucket_metadata->get_multipart_index_layout();
   bool atleast_one_json_error = false;
   bool skip_marker_key = true;
   auto& kvps = motr_kv_reader->get_key_values();
@@ -175,7 +177,7 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
       s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index oid = "
              "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-             indx_oid.u_hi, indx_oid.u_lo, kv.first.c_str(),
+             mp_idx_lo.oid.u_hi, mp_idx_lo.oid.u_lo, kv.first.c_str(),
              kv.second.second.c_str());
       --length;
       continue;
@@ -298,7 +300,14 @@ void S3GetMultipartBucketAction::send_response_to_s3_client() {
       request->set_out_header_value("Connection", "close");
     }
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {

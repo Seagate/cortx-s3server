@@ -26,7 +26,7 @@
 #include "s3_global_bucket_index_metadata.h"
 #include "s3_async_buffer_opt.h"
 #include "s3_auth_client.h"
-#include "s3_bucket_metadata_v1.h"
+#include "s3_bucket_metadata_proxy.h"
 #include "s3_motr_kvs_reader.h"
 #include "s3_motr_kvs_writer.h"
 #include "s3_motr_reader.h"
@@ -37,103 +37,96 @@
 #include "s3_put_bucket_body.h"
 #include "s3_put_tag_body.h"
 
+class S3BucketMetadataV1;
+
 class S3BucketMetadataFactory {
  public:
   virtual ~S3BucketMetadataFactory() {}
-  virtual std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
-      std::shared_ptr<S3RequestObject> req) {
-    s3_log(S3_LOG_DEBUG, "",
-           "S3BucketMetadataFactory::create_bucket_metadata_obj\n");
-    return std::make_shared<S3BucketMetadataV1>(req);
-  }
 
   virtual std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
-      const std::string& str_bucket_name) {
+      const std::string& str_bucket_name = "") {
     s3_log(S3_LOG_DEBUG, "",
            "S3BucketMetadataFactory::create_bucket_metadata_obj\n");
-    return std::make_shared<S3BucketMetadataV1>(req, str_bucket_name);
+    return std::make_shared<S3BucketMetadataProxy>(std::move(req),
+                                                   str_bucket_name);
   }
+};
+
+class S3MotrBucketMetadataFactory {
+ public:
+  virtual ~S3MotrBucketMetadataFactory() = default;
+
+  virtual std::unique_ptr<S3BucketMetadataV1> create_motr_bucket_metadata_obj(
+      const S3BucketMetadata& src);
 };
 
 class S3ObjectMetadataFactory {
  public:
-  virtual ~S3ObjectMetadataFactory() {}
+  virtual ~S3ObjectMetadataFactory() = default;
+
+  // The implementation is moved to s3_object_metadata.cc
+
   virtual std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
-      m0_uint128 indx_oid = {0ULL, 0ULL}) {
-    s3_log(S3_LOG_DEBUG, "",
-           "S3ObjectMetadataFactory::create_object_metadata_obj\n");
-    std::shared_ptr<S3ObjectMetadata> meta =
-        std::make_shared<S3ObjectMetadata>(req);
-    meta->set_object_list_index_oid(indx_oid);
-    return meta;
-  }
+      const struct s3_motr_idx_layout& obj_idx_lo = {},
+      const struct s3_motr_idx_layout& obj_ver_idx_lo = {});
+
   virtual std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
-      const std::string& str_object_name, m0_uint128 indx_oid = {0ULL, 0ULL}) {
-    s3_log(S3_LOG_DEBUG, "",
-           "S3ObjectMetadataFactory::create_object_metadata_obj\n");
-    std::shared_ptr<S3ObjectMetadata> meta = std::make_shared<S3ObjectMetadata>(
-        req, str_bucket_name, str_object_name);
-    meta->set_object_list_index_oid(indx_oid);
-    return meta;
-  }
+      const std::string& str_object_name,
+      const struct s3_motr_idx_layout& obj_idx_lo,
+      const struct s3_motr_idx_layout& obj_ver_idx_lo);
 };
 
 class S3ObjectMultipartMetadataFactory {
  public:
-  virtual ~S3ObjectMultipartMetadataFactory() {}
+  virtual ~S3ObjectMultipartMetadataFactory() = default;
+
+  // The implementation is moved to s3_object_metadata.cc
+
   virtual std::shared_ptr<S3ObjectMetadata> create_object_mp_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, m0_uint128 mp_indx_oid,
-      std::string upload_id) {
-    s3_log(S3_LOG_DEBUG, "",
-           "S3ObjectMultipartMetadataFactory::create_object_mp_metadata_obj\n");
-    std::shared_ptr<S3ObjectMetadata> meta =
-        std::make_shared<S3ObjectMetadata>(req, true, upload_id);
-    meta->set_object_list_index_oid(mp_indx_oid);
-    return meta;
-  }
+      std::shared_ptr<S3RequestObject> req,
+      const struct s3_motr_idx_layout& mp_idx_lo, std::string upload_id);
 };
 
 class S3PartMetadataFactory {
  public:
   virtual ~S3PartMetadataFactory() {}
   virtual std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, m0_uint128 indx_oid,
+      std::shared_ptr<S3RequestObject> req, const s3_motr_idx_layout& idx_lo,
       std::string upload_id, int part_num) {
     s3_log(S3_LOG_DEBUG, "",
            "S3PartMetadataFactory::create_part_metadata_obj\n");
-    return std::make_shared<S3PartMetadata>(req, indx_oid, upload_id, part_num);
+    return std::make_shared<S3PartMetadata>(std::move(req), idx_lo,
+                                            std::move(upload_id), part_num);
   }
   virtual std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
       std::shared_ptr<S3RequestObject> req, std::string upload_id,
       int part_num) {
     s3_log(S3_LOG_DEBUG, "",
            "S3PartMetadataFactory::create_part_metadata_obj\n");
-    return std::make_shared<S3PartMetadata>(req, upload_id, part_num);
+    return std::make_shared<S3PartMetadata>(std::move(req),
+                                            std::move(upload_id), part_num);
   }
 };
 
 class S3MotrWriterFactory {
  public:
-  virtual ~S3MotrWriterFactory() {}
-  virtual std::shared_ptr<S3MotrWiter> create_motr_writer(
-      std::shared_ptr<RequestObject> req, m0_uint128 oid) {
-    s3_log(S3_LOG_DEBUG, "", "S3MotrWriterFactory::create_motr_writer\n");
-    return std::make_shared<S3MotrWiter>(req, oid);
-  }
+  virtual ~S3MotrWriterFactory() = default;
+
   virtual std::shared_ptr<S3MotrWiter> create_motr_writer(
       std::shared_ptr<RequestObject> req) {
     s3_log(S3_LOG_DEBUG, "",
            "S3MotrWriterFactory::create_motr_writer with zero offset\n");
-    return std::make_shared<S3MotrWiter>(req);
+    return std::make_shared<S3MotrWiter>(std::move(req));
   }
   virtual std::shared_ptr<S3MotrWiter> create_motr_writer(
-      std::shared_ptr<RequestObject> req, m0_uint128 oid, uint64_t offset) {
+      std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
+      struct m0_fid pv_id, uint64_t offset) {
     s3_log(S3_LOG_DEBUG, "",
            "S3MotrWriterFactory::create_motr_writer with offset %zu\n", offset);
-    return std::make_shared<S3MotrWiter>(req, oid, offset);
+    return std::make_shared<S3MotrWiter>(std::move(req), oid, pv_id, offset);
   }
 };
 
@@ -143,9 +136,10 @@ class S3MotrReaderFactory {
 
   virtual std::shared_ptr<S3MotrReader> create_motr_reader(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid, int layout_id,
-      std::shared_ptr<MotrAPI> motr_api = nullptr) {
+      struct m0_fid pvid = {}, std::shared_ptr<MotrAPI> motr_api = {}) {
     s3_log(S3_LOG_DEBUG, "", "S3MotrReaderFactory::create_motr_reader\n");
-    return std::make_shared<S3MotrReader>(req, oid, layout_id, motr_api);
+    return std::make_shared<S3MotrReader>(std::move(req), oid, layout_id, pvid,
+                                          std::move(motr_api));
   }
 };
 
@@ -224,22 +218,19 @@ class S3AuthClientFactory {
 
 class S3GlobalBucketIndexMetadataFactory {
  public:
-  virtual ~S3GlobalBucketIndexMetadataFactory() {}
-  virtual std::shared_ptr<S3GlobalBucketIndexMetadata>
-  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req) {
-    s3_log(S3_LOG_DEBUG, "",
-           "S3GlobalBucketIndexMetadataFactory::create_s3_root_bucket_index_"
-           "metadata\n");
-    return std::make_shared<S3GlobalBucketIndexMetadata>(req);
-  }
+  virtual ~S3GlobalBucketIndexMetadataFactory() = default;
+
   virtual std::shared_ptr<S3GlobalBucketIndexMetadata>
   create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req,
-                                         const std::string& str_bucket_name) {
-    s3_log(S3_LOG_DEBUG, "",
+                                         const std::string& str_bucket_name,
+                                         const std::string& account_id,
+                                         const std::string& account_name) {
+    s3_log(S3_LOG_DEBUG, req->get_request_id(),
            "S3GlobalBucketIndexMetadataFactory::create_s3_root_bucket_index_"
            "metadata\n");
-    return std::make_shared<S3GlobalBucketIndexMetadata>(req, str_bucket_name);
+    return std::make_shared<S3GlobalBucketIndexMetadata>(
+        std::move(req), str_bucket_name, account_id, account_name);
   }
 };
 
-#endif
+#endif  // __S3_SERVER_S3_FACTORY_H__

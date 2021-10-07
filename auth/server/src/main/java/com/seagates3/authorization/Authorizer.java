@@ -21,10 +21,11 @@
 package com.seagates3.authorization;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Arrays;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
@@ -53,7 +54,6 @@ import com.seagates3.policy.PolicyUtil;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import com.seagates3.util.BinaryUtil;
-
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 public
@@ -79,8 +79,24 @@ class Authorizer {
     ServerResponse serverResponse = null;
     AuthorizationResponseGenerator responseGenerator =
         new AuthorizationResponseGenerator();
+    String mainOperation = requestBody.get("S3Action");
+    // Deny access if any action is restricted for public access
+    if (requestor == null &&
+        PublicAccessAuthorizer.getInstance().isActionRestricted(requestBody)) {
+      return responseGenerator.AccessDenied(
+          "Anonymous users cannot copy objects. Please authenticate.");
+    }
     try {
+
       String existingPolicy = requestBody.get("Policy");
+      List<String> allActions = new ArrayList<>();
+      if (requestBody.get("S3ActionList") != null) {
+        allActions.addAll(
+            Arrays.asList(requestBody.get("S3ActionList").split(",")));
+      }
+      allActions.add(mainOperation);
+      for (String action : allActions) {
+        requestBody.put("S3Action", action);
       // Below will check put/get/delete policy for first time
       if (existingPolicy == null || existingPolicy.isEmpty()) {
         String clientQueryParams = requestBody.get("ClientQueryParams");
@@ -114,6 +130,11 @@ class Authorizer {
         LOGGER.debug("inside acl validation w.o. authorization....");
         serverResponse = checkAclAuthorization(requestor, requestBody, false);
       }
+      if (serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
+        requestBody.put("S3Action", mainOperation);
+        return serverResponse;
+      }
+      }  // end of for
     }
     catch (Exception e) {
       LOGGER.error("exception in authorizaation.. ", e);
@@ -122,6 +143,7 @@ class Authorizer {
       LOGGER.debug("Authorization response is - " +
                    serverResponse.getResponseStatus());
     }
+    requestBody.put("S3Action", mainOperation);
     return serverResponse;
   }
 

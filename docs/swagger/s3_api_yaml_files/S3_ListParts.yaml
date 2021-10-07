@@ -1,0 +1,127 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: aws s3api list-parts --bucket <your_bucket> --key \<key> --upload-id \<id>
+  title: S3 API - List Parts
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  /{bucket_name}/{object_name}:
+    get:
+      tags:
+        - List Parts
+      parameters:
+        - name: bucket_name
+          in: path
+          type: string
+          required: true
+        - name: object_name
+          in: path
+          type: string
+          required: true
+        - name: uploadId
+          in: query
+          type: string
+          required: true
+        - name: User-Agent
+          in: header
+          description: Header to identify application, it's version number and programming language.
+          type: string
+          required: true
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string
+          required: true
+        - name: X-Amz-Content-SHA256
+          in: header
+          description: This header value informs whether s3 request signed or not.
+          type: string
+          required: true
+        - name: Authorization
+          in: header
+          description: >-
+            This Header contains credentials to authorize a User-Agent with
+            server.
+          type: string
+          required: true
+        - name: X-Forwarded-For
+          in: header
+          description: This header identify the originating IP address of a client connecting to a web server.
+          type: string
+          required: true
+      produces:
+        - application/xml
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: ListPartsResult
+            properties:
+              Bucket:
+                type: string
+              Key:
+                type: string
+              UploadID:
+                type: string
+              Initiator:
+                type: object
+                properties:
+                  ID:
+                    type: string
+                  DisplayName:
+                    type: string
+              Owner:
+                type: object
+                properties:
+                  ID:
+                    type: string
+                  DisplayName:
+                    type: string
+              StorageClass:
+                type: string
+              PartNumberMarker:
+                type: integer
+              NextPartNumberMarker:
+                type: integer
+              MaxParts:
+                type: integer
+              IsTruncated:
+                type: boolean
+              Part:
+                type: object
+                properties:
+                  PartNumber:
+                    type: integer
+                  LastModified:
+                    type: string
+                  ETag:
+                    type: string
+                  Size:
+                    type: integer
+          headers:
+            Content-Length:
+              type: integer
+            Content-Type:
+              type: string
+            x-amz-request-id:
+              type: string
+            Server:
+              type: string
+        400:  
+          description: Request Timeout - The client did not produce a request within the time that the server was prepared to wait.
+        403:
+          description: |
+            Access Denied.
+
+            Invalid AccessKey Id - The AWS access key Id you provided does not exist in our records.
+        404:
+          description: No Such Upload - The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed.
+        500:
+          description: Internal Error - We encountered an internal error. Please try again.
+        503: 
+          description: Service Unavailable - Reduce your request rate.

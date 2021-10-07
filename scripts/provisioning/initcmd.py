@@ -21,7 +21,6 @@
 import sys
 
 from setupcmd import SetupCmd
-from ldapaccountaction import LdapAccountAction
 
 class InitCmd(SetupCmd):
   """Init Setup Cmd."""
@@ -37,19 +36,10 @@ class InitCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
-    try:
-      # Create background delete account
-      bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
-                                  'account_id': "67891",
-                                  'canonical_id': "C67891",
-                                  'mail': "s3-background-delete-svc@seagate.com",
-                                  's3_user_id': "450",
-                                  'const_cipher_secret_str': "s3backgroundsecretkey",
-                                  'const_cipher_access_str': "s3backgroundaccesskey"
-                                }
-      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
-    except Exception as e:
-      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
-      raise e
+    self.phase_keys_validate(self.url, self.name)
+    self.validate_config_files(self.name)
+    self.logger.info("validations completed")
+

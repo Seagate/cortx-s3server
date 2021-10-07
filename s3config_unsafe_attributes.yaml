@@ -17,14 +17,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 #
-
-S3_MOTR_CONFIG:
-  S3_MOTR_MAX_UNITS_PER_REQUEST: "dummy"
-  S3_MOTR_MAX_IDX_FETCH_COUNT: "dummy"
-  S3_MOTR_MAX_RPC_MSG_SIZE: "dummy"
-  S3_MOTR_CASS_MAX_COL_FAMILY_NUM: "dummy"
-  S3_MOTR_READ_POOL_MAX_THRESHOLD: "dummy"
-
-S3_THIRDPARTY_CONFIG:
-  S3_LIBEVENT_MAX_READ_SIZE: "dummy"
-  S3_LIBEVENT_POOL_MAX_THRESHOLD: "dummy"
+S3_SERVER_CONFIG:
+   S3_WRITE_DATA_INTEGRITY_CHECK: dummy                  # TBD
+   S3_READ_DATA_INTEGRITY_CHECK: dummy                   # TBD

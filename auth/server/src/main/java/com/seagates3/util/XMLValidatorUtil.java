@@ -75,6 +75,10 @@ public class XMLValidatorUtil {
         } catch (SAXException | IOException e) {
            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.XML_SCHEMA_VALIDATION_ERROR,
                     "XML Schema Validation Failed Reason:" + e.getMessage(), null);
+           // AuthIEMAlert.generateIemAlert(severity,
+           // AuthIEMAlert.XML_SCHEMA_VALIDATION_ERROR, "XML Schema Validation
+           // Failed Reason:" + e.getMessage(),
+           //                       null);
 
            return false;
         }

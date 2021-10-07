@@ -1,6 +1,6 @@
 {
   "scanSettings": {
-    "configMode": "AUTO"
+    "configMode": "LOCAL"
   },
   "checkRunSettings": {
     "displayMode": "diff",
@@ -9,4 +9,4 @@
   "issueSettings": {
     "minSeverityLevel": "LOW"
   }
-}
+}  

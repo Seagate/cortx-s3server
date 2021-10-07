@@ -42,7 +42,7 @@ class S3DeleteBucketActionTest : public testing::Test {
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     oid = {0x1ffff, 0x1ffff};
     zero_oid = {0ULL, 0ULL};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
+    index_layout = {{0x11ffff, 0x1ffff}};
     upload_id = "upload_id";
     call_count_one = 0;
     bucket_name = "seagatebucket";
@@ -60,8 +60,17 @@ class S3DeleteBucketActionTest : public testing::Test {
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     // Owned and deleted by shared_ptr in S3PostMultipartObjectAction
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_motr_api);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
+
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_object_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
+
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_objects_version_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
+
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
 
@@ -74,11 +83,11 @@ class S3DeleteBucketActionTest : public testing::Test {
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
             ptr_mock_request, ptr_mock_s3_motr_api, upload_id);
-    object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
+    object_mp_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
@@ -99,8 +108,9 @@ class S3DeleteBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<S3DeleteBucketAction> action_under_test;
-  struct m0_uint128 mp_indx_oid;
-  struct m0_uint128 object_list_indx_oid;
+
+  struct s3_motr_idx_layout index_layout;
+  struct s3_motr_idx_layout zero_index_layout = {};
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid;
   std::string upload_id;
@@ -126,16 +136,14 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataPresent) {
       .WillOnce(Return(S3BucketMetadataState::present));
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(1)
-      .WillOnce(Return(oid));
-
-  struct m0_uint128 version_list_oid = {0x1ffff, 0x1ffff};
+      .WillOnce(ReturnRef(index_layout));
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_objects_version_list_index_oid())
+              get_objects_version_list_index_layout())
       .Times(1)
-      .WillOnce(Return(version_list_oid));
+      .WillOnce(ReturnRef(index_layout));
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
@@ -152,7 +160,8 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
       .WillOnce(Return(S3BucketMetadataState::present));
 
   // set the OID
-  action_under_test->bucket_metadata->set_object_list_index_oid(zero_oid);
+  action_under_test->bucket_metadata->set_object_list_index_layout(
+      zero_index_layout);
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(0);
@@ -255,7 +264,7 @@ TEST_F(S3DeleteBucketActionTest,
 TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectsMultipartPresent) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout(index_layout);
 
   action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
@@ -267,7 +276,8 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectsMultipartPresent) {
 TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectsMultipartNotPresent) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->bucket_metadata->set_multipart_index_oid(zero_oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout(
+      zero_index_layout);
 
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
@@ -293,7 +303,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccess) {
                      "\"motr_part_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\"}")));
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout(index_layout);
 
   action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
@@ -307,7 +317,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccess) {
   object_mp_meta_factory->mock_object_mp_metadata->set_oid(oid);
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("file2", action_under_test->last_key.c_str());
-  EXPECT_EQ(2, action_under_test->part_oids.size());
+  EXPECT_EQ(2, action_under_test->part_idx_layouts.size());
   EXPECT_EQ(2, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
 }
@@ -320,7 +330,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessIllegalJson) {
       std::make_pair("file2", std::make_pair(1, "Ilegal json format")));
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout(index_layout);
 
   action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
@@ -332,7 +342,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessIllegalJson) {
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->fetch_multipart_objects_successful();
-  EXPECT_EQ(0, action_under_test->part_oids.size());
+  EXPECT_EQ(0, action_under_test->part_idx_layouts.size());
   EXPECT_EQ(0, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
 }
@@ -370,7 +380,7 @@ TEST_F(S3DeleteBucketActionTest,
   object_mp_meta_factory->mock_object_mp_metadata->set_oid(oid);
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("file1", action_under_test->last_key.c_str());
-  EXPECT_EQ(1, action_under_test->part_oids.size());
+  EXPECT_EQ(1, action_under_test->part_idx_layouts.size());
   EXPECT_EQ(1, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
   S3Option::get_instance()->set_motr_idx_fetch_count(old_idx_fetch_count);
@@ -392,7 +402,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessNoMultipart) {
   object_mp_meta_factory->mock_object_mp_metadata->set_oid(oid);
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("", action_under_test->last_key.c_str());
-  EXPECT_EQ(0, action_under_test->part_oids.size());
+  EXPECT_EQ(0, action_under_test->part_idx_layouts.size());
   EXPECT_EQ(0, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
 }
@@ -401,7 +411,7 @@ TEST_F(S3DeleteBucketActionTest,
        DeleteMultipartObjectsMultipartObjectsPresent) {
   action_under_test->multipart_object_oids.push_back(oid);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_objects(_, _, _, _)).Times(1);
+              delete_objects(_, _, _, _, _)).Times(1);
   action_under_test->delete_multipart_objects();
 }
 
@@ -492,9 +502,9 @@ TEST_F(S3DeleteBucketActionTest, RemovePartIndexes) {
   action_under_test->remove_part_indexes();
   EXPECT_EQ(1, call_count_one);
 
-  action_under_test->part_oids.push_back(oid);
+  action_under_test->part_idx_layouts.push_back(index_layout);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              delete_indexes(_, _, _)).Times(1);
+              delete_indices(_, _, _)).Times(1);
   action_under_test->remove_part_indexes();
 }
 
@@ -540,7 +550,7 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexMultipartPresent) {
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout(index_layout);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               delete_index(_, _, _)).Times(1);
   action_under_test->remove_multipart_index();
@@ -563,7 +573,7 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailed) {
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout(index_layout);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
 
@@ -578,7 +588,7 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailedToLaunch) {
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout(index_layout);
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
@@ -588,7 +598,7 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailedToLaunch) {
 }
 
 TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndex) {
-  action_under_test->object_list_index_oid = {0ULL, 0ULL};
+  action_under_test->object_list_index_layout = {};
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3DeleteBucketActionTest::func_callback_one, this);
@@ -596,7 +606,7 @@ TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndex) {
   action_under_test->remove_object_list_index();
   EXPECT_EQ(1, call_count_one);
 
-  action_under_test->object_list_index_oid = oid;
+  action_under_test->object_list_index_layout = index_layout;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               delete_index(_, _, _)).Times(1);
   action_under_test->remove_object_list_index();
@@ -707,4 +717,3 @@ TEST_F(S3DeleteBucketActionTest, SendInternalErrorRetry) {
 
   action_under_test->send_response_to_s3_client();
 }
-

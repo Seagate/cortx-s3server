@@ -42,9 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import com.seagates3.authencryptutil.JKSUtil;
-import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
-
 /**
  * Store the auth server configuration properties like default endpoint and
  * server end points.
@@ -58,7 +55,7 @@ public class AuthServerConfig {
     public
      static final String DEFAULT_ACL_XML = "/defaultAclTemplate.xml";
     public
-     static final String XSD_PATH = "/AmazonS3.xsd";
+     static final String XSD_PATH = "/AmazonS3_V2.xsd";
     public
      static final int MAX_GRANT_SIZE = 100;
     private static Logger logger;
@@ -164,8 +161,8 @@ public class AuthServerConfig {
            ldapCipherKey = line;
          }
          // 2. Decrypt openldap password using cipher Key.
-         String decryptCmd = "s3cipher decrypt --data " + encryptedPasswd +
-                             " --key " + ldapCipherKey;
+         String decryptCmd = "s3cipher decrypt --data=" + encryptedPasswd +
+                             " --key=" + ldapCipherKey;
          Process s3CipherDecrypt = Runtime.getRuntime().exec(decryptCmd);
 
          int exitCode = s3CipherDecrypt.waitFor();
@@ -429,9 +426,37 @@ public class AuthServerConfig {
     int getVersion() {
       return Integer.parseInt(authServerConfig.getProperty("version"));
     }
+
    public
     static int getCacheTimeout() {
       return Integer.parseInt(authServerConfig.getProperty("cacheTimeout"));
+    }
+
+   public
+    static int getMaxAccountLimit() {
+      return Integer.parseInt(authServerConfig.getProperty("maxAccountLimit"));
+    }
+
+   public
+    static int getMaxIAMUserLimit() {
+      return Integer.parseInt(authServerConfig.getProperty("maxIAMUserLimit"));
+    }
+
+   public
+    static String getIEMServerURL() {
+      return authServerConfig.getProperty("IEMServerURL");
+    }
+   public
+    static String getRsyslogHostname() {
+      return authServerConfig.getProperty("RsyslogHostname");
+    }
+   public
+    static int getRsyslogPort() {
+      return Integer.parseInt(authServerConfig.getProperty("RsyslogPort"));
+    }
+   public
+    static String getRsyslogMsgId() {
+      return authServerConfig.getProperty("RsyslogMsgId");
     }
 }
 

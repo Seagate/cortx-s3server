@@ -20,14 +20,15 @@ version_config:                             # Section for version of S3 backgrou
    version: 1                                              # Default version for S3 background delete config
 
 cortx_s3:                                   # Section for S3 background delete config
-   endpoint: "http://127.0.0.1:28049"                       # Service specified for CORTX s3 client
+   producer_endpoint: "http://127.0.0.1:28049"              # Service specified for CORTX s3 producer
+   consumer_endpoint: "http://127.0.0.1:28049"             # Service specified for CORTX s3 consumer
    service: "cortxs3"                                      # Default region specified for CORTX s3 client
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
    access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
    secret_key: "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"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: "True"                                     # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
-   messaging_platform: "rabbit_mq"                       # Whether to use message_bus or rabbit_mq as the messaging platform
+   messaging_platform: "message_bus"                       # messaging platform
 
 message_bus:
    topic: "bgdelete"
@@ -38,10 +39,6 @@ message_bus:
    consumer_sleep: 5
    purge_sleep: 60
    admin_id: "admin_s3_background_delete"
-
-s3_recovery:                               # Section for S3 recovery config config
-   recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"
-   recovery_account_secret_key: "h98ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyNVME5" # Secret Key corresponding to account-name "s3-recovery-svc"
 
 logconfig:                                  # Section for scheduler & processor loggers.
 
@@ -58,20 +55,6 @@ logconfig:                                  # Section for scheduler & processor 
    max_bytes: 5242880                                                                         # Max size of a log files is set to 5mb
    backup_count: 5                                                                            # Max number of log files that can exist
 
-rabbitmq:                                    # Section for RabbitMQ configs
-
-   # RabbitMQ overview:  https://www.rabbitmq.com/getstarted.html
-
-    username: "cortx-s3"                                    # Username used to communicate with RabbitMQ
-    password: "password"                                    # Password corresponding to username
-    host: "127.0.0.1"                                       # Host on which RabbitMQ is runnning
-    queue: "s3_delete_obj_job_queue"                        # Queue name used in RabbitMQ
-    exchange: ""                                            # Exchanges control the routing of messages to queues.
-    exchange_type: "direct"                                 # Exchanges type includes direct, fanout, topic exchange, header exchange
-    mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
-    durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
-    schedule_interval_secs: 7200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
-
 indexid:
 
    probable_delete_index_id: "AAAAAAAAAHg=-AwAQAAAAAAA="      # Index id containing list of probable delete object oid. This is fixed index id shared with s3server.
@@ -83,3 +66,13 @@ indexid:
 leakconfig:                                  # Section for object leak config
    leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.
    version_processing_delay_in_mins: 5                        # Time delay in mins after which object version is processed
+
+#DO NOT CHANGE ANY KEY NAME
+background_delete_account:
+   account_name: "s3-background-delete-svc"                   #BG delete account name
+   account_id: "67891"                                        #BG delete accound id
+   canonical_id: "C67891"                                     #BG delete account canonical id
+   mail: "s3-background-delete-svc@seagate.com"               #BG delete account mail
+   s3_user_id: "450"                                          #BG delete account user id
+   const_cipher_secret_str: "s3backgroundsecretkey"           #BG delete account secret key
+   const_cipher_access_str: "s3backgroundaccesskey"           #BG delete account access key

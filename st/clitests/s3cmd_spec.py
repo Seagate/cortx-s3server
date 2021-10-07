@@ -61,6 +61,8 @@ S3ClientConfig.secret_key = 'ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYZ5Hd'
 Config.config_file = "pathstyle.s3cfg"
 
 # ************ Test post removal of data (removal/creation of root index) ************
+# Recreating of global indices causes s3server can loose access to them.
+'''
 s3kvs.clean_all_data()
 s3kvs.create_s3root_index()
 S3cmdTest('Create bucket post root index deletion').create_bucket("seagatebucket").execute_test().command_is_successful().command_response_should_not_have('WARNING')
@@ -73,7 +75,7 @@ S3cmdTest('s3cmd should not have bucket').list_buckets().execute_test().command_
 s3kvs.clean_all_data()
 s3kvs.create_s3root_index()
 S3cmdTest('s3cmd cannot fetch info for nonexistent bucket').info_bucket("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket").command_response_should_not_have('WARNING')
-
+'''
 # Create Account
 # Extract the response elements from response which has the following format
 # <Key 1> = <Value 1>, <Key 2> = <Value 2> ... <Key n> = <Value n>
@@ -562,7 +564,15 @@ S3cmdTest('s3cmd can upload 18MB file for Collision resolution test').upload_tes
 
 s3kvs.delete_bucket_info("seagatebucket")
 
+S3fiTest('Disable bucket metadata cache').\
+    enable_fi("enable", "", "disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
+
 S3cmdTest('Create bucket for Collision resolution test').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+S3fiTest('Enable bucket metadata cache').\
+    disable_fi("disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
 
 S3cmdTest('s3cmd can upload 3k file after Collision resolution').upload_test("seagatebucket", "3kfilecollision", 3000).execute_test().command_is_successful()
 

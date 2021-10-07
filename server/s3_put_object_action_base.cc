@@ -31,7 +31,7 @@
 #include "s3_put_object_action_base.h"
 #include "s3_uri_to_motr_oid.h"
 
-extern struct m0_uint128 global_probable_dead_object_list_index_oid;
+extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 S3PutObjectActionBase::S3PutObjectActionBase(
     std::shared_ptr<S3RequestObject> s3_request_object,
@@ -99,6 +99,63 @@ void S3PutObjectActionBase::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3PutObjectActionBase::fetch_additional_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_put_action_state = S3PutObjectActionState::validationFailed;
+
+  switch (additional_bucket_metadata->get_state()) {
+    case S3BucketMetadataState::missing:
+      s3_log(S3_LOG_ERROR, request_id, "Bucket: [%s] not found",
+             additional_bucket_name.c_str());
+      set_s3_error("NoSuchBucket");
+      break;
+    case S3BucketMetadataState::failed_to_launch:
+      s3_log(S3_LOG_ERROR, request_id,
+             "Bucket metadata load operation failed due to pre launch failure");
+      set_s3_error("ServiceUnavailable");
+      break;
+    default:
+      s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata fetch failed");
+      set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutObjectActionBase::fetch_additional_object_info_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_put_action_state = S3PutObjectActionState::validationFailed;
+
+  const auto& additional_object_list_layout =
+      additional_bucket_metadata->get_object_list_index_layout();
+
+  if (zero(additional_object_list_layout.oid)) {
+    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else {
+    switch (additional_object_metadata->get_state()) {
+      case S3ObjectMetadataState::missing:
+        set_s3_error("NoSuchKey");
+        break;
+      case S3ObjectMetadataState::failed_to_launch:
+        s3_log(S3_LOG_ERROR, request_id,
+               "Additional object metadata load operation failed due to pre "
+               "launch "
+               "failure\n");
+        set_s3_error("ServiceUnavailable");
+        break;
+      default:
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Additional object metadata fetch failed\n");
+        set_s3_error("InternalError");
+    }
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3PutObjectActionBase::fetch_object_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
@@ -106,7 +163,6 @@ void S3PutObjectActionBase::fetch_object_info_success() {
 
   if (metadata_state == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Destination object is absent");
-    next();
   } else if (metadata_state == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "Destination object already exists");
 
@@ -115,7 +171,6 @@ void S3PutObjectActionBase::fetch_object_info_success() {
     old_layout_id = object_metadata->get_layout_id();
 
     create_new_oid(old_object_oid);
-    next();
   } else {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
 
@@ -128,16 +183,25 @@ void S3PutObjectActionBase::fetch_object_info_success() {
       set_s3_error("InternalError");
     }
     send_response_to_s3_client();
+    return;
+  }
+  // Check if additioanl metadata needs to be loaded,
+  // case1: CopyObject API
+  std::string source = request->get_headers_copysource();
+  if (!source.empty()) {  // this is CopyObject API request
+    get_source_bucket_and_object(source);
+    fetch_additional_bucket_info();
+  } else {
+    // No additional metadata load required.
+    next();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutObjectActionBase::fetch_object_info_failed() {
   // Proceed to to next task, object metadata doesnt exist, will create now
-  struct m0_uint128 object_list_oid =
-      bucket_metadata->get_object_list_index_oid();
-  if (!(object_list_oid.u_hi | object_list_oid.u_lo) ||
-      !(objects_version_list_oid.u_hi | objects_version_list_oid.u_lo)) {
+
+  if (zero(obj_list_idx_lo.oid) || zero(obj_version_list_idx_lo.oid)) {
     // Rare/unlikely: Motr KVS data corruption:
     // object_list_oid/objects_version_list_oid is null only when bucket
     // metadata is corrupted.
@@ -149,7 +213,16 @@ void S3PutObjectActionBase::fetch_object_info_failed() {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("MetaDataCorruption");
     send_response_to_s3_client();
+    return;
+  }
+  // Check if additioanl metadata needs to be loaded,
+  // case1: CopyObject API
+  std::string source = request->get_headers_copysource();
+  if (!source.empty()) {  // this is CopyObject API request
+    get_source_bucket_and_object(source);
+    fetch_additional_bucket_info();
   } else {
+    // No additional metadata load required.
     next();
   }
 }
@@ -158,17 +231,15 @@ void S3PutObjectActionBase::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (!tried_count) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, new_object_oid);
-  } else {
-    motr_writer->set_oid(new_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       total_data_to_stream));
 
   motr_writer->create_object(
       std::bind(&S3PutObjectActionBase::create_object_successful, this),
-      std::bind(&S3PutObjectActionBase::create_object_failed, this), layout_id);
+      std::bind(&S3PutObjectActionBase::create_object_failed, this),
+      new_object_oid, layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -182,9 +253,8 @@ void S3PutObjectActionBase::create_object_successful() {
 
   // New Object or overwrite, create new metadata and release old.
   new_object_metadata = object_metadata_factory->create_object_metadata_obj(
-      request, bucket_metadata->get_object_list_index_oid());
-  new_object_metadata->set_objects_version_list_index_oid(
-      bucket_metadata->get_objects_version_list_index_oid());
+      request, bucket_metadata->get_object_list_index_layout(),
+      bucket_metadata->get_objects_version_list_index_layout());
 
   new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
 
@@ -192,6 +262,7 @@ void S3PutObjectActionBase::create_object_successful() {
   new_object_metadata->regenerate_version_id();
   new_object_metadata->set_oid(motr_writer->get_oid());
   new_object_metadata->set_layout_id(layout_id);
+  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   add_object_oid_to_probable_dead_oid_list();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -281,9 +352,9 @@ void S3PutObjectActionBase::add_object_oid_to_probable_dead_oid_list() {
            old_oid_rec_key.c_str());
     old_probable_del_rec.reset(new S3ProbableDeleteRecord(
         old_oid_rec_key, {0, 0}, object_metadata->get_object_name(),
-        old_object_oid, old_layout_id,
-        bucket_metadata->get_object_list_index_oid(),
-        bucket_metadata->get_objects_version_list_index_oid(),
+        old_object_oid, old_layout_id, object_metadata->get_pvid_str(),
+        bucket_metadata->get_object_list_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid,
         object_metadata->get_version_key_in_index(), false /* force_delete */));
 
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
@@ -293,8 +364,9 @@ void S3PutObjectActionBase::add_object_oid_to_probable_dead_oid_list() {
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
   new_probable_del_rec.reset(new S3ProbableDeleteRecord(
       new_oid_str, old_object_oid, new_object_metadata->get_object_name(),
-      new_object_oid, layout_id, bucket_metadata->get_object_list_index_oid(),
-      bucket_metadata->get_objects_version_list_index_oid(),
+      new_object_oid, layout_id, new_object_metadata->get_pvid_str(),
+      bucket_metadata->get_object_list_index_layout().oid,
+      bucket_metadata->get_objects_version_list_index_layout().oid,
       new_object_metadata->get_version_key_in_index(),
       false /* force_delete */));
 
@@ -306,7 +378,7 @@ void S3PutObjectActionBase::add_object_oid_to_probable_dead_oid_list() {
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, probable_oid_list,
+      global_probable_dead_object_list_index_layout, probable_oid_list,
       std::bind(&S3PutObjectActionBase::next, this),
       std::bind(&S3PutObjectActionBase::
                      add_object_oid_to_probable_dead_oid_list_failed,
@@ -399,7 +471,7 @@ void S3PutObjectActionBase::mark_new_oid_for_deletion() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
                              new_oid_str, new_probable_del_rec->to_json(),
                              std::bind(&S3PutObjectActionBase::next, this),
                              std::bind(&S3PutObjectActionBase::next, this));
@@ -421,7 +493,7 @@ void S3PutObjectActionBase::mark_old_oid_for_deletion() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
                              old_oid_rec_key, old_probable_del_rec->to_json(),
                              std::bind(&S3PutObjectActionBase::next, this),
                              std::bind(&S3PutObjectActionBase::next, this));
@@ -440,7 +512,7 @@ void S3PutObjectActionBase::remove_old_oid_probable_record() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
                                 old_oid_rec_key,
                                 std::bind(&S3PutObjectActionBase::next, this),
                                 std::bind(&S3PutObjectActionBase::next, this));
@@ -455,7 +527,7 @@ void S3PutObjectActionBase::remove_new_oid_probable_record() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
                                 new_oid_str,
                                 std::bind(&S3PutObjectActionBase::next, this),
                                 std::bind(&S3PutObjectActionBase::next, this));
@@ -467,11 +539,12 @@ void S3PutObjectActionBase::delete_old_object() {
   // If PUT is success, we delete old object if present
   assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
 
-  motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectActionBase::remove_old_object_version_metadata,
                 this),
-      std::bind(&S3PutObjectActionBase::next, this), old_layout_id);
+      std::bind(&S3PutObjectActionBase::next, this), old_object_oid,
+      old_layout_id, object_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -490,10 +563,11 @@ void S3PutObjectActionBase::delete_new_object() {
   assert(s3_put_action_state != S3PutObjectActionState::completed);
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
 
-  motr_writer->set_oid(new_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectActionBase::remove_new_oid_probable_record, this),
-      std::bind(&S3PutObjectActionBase::next, this), layout_id);
+      std::bind(&S3PutObjectActionBase::next, this), new_object_oid, layout_id,
+      new_object_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

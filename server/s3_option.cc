@@ -25,6 +25,12 @@
 #include "s3_motr_layout.h"
 #include "s3_log.h"
 #include "s3_common_utilities.h"
+#include <map>
+#include <string>
+#include "motr/client.h"
+
+std::map<std::string, int> g_pi_map = {
+    {std::string("PI_TYPE_MD5_INC_CONTEXT"), (int)M0_PI_TYPE_MD5_INC_CONTEXT}};
 
 S3Option* S3Option::option_instance = NULL;
 
@@ -40,6 +46,17 @@ bool S3Option::load_section(std::string section_name,
   }
   if (force_override_from_config) {
     if (section_name == "S3_SERVER_CONFIG") {
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_DATA_CORRUPTION_IEM");
+      s3_di_disable_data_corruption_iem =
+          s3_option_node["S3_DI_DISABLE_DATA_CORRUPTION_IEM"].as<bool>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_METADATA_CORRUPTION_IEM");
+      s3_di_disable_metadata_corruption_iem =
+          s3_option_node["S3_DI_DISABLE_METADATA_CORRUPTION_IEM"].as<bool>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_WORKING_DIR");
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_DO_REDIRECTION");
@@ -47,6 +64,33 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_DATA_INTEGRITY_CHECK");
+      s3_write_data_integrity_check =
+          s3_option_node["S3_WRITE_DATA_INTEGRITY_CHECK"].as<bool>();
+      std::string pi_val = s3_option_node["S3_PI_TYPE"].as<std::string>();
+      std::map<std::string, int>::iterator pi_map_iterator =
+          g_pi_map.find(pi_val);
+      if (pi_map_iterator == g_pi_map.end()) {
+        fprintf(stderr, "%s:%d:option [%s] has incorrect value\n", __FILE__,
+                __LINE__, pi_val.c_str());
+        return false;
+      }
+      s3_pi_type = pi_map_iterator->second;
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_DATA_INTEGRITY_CHECK");
+      s3_read_data_integrity_check =
+          s3_option_node["S3_READ_DATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_METADATA_INTEGRITY_CHECK");
+      s3_metadata_integrity_check =
+          s3_option_node["S3_METADATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SALT_CHECKSUM");
+      s3_salt_checksum = s3_option_node["S3_SALT_CHECKSUM"].as<bool>();
+      //
+      // if PI is not written during write then we
+      // wont verify during read operation.
+      //
+      if (!s3_write_data_integrity_check) {
+        s3_read_data_integrity_check = false;
+      }
       motr_http_reuseport = s3_option_node["S3_MOTR_HTTP_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_CERT_FILE");
@@ -66,6 +110,9 @@ bool S3Option::load_section(std::string section_name,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
                                 .as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_SHUTDOWN_AFTER_SEC");
+      s3_retry_after_sec =
+          s3_option_node["S3_RETRY_SHUTDOWN_AFTER_SEC"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_DIR");
       log_dir = s3_option_node["S3_LOG_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_MODE");
@@ -101,6 +148,9 @@ bool S3Option::load_section(std::string section_name,
                                "S3_AUDIT_LOGGER_KAFKA_WEB_PATH");
       audit_logger_kafka_web_path =
           s3_option_node["S3_AUDIT_LOGGER_KAFKA_WEB_PATH"].as<std::string>();
+      s3_iem_host = s3_option_node["S3_IEM_HOST"].as<std::string>();
+      s3_iem_port = s3_option_node["S3_IEM_PORT"].as<int>();
+      s3_iem_path = s3_option_node["S3_IEM_PATH"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FILE_MAX_SIZE");
       log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_ENABLE_BUFFERING");
@@ -140,6 +190,13 @@ bool S3Option::load_section(std::string section_name,
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_BUFFER_MULTIPLE");
+      write_buffer_multiple =
+          s3_option_node["S3_WRITE_BUFFER_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_TIME_MILLISEC");
+      s3_req_throttle_time =
+          s3_option_node["S3_GET_THROTTLE_TIME_MILLISEC"].as<int>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
       s3_default_endpoint =
           s3_option_node["S3_SERVER_DEFAULT_ENDPOINT"].as<std::string>();
@@ -196,6 +253,12 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<uint>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_ENABLE_ADDB_DUMP");
       FLAGS_addb = s3_option_node["S3_SERVER_ENABLE_ADDB_DUMP"].as<bool>();
+      bucket_metadata_cache_max_size =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_MAX_SIZE"].as<unsigned>();
+      bucket_metadata_cache_expire_sec =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_EXPIRE_SEC"].as<unsigned>();
+      bucket_metadata_cache_refresh_sec =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_REFRESH_SEC"].as<unsigned>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -261,6 +324,13 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_FIRST_READ_SIZE");
       motr_first_obj_read_size =
           s3_option_node["S3_MOTR_FIRST_READ_SIZE"].as<unsigned int>();
+
+      motr_reconnect_retry_count =
+          s3_option_node["S3_MOTR_RECONNECT_RETRY_COUNT"].as<unsigned int>();
+      ;
+      motr_reconnect_sleep_time =
+          s3_option_node["S3_MOTR_SLEEP_DURING_RECONNECT"].as<unsigned int>();
+      ;
 
       std::string motr_read_pool_initial_buffer_count_str;
       std::string motr_read_pool_expandable_count_str;
@@ -408,6 +478,9 @@ bool S3Option::load_section(std::string section_name,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
                                 .as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_SHUTDOWN_AFTER_SEC");
+      s3_retry_after_sec =
+          s3_option_node["S3_RETRY_SHUTDOWN_AFTER_SEC"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
       s3_default_endpoint =
           s3_option_node["S3_SERVER_DEFAULT_ENDPOINT"].as<std::string>();
@@ -421,6 +494,33 @@ bool S3Option::load_section(std::string section_name,
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REUSEPORT");
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_DATA_INTEGRITY_CHECK");
+      s3_write_data_integrity_check =
+          s3_option_node["S3_WRITE_DATA_INTEGRITY_CHECK"].as<bool>();
+      std::string pi_val = s3_option_node["S3_PI_TYPE"].as<std::string>();
+      std::map<std::string, int>::iterator pi_map_iterator =
+          g_pi_map.find(pi_val);
+      if (pi_map_iterator == g_pi_map.end()) {
+        fprintf(stderr, "%s:%d:option [%s] has incorrect value\n", __FILE__,
+                __LINE__, pi_val.c_str());
+        return false;
+      }
+      s3_pi_type = pi_map_iterator->second;
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_DATA_INTEGRITY_CHECK");
+      s3_read_data_integrity_check =
+          s3_option_node["S3_READ_DATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_METADATA_INTEGRITY_CHECK");
+      s3_metadata_integrity_check =
+          s3_option_node["S3_METADATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SALT_CHECKSUM");
+      s3_salt_checksum = s3_option_node["S3_SALT_CHECKSUM"].as<bool>();
+      //
+      // if PI is not written during write then we
+      // wont verify during read operation.
+      //
+      if (!s3_write_data_integrity_check) {
+        s3_read_data_integrity_check = false;
+      }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_HTTP_REUSEPORT");
       motr_http_reuseport = s3_option_node["S3_MOTR_HTTP_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
@@ -443,6 +543,12 @@ bool S3Option::load_section(std::string section_name,
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_BUFFER_MULTIPLE");
+      write_buffer_multiple =
+          s3_option_node["S3_WRITE_BUFFER_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_TIME_MILLISEC");
+      s3_req_throttle_time =
+          s3_option_node["S3_GET_THROTTLE_TIME_MILLISEC"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
       max_retry_count =
           s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
@@ -506,6 +612,12 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<unsigned>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_ENABLE_ADDB_DUMP");
       FLAGS_addb = s3_option_node["S3_SERVER_ENABLE_ADDB_DUMP"].as<bool>();
+      bucket_metadata_cache_max_size =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_MAX_SIZE"].as<unsigned>();
+      bucket_metadata_cache_expire_sec =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_EXPIRE_SEC"].as<unsigned>();
+      bucket_metadata_cache_refresh_sec =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_REFRESH_SEC"].as<unsigned>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -635,6 +747,7 @@ bool S3Option::load_section(std::string section_name,
       s3_version = s3_option_node["VERSION"].as<std::string>();
     }
   }
+
   return true;
 }
 
@@ -826,6 +939,14 @@ void S3Option::dump_options() {
          (s3_enable_auth_ssl) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_REUSEPORT = %s\n",
          (s3_reuseport) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_WRITE_DATA_INTEGRITY_CHECK = %s\n",
+         (s3_write_data_integrity_check) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_READ_DATA_INTEGRITY_CHECK = %s\n",
+         (s3_read_data_integrity_check) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_METADATA_INTEGRITY_CHECK = %s\n",
+         (s3_metadata_integrity_check) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_SALT_CHECKSUM = %s\n",
+         (s3_salt_checksum) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_MOTR_HTTP_REUSEPORT = %s\n",
          (motr_http_reuseport) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
@@ -840,6 +961,8 @@ void S3Option::dump_options() {
          motr_http_bind_port);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);
+  s3_log(S3_LOG_INFO, "", "S3_RETRY_SHUTDOWN_AFTER_SEC = %d\n",
+         s3_retry_after_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_ENABLE = %d\n", s3server_ssl_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_OBJECT_DELAYED_DELETE = %d\n",
@@ -851,6 +974,10 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_SESSION_TIMEOUT = %d\n",
          s3server_ssl_session_timeout_in_sec);
   s3_log(S3_LOG_INFO, "", "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
+  s3_log(S3_LOG_INFO, "", "S3_WRITE_BUFFER_MULTIPLE = %d\n",
+         write_buffer_multiple);
+  s3_log(S3_LOG_INFO, "", "S3_GET_THROTTLE_TIME_MILLISEC = %d\n",
+         s3_req_throttle_time);
   s3_log(S3_LOG_INFO, "", "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_DEFAULT_ENDPOINT = %s\n",
          s3_default_endpoint.c_str());
@@ -882,9 +1009,9 @@ void S3Option::dump_options() {
          (motr_is_oostore ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_MOTR_IS_READ_VERIFY = %s\n",
          (motr_is_read_verify ? "true" : "false"));
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %u\n",
          motr_tm_recv_queue_min_len);
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %u\n",
          motr_max_rpc_msg_size);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_PROCESS_FID = %s\n",
          motr_process_fid.c_str());
@@ -895,7 +1022,7 @@ void S3Option::dump_options() {
          motr_cass_keyspace.c_str());
   s3_log(S3_LOG_INFO, "", "S3_MOTR_CASS_MAX_COL_FAMILY_NUM = %d\n",
          motr_cass_max_column_family_num);
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %u\n",
          motr_op_wait_period);
 
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT = %zu\n",
@@ -971,6 +1098,14 @@ void S3Option::dump_options() {
   return;
 }
 
+bool S3Option::get_s3_di_disable_data_corruption_iem() {
+  return s3_di_disable_data_corruption_iem;
+}
+
+bool S3Option::get_s3_di_disable_metadata_corruption_iem() {
+  return s3_di_disable_metadata_corruption_iem;
+}
+
 std::string S3Option::get_s3_nodename() { return s3_nodename; }
 
 unsigned short S3Option::get_s3_bind_port() { return s3_bind_port; }
@@ -1005,9 +1140,17 @@ std::string S3Option::get_audit_logger_kafka_web_path() {
   return audit_logger_kafka_web_path;
 }
 
+std::string S3Option::get_iem_host() { return s3_iem_host; }
+
+int S3Option::get_iem_port() { return s3_iem_port; }
+
+std::string S3Option::get_iem_path() { return s3_iem_path; }
+
 unsigned short S3Option::get_s3_grace_period_sec() {
   return s3_grace_period_sec;
 }
+
+unsigned short S3Option::get_s3_retry_after_sec() { return s3_retry_after_sec; }
 
 bool S3Option::get_is_s3_shutting_down() { return is_s3_shutting_down; }
 
@@ -1099,6 +1242,22 @@ bool S3Option::is_murmurhash_oid_enabled() { return s3_enable_murmurhash_oid; }
 
 bool S3Option::is_s3_ssl_auth_enabled() { return s3_enable_auth_ssl; }
 
+bool S3Option::is_s3_write_di_check_enabled() {
+  return s3_write_data_integrity_check;
+}
+
+int S3Option::get_pi_type() { return s3_pi_type; }
+
+bool S3Option::is_s3_read_di_check_enabled() {
+  return s3_read_data_integrity_check;
+}
+
+bool S3Option::is_s3_metadata_integrity_check_enabled() {
+  return s3_metadata_integrity_check;
+}
+
+bool S3Option::is_s3_salt_checksum_enabled() { return s3_salt_checksum; }
+
 const char* S3Option::get_iam_cert_file() { return s3_iam_cert_file.c_str(); }
 
 const char* S3Option::get_s3server_ssl_cert_file() {
@@ -1117,6 +1276,10 @@ std::string S3Option::get_perf_log_filename() { return perf_log_file; }
 
 int S3Option::get_read_ahead_multiple() { return read_ahead_multiple; }
 
+int S3Option::get_write_buffer_multiple() { return write_buffer_multiple; }
+
+int S3Option::get_s3_req_throttle_time() { return s3_req_throttle_time; }
+
 std::string S3Option::get_ipv4_bind_addr() { return s3_ipv4_bind_addr; }
 
 std::string S3Option::get_ipv6_bind_addr() { return s3_ipv6_bind_addr; }
@@ -1127,6 +1290,18 @@ std::string S3Option::get_default_endpoint() { return s3_default_endpoint; }
 
 std::set<std::string>& S3Option::get_region_endpoints() {
   return s3_region_endpoints;
+}
+
+unsigned S3Option::get_bucket_metadata_cache_max_size() const {
+  return bucket_metadata_cache_max_size;
+}
+
+unsigned S3Option::get_bucket_metadata_cache_expire_sec() const {
+  return bucket_metadata_cache_expire_sec;
+}
+
+unsigned S3Option::get_bucket_metadata_cache_refresh_sec() const {
+  return bucket_metadata_cache_refresh_sec;
 }
 
 std::string S3Option::get_motr_local_addr() { return motr_local_addr; }
@@ -1293,6 +1468,8 @@ void S3Option::enable_murmurhash_oid() { s3_enable_murmurhash_oid = true; }
 
 void S3Option::disable_murmurhash_oid() { s3_enable_murmurhash_oid = false; }
 
+void S3Option::disable_daemon() { FLAGS_disable_daemon = true; }
+
 void S3Option::enable_reuseport() { FLAGS_reuseport = true; }
 
 bool S3Option::is_s3_reuseport_enabled() { return s3_reuseport; }
@@ -1302,6 +1479,8 @@ bool S3Option::is_motr_http_reuseport_enabled() { return motr_http_reuseport; }
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }
 
 bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }
+
+bool S3Option::is_daemon_disabled() { return FLAGS_disable_daemon; }
 
 std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
 
@@ -1325,4 +1504,12 @@ bool S3Option::get_libevent_mempool_zeroed_buffer() {
 
 unsigned int S3Option::get_motr_first_read_size() {
   return motr_first_obj_read_size;
+}
+
+unsigned int S3Option::get_motr_reconnect_retry_count() {
+  return motr_reconnect_retry_count;
+}
+
+unsigned int S3Option::get_motr_reconnect_sleep_time() {
+  return motr_reconnect_sleep_time;
 }

@@ -74,7 +74,7 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
   } else {
     motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
-
+  is_first_write_part_request = true;
   setup_steps();
 }
 
@@ -129,10 +129,13 @@ void S3PutMultiObjectAction::check_part_details() {
     send_response_to_s3_client();
   } else if (request->get_header_size() > MAX_HEADER_SIZE ||
              request->get_user_metadata_size() > MAX_USER_METADATA_SIZE) {
-    set_s3_error("BadRequest");
+    set_s3_error("MetadataTooLarge");
     send_response_to_s3_client();
   } else if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
     set_s3_error("KeyTooLongError");
+    send_response_to_s3_client();
+  } else if (request->get_content_length() > MAXIMUM_ALLOWED_PART_SIZE) {
+    set_s3_error("EntityTooLarge");
     send_response_to_s3_client();
   } else {
     next();
@@ -185,11 +188,25 @@ void S3PutMultiObjectAction::fetch_bucket_info_success() {
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
 void S3PutMultiObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  next();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "Entering\n");
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    next();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "Exiting\n");
 }
+
 void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Bucket does not exists\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -209,7 +226,7 @@ void S3PutMultiObjectAction::fetch_multipart_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   object_multipart_metadata =
       object_mp_metadata_factory->create_object_mp_metadata_obj(
-          request, bucket_metadata->get_multipart_index_oid(), upload_id);
+          request, bucket_metadata->get_multipart_index_layout(), upload_id);
 
   object_multipart_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
@@ -287,7 +304,8 @@ void S3PutMultiObjectAction::save_multipart_metadata_failed() {
 void S3PutMultiObjectAction::fetch_firstpart_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, object_multipart_metadata->get_part_index_oid(), upload_id, 1);
+      request, object_multipart_metadata->get_part_index_layout(), upload_id,
+      1);
   part_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::fetch_firstpart_info_failed, this), 1);
@@ -353,7 +371,8 @@ void S3PutMultiObjectAction::compute_part_offset() {
   }
   // Create writer to write from given offset as per the partnumber
   motr_writer = motr_writer_factory->create_motr_writer(
-      request, object_multipart_metadata->get_oid(), offset);
+      request, object_multipart_metadata->get_oid(),
+      object_multipart_metadata->get_pvid(), offset);
 
   _set_layout_id(object_multipart_metadata->get_layout_id());
   motr_writer->set_layout_id(layout_id);
@@ -484,6 +503,12 @@ void S3PutMultiObjectAction::write_object(
   if (content_length > motr_write_payload_size) {
     content_length = motr_write_payload_size;
   }
+  motr_writer->first_write_part_request(is_first_write_part_request);
+  if (is_first_write_part_request) {
+    // Used for motr unit checksum computation, for part's first write
+    // init need to be called
+    is_first_write_part_request = false;
+  }
   motr_writer->write_content(
       std::bind(&S3PutMultiObjectAction::write_object_successful, this),
       std::bind(&S3PutMultiObjectAction::write_object_failed, this),
@@ -497,7 +522,12 @@ void S3PutMultiObjectAction::write_object(
 void S3PutMultiObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   motr_write_in_progress = false;
-
+  if (is_first_write_part_request) {
+    // Used for motr unit checksum computation, for part's first write
+    // init need to be called
+    motr_writer->first_write_part_request(false);
+    is_first_write_part_request = false;
+  }
   request->get_buffered_input()->flush_used_buffers();
 
   if (check_shutdown_and_rollback()) {
@@ -549,6 +579,13 @@ void S3PutMultiObjectAction::write_object_failed() {
   motr_write_in_progress = false;
   motr_write_completed = true;
 
+  if (is_first_write_part_request) {
+    // Used for motr unit checksum computation, for part's first write
+    // init need to be called
+    motr_writer->first_write_part_request(false);
+    is_first_write_part_request = false;
+  }
+
   request->get_buffered_input()->flush_used_buffers();
 
   if (request->is_s3_client_read_error()) {
@@ -574,8 +611,15 @@ void S3PutMultiObjectAction::write_object_failed() {
 
 void S3PutMultiObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  std::string s_md5_got = request->get_header_value("content-md5");
+  if (!s_md5_got.empty() && !motr_writer->content_md5_matches(s_md5_got)) {
+    s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
+    set_s3_error("BadDigest");
+    send_response_to_s3_client();
+    return;
+  }
   part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, object_multipart_metadata->get_part_index_oid(), upload_id,
+      request, object_multipart_metadata->get_part_index_layout(), upload_id,
       part_number);
 
   // to rest Date and Last-Modfied time object metadata
@@ -641,7 +685,14 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
     }
 
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
@@ -677,4 +728,3 @@ void S3PutMultiObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
-

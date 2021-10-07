@@ -18,13 +18,14 @@
 #
 
 """
-This class act as object recovery processor which consumes
-the rabbitmq message queue.
+This class acts as object recovery processor which consumes
+the cortx message_bus message queue.
 """
 #!/usr/bin/python3.6
 
 import os
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
+import errno
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 import traceback
 import logging
 import datetime
@@ -50,29 +51,16 @@ class ObjectRecoveryProcessor(object):
         """Consume the objects from object recovery queue."""
         self.server = None
         try:
-            #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
+            #Conditionally importing ObjectRecoveryMsgbusConsumer when config setting says so.
             if self.config.get_messaging_platform() == MESSAGE_BUS:
                 from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
 
                 self.server = ObjectRecoveryMsgbus(
                     self.config,
                     self.logger)
-            elif self.config.get_messaging_platform() == RABBIT_MQ:
-                from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
-
-                self.server = ObjectRecoveryRabbitMq(
-                    self.config,
-                    self.config.get_rabbitmq_username(),
-                    self.config.get_rabbitmq_password(),
-                    self.config.get_rabbitmq_host(),
-                    self.config.get_rabbitmq_exchange(),
-                    self.config.get_rabbitmq_queue_name(),
-                    self.config.get_rabbitmq_mode(),
-                    self.config.get_rabbitmq_durable(),
-                    self.logger)
             else:
                 self.logger.error(
-                "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")
+                "Invalid argument : " + self.config.get_messaging_platform() + "specified in messaging_platform.")
                 return
 
             self.logger.info("Consumer started at " +
@@ -107,8 +95,8 @@ class ObjectRecoveryProcessor(object):
         self.logger.addHandler(chandler)
 
     def close(self):
-        """Stop processor and close rabbitmq connection."""
-        self.logger.info("Stopping the processor and rabbitmq connection")
+        """Stop processor."""
+        self.logger.info("Stopping the processor")
         self.server.close()
         # perform an orderly shutdown by flushing and closing all handlers
         logging.shutdown()
@@ -119,9 +107,11 @@ class ObjectRecoveryProcessor(object):
         if not os.path.isdir(self._logger_directory):
             try:
                 os.mkdir(self._logger_directory)
-            except BaseException:
-                self.logger.error(
-                    "Unable to create log directory at " + self._logger_directory)
+            except OSError as e:
+                if e.errno == errno.EEXIST:
+                    pass
+                else:
+                    raise Exception("Consumer Logger Could not be created")
 
 if __name__ == "__main__":
     PROCESSOR = ObjectRecoveryProcessor()

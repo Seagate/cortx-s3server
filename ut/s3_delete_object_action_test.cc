@@ -45,13 +45,13 @@ using ::testing::AtLeast;
   do {                                                                    \
     CREATE_BUCKET_METADATA;                                               \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_object_list_index_oid())                              \
+                get_object_list_index_layout())                           \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return(object_list_indx_oid));                    \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_objects_version_list_index_oid())                     \
+                get_objects_version_list_index_layout())                  \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return(objects_version_list_index_oid));          \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(mock_request), http_verb())                             \
         .WillOnce(Return(S3HttpVerb::GET));                               \
     EXPECT_CALL(*(mock_request), get_operation_code())                    \
@@ -60,6 +60,8 @@ using ::testing::AtLeast;
         .Times(AtLeast(1));                                               \
     action_under_test->fetch_object_info();                               \
   } while (0)
+
+const struct s3_motr_idx_layout zero_index_layout = {};
 
 class S3DeleteObjectActionTest : public testing::Test {
  protected:
@@ -72,8 +74,7 @@ class S3DeleteObjectActionTest : public testing::Test {
     object_name = "objname";
 
     oid = {0x1ffff, 0x1ffff};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_index_oid = {0x1ff1ff, 0x1ffff};
+    index_layout = {{0x11ffff, 0x1ffff}};
 
     call_count_one = 0;
 
@@ -97,12 +98,20 @@ class S3DeleteObjectActionTest : public testing::Test {
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     // Owned and deleted by shared_ptr in S3DeleteObjectAction
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        mock_request, ptr_mock_s3_motr_api);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(mock_request);
+
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_object_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
+
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_objects_version_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         mock_request, ptr_mock_s3_motr_api);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         mock_request, oid, ptr_mock_s3_motr_api);
@@ -125,8 +134,7 @@ class S3DeleteObjectActionTest : public testing::Test {
 
   std::shared_ptr<S3DeleteObjectAction> action_under_test;
 
-  struct m0_uint128 object_list_indx_oid;
-  struct m0_uint128 objects_version_list_index_oid;
+  struct s3_motr_idx_layout index_layout;
   struct m0_uint128 oid;
 
   int call_count_one;
@@ -300,9 +308,8 @@ TEST_F(S3DeleteObjectActionTest, DeleteObject) {
       .WillRepeatedly(Return(obj_oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .Times(AtLeast(1));
-
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _)).Times(1);
 
   action_under_test->delete_object();
 }
@@ -318,8 +325,8 @@ TEST_F(S3DeleteObjectActionTest, DelayedDeleteObject) {
       .WillRepeatedly(Return(obj_oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .Times(0);
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _)).Times(0);
   action_under_test->delete_object();
 }
 
@@ -334,4 +341,3 @@ TEST_F(S3DeleteObjectActionTest, SendSuccessResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
-

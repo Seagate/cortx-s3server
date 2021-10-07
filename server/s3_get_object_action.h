@@ -44,6 +44,7 @@ class S3GetObjectAction : public S3ObjectAction {
   size_t first_byte_offset_to_read;
   size_t last_byte_offset_to_read;
   size_t total_blocks_to_read;
+  size_t blocks_to_read;
 
   bool read_object_reply_started;
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
@@ -63,7 +64,6 @@ class S3GetObjectAction : public S3ObjectAction {
   void setup_steps();
 
   void fetch_bucket_info_failed();
-
   void fetch_object_info_failed();
   void validate_object_info();
   void check_full_or_range_object_read();
@@ -74,8 +74,12 @@ class S3GetObjectAction : public S3ObjectAction {
 
   void read_object_data();
   void read_object_data_failed();
+  void check_outbuffer_and_mempool_stats(bool& bcontinue);
+  void resume_action_handler();
   void send_data_to_client();
   void send_response_to_s3_client();
+  // Overridden from base
+  void resume_action_step();
 
   FRIEND_TEST(S3GetObjectActionTest, ConstructorTest);
   FRIEND_TEST(S3GetObjectActionTest, FetchBucketInfo);

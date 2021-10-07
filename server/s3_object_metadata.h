@@ -43,7 +43,7 @@ enum class S3ObjectMetadataState {
   deleted,  // Metadata deleted from store.
   failed,
   failed_to_launch,  // pre launch operation failed.
-  invalid
+  invalid   // Metadata invalid or corrupted
 };
 
 // Forward declarations.
@@ -83,6 +83,10 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string bucket_name;
   std::string object_name;
 
+  // Used in validation
+  std::string requested_bucket_name;
+  std::string requested_object_name;
+
   // Reverse epoch time used as version id key in verion index
   std::string rev_epoch_version_id_key;
   // holds base64 encoding value of rev_epoch_version_id_key, this is used
@@ -105,15 +109,15 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   struct m0_uint128 old_oid = {};
   // Will be object list index oid when simple object upload.
   // Will be multipart object list index oid when multipart object upload.
-  struct m0_uint128 object_list_index_oid = {};
-  struct m0_uint128 objects_version_list_index_oid = {};
-  struct m0_uint128 part_index_oid;
+  struct s3_motr_idx_layout object_list_index_layout = {};
+  struct s3_motr_idx_layout objects_version_list_index_layout = {};
+  struct s3_motr_idx_layout part_index_layout = {};
 
   std::string motr_oid_str;
   std::string motr_old_oid_str;
   std::string motr_old_object_version_id;
 
-  std::string motr_part_oid_str;
+  std::string motr_part_layout_str;
 
   bool is_multipart = false;
 
@@ -128,14 +132,12 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   S3ObjectMetadataState state;
   S3Timer s3_timer;
 
-  // `true` in case of json parsing failure.
-  bool json_parsing_error = false;
-
-  void initialize();
+  void initialize(bool is_multipart, const std::string& uploadid);
 
   // Any validations we want to do on metadata.
   void validate();
   std::string index_name;
+  std::string pvid_str;
 
   // TODO Eventually move these to s3_common as duplicated in s3_bucket_metadata
   // This index has keys as "object_name"
@@ -174,12 +176,14 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // Call these when Object metadata save/remove needs to be called.
   // id can be object list index OID or
   // id can be multipart upload list index OID
-  void set_object_list_index_oid(struct m0_uint128 id);
-  void set_objects_version_list_index_oid(struct m0_uint128 id);
+  void set_object_list_index_layout(const struct s3_motr_idx_layout& lo);
+  void set_objects_version_list_index_layout(
+      const struct s3_motr_idx_layout& lo);
 
   virtual std::string get_version_key_in_index();
-  virtual struct m0_uint128 get_object_list_index_oid() const;
-  virtual struct m0_uint128 get_objects_version_list_index_oid() const;
+  virtual const struct s3_motr_idx_layout& get_object_list_index_layout() const;
+  virtual const struct s3_motr_idx_layout&
+      get_objects_version_list_index_layout() const;
 
   virtual void set_content_length(std::string length);
   virtual size_t get_content_length();
@@ -195,7 +199,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual void set_oid(struct m0_uint128 id);
   void set_old_oid(struct m0_uint128 id);
   void acl_from_json(std::string acl_json_str);
-  void set_part_index_oid(struct m0_uint128 id);
+  void set_part_index_layout(const struct s3_motr_idx_layout&);
   virtual struct m0_uint128 get_oid() { return oid; }
   virtual int get_layout_id() { return layout_id; }
   void set_layout_id(int id) { layout_id = id; }
@@ -204,7 +208,9 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   virtual struct m0_uint128 get_old_oid() { return old_oid; }
 
-  struct m0_uint128 get_part_index_oid() const { return part_index_oid; }
+  const struct s3_motr_idx_layout& get_part_index_layout() const {
+    return part_index_layout;
+  }
 
   void regenerate_version_id();
 
@@ -219,6 +225,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string get_owner_name();
   std::string get_owner_id();
   virtual std::string get_object_name();
+  virtual std::string get_bucket_name();
   virtual std::string get_user_id();
   virtual std::string get_user_name();
   virtual std::string get_canonical_id();
@@ -232,6 +239,12 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
+
+  virtual struct m0_fid get_pvid() const;
+  void set_pvid(const struct m0_fid* p_pvid);
+
+  const std::string& get_pvid_str() const { return pvid_str; }
+  void set_pvid_str(const std::string& val) { pvid_str = val; }
 
   // Load attributes.
   std::string get_system_attribute(std::string key);
@@ -281,7 +294,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual int object_tags_count();
 
   // Virtual Destructor
-  virtual ~S3ObjectMetadata(){};
+  virtual ~S3ObjectMetadata() {};
 
  private:
   // Methods used internally within
@@ -310,6 +323,9 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   void remove_version_metadata_successful();
   void remove_version_metadata_failed();
 
+  // Validate just read metadata
+  bool validate_attrs();
+
  public:
   // Google tests.
   FRIEND_TEST(S3ObjectMetadataTest, ConstructorTest);
@@ -322,6 +338,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   FRIEND_TEST(S3ObjectMetadataTest, AddUserDefinedAttribute);
   FRIEND_TEST(S3ObjectMetadataTest, Load);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadMetadataFail);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessInvalidJson);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessfulInvalidJson);
   FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedJsonParsingFailed);
@@ -348,4 +365,3 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 };
 
 #endif
-

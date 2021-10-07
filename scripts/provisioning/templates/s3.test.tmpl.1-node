@@ -16,9 +16,11 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-cortx:
-  software:
-    openldap:
-      sgiam:
-        user: "sgiamadmin"
-        secret: "TMPL_SGIAM_SECRET_KEY"
+# This file should only contain the mandatory parameters from provisioner confstore.
+# All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_TEST.
+
+test:
+  s3:
+    iam_username: "sgiamadmin"
+    iam_password: "TMPL_SGIAM_PLAINTEXT_PASSWORD"
+    endpoint_url: "s3.seagate.com"

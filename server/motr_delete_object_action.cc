@@ -29,6 +29,7 @@ MotrDeleteObjectAction::MotrDeleteObjectAction(
     : MotrAction(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
+  pv_id_fid = {0};
   if (writer_factory) {
     motr_writer_factory = std::move(writer_factory);
   } else {
@@ -58,9 +59,14 @@ void MotrDeleteObjectAction::validate_request() {
     send_response_to_s3_client();
   } else {
     std::string object_layout_id = request->get_query_string_value("layout-id");
-    if (!S3CommonUtilities::stoi(object_layout_id, layout_id)) {
-      s3_log(S3_LOG_ERROR, request_id, "Invalid object layout-id: %s\n",
-             object_layout_id.c_str());
+    std::string pv_id_str = request->get_query_string_value("pvid");
+    s3_log(S3_LOG_DEBUG, request_id, "Object layout id = [%s], pv_id = [%s]",
+           object_layout_id.c_str(), pv_id_str.c_str());
+    if (!S3CommonUtilities::stoi(object_layout_id, layout_id) ||
+        !S3M0Uint128Helper::to_m0_fid(pv_id_str, pv_id_fid)) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Invalid object layout-id: %s or pvid %s\n",
+             object_layout_id.c_str(), pv_id_str.c_str());
       set_s3_error("BadRequest");
       send_response_to_s3_client();
     } else {
@@ -73,11 +79,12 @@ void MotrDeleteObjectAction::validate_request() {
 void MotrDeleteObjectAction::delete_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  motr_writer = motr_writer_factory->create_motr_writer(request, oid);
+  motr_writer = motr_writer_factory->create_motr_writer(request);
+
   motr_writer->delete_object(
       std::bind(&MotrDeleteObjectAction::delete_object_successful, this),
-      std::bind(&MotrDeleteObjectAction::delete_object_failed, this),
-      layout_id);
+      std::bind(&MotrDeleteObjectAction::delete_object_failed, this), oid,
+      layout_id, pv_id_fid);
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

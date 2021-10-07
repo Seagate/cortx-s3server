@@ -19,14 +19,10 @@
 
 [Unit]
 Description=Motr-S3 Core instance Server
-Requires=haproxy.service
-After=haproxy.service
-Requires=s3authserver.service
-After=s3authserver.service
 
 [Service]
 Type=forking
-ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh %i
+ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh -F  %i -P /etc/sysconfig/s3server-%i -C /opt/seagate/cortx/s3/conf/s3config.yaml
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/opt/seagate/cortx/s3/s3stopsystem.sh %i
 TimeoutStopSec=7

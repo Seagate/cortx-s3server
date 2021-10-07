@@ -100,6 +100,7 @@ class S3Option {
   std::string s3_default_endpoint;
   std::set<std::string> s3_region_endpoints;
   unsigned short s3_grace_period_sec;
+  unsigned short s3_retry_after_sec;
   bool is_s3_shutting_down;
 
   unsigned short perf_enabled;
@@ -117,23 +118,45 @@ class S3Option {
   int audit_logger_port;
   std::string audit_logger_rsyslog_msgid;
   std::string audit_logger_kafka_web_path;
+  std::string s3_iem_host;
+  int s3_iem_port;
+  std::string s3_iem_path;
   unsigned short max_audit_retry_count;
   std::string s3server_ssl_cert_file;
   std::string s3server_ssl_pem_file;
   int s3server_ssl_session_timeout_in_sec;
 
   int read_ahead_multiple;
+  int write_buffer_multiple;
+  // When Lib event's write buffer is getting accumulated,
+  // Throttle S3 GET request by 's3_req_throttle_time' milliseconds.
+  // Time is specified in milliseconds
+  int s3_req_throttle_time;
   std::string log_level;
   int log_file_max_size_mb;
   bool s3_enable_auth_ssl;
   bool s3server_ssl_enabled;
   bool s3server_obj_delayed_del_enabled;
   bool s3_reuseport;
+  bool s3_write_data_integrity_check;
+  int s3_pi_type;
+  bool s3_read_data_integrity_check;
+  bool s3_metadata_integrity_check;
+  bool s3_salt_checksum;
   bool motr_http_reuseport;
   bool log_buffering_enable;
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
   unsigned int motr_first_obj_read_size;
+  unsigned int motr_reconnect_retry_count;
+  unsigned int motr_reconnect_sleep_time;
+
+  unsigned bucket_metadata_cache_max_size;
+  unsigned bucket_metadata_cache_expire_sec;
+  unsigned bucket_metadata_cache_refresh_sec;
+
+  bool s3_di_disable_data_corruption_iem;
+  bool s3_di_disable_metadata_corruption_iem;
 
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
@@ -199,6 +222,10 @@ class S3Option {
     s3_pidfile = "/var/run/s3server.pid";
 
     read_ahead_multiple = 1;
+    write_buffer_multiple = 1;
+    // Default: Throttle S3 Get request for 500 milliseconds when there is
+    // memory issue
+    s3_req_throttle_time = 500;
 
     s3_default_endpoint = "s3.seagate.com";
     s3_region_endpoints.insert("s3-us.seagate.com");
@@ -210,6 +237,7 @@ class S3Option {
     s3server_obj_delayed_del_enabled = true;
 
     s3_grace_period_sec = 10;  // 10 seconds
+    s3_retry_after_sec = 30;   // 30 seconds
     is_s3_shutting_down = false;
 
     log_dir = "/var/log/seagate/s3";
@@ -228,6 +256,11 @@ class S3Option {
     audit_logger_rsyslog_msgid = "s3server-audit-logging";
     audit_logger_kafka_web_path = "/topics/test";
     max_audit_retry_count = 5;
+
+    // IEM
+    s3_iem_host = "localhost";
+    s3_iem_port = 28300;
+    s3_iem_path = "/EventMessage/event";
 
     motr_layout_id = FLAGS_motrlayoutid;
     motr_local_addr = FLAGS_motrlocal;
@@ -319,6 +352,9 @@ class S3Option {
   bool load_all_sections(bool force_override_from_config);
   bool reload_modifiable_options();
 
+  bool get_s3_di_disable_data_corruption_iem();
+  bool get_s3_di_disable_metadata_corruption_iem();
+
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();
   std::string get_ipv6_bind_addr();
@@ -332,6 +368,9 @@ class S3Option {
   int get_audit_logger_port();
   std::string get_audit_logger_rsyslog_msgid();
   std::string get_audit_logger_kafka_web_path();
+  std::string get_iem_host();
+  int get_iem_port();
+  std::string get_iem_path();
   unsigned short get_audit_max_retry_count();
   unsigned short get_s3_bind_port();
   unsigned short get_motr_http_bind_port();
@@ -340,9 +379,13 @@ class S3Option {
   int get_s3server_ssl_session_timeout();
 
   int get_read_ahead_multiple();
+  int get_write_buffer_multiple();
+  int get_s3_req_throttle_time();
+
   std::string get_default_endpoint();
   std::set<std::string>& get_region_endpoints();
   unsigned short get_s3_grace_period_sec();
+  unsigned short get_s3_retry_after_sec();
   bool get_is_s3_shutting_down();
   void set_is_s3_shutting_down(bool is_shutting_down);
 
@@ -369,6 +412,11 @@ class S3Option {
   std::string get_log_level();
   int get_log_file_max_size_in_mb();
   bool is_s3_ssl_auth_enabled();
+  bool is_s3_write_di_check_enabled();
+  int get_pi_type();
+  bool is_s3_read_di_check_enabled();
+  bool is_s3_metadata_integrity_check_enabled();
+  bool is_s3_salt_checksum_enabled();
   bool is_s3server_ssl_enabled();
   bool is_s3server_addb_dump_enabled();
 
@@ -384,6 +432,10 @@ class S3Option {
 
   unsigned short s3_performance_enabled();
   std::string get_perf_log_filename();
+
+  unsigned get_bucket_metadata_cache_max_size() const;
+  unsigned get_bucket_metadata_cache_expire_sec() const;
+  unsigned get_bucket_metadata_cache_refresh_sec() const;
 
   std::string get_motr_local_addr();
   std::string get_motr_ha_addr();
@@ -402,6 +454,8 @@ class S3Option {
   size_t get_motr_read_pool_expandable_count();
   size_t get_motr_read_pool_max_threshold();
   unsigned int get_motr_first_read_size();
+  unsigned int get_motr_reconnect_sleep_time();
+  unsigned int get_motr_reconnect_retry_count();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
@@ -471,6 +525,8 @@ class S3Option {
   void enable_murmurhash_oid();
   void disable_murmurhash_oid();
 
+  bool is_daemon_disabled();
+  void disable_daemon();
   void dump_options();
 
   static S3Option* get_instance() {

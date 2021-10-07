@@ -27,6 +27,7 @@
 #include "s3_common_utilities.h"
 #include "s3_stats.h"
 #include "s3_perf_metrics.h"
+#include "s3_m0_uint128_helper.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -85,27 +86,22 @@ void S3GetObjectAction::fetch_bucket_info_failed() {
 }
 
 void S3GetObjectAction::fetch_object_info_failed() {
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-      s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
-      set_s3_error("NoSuchKey");
-    } else {
-      if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-        s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-        set_s3_error("NoSuchKey");
-      } else if (object_metadata->get_state() ==
-                 S3ObjectMetadataState::failed_to_launch) {
-        s3_log(S3_LOG_ERROR, request_id,
-               "Object metadata load operation failed due to pre launch "
-               "failure\n");
-        set_s3_error("ServiceUnavailable");
-      } else {
-        s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-        set_s3_error("InternalError");
-      }
-    }
+  obj_list_idx_lo = bucket_metadata->get_object_list_index_layout();
+  if (zero(obj_list_idx_lo.oid)) {
+    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
+    set_s3_error("InternalError");
   }
   send_response_to_s3_client();
 }
@@ -326,7 +322,8 @@ void S3GetObjectAction::read_object() {
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
   motr_reader = motr_reader_factory->create_motr_reader(
-      request, object_metadata->get_oid(), object_metadata->get_layout_id());
+      request, object_metadata->get_oid(), object_metadata->get_layout_id(),
+      object_metadata->get_pvid());
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =
@@ -339,19 +336,80 @@ void S3GetObjectAction::read_object() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3GetObjectAction::check_outbuffer_and_mempool_stats(bool& bcontinue) {
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
+  bcontinue = true;
+  size_t motr_read_payload_size =
+      S3Option::get_instance()->get_motr_read_payload_size(
+          object_metadata->get_layout_id());
+  // Determine the size of outstanding response buffer (not written to client
+  // sock) in Lib event
+  size_t len_response_buffer = request->get_write_buffer_outstanding_length();
+  size_t len_mempool_free_mem = 0;
+  // Determine the size of outstanding mem pool buffer (free buffer)
+  struct pool_info poolinfo;
+  int rc = event_mempool_getinfo(&poolinfo);
+  if (rc != 0) {
+    s3_log(
+        S3_LOG_ERROR, request_id,
+        "Issue in reading memory pool stats during S3 Get API memory check\n");
+  } else {
+    len_mempool_free_mem =
+        poolinfo.free_bufs_in_pool * poolinfo.mempool_item_size;
+  }
+  s3_log(S3_LOG_INFO, request_id,
+         "Outstanding S3 Get response buffer size: (%zu)\n",
+         len_response_buffer);
+  s3_log(S3_LOG_INFO, request_id, "Free S3 mempool memory: (%zu)\n",
+         len_mempool_free_mem);
+  if ((len_response_buffer >=
+       (motr_read_payload_size *
+        S3Option::get_instance()->get_write_buffer_multiple())) ||
+      (!S3MemoryProfile().free_memory_in_pool_above_threshold_limits())) {
+    bcontinue = false;
+    s3_log(
+        S3_LOG_WARN, stripped_request_id,
+        "Limited memory: Throttling S3 GET object/part request is required\n");
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3GetObjectAction::read_object_data() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
-
+  // Before reading from Motr, ensure that outstanding response buffer
+  // is not above threshold1 or outstanding S3 mempool memory
+  // is not below threshold2
+  // threshold1 := motr_read_payload_size *
+  // S3Option::get_instance()->get_write_buffer_multiple()
+  // threshold2 :=
+  // S3MemoryProfile().free_memory_in_pool_above_threshold_limits()
+  bool bcontinue = true;
+  check_outbuffer_and_mempool_stats(bcontinue);
+  if (!bcontinue) {
+    int throttle_for_millisecs =
+        S3Option::get_instance()->get_s3_req_throttle_time();
+    // Throttle S3 Get API by adding delay using timer event
+    if (!request->set_start_response_delay_timer(throttle_for_millisecs,
+                                                 (void*)this)) {
+      s3_log(S3_LOG_INFO, request_id,
+             "S3 GET API response will be throttled by: (%d) millisecs\n",
+             throttle_for_millisecs);
+      return;
+    } else {
+      s3_log(S3_LOG_WARN, request_id,
+             "Failed to throttle S3 GET API response\n");
+    }
+  }
   size_t max_blocks_in_one_read_op =
       S3Option::get_instance()->get_motr_units_per_request();
   size_t motr_unit_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
           object_metadata->get_layout_id());
-  size_t blocks_to_read = 0;
+  blocks_to_read = 0;
 
   s3_log(S3_LOG_DEBUG, request_id, "max_blocks_in_one_read_op: (%zu)\n",
          max_blocks_in_one_read_op);
@@ -361,7 +419,8 @@ void S3GetObjectAction::read_object_data() {
          total_blocks_to_read);
   if (blocks_already_read != total_blocks_to_read) {
     if (blocks_already_read == 0 &&
-        content_length > max_blocks_in_one_read_op * motr_unit_size) {
+        get_requested_content_length() >
+            max_blocks_in_one_read_op * motr_unit_size) {
       size_t first_blocks_to_read =
           S3Option::get_instance()->get_motr_first_read_size();
       blocks_to_read = max_blocks_in_one_read_op < first_blocks_to_read
@@ -406,7 +465,6 @@ void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_stats_inc("read_object_data_success_count");
   log_timed_counter(get_timed_counter, "outgoing_object_data_blocks");
-
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
@@ -448,52 +506,76 @@ void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Earlier data_sent_to_client = %zu bytes.\n",
          data_sent_to_client);
 
-  char* data = NULL;
-  size_t length = 0;
+  S3Evbuffer* p_evbuffer = motr_reader->get_evbuffer();
+  size_t buff_count = (p_evbuffer->get_evbuff_length() + 16384 - 1) / 16384;
+  request->add_to_mempool_buffer_count(buff_count);
+  size_t obj_unit_sz =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+          object_metadata->get_layout_id());
   size_t requested_content_length = get_requested_content_length();
   s3_log(S3_LOG_DEBUG, request_id,
          "object requested content length size(%zu).\n",
          requested_content_length);
-  length = motr_reader->get_first_block(&data);
-
-  while (length > 0) {
-    size_t read_data_start_offset = 0;
-    blocks_already_read++;
-    if (data_sent_to_client == 0) {
-      // get starting offset from the block,
-      // condition true for only statring block read object.
-      // this is to set get first offset byte from initial read block
-      // eg: read_data_start_offset will be set to 1000 on initial read block
-      // for a given range 1000-1500 to read from 2mb object
-      read_data_start_offset =
-          first_byte_offset_to_read %
-          S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
-              object_metadata->get_layout_id());
-      length -= read_data_start_offset;
+  size_t length_in_evbuf = blocks_to_read * obj_unit_sz;
+  blocks_already_read += blocks_to_read;
+  if (data_sent_to_client == 0) {
+    // get starting offset from the block,
+    // condition true for only statring block read object.
+    // this is to set get first offset byte from initial read block
+    // eg: read_data_start_offset will be set to 1000 on initial read block
+    // for a given range 1000-1500 to read from 2mb object
+    size_t read_data_start_offset = first_byte_offset_to_read % obj_unit_sz;
+    if (read_data_start_offset) {
+      // Move the starting range (1000-) if specified.
+      p_evbuffer->drain_data(read_data_start_offset);
+      length_in_evbuf = p_evbuffer->get_evbuff_length();
     }
-    // to read number of bytes from final read block of read object
-    // that is requested content length is lesser than the sum of data has been
-    // sent to client and current read block size
-    if ((data_sent_to_client + length) >= requested_content_length) {
-      // length will have the size of remaining byte to sent
-      length = requested_content_length - data_sent_to_client;
-    }
-    data_sent_to_client += length;
-    request->set_bytes_sent(data_sent_to_client);
-    s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
-    request->send_reply_body(data + read_data_start_offset, length);
-    s3_perf_count_outcoming_bytes(length);
-    length = motr_reader->get_next_block(&data);
   }
+  // to read number of bytes from final read block of read object
+  // that is requested content length is lesser than the sum of data has been
+  // sent to client and current read block size
+  if (((data_sent_to_client + length_in_evbuf) >= requested_content_length) ||
+      (p_evbuffer->get_evbuff_length() >= requested_content_length)) {
+    // length will have the size of remaining byte to sent
+    int length = requested_content_length - data_sent_to_client;
+    p_evbuffer->read_drain_data_from_buffer(length);
+  }
+  data_sent_to_client += p_evbuffer->get_evbuff_length();
+  // Send data to client. evbuf_body will be free'ed internally
+  s3_perf_count_outcoming_bytes(p_evbuffer->get_evbuff_length());
+  request->send_reply_body(p_evbuffer->release_ownership());
   s3_timer.stop();
-
-  if (data_sent_to_client != requested_content_length) {
-    read_object_data();
+  // Dump Mem pool stats after sending data to client
+  struct pool_info poolinfo;
+  int rc = event_mempool_getinfo(&poolinfo);
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Issue in memory pool during S3 Get API send data call!\n");
   } else {
-    const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
-    s3_stats_timing("get_object_send_data", mss);
+    s3_log(S3_LOG_INFO, request_id,
+           "S3 Get API send data mempool stats: mempool_item_size = %zu "
+           "free_bufs_in_pool = %d "
+           "number_of_bufs_shared = %d "
+           "total_bufs_allocated_by_pool = %d\n",
+           poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+           poolinfo.number_of_bufs_shared,
+           poolinfo.total_bufs_allocated_by_pool);
+  }
 
+  if (request->client_connected()) {
+    if (data_sent_to_client != requested_content_length) {
+      read_object_data();
+    } else {
+      const auto mss = s3_timer.elapsed_time_in_millisec();
+      LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
+      s3_stats_timing("get_object_send_data", mss);
+
+      send_response_to_s3_client();
+    }
+  } else {
+    s3_log(S3_LOG_INFO, request_id,
+           "Client disconnected. Aborting S3 GET operation\n");
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -510,6 +592,9 @@ void S3GetObjectAction::read_object_data_failed() {
 
 void S3GetObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_DEBUG, request_id,
+         "S3 request [%s] with total allocated mempool buffers = %zu\n",
+         request_id.c_str(), request->get_mempool_buffer_count());
 
   if (reject_if_shutting_down()) {
     if (read_object_reply_started) {
@@ -525,7 +610,10 @@ void S3GetObjectAction::send_response_to_s3_client() {
       request->set_out_header_value("Content-Length",
                                     std::to_string(response_xml.length()));
       request->set_out_header_value("Retry-After", "1");
-
+      // Dump request that failed
+      s3_log(S3_LOG_ERROR, request_id,
+             "S3 Get request failed. HTTP status code = %d\n",
+             error.get_http_status_code());
       request->send_response(error.get_http_status_code(), response_xml);
     }
   } else if (is_error_state() && !get_s3_error_code().empty()) {
@@ -537,8 +625,19 @@ void S3GetObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
+    // Dump request that failed
+    s3_log(S3_LOG_ERROR, request_id,
+           "S3 Get request failed. HTTP status code = %d\n",
+           error.get_http_status_code());
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&
              (object_metadata->get_content_length() == 0 ||
@@ -556,11 +655,22 @@ void S3GetObjectAction::send_response_to_s3_client() {
       request->set_out_header_value("Content-Length",
                                     std::to_string(response_xml.length()));
       request->set_out_header_value("Retry-After", "1");
-
+      // Dump request that failed
+      s3_log(S3_LOG_ERROR, request_id,
+             "S3 Get request failed. HTTP status code = %d\n",
+             error.get_http_status_code());
       request->send_response(error.get_http_status_code(), response_xml);
     }
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3GetObjectAction::resume_action_step() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+  // Free timer event object
+  request->free_response_delay_timer(true);
+  read_object_data();
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }

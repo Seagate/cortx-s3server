@@ -22,6 +22,7 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 #include "base64.h"
+#include "s3_m0_uint128_helper.h"
 
 S3PutObjectACLAction::S3PutObjectACLAction(
     std::shared_ptr<S3RequestObject> req,
@@ -156,7 +157,7 @@ void S3PutObjectACLAction::fetch_bucket_info_failed() {
 void S3PutObjectACLAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if ((object_metadata->get_state() == S3ObjectMetadataState::missing) ||
-      (object_list_oid.u_lo == 0ULL && object_list_oid.u_hi == 0ULL)) {
+      zero(obj_list_idx_lo.oid)) {
     set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() ==
              S3ObjectMetadataState::failed_to_launch) {
@@ -194,7 +195,14 @@ void S3PutObjectACLAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else {

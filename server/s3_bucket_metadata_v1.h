@@ -23,31 +23,61 @@
 #ifndef __S3_SERVER_S3_BUCKET_METADATA_V1_H__
 #define __S3_SERVER_S3_BUCKET_METADATA_V1_H__
 
-#include <gtest/gtest_prod.h>
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
-#include "s3_global_bucket_index_metadata.h"
+
+#include <gtest/gtest_prod.h>
+#include "lib/types.h"  // struct m0_uint128
+
 #include "s3_bucket_metadata.h"
-#include "s3_log.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
 #include "s3_timer.h"
 
 // Forward declarations
+class MotrAPI;
+class S3GlobalBucketIndexMetadata;
 class S3GlobalBucketIndexMetadataFactory;
+class S3MotrKVSReader;
+class S3MotrKVSReaderFactory;
+class S3MotrKVSWriter;
+class S3MotrKVSWriterFactory;
+class S3RequestObject;
 
 class S3BucketMetadataV1 : public S3BucketMetadata {
   // Holds mainly system-defined metadata (creation date etc)
   // Partially supported on need bases, some of these are placeholders
  protected:
-  std::string bucket_owner_account_id;
+  std::string salted_object_list_index_name;
+  std::string salted_multipart_list_index_name;
+  std::string salted_objects_version_list_index_name;
+  std::string extended_metadata_index_name;
+  // Maximum retry count for collision resolution
+  unsigned short collision_attempt_count = 0;
+  std::string collision_salt;
+
+  // Used to report to caller
+  using CallbackHandlerType = std::function<void(S3BucketMetadataState)>;
+  CallbackHandlerType callback;
 
   std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
       global_bucket_index_metadata_factory;
 
   std::shared_ptr<S3GlobalBucketIndexMetadata> global_bucket_index_metadata;
 
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
+
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory;
+
   S3Timer s3_timer;
+
+  // `true` in case of json parsing failure
+  bool json_parsing_error = false;
 
  private:
   void fetch_global_bucket_account_id_info();
@@ -70,6 +100,10 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void create_objects_version_list_index_successful();
   void create_objects_version_list_index_failed();
 
+  void create_extended_metadata_index();
+  void create_extended_metadata_index_successful();
+  void create_extended_metadata_index_failed();
+
   void save_bucket_info(bool clean_glob_on_err = false);
   void save_bucket_info_successful();
   void save_bucket_info_failed();
@@ -85,6 +119,15 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void save_global_bucket_account_id_info();
   void save_global_bucket_account_id_info_successful();
   void save_global_bucket_account_id_info_failed();
+
+  S3GlobalBucketIndexMetadata* get_global_bucket_index_metadata();
+
+  void regenerate_new_index_name(const std::string& base_index_name,
+                                 std::string& salted_index_name);
+
+  void handle_collision(const std::string& base_index_name,
+                        std::string& salted_index_name,
+                        std::function<void(void)> callback);
 
   // CreateBucket operation does following (in context of account A1):
   // 1. Create entry in global bucket list index (e.g., with key=bucket_name,
@@ -107,21 +150,33 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void cleanup_on_create_err_global_bucket_account_id_info(
       S3MotrKVSWriterOpState op_state);
   void cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
-  S3BucketMetadataState on_cleanup_state;
-  bool should_cleanup_global_idx;
 
-  std::string get_bucket_metadata_index_key_name() {
-    return bucket_owner_account_id + "/" + bucket_name;
+  S3BucketMetadataState on_cleanup_state;
+  bool should_cleanup_global_idx = false;
+
+  std::string get_object_list_index_name() { return "BUCKET/" + bucket_name; }
+  std::string get_multipart_index_name() {
+    return "BUCKET/" + bucket_name + "/" + "Multipart";
+  }
+  std::string get_version_list_index_name() {
+    return "BUCKET/" + bucket_name + "/objects/versions";
   }
 
-  // for UTs only
-  struct m0_uint128 get_bucket_metadata_list_index_oid();
-  void set_bucket_metadata_list_index_oid(struct m0_uint128 id);
+  std::string get_extended_metadata_index_name() {
+    return "BUCKET/" + bucket_name + "/" + "ExtendedMetadata";
+  }
+
+  std::string get_bucket_metadata_index_key_name() {
+    assert(!account_id.empty());
+    return account_id + "/" + bucket_name;
+  }
+
+ protected:
   void set_state(S3BucketMetadataState state);
 
  public:
-  S3BucketMetadataV1(
-      std::shared_ptr<S3RequestObject> req,
+  explicit S3BucketMetadataV1(
+      const S3BucketMetadata& tmplt,
       std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,
@@ -130,31 +185,17 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
       std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
           s3_global_bucket_index_metadata_factory = nullptr);
 
-  S3BucketMetadataV1(
-      std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
-      std::shared_ptr<MotrAPI> motr_api = nullptr,
-      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
-          nullptr,
-      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
-          nullptr,
-      std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
-          s3_global_bucket_index_metadata_factory = nullptr);
+  ~S3BucketMetadataV1() override;
 
-  virtual void load(std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
-
-  virtual void save(std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
-
-  virtual void update(std::function<void(void)> on_success,
-                      std::function<void(void)> on_failed);
-
-  virtual void remove(std::function<void(void)> on_success,
-                      std::function<void(void)> on_failed);
-
-  virtual S3BucketMetadataState get_state() { return state; }
+  virtual void load(const S3BucketMetadata& src, CallbackHandlerType on_load);
+  virtual void save(const S3BucketMetadata& src, CallbackHandlerType on_save);
+  virtual void update(const S3BucketMetadata& src,
+                      CallbackHandlerType on_update);
+  virtual void remove(CallbackHandlerType on_remove);
 
   // Google tests
+  friend class S3BucketMetadataV1Test;
+
   FRIEND_TEST(S3BucketMetadataV1Test, ConstructorTest);
   FRIEND_TEST(S3BucketMetadataV1Test, GetSystemAttributesTest);
   FRIEND_TEST(S3BucketMetadataV1Test, GetSetOIDsPolicyAndLocation);
@@ -242,6 +283,9 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataV1Test, CreateObjectListIndexFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataV1Test, CreateMultipartListIndexFailed);
   FRIEND_TEST(S3BucketMetadataV1Test, CreateMultipartListIndexFailedToLaunch);
+  FRIEND_TEST(S3BucketMetadataV1Test, CreateExtendedMetadataIndexFailed);
+  FRIEND_TEST(S3BucketMetadataV1Test,
+              CreateExtendedMetadataIndexFailedToLaunch);
 };
 
-#endif
+#endif  // __S3_SERVER_S3_BUCKET_METADATA_V1_H__

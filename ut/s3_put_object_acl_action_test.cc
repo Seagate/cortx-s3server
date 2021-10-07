@@ -36,11 +36,11 @@ using ::testing::ReturnRef;
     action_under_test_ptr->fetch_bucket_info();                           \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                                 \
-  do {                                                                         \
-    action_under_test_ptr->object_metadata =                                   \
-        object_meta_factory->create_object_metadata_obj(request_mock,          \
-                                                        object_list_indx_oid); \
+#define CREATE_OBJECT_METADATA                           \
+  do {                                                   \
+    action_under_test_ptr->object_metadata =             \
+        object_meta_factory->create_object_metadata_obj( \
+            request_mock, {object_list_indx_oid});       \
   } while (0)
 
 class S3PutObjectACLActionTest : public testing::Test {
@@ -84,8 +84,8 @@ class S3PutObjectACLActionTest : public testing::Test {
 
 TEST_F(S3PutObjectACLActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
-  EXPECT_EQ(0, action_under_test_ptr->object_list_oid.u_lo);
-  EXPECT_EQ(0, action_under_test_ptr->object_list_oid.u_hi);
+  EXPECT_EQ(0, action_under_test_ptr->obj_list_idx_lo.oid.u_lo);
+  EXPECT_EQ(0, action_under_test_ptr->obj_list_idx_lo.oid.u_hi);
 }
 
 TEST_F(S3PutObjectACLActionTest, ValidateRequest) {
@@ -101,9 +101,8 @@ TEST_F(S3PutObjectACLActionTest, ValidateRequest) {
 }
 
 TEST_F(S3PutObjectACLActionTest, ValidateRequestMoreContent) {
-  EXPECT_CALL(*request_mock, has_all_body_content())
-      .Times(1)
-      .WillOnce(Return(false));
+  EXPECT_CALL(*request_mock, has_all_body_content()).Times(1).WillOnce(
+      Return(false));
   EXPECT_CALL(*request_mock, get_data_length()).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*request_mock, listen_for_incoming_data(_, _)).Times(1);
   action_under_test_ptr->clear_tasks();
@@ -259,4 +258,3 @@ TEST_F(S3PutObjectACLActionTest, SendResponseToClientSuccess) {
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
-

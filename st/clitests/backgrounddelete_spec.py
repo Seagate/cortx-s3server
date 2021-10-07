@@ -33,14 +33,14 @@ from s3cmd import S3cmdTest
 from s3kvstool import S3kvTest
 import s3kvs
 import time
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/s3backgrounddelete')))
 from s3backgrounddelete.object_recovery_scheduler import ObjectRecoveryScheduler
 from s3backgrounddelete.object_recovery_processor import ObjectRecoveryProcessor
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
-from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 
@@ -108,20 +108,35 @@ def restore_configuration():
     del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 
-# Call HEAD object api on oids
-def perform_head_object(oid_dict):
-    print("Validating non-existence of oids using HEAD object api")
-    print("Probable dead list should not contain :" + str(list(oid_dict.keys())))
+# Check probable delete record - Ensure that entry for leaked object does not exist
+def check_object_in_probable_delete_index(oid_dict):
+    oid_str = str(list(oid_dict.keys()))
+    oid_list = list(oid_dict.keys())
+    oid_deleted = False
+    print("Probable delete list index should not contain: [" + oid_str + "]")
     config = CORTXS3Config()
-    for oid,layout_id in oid_dict.items():
-        response = CORTXS3ObjectApi(config).head(oid, layout_id)
-        assert response is not None
-        assert response[0] is False
-        assert isinstance(response[1], CORTXS3ErrorResponse)
-        assert response[1].get_error_status() == 404
-        assert response[1].get_error_reason() == "Not Found"
-        print("Object oid \"" + oid + "\" is not present in list..")
-    print("HEAD object validation completed..")
+    result, index_response = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER).list(config.get_probable_delete_index_id(), config.get_max_keys())
+    if result:
+        if index_response is None:
+            raise AssertionError
+        probable_delete_json = index_response.get_index_content()
+        probable_delete_oid_list = probable_delete_json["Keys"]
+        if (probable_delete_oid_list is not None and len(probable_delete_oid_list) > 0):
+            print("Probable delete list is non-empty. Checking presence of oid:[" + oid_str + "] ...")
+            if any(oid in probable_delete_oid_list for oid in oid_list):
+                print("Probable delete list contains oid [" + oid_str + "]. Expected no such oid")
+                raise AssertionError
+            else:
+                oid_deleted = True
+        else:
+            print("Probable delete list is empty")
+            oid_deleted = True
+    else:
+        # Something failed badly
+        raise AssertionError
+
+    if (oid_deleted):
+        print("Success - Object oid [" + oid_str + "] is not present in list")
 
 
 # *********************Create account s3-background-delete-svc************************
@@ -140,8 +155,8 @@ print(account_response_elements)
 load_and_update_config(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])
 
 #Clear probable delete list index
-s3kvs.clean_all_data()
-s3kvs.create_s3root_index()
+#s3kvs.clean_all_data()
+#s3kvs.create_s3root_index()
 
 # ********** Create test bucket in s3-background-delete-svc account********
 AwsTest('Create Bucket "seagatebucket" using s3-background-delete-svc account')\
@@ -184,16 +199,13 @@ S3fiTest('Disable FI motr entity delete').disable_fi("motr_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -204,7 +216,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify OID is not present in list*******
-perform_head_object(object1_oid_dict)
+check_object_in_probable_delete_index(object1_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object1" on bucket "seagatebucket"')\
@@ -246,16 +258,13 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 object2_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 print("Schdeuler has stopped...")
@@ -265,7 +274,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # *********** Validate OID is not present in list**********
-perform_head_object(object2_oid_dict)
+check_object_in_probable_delete_index(object2_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object2" on bucket "seagatebucket"')\
@@ -291,7 +300,7 @@ result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
     .execute_test(ignore_err=True).command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 object3_old_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
@@ -309,7 +318,7 @@ result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
     .command_error_should_have("InternalError")
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr object write fail').disable_fi("motr_obj_write_fail")\
    .execute_test().command_is_successful()
@@ -323,9 +332,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -336,7 +342,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # *********** Validate old oid is not present in list**********************************
-perform_head_object(object3_new_oid_dict)
+check_object_in_probable_delete_index(object3_new_oid_dict)
 
 # ********** Delete object "object3" *************
 AwsTest('Delete Object "object3"').delete_object("seagatebucket", "object3")\
@@ -378,7 +384,7 @@ S3cmdTest('s3cmd can delete multiple objects "object4" and "object5"')\
     .multi_delete_test("seagatebucket").execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail')\
     .disable_fi("motr_entity_delete_fail").execute_test()\
@@ -389,9 +395,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -402,8 +405,8 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify OID are not present in list*******
-perform_head_object(object4_oid_dict)
-perform_head_object(object5_oid_dict)
+check_object_in_probable_delete_index(object4_oid_dict)
+check_object_in_probable_delete_index(object5_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object4" on bucket "seagatebucket"')\
@@ -478,7 +481,7 @@ result=AwsTest('Aws can complete multipart upload object6 10Mb file')\
     .command_response_should_have("seagatebucket/object6")
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
@@ -488,9 +491,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -501,7 +501,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify clean up of OID's*****************
-perform_head_object(object6_oid_dict)
+check_object_in_probable_delete_index(object6_oid_dict)
 
 # * ********** Delete object "object6 10Mbfile" *************
 AwsTest('Delete Object "object6"').delete_object("seagatebucket", "object6")\
@@ -545,7 +545,7 @@ result=AwsTest('Aws can abort multipart upload object7 10Mb file')\
     .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
@@ -555,9 +555,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -568,7 +565,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify clean up of OID's*****************
-perform_head_object(multipart_oid_dict)
+check_object_in_probable_delete_index(multipart_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object7" on bucket "seagatebucket"')\
@@ -631,16 +628,13 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
     .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -651,7 +645,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify clean up of OID's*****************
-perform_head_object(multipart_oid_dict)
+check_object_in_probable_delete_index(multipart_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api*****************
 AwsTest('Do head-object for "object8" on bucket "seagatebucket"')\
@@ -661,7 +655,7 @@ AwsTest('Do head-object for "object8" on bucket "seagatebucket"')\
 # ************* Verify part list index is deleted *************
 # Use HEAD /indexes/<index oid> API to ensure that
 # the part list index is deleted by the object leak task.
-status, res = CORTXS3IndexApi(CONFIG).head(part_index)
+status, res = CORTXS3IndexApi(CONFIG, CONNECTION_TYPE_PRODUCER).head(part_index)
 if (not status):
     if (res):
         assert isinstance(res, CORTXS3ErrorResponse)
@@ -694,16 +688,13 @@ result = AwsTest('Delete Object "object1" from bucket "seagatebucket"')\
 object1_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -714,7 +705,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify OID is not present in list*******
-perform_head_object(object1_oid_dict)
+check_object_in_probable_delete_index(object1_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object1" on bucket "seagatebucket"')\
@@ -741,16 +732,13 @@ result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
     .execute_test(ignore_err=True).command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -797,7 +785,7 @@ S3cmdTest('s3cmd can delete multiple objects "object2" and "object3"')\
     .multi_delete_test("seagatebucket").execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 
 # ************ Start Schedular*****************************
@@ -805,9 +793,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -818,8 +803,8 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify OID are not present in list*******
-perform_head_object(object4_oid_dict)
-perform_head_object(object5_oid_dict)
+check_object_in_probable_delete_index(object4_oid_dict)
+check_object_in_probable_delete_index(object5_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object2" on bucket "seagatebucket"')\
@@ -835,8 +820,8 @@ AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
 #Clear probable delete list index
-s3kvs.clean_all_data()
-s3kvs.create_s3root_index()
+#s3kvs.clean_all_data()
+#s3kvs.create_s3root_index()
 
 # ************ Delete Account*******************************
 test_msg = "Delete account s3-background-delete-svc"

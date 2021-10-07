@@ -32,6 +32,7 @@
 #include "evhtp_wrapper.h"
 #include "fid/fid.h"
 #include "murmur3_hash.h"
+#include "s3_bucket_metadata_cache.h"
 #include "s3_motr_layout.h"
 #include "s3_common_utilities.h"
 #include "s3_daemonize_server.h"
@@ -69,18 +70,34 @@
 #define OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO 3
 #define GLOBAL_INSTANCE_INDEX_U_LO 4
 
+extern "C" void mem_log_msg_func(int mempool_log_level, const char *msg) {
+  if (mempool_log_level == MEMPOOL_LOG_INFO) {
+    s3_log(S3_LOG_INFO, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_FATAL) {
+    s3_log(S3_LOG_FATAL, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_ERROR) {
+    s3_log(S3_LOG_ERROR, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_WARN) {
+    s3_log(S3_LOG_WARN, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_DEBUG) {
+    s3_log(S3_LOG_DEBUG, "", "%s\n", msg);
+  } else {
+    s3_log(S3_LOG_FATAL, "", "Invalid mempool log level. %s\n", msg);
+  }
+}
+
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
 extern struct m0_realm motr_uber_realm;
 // index will have bucket and account information
-struct m0_uint128 global_bucket_list_index_oid;
+struct s3_motr_idx_layout global_bucket_list_index_layout;
 // index will have bucket metada information
-struct m0_uint128 bucket_metadata_list_index_oid;
+struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 // index will have s3server instance information
-struct m0_uint128 global_instance_list_index;
+struct s3_motr_idx_layout global_instance_list_index_layout;
 // objects listed in this index are probable delete candidates and not absolute.
-struct m0_uint128 global_probable_dead_object_list_index_oid;
+struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 int global_shutdown_in_progress;
 pthread_t global_tid_indexop;
@@ -96,7 +113,7 @@ std::set<struct s3_motr_obj_context *> global_motr_obj;
 void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
   // s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
   //     S3_IEM_MOTR_CONN_FAIL_JSON);
-  s3_log(S3_LOG_ERROR, "", "Motr connection failed\n");
+  s3_log(S3_LOG_FATAL, "", "Motr connection timet out (hang)\n");
   event_base_loopbreak(global_evbase_handle);
   return;
 }
@@ -232,8 +249,16 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   // so initialise the s3 request;
   s3_request->initialise();
 
+  bool is_haproxy_head_request = false;
+  // Check if request is head request from haproxy
+  if (std::strcmp(req->uri->path->full, "/") == 0 &&
+      s3_request->http_verb() == S3HttpVerb::HEAD) {
+    is_haproxy_head_request = true;
+  }
+
   if (S3Option::get_instance()->get_is_s3_shutting_down() &&
-      !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
+      !s3_fi_is_enabled("shutdown_system_tests_in_progress") &&
+      !is_haproxy_head_request) {
     // We are shutting down, so don't entertain new requests.
     s3_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
@@ -245,11 +270,9 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_request->set_out_header_value("Content-Length",
                                      std::to_string(response_xml.length()));
     s3_request->set_out_header_value("Connection", "close");
-    int shutdown_grace_period =
-        S3Option::get_instance()->get_s3_grace_period_sec();
+    int retry_after_period = S3Option::get_instance()->get_s3_retry_after_sec();
     s3_request->set_out_header_value("Retry-After",
-                                     std::to_string(shutdown_grace_period));
-
+                                     std::to_string(retry_after_period));
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
@@ -260,7 +283,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
   } else {
     s3_log(S3_LOG_DEBUG, "",
-           "mempool info: mempool_item_size = %zu "
+           "mempool stats during new request: mempool_item_size = %zu "
            "free_bufs_in_pool = %d "
            "number_of_bufs_shared = %d "
            "total_bufs_allocated_by_pool = %d\n",
@@ -271,13 +294,15 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
 
   // Check if we have enough approx memory to proceed with request
   if (s3_request->get_api_type() == S3ApiType::object &&
-      s3_request->http_verb() == S3HttpVerb::PUT) {
+      (s3_request->http_verb() == S3HttpVerb::PUT ||
+       (s3_request->http_verb() == S3HttpVerb::GET))) {
     int layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
         s3_request->get_data_length());
     if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id) ||
         !S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
-      s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
-             "Limited memory: Rejecting PUT object/part request with retry.\n");
+      s3_log(S3_LOG_INFO, s3_request->get_request_id().c_str(),
+             "Limited memory: Rejecting PUT/GET object/part request with "
+             "retry.\n");
       s3_request->respond_retry_after(1);
       return EVHTP_RES_OK;
     } else if (req->buffer_out) {
@@ -385,18 +410,29 @@ extern "C" evhtp_res dispatch_motr_api_request(evhtp_request_t *req,
 static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
                                       evbuf_t *buf, void *arg) {
   RequestObject *p_s3_req = static_cast<RequestObject *>(p_evhtp_req->cbarg);
-  const char *psz_request_id =
-      p_s3_req ? p_s3_req->get_request_id().c_str() : nullptr;
+  std::string request_id = "";
+  if (p_s3_req) {
+    request_id = p_s3_req->get_request_id();
+  }
 
-  s3_log(S3_LOG_DEBUG, psz_request_id, "RequestObject(%p)\n", p_s3_req);
+  s3_log(S3_LOG_DEBUG, request_id, "RequestObject(%p)\n", p_s3_req);
 
   if (p_s3_req) {
     // Data has arrived so disable read timeout
     p_s3_req->stop_client_read_timer();
 
-    s3_log(S3_LOG_DEBUG, psz_request_id,
+    s3_log(S3_LOG_DEBUG, request_id,
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
+    size_t pool_buffer_sz =
+        S3Option::get_instance()->get_libevent_pool_buffer_size();
+    size_t buff_count =
+        (evbuffer_get_length(buf) + pool_buffer_sz - 1) / pool_buffer_sz;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "S3 request [%s] allocated mempool buffer(16k) with total buffer "
+           "count = %zu\n",
+           request_id.c_str(), buff_count);
+    p_s3_req->add_to_mempool_buffer_count(buff_count);
 
     if (!p_s3_req->is_incoming_data_ignored()) {
       evbuf_t *s3_buf = evbuffer_new();
@@ -408,7 +444,7 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
     }
   }
   if (buf) {
-    s3_log(S3_LOG_DEBUG, psz_request_id, "Drain incoming data\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Drain incoming data\n");
     evbuffer_drain(buf, -1);
   }
   return EVHTP_RES_OK;
@@ -531,7 +567,7 @@ void fini_auth_ssl() {
 }
 
 // This index will be holding the ids for the bucket
-int create_global_index(struct m0_uint128 &root_index_oid,
+int create_global_index(struct s3_motr_idx_layout &idx_lo,
                         const uint64_t &u_lo_index_offset) {
   int rc = 0;
 
@@ -540,16 +576,17 @@ int create_global_index(struct m0_uint128 &root_index_oid,
 
   // reserving an oid for root index -- M0_ID_APP + offset
   const auto m0_timeout = m0_time_from_now(motr_op_wait_period, 0);
-  init_s3_index_oid(root_index_oid, u_lo_index_offset);
+  init_s3_index_oid(idx_lo.oid, u_lo_index_offset);
 
   struct m0_idx idx;
   memset(&idx, 0, sizeof idx);
 
-  m0_idx_init(&idx, &motr_uber_realm, &root_index_oid);
+  m0_idx_init(&idx, &motr_uber_realm, &idx_lo.oid);
 
   for (; --n_retry > 0; ::sleep(1)) {  // suspend current thread for 1 second
     struct m0_op *cr_op = nullptr;
-
+    // Pass M0_ENF_META to avoid lookup by Motr
+    idx.in_entity.en_flags |= M0_ENF_META;
     m0_entity_create(NULL, &idx.in_entity, &cr_op);
     m0_op_launch(&cr_op, 1);
 
@@ -593,15 +630,22 @@ int create_global_index(struct m0_uint128 &root_index_oid,
   if (rc) {
     s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
            S3_IEM_MOTR_CONN_FAIL_JSON);
+  } else {
+    idx_lo.pver = idx.in_attr.idx_pver;
+    idx_lo.layout_type = idx.in_attr.idx_layout_type;
+    s3_log(S3_LOG_INFO, "Global index details",
+           "Index OID: %08zx-%08zx PV Id: %08zx-%08zx Layout_type: 0x%x",
+           idx_lo.oid.u_hi, idx_lo.oid.u_lo, idx_lo.pver.f_container,
+           idx_lo.pver.f_key, idx_lo.layout_type);
   }
   return rc;
 }
-
+/*
 int create_global_replica_index(struct m0_uint128 &root_index_oid,
                                 const uint64_t &u_lo_index_offset) {
   return create_global_index(root_index_oid, u_lo_index_offset);
 }
-
+*/
 void log_resource_limits() {
   int rc;
   struct rlimit rlimit;
@@ -732,7 +776,11 @@ int main(int argc, char **argv) {
 
   S3Daemonize s3daemon;
   set_fatal_handler_exit();
-  s3daemon.daemonize();
+  if (!g_option_instance->is_daemon_disabled()) {
+    s3daemon.daemonize();
+  }
+  s3daemon.change_work_dir();
+  s3daemon.write_to_pidfile();
 #if 0
   s3daemon.register_signals();
 #endif
@@ -764,12 +812,14 @@ int main(int argc, char **argv) {
 
   // Call this function at starting as we need to make use of our own
   // memory allocation/deallocation functions
-  rc = event_use_mempool(g_option_instance->get_libevent_pool_buffer_size(),
-                         g_option_instance->get_libevent_pool_initial_size(),
-                         g_option_instance->get_libevent_pool_expandable_size(),
-                         g_option_instance->get_libevent_pool_max_threshold(),
-                         libevent_mempool_flags);
-
+  // Do not pass log function in non-debug(i.e. release) mode of S3server
+  rc = event_use_mempool(
+      g_option_instance->get_libevent_pool_buffer_size(),
+      g_option_instance->get_libevent_pool_initial_size(),
+      g_option_instance->get_libevent_pool_expandable_size(),
+      g_option_instance->get_libevent_pool_max_threshold(),
+      g_option_instance->get_log_level() == "DEBUG" ? mem_log_msg_func : NULL,
+      libevent_mempool_flags);
   if (rc != 0) {
     s3daemon.delete_pidfile();
     finalize_cli_options();
@@ -883,15 +933,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  // This thread is created to do event base looping
-  // Its to send IEM message in case of motr initialization hang
-  rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
-  if (rc != 0) {
-    s3daemon.delete_pidfile();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
-  }
-
   int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
   if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
     motr_read_mempool_flags = motr_read_mempool_flags | ZEROED_BUFFER;
@@ -914,31 +955,53 @@ int main(int argc, char **argv) {
   }
 
   log_resource_limits();
-  struct timeval tv;
-  tv.tv_usec = 0;
-  tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  struct event *timer_event =
-      event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+  int icounter = 0;
+  int max_retry_count = g_option_instance->get_motr_reconnect_retry_count();
+  int sleep_time = g_option_instance->get_motr_reconnect_sleep_time();
+  while (true) {
+    // This thread is created to do event base looping
+    // Its to send IEM message in case of motr initialization hang
+    rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
+    if (rc != 0) {
+      s3daemon.delete_pidfile();
+      fini_auth_ssl();
+      finalize_cli_options();
+      s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
+    }
 
-  // Register the timer event, in case if Motr initialization hangs, then in
-  // callback
-  // we will send IEM Alert, so that IO stack gets restarted
-  event_add(timer_event, &tv);
+    struct timeval tv;
+    tv.tv_usec = 0;
+    tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  /* Initialise Motr */
-  rc = init_motr();
-  if (rc < 0) {
-    s3daemon.delete_pidfile();
-    fini_auth_ssl();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
+    struct event *timer_event =
+        event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+
+    // Register the timer event, in case if Motr initialization hangs, then in
+    // callback
+    // we will send IEM Alert, so that IO stack gets restarted
+    event_add(timer_event, &tv);
+
+    /* Initialise Motr */
+    rc = init_motr();
+    if (rc < 0) {
+      icounter++;
+      if (icounter > max_retry_count) {
+        s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
+      }
+    }
+    // delete the timer event
+    event_del(timer_event);
+    event_free(timer_event);
+    // Bail out of the event loop
+    event_base_loopbreak(global_evbase_handle);
+
+    if (rc == 0) {
+      break;
+    } else {
+      sleep(sleep_time);
+    }
   }
-  // delete the timer event
-  event_del(timer_event);
-  event_free(timer_event);
-  // Bail out of the event loop
-  event_base_loopbreak(global_evbase_handle);
 
   // Init addb
   rc = s3_addb_init();
@@ -950,9 +1013,9 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "S3 ADDB Init failed!\n");
   }
 
-  // global_bucket_list_index_oid - will hold bucket name as key, its owner
+  // global_bucket_list_index_layout - will hold bucket name as key, its owner
   // account information and region as value.
-  rc = create_global_index(global_bucket_list_index_oid,
+  rc = create_global_index(global_bucket_list_index_layout,
                            GLOBAL_BUCKET_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -961,10 +1024,18 @@ int main(int argc, char **argv) {
     // fatal message will call exit
     s3_log(S3_LOG_FATAL, "", "Failed to create a global bucket KVS index\n");
   }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Global bucket list index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
+         "layout_type: 0x%x",
+         global_bucket_list_index_layout.oid.u_hi,
+         global_bucket_list_index_layout.oid.u_lo,
+         global_bucket_list_index_layout.pver.f_container,
+         global_bucket_list_index_layout.pver.f_key,
+         global_bucket_list_index_layout.layout_type);
 
-  // bucket_metadata_list_index_oid - will hold accountid/bucket_name as key,
+  // bucket_metadata_list_index_layout - will hold accountid/bucket_name as key,
   // bucket medata as value.
-  rc = create_global_index(bucket_metadata_list_index_oid,
+  rc = create_global_index(bucket_metadata_list_index_layout,
                            BUCKET_METADATA_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -973,10 +1044,18 @@ int main(int argc, char **argv) {
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
   }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Bucket metadata list index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
+         "layout_type: 0x%x",
+         bucket_metadata_list_index_layout.oid.u_hi,
+         bucket_metadata_list_index_layout.oid.u_lo,
+         bucket_metadata_list_index_layout.pver.f_container,
+         bucket_metadata_list_index_layout.pver.f_key,
+         bucket_metadata_list_index_layout.layout_type);
 
-  // global_probable_dead_object_list_index_oid - will have stale object oid
+  // global_probable_dead_object_list_index_layout - will have stale object oid
   // information
-  rc = create_global_index(global_probable_dead_object_list_index_oid,
+  rc = create_global_index(global_probable_dead_object_list_index_layout,
                            OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -985,10 +1064,18 @@ int main(int argc, char **argv) {
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to global object leak list KVS index\n");
   }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Global probable dead object list index OID: %08zx-%08zx, PVer: "
+         "%08zx-%08zx, layout_type: 0x%x",
+         global_probable_dead_object_list_index_layout.oid.u_hi,
+         global_probable_dead_object_list_index_layout.oid.u_lo,
+         global_probable_dead_object_list_index_layout.pver.f_container,
+         global_probable_dead_object_list_index_layout.pver.f_key,
+         global_probable_dead_object_list_index_layout.layout_type);
 
-  // global_instance_list_index - will hold s3server fid as key,
+  // global_instance_list_index_layout - will hold s3server fid as key,
   // instance id as value.
-  rc = create_global_index(global_instance_list_index,
+  rc = create_global_index(global_instance_list_index_layout,
                            GLOBAL_INSTANCE_INDEX_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -997,6 +1084,14 @@ int main(int argc, char **argv) {
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create global instance index\n");
   }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Global  instance list index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
+         "layout_type: 0x%x",
+         global_instance_list_index_layout.oid.u_hi,
+         global_instance_list_index_layout.oid.u_lo,
+         global_instance_list_index_layout.pver.f_container,
+         global_instance_list_index_layout.pver.f_key,
+         global_instance_list_index_layout.layout_type);
 
   extern struct m0_config motr_conf;
 
@@ -1029,7 +1124,7 @@ int main(int argc, char **argv) {
           mote_kv_writer_factory->create_sync_motr_kvs_writer("", s3_motr_api);
     }
 
-    rc = motr_kv_writer->put_keyval_sync(global_instance_list_index,
+    rc = motr_kv_writer->put_keyval_sync(global_instance_list_index_layout,
                                          s3server_instance_id);
     if (rc != 0) {
       s3daemon.delete_pidfile();
@@ -1134,6 +1229,12 @@ int main(int argc, char **argv) {
 
   /* Set the fatal handler to graceful shutdown*/
   set_graceful_handler();
+
+  std::unique_ptr<S3BucketMetadataCache> sptr_bucket_metadata_cache(
+      new S3BucketMetadataCache(
+          g_option_instance->get_bucket_metadata_cache_max_size(),
+          g_option_instance->get_bucket_metadata_cache_expire_sec(),
+          g_option_instance->get_bucket_metadata_cache_refresh_sec()));
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()

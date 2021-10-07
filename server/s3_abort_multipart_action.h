@@ -50,8 +50,9 @@ class S3AbortMultipartAction : public S3BucketAction {
   std::string upload_id;
   std::string bucket_name;
   std::string object_name;
-  m0_uint128 multipart_oid;
-  m0_uint128 part_index_oid;
+
+  struct s3_motr_idx_layout multipart_index_layout;
+  struct s3_motr_idx_layout part_index_layout;
 
   // Probable delete record for object OID to be deleted
   std::string oid_str;  // Key for probable delete rec
