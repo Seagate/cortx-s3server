@@ -72,10 +72,73 @@ public class AccountParameterValidatorTest {
     /**
      * Test Account#isValidCreateParams. Case - Account name is valid.
      */
-    @Test
-    public void Create_ValidInputParams_True() {
+    @Test public void CreateWithoutKeys_ValidInputParams_True() {
         requestBody.put("AccountName", "seagate");
         requestBody.put("Email", "testuser@seagate.com");
         assertTrue(accountValidator.isValidCreateParams(requestBody));
+    }
+
+    /**
+     * Test Account#isValidCreateParams. Case - Account name is valid.
+     */
+    @Test public void CreateWithKeys_ValidInputParams_True() {
+      requestBody.put("AccountName", "seagate");
+      requestBody.put("Email", "testuser@seagate.com");
+      requestBody.put("AccessKey", "AAAAAAAAAAAAAAAAA");
+      requestBody.put("SecretKey", "BBBBBBBBB");
+      assertTrue(accountValidator.isValidCreateParams(requestBody));
+    }
+
+    /**
+     * Test Account#isValidCreateParams. Case - Only Access key is given.
+     */
+    @Test public void CreateWithKeys_OnlyAccessKey_False() {
+      requestBody.put("AccountName", "arj-123");
+      requestBody.put("Email", "testuser@seagate.com");
+      requestBody.put("AccessKey", "AAAAAAAAAAAAAAAAA");
+      assertFalse(accountValidator.isValidCreateParams(requestBody));
+    }
+
+    /**
+     * Test Account#isValidCreateParams. Case - Only Access key is given.
+     */
+    @Test public void CreateWithKeys_OnlySecretKey_False() {
+      requestBody.put("AccountName", "arj-123");
+      requestBody.put("Email", "testuser@seagate.com");
+      requestBody.put("SecretKey", "BBBBBBBBB");
+      assertFalse(accountValidator.isValidCreateParams(requestBody));
+    }
+
+    /**
+     * Test Account#isValidCreateParams. Case - Only Access key is given.
+     */
+    @Test public void CreateWithKeys_InvalidAccessKey_False() {
+      requestBody.put("AccountName", "arj-123");
+      requestBody.put("Email", "testuser@seagate.com");
+      requestBody.put("AccessKey", "A");
+      requestBody.put("SecretKey", "BBBBBBBBB");
+      assertFalse(accountValidator.isValidCreateParams(requestBody));
+    }
+
+    /**
+     * Test Account#isValidCreateParams. Case - Only Access key is given.
+     */
+    @Test public void CreateWithKeys_InvalidSecretKey_False() {
+      requestBody.put("AccountName", "arj-123");
+      requestBody.put("Email", "testuser@seagate.com");
+      requestBody.put("AccessKey", "AAAAAAAAAAAAAAAAA");
+      requestBody.put("SecretKey", "BBBB");
+      assertFalse(accountValidator.isValidCreateParams(requestBody));
+    }
+
+    /**
+     * Test Account#isValidCreateParams. Case - Only Access key is given.
+     */
+    @Test public void CreateWithKeys_InvalidAccessSecretKey_False() {
+      requestBody.put("AccountName", "arj-123");
+      requestBody.put("Email", "testuser@seagate.com");
+      requestBody.put("AccessKey", "AAAA");
+      requestBody.put("SecretKey", "BBBB");
+      assertFalse(accountValidator.isValidCreateParams(requestBody));
     }
 }

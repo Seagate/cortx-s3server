@@ -47,8 +47,17 @@ class Account:
         # Get host value from url https://iam.seagate.com:9443
         url_parse_result  = urllib.parse.urlparse(Config.endpoint)
         epoch_t = datetime.datetime.utcnow();
-        body = urllib.parse.urlencode({'Action' : 'CreateAccount',
-            'AccountName' : self.cli_args.name, 'Email' : self.cli_args.email})
+        request_params = {
+            'Action' : 'CreateAccount',
+            'AccountName' : self.cli_args.name,
+            'Email' : self.cli_args.email
+        }
+        if(self.cli_args.user_provided_access_key is not None) and\
+            (self.cli_args.user_provided_secret_key is not None):
+            request_params['AccessKey'] = self.cli_args.user_provided_access_key
+            request_params['SecretKey'] = self.cli_args.user_provided_secret_key
+
+        body = urllib.parse.urlencode(request_params)
         headers = {'content-type': 'application/x-www-form-urlencoded',
                 'Accept': 'text/plain'}
         headers['Authorization'] = sign_request_v4('POST', '/', body, epoch_t, url_parse_result.netloc,

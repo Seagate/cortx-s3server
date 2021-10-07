@@ -55,17 +55,21 @@ import com.seagates3.model.Role;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.s3service.S3AccountNotifier;
+import com.seagates3.service.AccessKeyService;
 import com.seagates3.util.KeyGenUtil;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 @RunWith(PowerMockRunner.class)
     @PrepareForTest({DAODispatcher.class,    KeyGenUtil.class,
-                     AuthServerConfig.class, AccountController.class})
+                     AuthServerConfig.class, AccountController.class,
+                     AccessKeyService.class})
     @PowerMockIgnore(
         {"javax.management.*"}) public class AccountControllerTest {
 
     private final AccountController accountController;
+    private
+     final AccountController accountControllerWithKeys;
     private final AccountDAO accountDAO;
     private final UserDAO userDAO;
     private final AccessKeyDAO accessKeyDAO;
@@ -73,6 +77,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     private final Requestor requestor;
     private final S3AccountNotifier s3;
     private Map<String, String> requestBody = new HashMap<>();
+    private
+     Map<String, String> requestBodyWithKeys = new HashMap<>();
 
     public AccountControllerTest() throws Exception {
         PowerMockito.mockStatic(DAODispatcher.class);
@@ -80,6 +86,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         requestor = mock(Requestor.class);
         requestBody.put("AccountName", "s3test");
         requestBody.put("Email", "testuser@seagate.com");
+
+        requestBodyWithKeys.put("AccountName", "s3test");
+        requestBodyWithKeys.put("Email", "testuser@seagate.com");
+        requestBodyWithKeys.put("AccessKey", "AKIASIAS");
+        requestBodyWithKeys.put("SecretKey", "htuspscae/123");
 
         accountDAO = Mockito.mock(AccountDAO.class);
         userDAO = Mockito.mock(UserDAO.class);
@@ -103,6 +114,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             .when(DAODispatcher.class, "getResourceDAO", DAOResource.ROLE);
 
         accountController = new AccountController(requestor, requestBody);
+        accountControllerWithKeys =
+            new AccountController(requestor, requestBodyWithKeys);
     }
 
     @Before
@@ -110,6 +123,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         PowerMockito.mockStatic(DAODispatcher.class);
         PowerMockito.mockStatic(KeyGenUtil.class);
         PowerMockito.mockStatic(AuthServerConfig.class);
+        PowerMockito.mockStatic(AccessKeyService.class);
 
         PowerMockito.doReturn("987654352188")
             .when(KeyGenUtil.class, "createAccountId");
@@ -337,10 +351,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
-        Mockito.doThrow(new DataAccessException(
-                            "failed to save root access key.\n"))
-            .when(accessKeyDAO)
-            .save(any(AccessKey.class));
+        PowerMockito.doThrow(new DataAccessException(
+                                 "failed to save root access key.\n"))
+            .when(AccessKeyService.class, "createAccessKey", any(User.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
 
@@ -366,17 +379,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         ServerResponse resp = new ServerResponse();
         resp.setResponseStatus(HttpResponseStatus.OK);
 
-        PowerMockito.doReturn("AKIASIAS")
-            .when(KeyGenUtil.class, "createUserAccessKeyId", true);
-
-        PowerMockito.doReturn("htuspscae/123")
-            .when(KeyGenUtil.class, "generateSecretKey");
+        mockCreateAccessKey();
 
         Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
-        Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
         Mockito.doReturn(resp).when(s3).notifyNewAccount(
             any(String.class), any(String.class), any(String.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
@@ -403,6 +411,77 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.CREATED,
                 response.getResponseStatus());
+    }
+
+    @Test public void CreateAccountWithKeys_Success_ReturnCreateResponse()
+        throws Exception {
+      Account account = new Account();
+      account.setName("s3test");
+      ServerResponse resp = new ServerResponse();
+      resp.setResponseStatus(HttpResponseStatus.OK);
+
+      mockCreateAccessKeyWithKeys();
+
+      Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
+      Mockito.doReturn(account).when(accountDAO).find("s3test");
+      Mockito.doNothing().when(accountDAO).save(any(Account.class));
+      Mockito.doNothing().when(userDAO).save(any(User.class));
+      Mockito.doReturn(new AccessKey()).when(accessKeyDAO).find(
+          any(String.class));
+      Mockito.doReturn(resp).when(s3).notifyNewAccount(
+          any(String.class), any(String.class), any(String.class));
+      Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+          "can1234");
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<CreateAccountResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<CreateAccountResult>" + "<Account>" +
+          "<AccountId>987654352188</AccountId>" +
+          "<CanonicalId>can1234</CanonicalId>" +
+          "<AccountName>s3test</AccountName>" +
+          "<RootUserName>root</RootUserName>" +
+          "<AccessKeyId>AKIASIASCustom</AccessKeyId>" +
+          "<RootSecretKeyId>htuspscae/123/custom</RootSecretKeyId>" +
+          "<Status>Active</Status>" + "</Account>" + "</CreateAccountResult>" +
+          "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+          "</ResponseMetadata>" + "</CreateAccountResponse>";
+
+      ServerResponse response = accountControllerWithKeys.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.CREATED,
+                          response.getResponseStatus());
+    }
+
+    @Test public void
+    CreateAccount_AccessKeyExists_ReturnAccessKeyAlreadyExists()
+        throws Exception {
+      Account account = new Account();
+      account.setName("s3test");
+
+      AccessKey accessKey = new AccessKey();
+      accessKey.setUserId("UserId");
+
+      Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
+      Mockito.doReturn(account).when(accountDAO).find("s3test");
+      Mockito.doReturn(accessKey).when(accessKeyDAO).find(any(String.class));
+      Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+          "can1234");
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>AccessKeyAlreadyExists</Code>" +
+          "<Message>The request was rejected because " +
+          "account with this access key already exists.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountControllerWithKeys.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.CONFLICT,
+                          response.getResponseStatus());
     }
 
     @Test public void CreateAccount_ReturnMaxAccountLimitExceeded()
@@ -442,11 +521,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       Account account = new Account();
       account.setName("s3test");
 
-      PowerMockito.doReturn("AKIASIAS")
-          .when(KeyGenUtil.class, "createUserAccessKeyId", true);
+      mockCreateAccessKey();
 
-      PowerMockito.doReturn("htuspscae/123")
-          .when(KeyGenUtil.class, "generateSecretKey");
       ServerResponse resp = new ServerResponse();
       resp.setResponseStatus(HttpResponseStatus.OK);
 
@@ -560,11 +636,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         root.setId("AKIASIAS");
         AccessKey[] accessKeys = new AccessKey[1];
 
-        PowerMockito.doReturn("AKIASIAS")
-            .when(KeyGenUtil.class, "createUserAccessKeyId", true);
-
-        PowerMockito.doReturn("htuspscae/123")
-            .when(KeyGenUtil.class, "generateSecretKey");
+        mockCreateAccessKey();
 
         accessKeys[0] = mock(AccessKey.class);
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
@@ -965,6 +1037,32 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       ServerResponse response = accountController.delete ();
       Assert.assertEquals(expectedResponseBody, response.getResponseBody());
       Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    }
+
+   private
+    void mockCreateAccessKey() throws Exception {
+      AccessKey mockAccessKey = mockAccessKey("AKIASIAS", "htuspscae/123");
+      PowerMockito.doReturn(mockAccessKey)
+          .when(AccessKeyService.class, "createAccessKey", any(User.class));
+    }
+
+   private
+    void mockCreateAccessKeyWithKeys() throws Exception {
+      AccessKey mockAccessKey =
+          mockAccessKey("AKIASIASCustom", "htuspscae/123/custom");
+      PowerMockito.doReturn(mockAccessKey)
+          .when(AccessKeyService.class, "createAccessKey", any(User.class),
+                any(String.class), any(String.class));
+    }
+
+   private
+    AccessKey mockAccessKey(String accessKeyId, String secretKey) {
+      AccessKey mockAccessKey = mock(AccessKey.class);
+      Mockito.when(mockAccessKey.getId()).thenReturn(accessKeyId);
+      Mockito.when(mockAccessKey.getSecretKey()).thenReturn(secretKey);
+      Mockito.when(mockAccessKey.getStatus()).thenReturn("Active");
+
+      return mockAccessKey;
     }
 }
 
