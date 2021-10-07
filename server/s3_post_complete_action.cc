@@ -34,6 +34,13 @@
 
 extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
+const char xml_spaces[] = "        ";
+// Shall be 8 bytes (size of cipher block)
+
+const char xml_decl[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+const char xml_comment_begin[] = "<!--   \n";
+const char xml_comment_end[] = "\n   -->\n";
+
 S3PostCompleteAction::S3PostCompleteAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
@@ -57,6 +64,7 @@ S3PostCompleteAction::S3PostCompleteAction(
          bucket_name.c_str(), object_name.c_str(), upload_id.c_str());
 
   action_uses_cleanup = true;
+  response_started = false;
   s3_post_complete_action_state = S3PostCompleteActionState::empty;
   if (motr_api) {
     s3_motr_api = std::move(motr_api);
@@ -289,11 +297,61 @@ void S3PostCompleteAction::fetch_multipart_info_failed() {
   send_response_to_s3_client();
 }
 
+std::string S3PostCompleteAction::get_response_xml() {
+  std::string response_xml;
+  std::string object_name = request->get_object_name();
+  std::string bucket_name = request->get_bucket_name();
+  std::string object_uri = request->get_object_uri();
+
+  if (!response_started) {
+    response_xml += xml_decl;
+  }
+  response_xml += "<CompleteMultipartUploadResult xmlns=\"http://s3\">\n";
+  response_xml += "<Location>" + object_uri + "</Location>";
+  response_xml += "<Bucket>" + bucket_name + "</Bucket>\n";
+  response_xml += "<Key>" + object_name + "</Key>\n";
+  response_xml += "<ETag>\"" + etag + "\"</ETag>";
+  response_xml += "</CompleteMultipartUploadResult>";
+  return response_xml;
+}
+
+bool S3PostCompleteAction::mp_completion_send_space_chk_shutdown() {
+  if (check_shutdown_and_rollback() || !request->client_connected()) {
+    return true;
+  }
+  if (response_started) {
+    request->send_reply_body(xml_spaces, sizeof(xml_spaces) - 1);
+  }
+  return false;
+}
+
+void S3PostCompleteAction::start_response() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  request->set_out_header_value("Content-Type", "application/xml");
+  request->set_out_header_value("Connection", "close");
+
+  request->send_reply_start(S3HttpSuccess200);
+  request->send_reply_body(xml_decl, sizeof(xml_decl) - 1);
+  request->send_reply_body(xml_comment_begin, sizeof(xml_comment_begin) - 1);
+
+  response_started = true;
+}
+
 void S3PostCompleteAction::get_next_parts_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Fetching parts list from KV store\n");
-  motr_kv_reader =
-      s3_motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  if (motr_kv_reader == nullptr) {
+    motr_kv_reader = s3_motr_kvs_reader_factory->create_motr_kvs_reader(
+        request, s3_motr_api);
+  }
+  if (response_started) {
+    if (mp_completion_send_space_chk_shutdown()) {
+      s3_log(S3_LOG_DEBUG, nullptr,
+             "Shutdown or rollback or client disconncted");
+      return;
+    }
+  }
   motr_kv_reader->next_keyval(
       multipart_metadata->get_part_index_layout(), last_key, count_we_requested,
       std::bind(&S3PostCompleteAction::get_next_parts_info_successful, this),
@@ -345,6 +403,9 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
       }
       s3_log(S3_LOG_DEBUG, request_id, "continue fetching with %s",
              last_key.c_str());
+      if (!response_started) {
+        start_response();
+      }
       get_next_parts_info();
     }
   }
@@ -897,51 +958,49 @@ bool S3PostCompleteAction::validate_request_body(std::string& xml_str) {
 void S3PostCompleteAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
+  std::string response_xml;
+  int http_status_code = S3HttpFailed500;
+
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    if (get_s3_error_code() == "ServiceUnavailable" ||
-        get_s3_error_code() == "InternalError") {
+    response_xml = std::move(error.to_xml(response_started));
+    http_status_code = error.get_http_status_code();
+    if (!response_started && (get_s3_error_code() == "ServiceUnavailable" ||
+                              get_s3_error_code() == "InternalError")) {
       request->set_out_header_value("Connection", "close");
     }
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
-    request->send_response(error.get_http_status_code(), response_xml);
   } else if (is_abort_multipart()) {
     S3Error error("InvalidObjectState", request->get_request_id(),
                   request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
+    response_xml = std::move(error.to_xml(response_started));
+    http_status_code = error.get_http_status_code();
   } else if (obj_metadata_updated == true) {
-    std::string response;
-    std::string object_name = request->get_object_name();
-    std::string bucket_name = request->get_bucket_name();
-    std::string object_uri = request->get_object_uri();
-    response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    response += "<CompleteMultipartUploadResult xmlns=\"http://s3\">\n";
-    response += "<Location>" + object_uri + "</Location>";
-    response += "<Bucket>" + bucket_name + "</Bucket>\n";
-    response += "<Key>" + object_name + "</Key>\n";
-    response += "<ETag>\"" + etag + "\"</ETag>";
-    response += "</CompleteMultipartUploadResult>";
-
     s3_post_complete_action_state = S3PostCompleteActionState::completed;
-    request->send_response(S3HttpSuccess200, response);
+    response_xml = get_response_xml();
+    http_status_code = S3HttpSuccess200;
   } else {
     S3Error error("InternalError", request->get_request_id(),
                   request->get_object_uri());
-    std::string& response_xml = error.to_xml();
+    response_xml = std::move(error.to_xml(response_started));
+  }
+
+  if (response_started) {
+    request->send_reply_body(xml_comment_end, sizeof(xml_comment_end) - 1);
+    request->send_reply_body(response_xml.c_str(), response_xml.length());
+    request->send_reply_end();
+    request->close_connection();
+  } else {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
+
+    request->send_response(http_status_code, std::move(response_xml));
   }
+
   request->resume(false);
   startcleanup();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
