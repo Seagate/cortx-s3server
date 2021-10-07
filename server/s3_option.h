@@ -397,14 +397,14 @@ class S3Option {
   bool is_auth_disabled();
 
   std::string get_option_file();
-  void set_option_file(std::string filename);
+  void set_option_file(const std::string& filename);
 
   std::string get_layout_recommendation_file();
-  void set_layout_recommendation_file(std::string filename);
+  void set_layout_recommendation_file(const std::string& filename);
 
   std::string get_daemon_dir();
   unsigned short do_redirection();
-  void set_daemon_dir(std::string path);
+  void set_daemon_dir(const std::string& path);
   void set_redirection(unsigned short redirect);
 
   std::string get_log_dir();
@@ -514,7 +514,7 @@ class S3Option {
   unsigned short get_statsd_max_send_retry();
   std::string get_stats_allowlist_filename();
   uint32_t get_perf_stats_inout_bytes_interval_msec();
-  void set_stats_allowlist_filename(std::string filename);
+  void set_stats_allowlist_filename(const std::string& filename);
 
   // Fault injection Option
   void enable_fault_injection();

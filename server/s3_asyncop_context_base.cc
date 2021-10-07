@@ -95,7 +95,7 @@ void S3AsyncOpContextBase::set_op_errno_for(int op_idx, int err) {
   }
 }
 
-void S3AsyncOpContextBase::start_timer_for(std::string op_key) {
+void S3AsyncOpContextBase::start_timer_for(const std::string& op_key) {
   operation_key = op_key;
   timer.start();
 }

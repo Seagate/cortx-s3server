@@ -24,7 +24,7 @@
 #include "s3_common_utilities.h"
 #include "s3_log.h"
 
-MotrKVListResponse::MotrKVListResponse(std::string encoding_type)
+MotrKVListResponse::MotrKVListResponse(const std::string& encoding_type)
     : encoding_type(encoding_type),
       request_prefix(""),
       request_delimiter(""),
@@ -35,7 +35,9 @@ MotrKVListResponse::MotrKVListResponse(std::string encoding_type)
   s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
-void MotrKVListResponse::set_index_id(std::string name) { index_id = name; }
+void MotrKVListResponse::set_index_id(const std::string& name) {
+  index_id = name;
+}
 
 // Encoding type used by S3 to encode object key names in the XML response.
 // If you specify encoding-type request parameter, S3 includes this element in
@@ -55,25 +57,27 @@ std::string MotrKVListResponse::get_response_format_key_value(
   return format_key_value;
 }
 
-void MotrKVListResponse::set_request_prefix(std::string prefix) {
+void MotrKVListResponse::set_request_prefix(const std::string& prefix) {
   request_prefix = get_response_format_key_value(prefix);
 }
 
-void MotrKVListResponse::set_request_delimiter(std::string delimiter) {
+void MotrKVListResponse::set_request_delimiter(const std::string& delimiter) {
   request_delimiter = get_response_format_key_value(delimiter);
 }
 
-void MotrKVListResponse::set_request_marker_key(std::string marker) {
+void MotrKVListResponse::set_request_marker_key(const std::string& marker) {
   request_marker_key = get_response_format_key_value(marker);
 }
 
-void MotrKVListResponse::set_max_keys(std::string count) { max_keys = count; }
+void MotrKVListResponse::set_max_keys(const std::string& count) {
+  max_keys = count;
+}
 
 void MotrKVListResponse::set_response_is_truncated(bool flag) {
   response_is_truncated = flag;
 }
 
-void MotrKVListResponse::set_next_marker_key(std::string next) {
+void MotrKVListResponse::set_next_marker_key(const std::string& next) {
   next_marker_key = get_response_format_key_value(next);
 }
 
@@ -88,7 +92,7 @@ unsigned int MotrKVListResponse::common_prefixes_size() {
   return common_prefixes.size();
 }
 
-void MotrKVListResponse::add_common_prefix(std::string common_prefix) {
+void MotrKVListResponse::add_common_prefix(const std::string& common_prefix) {
   common_prefixes.insert(common_prefix);
 }
 

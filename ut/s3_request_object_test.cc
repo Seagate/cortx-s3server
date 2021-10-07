@@ -90,7 +90,8 @@ class S3RequestObjectTest : public testing::Test {
 
   // For simplicity of test we take separate args and not repeat
   // _evhtp_path_new()
-  void fake_uri_path(std::string full, std::string path, std::string file) {
+  void fake_uri_path(const std::string &full, const std::string &path,
+                     const std::string &file) {
     init_uri_();
     ev_request->uri->path->full = malloc_cp_c_str_(full);
     ASSERT_TRUE(ev_request->uri->path->full != NULL);

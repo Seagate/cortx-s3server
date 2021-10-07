@@ -26,7 +26,7 @@
 
 S3ErrorMessages* S3ErrorMessages::instance = NULL;
 
-S3ErrorMessages::S3ErrorMessages(std::string config_file) {
+S3ErrorMessages::S3ErrorMessages(const std::string& config_file) {
   Json::Value jsonroot;
   Json::Reader reader;
   std::ifstream json_file(config_file.c_str(), std::ifstream::binary);
@@ -52,11 +52,11 @@ S3ErrorMessages::~S3ErrorMessages() {
   error_list.clear();
 }
 
-S3ErrorDetails& S3ErrorMessages::get_details(std::string code) {
+S3ErrorDetails& S3ErrorMessages::get_details(const std::string& code) {
   return error_list[code];
 }
 
-void S3ErrorMessages::init_messages(std::string config_file) {
+void S3ErrorMessages::init_messages(const std::string& config_file) {
   if (!instance) {
     instance = new S3ErrorMessages(config_file);
   }
