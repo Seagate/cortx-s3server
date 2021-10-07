@@ -96,10 +96,11 @@ class ConfigCmd(SetupCmd):
       self.copy_s3authserver_resources()
       self.logger.info("copy s3 authserver resources completed")
 
-      # Copy log rotation config files from install directory to cron directory.
-      self.logger.info("copy log rotate config started")
-      self.copy_logrotate_files()
-      self.logger.info("copy log rotate config completed")
+      if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
+        # Copy log rotation config files from install directory to cron directory.
+        self.logger.info("copy log rotate config started")
+        self.copy_logrotate_files()
+        self.logger.info("copy log rotate config completed")
 
       # update all the config files
       self.logger.info("update all services config files started")
@@ -712,7 +713,6 @@ class ConfigCmd(SetupCmd):
     """Copy log rotation config files from install directory to cron directory."""
     # Copy log rotate config files to /etc/logrotate.d/
     config_files = [self.get_confkey('S3_LOGROTATE_AUDITLOG'),
-                    self.get_confkey('S3_LOGROTATE_OPENLDAP'),
                     self.get_confkey('S3_LOGROTATE_HAPROXY')]
     self.copy_logrotate_files_crond(config_files, "/etc/logrotate.d/")
 
