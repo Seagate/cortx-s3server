@@ -272,12 +272,11 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %dir /opt/seagate/cortx/s3/nodejs
 %dir /opt/seagate/cortx/s3/resources
 %dir /opt/seagate/cortx/s3/install/haproxy
+%dir /opt/seagate/cortx/s3/install/logrotate
+%dir /opt/seagate/cortx/s3/install/ldap/logrotate
 %dir /var/log/seagate/
 %dir /var/log/seagate/auth
 %dir /var/log/seagate/s3
-/etc/cron.hourly/s3logfilerollover.sh
-/etc/cron.hourly/s3m0tracelogfilerollover.sh
-/etc/cron.hourly/s3addblogfilerollover.sh
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
 /lib/systemd/system/s3backgroundproducer.service
@@ -327,6 +326,10 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_pthreads.pc
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_core.pc
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_extra.pc
+/opt/seagate/cortx/s3/install/logrotate/s3auditlog
+/opt/seagate/cortx/s3/install/logrotate/s3logfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3m0tracelogfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollover.sh
 /opt/seagate/cortx/s3/install/haproxy/503.http
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver7.cfg
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver8.cfg
@@ -336,6 +339,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt
 /opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem
 /opt/seagate/cortx/s3/install/haproxy/503.http
+/opt/seagate/cortx/s3/install/ldap/logrotate/openldap
 /opt/seagate/cortx/s3/install/ldap/syncprov_mod.ldif
 /opt/seagate/cortx/s3/install/ldap/syncprov.ldif
 /opt/seagate/cortx/s3/install/ldap/replicate.ldif
@@ -430,8 +434,6 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.main
-/etc/logrotate.d/s3auditlog
-/etc/logrotate.d/openldap
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
 %{_bindir}/s3cipher

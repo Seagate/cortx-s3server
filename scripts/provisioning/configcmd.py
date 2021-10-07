@@ -91,9 +91,15 @@ class ConfigCmd(SetupCmd):
       self.copy_config_files()
       self.logger.info("copy config files completed")
 
+      # copy s3 authserver resources to base dir of config files (/etc/cortx)
       self.logger.info("copy s3 authserver resources started")
       self.copy_s3authserver_resources()
       self.logger.info("copy s3 authserver resources completed")
+
+      # Copy log rotation config files from install directory to cron directory.
+      self.logger.info("copy log rotate config started")
+      self.copy_logrotate_files()
+      self.logger.info("copy log rotate config completed")
 
       # update all the config files
       self.logger.info("update all services config files started")
@@ -701,3 +707,27 @@ class ConfigCmd(SetupCmd):
         shutil.copytree(source, destination)
       else:
           shutil.copy2(source, destination)
+
+  def copy_logrotate_files(self):
+    """Copy log rotation config files from install directory to cron directory."""
+    # Copy log rotate config files to /etc/logrotate.d/
+    config_files = [self.get_confkey('S3_LOGROTATE_AUDITLOG'),
+                    self.get_confkey('S3_LOGROTATE_OPENLDAP'),
+                    self.get_confkey('S3_LOGROTATE_HAPROXY')]
+    self.copy_logrotate_files_crond(config_files, "/etc/logrotate.d/")
+
+    # Copy log rotate config files to /etc/cron.hourly/
+    config_files = [self.get_confkey('S3_LOGROTATE_S3LOG'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_LOGROTATE_ADDB')]
+    self.copy_logrotate_files_crond(config_files, "/etc/cron.hourly/")
+
+  def copy_logrotate_files_crond(self, config_files, dest_directory):
+    """Copy log rotation config files from install directory to cron directory."""
+    # Copy log rotation config files from install directory to cron directory
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      self.logger.info(f"Dest dir: {dest_directory}")
+      os.makedirs(os.path.dirname(dest_directory), exist_ok=True)
+      shutil.copy(config_file, dest_directory)
+      self.logger.info("Config file copied successfully to cron directory")

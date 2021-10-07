@@ -193,15 +193,6 @@ cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
 # Copy the s3 service file for systemctl multiple instance support.
 cp ./system/s3server@.service $SERVICE_FILE_LOCATION
 
-# Copy the s3 log rotate script for retaining recent modified log files
-cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
-
-# Copy m0trace log rotation script for retaining recent m0trace files
-cp -f scripts/s3-logrotate/s3m0tracelogfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
-
-# Copy addb log rotation script for retaining recent addb files
-cp -f scripts/s3-logrotate/s3addblogfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
-
 # Copy s3server support bundle script
 cp -f scripts/s3-support-bundles/s3_bundle_generate.sh $S3_INSTALL_LOCATION/scripts/
 
