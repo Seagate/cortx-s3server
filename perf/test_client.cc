@@ -89,7 +89,7 @@ print_response_headers(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg
   printf("put_request_response_time_ms = %zu,", client_request->timer.elapsed_time_in_millisec());
 
   unsigned int resp_status = evhtp_request_status(req);
-  printf("response status = %d\n", resp_status);
+  printf("response status = %u\n", resp_status);
 
   // evhtp_headers_for_each(hdrs, output_header, NULL);
   return EVHTP_RES_OK;

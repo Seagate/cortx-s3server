@@ -51,14 +51,14 @@ class S3ProbableDeleteRecord {
   struct m0_uint128 part_list_idx_oid;  // present in case of multipart
 
  public:
-  S3ProbableDeleteRecord(std::string rec_key, struct m0_uint128 old_oid,
-                         std::string obj_key_in_index,
+  S3ProbableDeleteRecord(const std::string& rec_key, struct m0_uint128 old_oid,
+                         const std::string& obj_key_in_index,
                          struct m0_uint128 new_oid, int layout_id,
-                         std::string pvid_str,
+                         const std::string& pvid_str,
                          struct m0_uint128 obj_list_idx_oid,
                          struct m0_uint128 objs_version_list_idx_oid,
-                         std::string ver_key_in_index, bool force_del = false,
-                         bool is_multipart = false,
+                         const std::string& ver_key_in_index,
+                         bool force_del = false, bool is_multipart = false,
                          struct m0_uint128 part_list_oid = {0ULL, 0ULL});
   virtual ~S3ProbableDeleteRecord() {}
 

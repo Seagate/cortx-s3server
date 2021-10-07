@@ -122,6 +122,7 @@ class S3MotrKVSReaderTest : public testing::Test {
     ptr_motrkvs_reader =
         std::make_shared<S3MotrKVSReader>(ptr_mock_s3request, ptr_mock_s3motr);
     index_oid = {0ULL, 0ULL};
+    nr_kvp = 0;
   }
 
   ~S3MotrKVSReaderTest() { event_base_free(evbase); }

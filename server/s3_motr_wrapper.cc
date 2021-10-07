@@ -263,7 +263,7 @@ void store_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
     wt_idx = write_idx;
   }
 
-  if (wt_idx == MAX_OBJECTS_TDATA) {
+  if (wt_idx >= MAX_OBJECTS_TDATA) {
     assert(0);
   }
 

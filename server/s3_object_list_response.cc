@@ -24,7 +24,7 @@
 #include "s3_common_utilities.h"
 #include "s3_log.h"
 
-S3ObjectListResponse::S3ObjectListResponse(std::string encoding_type)
+S3ObjectListResponse::S3ObjectListResponse(const std::string& encoding_type)
     : encoding_type(encoding_type),
       request_prefix(""),
       request_delimiter(""),
@@ -42,7 +42,7 @@ S3ObjectListResponse::S3ObjectListResponse(std::string encoding_type)
   part_list.clear();
 }
 
-void S3ObjectListResponse::set_bucket_name(std::string name) {
+void S3ObjectListResponse::set_bucket_name(const std::string& name) {
   bucket_name = name;
 }
 
@@ -64,27 +64,30 @@ std::string S3ObjectListResponse::get_response_format_key_value(
   return format_key_value;
 }
 
-void S3ObjectListResponse::set_object_name(std::string name) {
+void S3ObjectListResponse::set_object_name(const std::string& name) {
   object_name = get_response_format_key_value(name);
 }
 
-void S3ObjectListResponse::set_request_prefix(std::string prefix) {
+void S3ObjectListResponse::set_request_prefix(const std::string& prefix) {
   request_prefix = prefix;
 }
 
-void S3ObjectListResponse::set_request_delimiter(std::string delimiter) {
+void S3ObjectListResponse::set_request_delimiter(const std::string& delimiter) {
   request_delimiter = delimiter;
 }
 
-void S3ObjectListResponse::set_request_marker_key(std::string marker) {
+void S3ObjectListResponse::set_request_marker_key(const std::string& marker) {
   request_marker_key = get_response_format_key_value(marker);
 }
 
-void S3ObjectListResponse::set_request_marker_uploadid(std::string marker) {
+void S3ObjectListResponse::set_request_marker_uploadid(
+    const std::string& marker) {
   request_marker_uploadid = marker;
 }
 
-void S3ObjectListResponse::set_max_keys(std::string count) { max_keys = count; }
+void S3ObjectListResponse::set_max_keys(const std::string& count) {
+  max_keys = count;
+}
 
 void S3ObjectListResponse::set_key_count(size_t& keys) {
   std::stringstream ss;
@@ -92,11 +95,11 @@ void S3ObjectListResponse::set_key_count(size_t& keys) {
   key_count = ss.str();
 }
 
-void S3ObjectListResponse::set_max_uploads(std::string upload_count) {
+void S3ObjectListResponse::set_max_uploads(const std::string& upload_count) {
   max_uploads = upload_count;
 }
 
-void S3ObjectListResponse::set_max_parts(std::string part_count) {
+void S3ObjectListResponse::set_max_parts(const std::string& part_count) {
   max_parts = part_count;
 }
 
@@ -104,7 +107,7 @@ void S3ObjectListResponse::set_response_is_truncated(bool flag) {
   response_is_truncated = flag;
 }
 
-void S3ObjectListResponse::set_next_marker_key(std::string next,
+void S3ObjectListResponse::set_next_marker_key(const std::string& next,
                                                bool url_encode) {
   if (url_encode) {
     next_marker_key = get_response_format_key_value(next);
@@ -113,7 +116,7 @@ void S3ObjectListResponse::set_next_marker_key(std::string next,
   }
 }
 
-void S3ObjectListResponse::set_next_marker_uploadid(std::string next) {
+void S3ObjectListResponse::set_next_marker_uploadid(const std::string& next) {
   next_marker_uploadid = next;
 }
 
@@ -134,30 +137,32 @@ void S3ObjectListResponse::add_part(std::shared_ptr<S3PartMetadata> part) {
   part_list[strtoul(part->get_part_number().c_str(), NULL, 0)] = part;
 }
 
-void S3ObjectListResponse::add_common_prefix(std::string common_prefix) {
+void S3ObjectListResponse::add_common_prefix(const std::string& common_prefix) {
   common_prefixes.insert(common_prefix);
 }
 
 bool S3ObjectListResponse::is_prefix_in_common_prefix(
-    std::string& check_prefix) {
+    const std::string& check_prefix) {
   return (common_prefixes.find(check_prefix) != common_prefixes.end());
 }
 
-void S3ObjectListResponse::set_user_id(std::string userid) { user_id = userid; }
+void S3ObjectListResponse::set_user_id(const std::string& userid) {
+  user_id = userid;
+}
 
-void S3ObjectListResponse::set_user_name(std::string username) {
+void S3ObjectListResponse::set_user_name(const std::string& username) {
   user_name = username;
 }
 
-void S3ObjectListResponse::set_canonical_id(std::string canonicalid) {
+void S3ObjectListResponse::set_canonical_id(const std::string& canonicalid) {
   canonical_id = canonicalid;
 }
 
-void S3ObjectListResponse::set_account_id(std::string accountid) {
+void S3ObjectListResponse::set_account_id(const std::string& accountid) {
   account_id = accountid;
 }
 
-void S3ObjectListResponse::set_account_name(std::string accountname) {
+void S3ObjectListResponse::set_account_name(const std::string& accountname) {
   account_name = accountname;
 }
 
@@ -165,7 +170,7 @@ std::string& S3ObjectListResponse::get_account_id() { return account_id; }
 
 std::string& S3ObjectListResponse::get_account_name() { return account_name; }
 
-void S3ObjectListResponse::set_storage_class(std::string stor_class) {
+void S3ObjectListResponse::set_storage_class(const std::string& stor_class) {
   storage_class = stor_class;
 }
 
@@ -177,7 +182,7 @@ std::string& S3ObjectListResponse::get_canonical_id() { return canonical_id; }
 
 std::string& S3ObjectListResponse::get_storage_class() { return storage_class; }
 
-void S3ObjectListResponse::set_upload_id(std::string uploadid) {
+void S3ObjectListResponse::set_upload_id(const std::string& uploadid) {
   upload_id = uploadid;
 }
 

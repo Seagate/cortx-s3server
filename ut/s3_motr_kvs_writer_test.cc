@@ -128,6 +128,7 @@ class S3MotrKVSWritterTest : public testing::Test {
     action_under_test =
         std::make_shared<S3MotrKVSWriter>(ptr_mock_request, ptr_mock_s3motr);
     oid = {0xffff, 0xfff1f};
+    p_motrkvs = nullptr;
   }
 
   ~S3MotrKVSWritterTest() { event_base_free(evbase); }

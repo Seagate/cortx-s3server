@@ -246,9 +246,10 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   (void)get_global_bucket_index_metadata();
-
-  assert(!(global_bucket_index_metadata->get_account_id().empty()));
-  assert(!(global_bucket_index_metadata->get_account_name().empty()));
+  if ((global_bucket_index_metadata->get_account_id().empty()) ||
+      (global_bucket_index_metadata->get_account_name().empty())) {
+    assert(0);
+  }
 
   // set location_constraint attributes & save
   global_bucket_index_metadata->set_location_constraint(
