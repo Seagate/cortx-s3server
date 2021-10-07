@@ -967,7 +967,9 @@ void S3PostCompleteAction::remove_old_object_version_metadata() {
       request, bucket_metadata->get_object_list_index_layout(),
       bucket_metadata->get_objects_version_list_index_layout());
 
-  assert(multipart_metadata->get_object_name() == request->get_object_name());
+  if (multipart_metadata->get_object_name() != request->get_object_name()) {
+    assert(0);
+  }
   object_metadata->set_oid(old_object_oid);
   object_metadata->set_layout_id(old_layout_id);
   object_metadata->set_version_id(multipart_metadata->get_old_obj_version_id());
@@ -1000,7 +1002,9 @@ void S3PostCompleteAction::remove_old_oid_probable_record() {
 void S3PostCompleteAction::mark_new_oid_for_deletion() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!new_oid_str.empty());
-  assert(is_abort_multipart());
+  if (!is_abort_multipart()) {
+    assert(0);
+  }
 
   // update new oid, key = newoid, force_del = true
   new_probable_del_rec->set_force_delete(true);

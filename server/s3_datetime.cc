@@ -42,11 +42,11 @@ void S3DateTime::init_with_fmt(std::string time_str, std::string format) {
   strptime(time_str.c_str(), format.c_str(), &point_in_time);
 }
 
-void S3DateTime::init_with_gmt(std::string time_str) {
+void S3DateTime::init_with_gmt(const std::string& time_str) {
   init_with_fmt(time_str, S3_GMT_DATETIME_FORMAT);
 }
 
-void S3DateTime::init_with_iso(std::string time_str) {
+void S3DateTime::init_with_iso(const std::string& time_str) {
   init_with_fmt(time_str, S3_ISO_DATETIME_FORMAT);
 }
 
