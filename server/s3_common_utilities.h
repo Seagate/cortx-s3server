@@ -85,7 +85,7 @@ bool stoi(const std::string &str, int &value);
 // returns new string with the substitution done
 std::string s3xmlEncodeSpecialChars(const std::string &input);
 
-std::string format_xml_string(std::string tag, const std::string &value,
+std::string format_xml_string(const std::string &tag, const std::string &value,
                               bool append_quotes = false);
 void find_and_replaceall(std::string &data, const std::string &to_search,
                          const std::string &replace_str);

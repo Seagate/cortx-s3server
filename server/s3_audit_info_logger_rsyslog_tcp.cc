@@ -81,10 +81,10 @@ void S3AuditInfoLoggerRsyslogTcp::connect() {
 }
 
 S3AuditInfoLoggerRsyslogTcp::S3AuditInfoLoggerRsyslogTcp(
-    struct event_base *base, std::string dest_host, int dest_port,
-    int retry_cnt, std::string message_id, int facility, int severity,
-    std::string hostname, std::string app, std::string app_procid,
-    S3LibeventSocketWrapper *sock_api)
+    struct event_base *base, const std::string &dest_host, int dest_port,
+    int retry_cnt, const std::string &message_id, int facility, int severity,
+    const std::string &hostname, const std::string &app,
+    const std::string &app_procid, S3LibeventSocketWrapper *sock_api)
     : host(dest_host),
       port(dest_port),
       max_retry(retry_cnt),

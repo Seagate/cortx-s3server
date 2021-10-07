@@ -50,6 +50,7 @@ class S3DeleteBucketTaggingActionTest : public testing::Test {
         ReturnRef(input_headers));
     action_under_test_ptr = std::make_shared<S3DeleteBucketTaggingAction>(
         request_mock, bucket_meta_factory);
+    call_count_one = 0;
   }
 
   std::shared_ptr<MockS3RequestObject> request_mock;

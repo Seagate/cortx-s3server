@@ -51,6 +51,7 @@ S3AuditInfo::S3AuditInfo()
       operation("-"),
       object_key("-"),
       request_uri("-"),
+      http_status(200),
       error_code("-"),
       bytes_sent(0),
       object_size(0),

@@ -37,7 +37,8 @@ MotrRequestObject::MotrRequestObject(
     std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory,
     EventInterface* event_obj_ptr)
     : RequestObject(req, evhtp_obj_ptr, async_buf_factory, event_obj_ptr),
-      motr_api_type(MotrApiType::unsupported) {
+      motr_api_type(MotrApiType::unsupported),
+      motr_operation_code(MotrOperationCode::none) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 }
 

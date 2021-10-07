@@ -77,8 +77,8 @@ static void s3_dummy_motr_op_launch(uint64_t, struct m0_op **op, uint32_t nr,
 
 class S3MotrReaderTest : public testing::Test {
  protected:
-  S3MotrReaderTest() {
-    oid = {0x1ffff, 0x1ffff};
+  S3MotrReaderTest() : oid{0x1ffff, 0x1ffff} {
+    // oid = {0x1ffff, 0x1ffff};
     layout_id =
         S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
