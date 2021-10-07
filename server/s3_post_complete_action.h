@@ -71,6 +71,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   struct s3_motr_idx_layout multipart_index_layout;
   bool delete_multipart_object;
   bool obj_metadata_updated;
+  bool response_started;
   void parse_xml_str(std::string &xml_str);
   size_t count_we_requested;
   size_t current_parts_size;
@@ -78,7 +79,6 @@ class S3PostCompleteAction : public S3ObjectAction {
   size_t validated_parts_count;
   std::string last_key;
   S3AwsEtag awsetag;
-
   struct m0_uint128 old_object_oid;
   int old_layout_id;
   struct m0_uint128 new_object_oid;
@@ -95,6 +95,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   // List of part object oids belong to old object
   std::vector<struct m0_uint128> old_obj_oids;
 
+  void start_response();
   // Probable delete record for object parts
   std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
       new_parts_probable_del_rec_list;
@@ -102,6 +103,7 @@ class S3PostCompleteAction : public S3ObjectAction {
       old_parts_probable_del_rec_list;
   std::map<unsigned int, std::string> part_etags;
   std::string generate_etag();
+  bool mp_completion_send_space_chk_shutdown();
 
  public:
   S3PostCompleteAction(
@@ -117,6 +119,7 @@ class S3PostCompleteAction : public S3ObjectAction {
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();
+  std::string get_response_xml();
 
   void load_and_validate_request();
   void consume_incoming_content();
