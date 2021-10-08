@@ -44,13 +44,17 @@ def main():
 
   args = parser.parse_args()
 
+  # global variables
+  global s3_confkeys_store
+  global base_config_path
+  global logger
+
   try:
     if not args.c:
       raise Exception("provide confstore_url")
     confstore_url = args.c
 
     # Load confstore file
-    global s3_confkeys_store
     s3_confkeys_store = S3CortxConfStore\
         (f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', \
           's3_index')
@@ -61,7 +65,6 @@ def main():
     # Get Config entries
     config_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_CONFIG_PATH")
-    global base_config_path
     base_config_path = prov_confkeys_store.get_config(config_key)
     logdir_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_LOG_PATH")
@@ -78,7 +81,6 @@ def main():
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
     create_logger_directory(s3_single_entry_log_directory)
-    global logger
     logger = create_logger(s3_single_entry_log_file, s3_single_entry_logger_name, s3_single_entry_log_format)
 
     if args.service == 's3server':
@@ -268,17 +270,6 @@ def configure_log_rotate(key_to_read: str, cron_dir: str):
     os.makedirs(os.path.dirname(cron_dir), exist_ok=True)
     shutil.copy(s3_logrotate_config_file, cron_dir)
     logger.info("logrotate config file copied successfully to cron directory")
-
-def create_symbolic_link(src_path: str, dst_path: str):
-  """create symbolic link."""
-  logger.info(f"symbolic link source path: {src_path}")
-  logger.info(f"symbolic link destination path: {dst_path}")
-  if os.path.exists(dst_path):
-    logger.info(f"symbolic link is already present")
-    os.unlink(dst_path)
-    logger.info("symbolic link is unlinked")
-  os.symlink(src_path, dst_path)
-  logger.info(f"symbolic link created successfully")
 
 if __name__ == '__main__':
   sys.exit(main())

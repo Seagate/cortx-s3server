@@ -34,7 +34,7 @@ where:
 
 # max haproxy files count in each haproxy log directory
 haproxy_log_files_max_count=5
-haproxy_config="/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy_sysconfig.conf"
+haproxy_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_SYSCONF_SYMLINK")
 haproxy_log_file=$(s3confstore "properties://$haproxy_config" getkey --key="LOG_FILE")
 
 while getopts ":n:" option; do

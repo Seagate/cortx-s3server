@@ -35,7 +35,7 @@ where:
 # max log files count in each log directory
 log_files_max_count=5
 # config file path is symbolic link created during mini provisioner in config phase
-s3server_config="/opt/seagate/cortx/s3/install/logrotate/s3config.yaml"
+s3server_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_CONF_SYMLINK")
 # have severity entries, as s3sever logs are created based on severity.
 log_severity="INFO WARNING ERROR FATAL"
 # get log directory from s3 server config file
