@@ -56,7 +56,8 @@ class MockEvhtpWrapper : public EvhtpInterface {
                void(evhtp_request_t *request, evbuf_t *buf));
   MOCK_METHOD1(http_send_reply_end, void(evhtp_request_t *request));
   MOCK_METHOD1(close_connection_after_writing, void(evhtp_connection_t *));
-
+  MOCK_METHOD1(http_response_outstanding_buffer_length,
+               size_t(evhtp_connection_t *));
   // Libevent wrappers
   MOCK_METHOD1(evbuffer_get_length, size_t(const struct evbuffer *buf));
 };

@@ -93,6 +93,7 @@ class S3ObjectAction : public S3Action {
 
   void load_metadata();
   virtual void set_authorization_meta();
+  virtual void on_action_delay_timeout_cb();
 
   FRIEND_TEST(S3ObjectActionTest, Constructor);
   FRIEND_TEST(S3ObjectActionTest, FetchBucketInfo);

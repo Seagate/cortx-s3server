@@ -70,6 +70,22 @@
 #define OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO 3
 #define GLOBAL_INSTANCE_INDEX_U_LO 4
 
+extern "C" void mem_log_msg_func(int mempool_log_level, const char *msg) {
+  if (mempool_log_level == MEMPOOL_LOG_INFO) {
+    s3_log(S3_LOG_INFO, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_FATAL) {
+    s3_log(S3_LOG_FATAL, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_ERROR) {
+    s3_log(S3_LOG_ERROR, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_WARN) {
+    s3_log(S3_LOG_WARN, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_DEBUG) {
+    s3_log(S3_LOG_DEBUG, "", "%s\n", msg);
+  } else {
+    s3_log(S3_LOG_FATAL, "", "Invalid mempool log level. %s\n", msg);
+  }
+}
+
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
@@ -97,7 +113,7 @@ std::set<struct s3_motr_obj_context *> global_motr_obj;
 void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
   // s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
   //     S3_IEM_MOTR_CONN_FAIL_JSON);
-  s3_log(S3_LOG_ERROR, "", "Motr connection failed\n");
+  s3_log(S3_LOG_FATAL, "", "Motr connection timet out (hang)\n");
   event_base_loopbreak(global_evbase_handle);
   return;
 }
@@ -233,8 +249,16 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   // so initialise the s3 request;
   s3_request->initialise();
 
+  bool is_haproxy_head_request = false;
+  // Check if request is head request from haproxy
+  if (std::strcmp(req->uri->path->full, "/") == 0 &&
+      s3_request->http_verb() == S3HttpVerb::HEAD) {
+    is_haproxy_head_request = true;
+  }
+
   if (S3Option::get_instance()->get_is_s3_shutting_down() &&
-      !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
+      !s3_fi_is_enabled("shutdown_system_tests_in_progress") &&
+      !is_haproxy_head_request) {
     // We are shutting down, so don't entertain new requests.
     s3_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
@@ -246,11 +270,9 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_request->set_out_header_value("Content-Length",
                                      std::to_string(response_xml.length()));
     s3_request->set_out_header_value("Connection", "close");
-    int shutdown_grace_period =
-        S3Option::get_instance()->get_s3_grace_period_sec();
+    int retry_after_period = S3Option::get_instance()->get_s3_retry_after_sec();
     s3_request->set_out_header_value("Retry-After",
-                                     std::to_string(shutdown_grace_period));
-
+                                     std::to_string(retry_after_period));
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
@@ -261,7 +283,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
   } else {
     s3_log(S3_LOG_DEBUG, "",
-           "mempool info: mempool_item_size = %zu "
+           "mempool stats during new request: mempool_item_size = %zu "
            "free_bufs_in_pool = %d "
            "number_of_bufs_shared = %d "
            "total_bufs_allocated_by_pool = %d\n",
@@ -272,13 +294,15 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
 
   // Check if we have enough approx memory to proceed with request
   if (s3_request->get_api_type() == S3ApiType::object &&
-      s3_request->http_verb() == S3HttpVerb::PUT) {
+      (s3_request->http_verb() == S3HttpVerb::PUT ||
+       (s3_request->http_verb() == S3HttpVerb::GET))) {
     int layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
         s3_request->get_data_length());
     if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id) ||
         !S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
-      s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
-             "Limited memory: Rejecting PUT object/part request with retry.\n");
+      s3_log(S3_LOG_INFO, s3_request->get_request_id().c_str(),
+             "Limited memory: Rejecting PUT/GET object/part request with "
+             "retry.\n");
       s3_request->respond_retry_after(1);
       return EVHTP_RES_OK;
     } else if (req->buffer_out) {
@@ -400,6 +424,15 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
     s3_log(S3_LOG_DEBUG, request_id,
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
+    size_t pool_buffer_sz =
+        S3Option::get_instance()->get_libevent_pool_buffer_size();
+    size_t buff_count =
+        (evbuffer_get_length(buf) + pool_buffer_sz - 1) / pool_buffer_sz;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "S3 request [%s] allocated mempool buffer(16k) with total buffer "
+           "count = %zu\n",
+           request_id.c_str(), buff_count);
+    p_s3_req->add_to_mempool_buffer_count(buff_count);
 
     if (!p_s3_req->is_incoming_data_ignored()) {
       evbuf_t *s3_buf = evbuffer_new();
@@ -743,7 +776,11 @@ int main(int argc, char **argv) {
 
   S3Daemonize s3daemon;
   set_fatal_handler_exit();
-  s3daemon.daemonize();
+  if (!g_option_instance->is_daemon_disabled()) {
+    s3daemon.daemonize();
+  }
+  s3daemon.change_work_dir();
+  s3daemon.write_to_pidfile();
 #if 0
   s3daemon.register_signals();
 #endif
@@ -775,12 +812,14 @@ int main(int argc, char **argv) {
 
   // Call this function at starting as we need to make use of our own
   // memory allocation/deallocation functions
-  rc = event_use_mempool(g_option_instance->get_libevent_pool_buffer_size(),
-                         g_option_instance->get_libevent_pool_initial_size(),
-                         g_option_instance->get_libevent_pool_expandable_size(),
-                         g_option_instance->get_libevent_pool_max_threshold(),
-                         libevent_mempool_flags);
-
+  // Do not pass log function in non-debug(i.e. release) mode of S3server
+  rc = event_use_mempool(
+      g_option_instance->get_libevent_pool_buffer_size(),
+      g_option_instance->get_libevent_pool_initial_size(),
+      g_option_instance->get_libevent_pool_expandable_size(),
+      g_option_instance->get_libevent_pool_max_threshold(),
+      g_option_instance->get_log_level() == "DEBUG" ? mem_log_msg_func : NULL,
+      libevent_mempool_flags);
   if (rc != 0) {
     s3daemon.delete_pidfile();
     finalize_cli_options();
@@ -894,15 +933,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  // This thread is created to do event base looping
-  // Its to send IEM message in case of motr initialization hang
-  rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
-  if (rc != 0) {
-    s3daemon.delete_pidfile();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
-  }
-
   int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
   if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
     motr_read_mempool_flags = motr_read_mempool_flags | ZEROED_BUFFER;
@@ -925,31 +955,53 @@ int main(int argc, char **argv) {
   }
 
   log_resource_limits();
-  struct timeval tv;
-  tv.tv_usec = 0;
-  tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  struct event *timer_event =
-      event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+  int icounter = 0;
+  int max_retry_count = g_option_instance->get_motr_reconnect_retry_count();
+  int sleep_time = g_option_instance->get_motr_reconnect_sleep_time();
+  while (true) {
+    // This thread is created to do event base looping
+    // Its to send IEM message in case of motr initialization hang
+    rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
+    if (rc != 0) {
+      s3daemon.delete_pidfile();
+      fini_auth_ssl();
+      finalize_cli_options();
+      s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
+    }
 
-  // Register the timer event, in case if Motr initialization hangs, then in
-  // callback
-  // we will send IEM Alert, so that IO stack gets restarted
-  event_add(timer_event, &tv);
+    struct timeval tv;
+    tv.tv_usec = 0;
+    tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  /* Initialise Motr */
-  rc = init_motr();
-  if (rc < 0) {
-    s3daemon.delete_pidfile();
-    fini_auth_ssl();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
+    struct event *timer_event =
+        event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+
+    // Register the timer event, in case if Motr initialization hangs, then in
+    // callback
+    // we will send IEM Alert, so that IO stack gets restarted
+    event_add(timer_event, &tv);
+
+    /* Initialise Motr */
+    rc = init_motr();
+    if (rc < 0) {
+      icounter++;
+      if (icounter > max_retry_count) {
+        s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
+      }
+    }
+    // delete the timer event
+    event_del(timer_event);
+    event_free(timer_event);
+    // Bail out of the event loop
+    event_base_loopbreak(global_evbase_handle);
+
+    if (rc == 0) {
+      break;
+    } else {
+      sleep(sleep_time);
+    }
   }
-  // delete the timer event
-  event_del(timer_event);
-  event_free(timer_event);
-  // Bail out of the event loop
-  event_base_loopbreak(global_evbase_handle);
 
   // Init addb
   rc = s3_addb_init();

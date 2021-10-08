@@ -150,7 +150,7 @@ static int mempool_init() {
 
   rc = event_use_mempool(
       libevent_pool_buffer_size, libevent_pool_buffer_size * 100,
-      libevent_pool_buffer_size * 100, libevent_pool_buffer_size * 1000,
+      libevent_pool_buffer_size * 100, libevent_pool_buffer_size * 1000, NULL,
       libevent_mempool_flags);
   if (rc != 0) return rc;
 

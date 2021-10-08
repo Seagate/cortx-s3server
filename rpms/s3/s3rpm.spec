@@ -424,6 +424,8 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_start
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
+%attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh
+%attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.main

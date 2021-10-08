@@ -73,6 +73,10 @@ class S3Action : public Action {
   void fetch_acl_policies();
   void fetch_acl_bucket_policies_failed();
   void fetch_acl_object_policies_failed();
+  // Derived action class to override below to call appropriate
+  // sub-step/method within the action class to continue after the
+  // delay timer expires
+  virtual void resume_action_step();
 
   FRIEND_TEST(S3ActionTest, Constructor);
   FRIEND_TEST(S3ActionTest, ClientReadTimeoutCallBackRollback);

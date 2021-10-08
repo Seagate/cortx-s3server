@@ -28,8 +28,9 @@
 import sys
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 CONFIG = CORTXS3Config()
-kv_api = CORTXS3KVApi(CONFIG)
+kv_api = CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER)
 response, data = kv_api.put(sys.argv[1], sys.argv[2], sys.argv[3])
 if(response):
     print("success")

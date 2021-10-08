@@ -110,6 +110,9 @@ bool S3Option::load_section(std::string section_name,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
                                 .as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_SHUTDOWN_AFTER_SEC");
+      s3_retry_after_sec =
+          s3_option_node["S3_RETRY_SHUTDOWN_AFTER_SEC"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_DIR");
       log_dir = s3_option_node["S3_LOG_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_MODE");
@@ -187,6 +190,13 @@ bool S3Option::load_section(std::string section_name,
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_BUFFER_MULTIPLE");
+      write_buffer_multiple =
+          s3_option_node["S3_WRITE_BUFFER_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_TIME_MILLISEC");
+      s3_req_throttle_time =
+          s3_option_node["S3_GET_THROTTLE_TIME_MILLISEC"].as<int>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
       s3_default_endpoint =
           s3_option_node["S3_SERVER_DEFAULT_ENDPOINT"].as<std::string>();
@@ -314,6 +324,13 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_FIRST_READ_SIZE");
       motr_first_obj_read_size =
           s3_option_node["S3_MOTR_FIRST_READ_SIZE"].as<unsigned int>();
+
+      motr_reconnect_retry_count =
+          s3_option_node["S3_MOTR_RECONNECT_RETRY_COUNT"].as<unsigned int>();
+      ;
+      motr_reconnect_sleep_time =
+          s3_option_node["S3_MOTR_SLEEP_DURING_RECONNECT"].as<unsigned int>();
+      ;
 
       std::string motr_read_pool_initial_buffer_count_str;
       std::string motr_read_pool_expandable_count_str;
@@ -461,6 +478,9 @@ bool S3Option::load_section(std::string section_name,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
                                 .as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_SHUTDOWN_AFTER_SEC");
+      s3_retry_after_sec =
+          s3_option_node["S3_RETRY_SHUTDOWN_AFTER_SEC"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
       s3_default_endpoint =
           s3_option_node["S3_SERVER_DEFAULT_ENDPOINT"].as<std::string>();
@@ -523,6 +543,12 @@ bool S3Option::load_section(std::string section_name,
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_BUFFER_MULTIPLE");
+      write_buffer_multiple =
+          s3_option_node["S3_WRITE_BUFFER_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_TIME_MILLISEC");
+      s3_req_throttle_time =
+          s3_option_node["S3_GET_THROTTLE_TIME_MILLISEC"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
       max_retry_count =
           s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
@@ -935,6 +961,8 @@ void S3Option::dump_options() {
          motr_http_bind_port);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);
+  s3_log(S3_LOG_INFO, "", "S3_RETRY_SHUTDOWN_AFTER_SEC = %d\n",
+         s3_retry_after_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_ENABLE = %d\n", s3server_ssl_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_OBJECT_DELAYED_DELETE = %d\n",
@@ -946,6 +974,10 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_SESSION_TIMEOUT = %d\n",
          s3server_ssl_session_timeout_in_sec);
   s3_log(S3_LOG_INFO, "", "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
+  s3_log(S3_LOG_INFO, "", "S3_WRITE_BUFFER_MULTIPLE = %d\n",
+         write_buffer_multiple);
+  s3_log(S3_LOG_INFO, "", "S3_GET_THROTTLE_TIME_MILLISEC = %d\n",
+         s3_req_throttle_time);
   s3_log(S3_LOG_INFO, "", "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_DEFAULT_ENDPOINT = %s\n",
          s3_default_endpoint.c_str());
@@ -1118,6 +1150,8 @@ unsigned short S3Option::get_s3_grace_period_sec() {
   return s3_grace_period_sec;
 }
 
+unsigned short S3Option::get_s3_retry_after_sec() { return s3_retry_after_sec; }
+
 bool S3Option::get_is_s3_shutting_down() { return is_s3_shutting_down; }
 
 void S3Option::set_is_s3_shutting_down(bool is_shutting_down) {
@@ -1241,6 +1275,10 @@ int S3Option::get_s3server_ssl_session_timeout() {
 std::string S3Option::get_perf_log_filename() { return perf_log_file; }
 
 int S3Option::get_read_ahead_multiple() { return read_ahead_multiple; }
+
+int S3Option::get_write_buffer_multiple() { return write_buffer_multiple; }
+
+int S3Option::get_s3_req_throttle_time() { return s3_req_throttle_time; }
 
 std::string S3Option::get_ipv4_bind_addr() { return s3_ipv4_bind_addr; }
 
@@ -1430,6 +1468,8 @@ void S3Option::enable_murmurhash_oid() { s3_enable_murmurhash_oid = true; }
 
 void S3Option::disable_murmurhash_oid() { s3_enable_murmurhash_oid = false; }
 
+void S3Option::disable_daemon() { FLAGS_disable_daemon = true; }
+
 void S3Option::enable_reuseport() { FLAGS_reuseport = true; }
 
 bool S3Option::is_s3_reuseport_enabled() { return s3_reuseport; }
@@ -1439,6 +1479,8 @@ bool S3Option::is_motr_http_reuseport_enabled() { return motr_http_reuseport; }
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }
 
 bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }
+
+bool S3Option::is_daemon_disabled() { return FLAGS_disable_daemon; }
 
 std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
 
@@ -1462,4 +1504,12 @@ bool S3Option::get_libevent_mempool_zeroed_buffer() {
 
 unsigned int S3Option::get_motr_first_read_size() {
   return motr_first_obj_read_size;
+}
+
+unsigned int S3Option::get_motr_reconnect_retry_count() {
+  return motr_reconnect_retry_count;
+}
+
+unsigned int S3Option::get_motr_reconnect_sleep_time() {
+  return motr_reconnect_sleep_time;
 }

@@ -24,6 +24,7 @@ the underlying messaging platform.
 #!/usr/bin/python3.6
 
 import os
+import errno
 import traceback
 import sched
 import time
@@ -39,6 +40,7 @@ from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 #from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
@@ -89,7 +91,7 @@ class ObjectRecoveryScheduler(object):
             #PurgeAPI Here
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
-                self.config, logger=self.logger).list(
+                self.config, connectionType=CONNECTION_TYPE_PRODUCER, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
             if result:
                 self.logger.info("Index listing result :" +
@@ -194,9 +196,12 @@ class ObjectRecoveryScheduler(object):
         if not os.path.isdir(self._logger_directory):
             try:
                 os.mkdir(self._logger_directory)
-            except BaseException:
-                self.logger.error(
-                    "Unable to create log directory at " + self._logger_directory)
+            except OSError as e:
+                if e.errno == errno.EEXIST:
+                    pass
+                else:
+                    raise Exception(" Producer Logger Could not be created")
+
 
 if __name__ == "__main__":
     SCHEDULER = ObjectRecoveryScheduler(sys.argv[1])
