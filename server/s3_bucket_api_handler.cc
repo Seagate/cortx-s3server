@@ -37,6 +37,7 @@
 #include "s3_put_bucket_tagging_action.h"
 #include "s3_stats.h"
 #include "s3_delete_bucket_tagging_action.h"
+#include "s3_get_bucket_versioning_action.h"
 
 void S3BucketAPIHandler::create_action() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);

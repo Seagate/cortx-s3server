@@ -1351,6 +1351,19 @@ AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")
 AwsTest('Aws can delete bucket').delete_bucket("target-bucket")\
     .execute_test().command_is_successful()
 
+#******** Get Bucket Versioning default status ********
+AwsTest('Aws can get bucket versioning default status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_be_empty()
+
+#******** Get Bucket Versioning Enabled status ********
+AwsTest('Aws can get bucket versioning Enabled status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_have("Enabled")
+
+#******** Get Bucket Versioning Suspended status ********
+AwsTest('Aws can get bucket versioning Suspended status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_have("Suspended")
+
+#************Negative case to get versioning status of non-existant bucket*******
+AwsTest('Aws can not get versioning status of non-existant bucket').get_bucket_versioning("seagate1")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
 #-------------------Delete Accounts------------------
 test_msg = "Delete account sourceAccount"
 s3test_access_key = S3ClientConfig.access_key_id

@@ -43,6 +43,19 @@ class S3GetBucketVersioningAction : public S3BucketAction {
   void consume_incoming_content();
   void fetch_bucket_info_failed();
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3GetBucketVersioningActionTest, Constructor);
+  FRIEND_TEST(S3GetBucketVersioningActionTest, ValidateRequest);
+  FRIEND_TEST(S3GetBucketVersioningActionTest,
+              SetVersioningStateWhenBucketFailedToLaunch);
+  FRIEND_TEST(S3GetBucketVersioningActionTest,
+              SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3GetBucketVersioningActionTest,
+              SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3GetBucketVersioningActionTest,
+              SendResponseToClientInternalError);
+  FRIEND_TEST(S3GetBucketVersioningActionTest, SendResponseToClientSuccess);
 };
 
 #endif
