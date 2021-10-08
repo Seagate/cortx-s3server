@@ -699,7 +699,7 @@ void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
       bucket_metadata->get_multipart_index_layout().oid,
       bucket_metadata->get_objects_version_list_index_layout().oid, "",
       false /* force_delete */, true,
-      part_metadata->get_part_index_layout().oid, 0,
+      part_metadata->get_part_index_layout().oid, 1,
       strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
       bucket_metadata->get_extended_metadata_index_layout().oid));
   // store new oid, key = newoid

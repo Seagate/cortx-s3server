@@ -680,8 +680,6 @@ void S3PutObjectAction::add_part_object_to_probable_dead_oid_list(
         // bucketing of object)
         S3CommonUtilities::size_based_bucketing_of_objects(
             ext_oid_str, part_entry[0].item_size);
-        // key = oldoid + "-" + newoid; // (newoid = dummy oid of new object)
-        ext_oid_str = ext_oid_str + '-' + new_oid_str;
 
         old_obj_oids.push_back(part_entry[0].motr_OID);
         old_obj_pvids.push_back(part_entry[0].PVID);
@@ -702,14 +700,33 @@ void S3PutObjectAction::add_part_object_to_probable_dead_oid_list(
             bucket_metadata->get_object_list_index_layout().oid,
             bucket_metadata->get_objects_version_list_index_layout().oid,
             object_metadata->get_version_key_in_index(),
-            false /* force_delete */, part_entry[0].is_multipart, {0ULL, 0ULL},
-            1, it->first,
+            false /* force_delete */, false, {0ULL, 0ULL}, 1, it->first,
             bucket_metadata->get_extended_metadata_index_layout().oid,
-            part_entry[0].versionID));
+            part_entry[0].versionID, object_metadata->get_oid()));
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
         it++;
       }
     }  // End of For
+    // Add one more entry for parent multipart object so that S3 BD can erase
+    // it from the version index, once it is marked for deletion
+    std::string oid_str =
+        S3M0Uint128Helper::to_string(object_metadata->get_oid());
+    // For multiart parent object, size is 0 (as it is dummy object)
+    S3CommonUtilities::size_based_bucketing_of_objects(oid_str, 0);
+    std::unique_ptr<S3ProbableDeleteRecord> probable_del_rec;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Adding multipart parent probable del rec with key [%s]\n",
+           oid_str.c_str());
+    probable_del_rec.reset(new S3ProbableDeleteRecord(
+        oid_str, {0ULL, 0ULL}, object_metadata->get_object_name(),
+        object_metadata->get_oid(), 0, "",
+        bucket_metadata->get_object_list_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid,
+        object_metadata->get_version_key_in_index(), false /* force_delete */,
+        false, {0ULL, 0ULL}, 1, total_parts /* Total parts in parent object */,
+        bucket_metadata->get_extended_metadata_index_layout().oid,
+        object_metadata->get_obj_version_key(), {0ULL, 0ULL}));
+    parts_probable_del_rec_list.push_back(std::move(probable_del_rec));
   }
 }
 

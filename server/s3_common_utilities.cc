@@ -139,14 +139,22 @@ void size_based_bucketing_of_objects(std::string &oid_str,
   // 50MB < size <= 1GB                           'F'
   // 10KB < size <= 50MB                          'G'
   // 1KB < size <= 10KB                           'H'
-  // size <= 1KB                                  'I'
+  // 0 < size <= 1KB                              'I'
+  // size = 0                                     'J'
+
+  // Note: size = 0 is added for dummy object in case of multipart parent object
 
   // NOTE : chars A/B/C have been left out for objects bigger than 100GB
   // Listing of keys in motr happens in lexicographic order, hence bigger object
   // will get listed first.
 
   switch (object_size_for_bucketing) {
-    case 0 ... 1024:  // less than or equal to 1KB
+    case 0:
+      marker = 'J';  // Multipart parent object (a dummy object oid)
+      oid_str.insert(0, marker);
+      break;
+
+    case 1 ... 1024:  // greater than 0 and less than equal to 1KB
       marker = 'I';
       oid_str.insert(0, marker);
       break;

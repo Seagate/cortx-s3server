@@ -269,6 +269,23 @@ void S3PostCompleteAction::fetch_multipart_info_success() {
   new_object_oid = multipart_metadata->get_oid();
   layout_id = multipart_metadata->get_layout_id();
   new_pvid = multipart_metadata->get_pvid();
+  // Check if a new object has become live after multipart initiate
+  // of this multipart operation. If so, read current state.
+  if (S3ObjectMetadataState::missing != object_metadata->get_state()) {
+    // old object exists.
+    struct m0_uint128 current_old_oid = object_metadata->get_oid();
+    if (!((old_object_oid.u_hi == current_old_oid.u_hi) &&
+          (old_object_oid.u_lo == current_old_oid.u_lo))) {
+      s3_log(S3_LOG_DEBUG, request_id,
+             "New object has become live after this multipart initiate. Get "
+             "current object state\n");
+      old_object_oid = object_metadata->get_oid();
+      old_layout_id = object_metadata->get_layout_id();
+      // TBD - Don't we need old PV id ?
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "No change in current object state\n");
+    }
+  }
   if (old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL) {
     old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
   }
@@ -516,6 +533,17 @@ bool S3PostCompleteAction::validate_parts() {
       }
       unsigned int pnum = std::stoul(store_kv->first.c_str());
       object_size += part_metadata->get_content_length();
+      if (object_size > MAXIMUM_ALLOWED_OBJECT_SIZE) {
+        s3_log(S3_LOG_ERROR, request_id, "The multipart object size (%" PRIu64
+                                         ") is larger than max "
+                                         "object size allowed:5TB\n",
+               object_size);
+        set_s3_error("EntityTooLarge");
+        s3_post_complete_action_state =
+            S3PostCompleteActionState::validationFailed;
+        send_response_to_s3_client();
+        return false;
+      }
       part_etags[pnum] = part_metadata->get_md5();
       // Remove the entry from parts map, so that in next
       // validate_parts() we dont have to scan it again
@@ -607,7 +635,7 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
     // object has some parts
     const std::map<int, std::vector<struct s3_part_frag_context>>&
         ext_entries_mp = object_ext_metadata->get_raw_extended_entries();
-    struct m0_uint128 old_oid, part_list_index_oid;
+    struct m0_uint128 part_list_index_oid;
     // bool is_multipart = false;
     for (unsigned int key_indx = 1; key_indx <= total_parts; key_indx++) {
       const std::vector<struct s3_part_frag_context>& part_entry =
@@ -621,16 +649,7 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
         // bucketing of object)
         S3CommonUtilities::size_based_bucketing_of_objects(
             ext_oid_str, part_entry[0].item_size);
-        if (is_old_object) {
-          // key = oldoid + "-" + newoid; // (newoid = dummy oid of new object)
-          ext_oid_str = ext_oid_str + '-' + new_oid_str;
-          old_oid = {0ULL, 0ULL};
-          part_list_index_oid = {0ULL, 0ULL};
-        } else {
-          // is_multipart = true;
-          part_list_index_oid = multipart_metadata->get_part_index_layout().oid;
-          old_oid = old_object_oid;
-        }
+        part_list_index_oid = multipart_metadata->get_part_index_layout().oid;
 
         s3_log(S3_LOG_DEBUG, request_id,
                "Adding part object, with oid [%" SCNx64 " : %" SCNx64
@@ -642,7 +661,7 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
         S3M0Uint128Helper::to_string(part_entry[0].PVID, pvid_str);
         std::unique_ptr<S3ProbableDeleteRecord> ext_del_rec;
         ext_del_rec.reset(new S3ProbableDeleteRecord(
-            ext_oid_str, old_oid, object_metadata->get_object_name(),
+            ext_oid_str, {0ULL, 0ULL}, object_metadata->get_object_name(),
             part_entry[0].motr_OID, part_entry[0].layout_id, pvid_str,
             bucket_metadata->get_object_list_index_layout().oid,
             bucket_metadata->get_objects_version_list_index_layout().oid,
@@ -650,10 +669,35 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
             false /* force_delete */, part_entry[0].is_multipart,
             part_list_index_oid, 1, key_indx,
             bucket_metadata->get_extended_metadata_index_layout().oid,
-            part_entry[0].versionID));
+            part_entry[0].versionID,
+            object_metadata->get_oid() /* parent oid of multipart */));
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
       }
     }  // End of For
+    // Add one more entry for parent multipart object to erase it
+    // from version index once it is marked for deletion
+    std::string oid_str =
+        S3M0Uint128Helper::to_string(object_metadata->get_oid());
+    // For multiart parent object, size is 0 (as it is dummy object)
+    S3CommonUtilities::size_based_bucketing_of_objects(oid_str, 0);
+    if (is_old_object) {
+      // Old object is passed. This is overwrite case
+      oid_str = oid_str + '-' + new_oid_str;
+    }
+    std::unique_ptr<S3ProbableDeleteRecord> probable_del_rec;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Adding multipart parent probable del rec with key [%s]\n",
+           oid_str.c_str());
+    probable_del_rec.reset(new S3ProbableDeleteRecord(
+        oid_str, {0ULL, 0ULL}, object_metadata->get_object_name(),
+        object_metadata->get_oid(), 0, "",
+        bucket_metadata->get_object_list_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid,
+        object_metadata->get_version_key_in_index(), false /* force_delete */,
+        true, {0ULL, 0ULL}, 1, total_parts /* Total parts in parent object */,
+        bucket_metadata->get_extended_metadata_index_layout().oid,
+        object_metadata->get_obj_version_key(), {0ULL, 0ULL}));
+    parts_probable_del_rec_list.push_back(std::move(probable_del_rec));
   } else {
     // Overwritten by Simple Object.
     S3CommonUtilities::size_based_bucketing_of_objects(
