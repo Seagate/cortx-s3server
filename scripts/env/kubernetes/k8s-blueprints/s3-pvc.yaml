@@ -36,3 +36,29 @@ spec:
     requests:
       storage: 3Gi
   volumeName: var-data-cortx
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: solution-node-for-storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 3Gi
+  volumeName: solution-node-for-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: solution-node-for-ctrl
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 3Gi
+  volumeName: solution-node-for-ctrl

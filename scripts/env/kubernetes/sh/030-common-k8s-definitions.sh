@@ -36,6 +36,12 @@ kubectl apply -f k8s-blueprints/storage-class.yaml
 mkdir -p /var/motr
 mkdir -p /etc/cortx /share/var/log/cortx /var/data/cortx
 
+# Create node/id files.
+mkdir -p /etc/cortx/solution/control-node
+touch /etc/cortx/solution/control-node/id
+mkdir -p /etc/cortx/solution/storage-node1
+touch /etc/cortx/solution/storage-node1/id
+
 kubectl apply -f k8s-blueprints/motr-pv.yaml
 kubectl apply -f k8s-blueprints/motr-pvc.yaml
 kubectl apply -f k8s-blueprints/var-motr-pv.yaml
