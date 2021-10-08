@@ -131,6 +131,8 @@ def account_tests():
         'access_key': 'AAAAAAAAAAAAAAAAA2'
     }
     result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
+    print(vars(result))
+    print(vars(result.status))
     result.command_response_should_have("InvalidParameterValue")
 
     # 3. Negative
