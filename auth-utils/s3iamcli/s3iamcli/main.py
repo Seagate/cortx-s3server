@@ -290,8 +290,8 @@ class S3IamCli:
 
             # Take access key and secret key if user provides.
             if(cli_args.access_key is not None) and (cli_args.secret_key is not None):
-                cli_args['user_provided_access_key'] = cli_args.access_key
-                cli_args['user_provided_secret_key'] = cli_args.secret_key
+                cli_args.user_provided_access_key = cli_args.access_key
+                cli_args.user_provided_secret_key = cli_args.secret_key
 
             # This assignment is done at the end as user may provide access key and secret key.
             cli_args.access_key = cli_args.ldapuser
