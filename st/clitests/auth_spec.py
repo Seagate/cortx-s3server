@@ -102,6 +102,75 @@ def _use_root_credentials():
 
 # Test create account API
 def account_tests():
+    # Test Create Account with keys
+    # 1. Positive
+    test_msg = "Create account s3testwithkeys1 with Access key and Secret key"
+    account_args = {
+        'AccountName': 's3testwithkeys1',
+        'Email': 's3testwithkeys1@seagate.com',
+        'ldapuser': S3ClientConfig.ldapuser,
+        'ldappasswd': S3ClientConfig.ldappasswd,
+        'access_key': 'AAAAAAAAAAAAAAAAA1',
+        'secret_key': 'SSSSSSSSS1'
+    }
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+    GlobalTestState.root_access_key = account_response_elements['AccessKeyId']
+    GlobalTestState.root_secret_key = account_response_elements['SecretKey']
+    AuthTest("Test passed. Deleting account.").delete_account(**account_args).execute_test()
+
+    # 2. Negative
+    test_msg = "Create account s3testwithkeys2 with only Access key"
+    account_args = {
+        'AccountName': 's3testwithkeys2',
+        'Email': 's3testwithkeys2@seagate.com',
+        'ldapuser': S3ClientConfig.ldapuser,
+        'ldappasswd': S3ClientConfig.ldappasswd,
+        'access_key': 'AAAAAAAAAAAAAAAAA2'
+    }
+    result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
+    result.command_response_should_have("InvalidParameterValue")
+
+    # 3. Negative
+    test_msg = "Create account s3testwithkeys3 with only Secret key"
+    account_args = {
+        'AccountName': 's3testwithkeys3',
+        'Email': 's3testwithkeys3@seagate.com',
+        'ldapuser': S3ClientConfig.ldapuser,
+        'ldappasswd': S3ClientConfig.ldappasswd,
+        'secret_key': 'SSSSSSSS2'
+    }
+    result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
+    result.command_response_should_have("InvalidParameterValue")
+
+    # 4. Negative
+    test_msg = "Create account s3testwithkeys4 with invalid Access key"
+    account_args = {
+        'AccountName': 's3testwithkeys4',
+        'Email': 's3testwithkeys4@seagate.com',
+        'ldapuser': S3ClientConfig.ldapuser,
+        'ldappasswd': S3ClientConfig.ldappasswd,
+        'access_key': 'AAAAA',
+        'secret_key': 'SSSSSSSSS12'
+    }
+    result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
+    result.command_response_should_have("InvalidParameterValue")
+
+    # 5. Negative
+    test_msg = "Create account s3testwithkeys5 with invalid Secret key"
+    account_args = {
+        'AccountName': 's3testwithkeys5',
+        'Email': 's3testwithkeys5@seagate.com',
+        'ldapuser': S3ClientConfig.ldapuser,
+        'ldappasswd': S3ClientConfig.ldappasswd,
+        'access_key': 'AAAAAAAAAAAAAAAA3',
+        'secret_key': 'SSSS'
+    }
+    result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
+    result.command_response_should_have("InvalidParameterValue")
+
     test_msg = "Create account s3test"
     account_args = {'AccountName': 's3test', 'Email': 's3test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"

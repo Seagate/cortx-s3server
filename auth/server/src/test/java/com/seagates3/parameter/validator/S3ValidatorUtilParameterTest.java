@@ -285,7 +285,7 @@ public class S3ValidatorUtilParameterTest {
     /**
      * Test S3ValidatorUtil#isValidCustomAccessKey. case - Valid access key id.
      */
-    @Test public void IsValidCustomAccessKey_ValidAccessKey_True() {
+    @Test public void isValidCustomAccessKeyValidAccessKeyTrue() {
       String accessKey = "ABCDEFGHIJKLMN_123456";
       assertTrue(S3ParameterValidatorUtil.isValidCustomAccessKey(accessKey));
     }
@@ -293,7 +293,7 @@ public class S3ValidatorUtilParameterTest {
     /**
      * Test S3ValidatorUtil#isValidCustomAccessKey. case - Access key id is null
      */
-    @Test public void IsValidCustomAccessKey_Null_False() {
+    @Test public void isValidCustomAccessKeyNullFalse() {
       String accessKey = null;
       assertFalse(S3ParameterValidatorUtil.isValidCustomAccessKey(accessKey));
     }
@@ -302,7 +302,7 @@ public class S3ValidatorUtilParameterTest {
      * Test S3ValidatorUtil#isValidCustomAccessKey. case - Invalid access key id
      * pattern.
      */
-    @Test public void IsValidCustomAccessKey_InvalidNamePattern_False() {
+    @Test public void isValidCustomAccessKeyInvalidNamePatternFalse() {
       String accessKey = "ABCDEFGHIJKLMN 123456";
       assertFalse(S3ParameterValidatorUtil.isValidCustomAccessKey(accessKey));
 
@@ -315,7 +315,7 @@ public class S3ValidatorUtilParameterTest {
      * key
      * id is out of range.
      */
-    @Test public void IsValidCustomAccessKey_LengthOutOfRange_False() {
+    @Test public void isValidCustomAccessKeyLengthOutOfRangeFalse() {
       String accessKey = new String(new char[129]).replace('\0', 'A');
       assertFalse(S3ParameterValidatorUtil.isValidCustomAccessKey(accessKey));
 
@@ -326,7 +326,7 @@ public class S3ValidatorUtilParameterTest {
     /**
      * Test S3ValidatorUtil#isValidCustomSecretKey. case - Valid secret key.
      */
-    @Test public void IsValidCustomSecretKey_ValidSecretKey_True() {
+    @Test public void isValidCustomSecretKeyValidSecretKeyTrue() {
       String secretKey = "ABCDEFGHIJKLMN_123456@";
       assertTrue(S3ParameterValidatorUtil.isValidCustomSecretKey(secretKey));
     }
@@ -334,7 +334,7 @@ public class S3ValidatorUtilParameterTest {
     /**
      * Test S3ValidatorUtil#isValidCustomSecretKey. case - Secret key is null
      */
-    @Test public void IsValidCustomSecretKey_Null_False() {
+    @Test public void isValidCustomSecretKeyNullFalse() {
       String secretKey = null;
       assertFalse(S3ParameterValidatorUtil.isValidCustomSecretKey(secretKey));
     }
@@ -344,7 +344,7 @@ public class S3ValidatorUtilParameterTest {
      * key
      * id is out of range.
      */
-    @Test public void IsValidCustomSecretKey_LengthOutOfRange_False() {
+    @Test public void isValidCustomSecretKeyLengthOutOfRangeFalse() {
       String secretKey = new String(new char[41]).replace('\0', 'A');
       assertFalse(S3ParameterValidatorUtil.isValidCustomSecretKey(secretKey));
 

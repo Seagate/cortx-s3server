@@ -413,7 +413,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                 response.getResponseStatus());
     }
 
-    @Test public void CreateAccountWithKeys_Success_ReturnCreateResponse()
+    @Test public void createAccountWithKeysReturnSuccessCreateResponse()
         throws Exception {
       Account account = new Account();
       account.setName("s3test");
