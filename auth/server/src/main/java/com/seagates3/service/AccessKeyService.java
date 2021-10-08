@@ -27,6 +27,7 @@ import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
+import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
 import com.seagates3.util.KeyGenUtil;
@@ -51,6 +52,38 @@ public class AccessKeyService {
         accessKeyDAO.save(accessKey);
 
         return accessKey;
+    }
+
+    /*
+     * Create access keys for the root user.
+     */
+   public
+    static AccessKey createAccessKey(User user) throws DataAccessException {
+      String accessKeyId = KeyGenUtil.createUserAccessKeyId(true);
+      String secretKey = KeyGenUtil.generateSecretKey();
+      AccessKey accessKey = createAccessKey(user, accessKeyId, secretKey);
+
+      return accessKey;
+    }
+
+    /*
+     * Create access keys for the root user.
+     */
+   public
+    static AccessKey createAccessKey(User user, String accessKeyId,
+                                     String secretKey)
+        throws DataAccessException {
+      AccessKeyDAO accessKeyDAO =
+          (AccessKeyDAO)DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
+      AccessKey accessKey = new AccessKey();
+      accessKey.setUserId(user.getId());
+      accessKey.setId(accessKeyId);
+      accessKey.setSecretKey(secretKey);
+      accessKey.setStatus(AccessKeyStatus.ACTIVE);
+
+      accessKeyDAO.save(accessKey);
+
+      return accessKey;
     }
 }
 
