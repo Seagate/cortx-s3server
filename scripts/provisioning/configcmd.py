@@ -102,6 +102,10 @@ class ConfigCmd(SetupCmd):
         self.copy_logrotate_files()
         self.logger.info("copy log rotate config completed")
 
+      # create symbolic link for this config file to be used by log rotation
+      self.create_symbolic_link(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                self.get_confkey("S3_CONF_SYMLINK"))
+
       # update all the config files
       self.logger.info("update all services config files started")
       self.update_configs()
@@ -366,7 +370,7 @@ class ConfigCmd(SetupCmd):
         sysconfig.write(f"LOG_FILE='{log_file}'\n")
       
       # create symbolic link for this config file to be used by log rotation
-      self.create_symbolic_link(sysconfig_file, "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy_sysconfig.conf")
+      self.create_symbolic_link(sysconfig_file, self.get_confkey("S3_HAPROXY_SYSCONF_SYMLINK"))
 
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()

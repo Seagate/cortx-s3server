@@ -173,3 +173,9 @@ S3_LOGROTATE_HAPROXY_ROLLOVER: "/opt/seagate/cortx/s3/install/haproxy/logrotate/
 S3_LOGROTATE_S3LOG: "/opt/seagate/cortx/s3/install/logrotate/s3logfilerollover.sh"
 S3_LOGROTATE_M0TRACE: "/opt/seagate/cortx/s3/install/logrotate/s3m0tracelogfilerollover.sh"
 S3_LOGROTATE_ADDB: "/opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollover.sh"
+
+# S3 config file symbolic link path
+S3_CONF_SYMLINK: "/opt/seagate/cortx/s3/install/logrotate/s3config.yaml"
+
+# HAProxy sysconfig file symbolic link path
+S3_HAPROXY_SYSCONF_SYMLINK: "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy_sysconfig.conf"

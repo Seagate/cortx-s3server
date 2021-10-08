@@ -34,12 +34,13 @@ where:
 
 # max log files count in each log directory
 log_files_max_count=5
-s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
+# config file path is symbolic link created during mini provisioner in config phase
+s3server_config="/opt/seagate/cortx/s3/install/logrotate/s3config.yaml"
 # have severity entries, as s3sever logs are created based on severity.
 log_severity="INFO WARNING ERROR FATAL"
 # get log directory from s3 server config file
 # TODO: have to check alternatives to get log dorectory
-s3server_logdir=`cat /opt/seagate/cortx/s3/conf/s3config.yaml | grep "S3_LOG_DIR:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
+s3server_logdir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_LOG_DIR")
 
 while getopts ":n:" option; do
     case "${option}" in

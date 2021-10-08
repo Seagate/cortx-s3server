@@ -91,7 +91,6 @@ def main():
       configure_log_rotate("S3_LOGROTATE_ADDB", "/etc/cron.hourly/")
       configure_log_rotate("S3_LOGROTATE_AUDITLOG", "/etc/cron.daily/")
 
-
       # start crond
       os.system("/usr/sbin/crond start")
 
@@ -269,6 +268,17 @@ def configure_log_rotate(key_to_read: str, cron_dir: str):
     os.makedirs(os.path.dirname(cron_dir), exist_ok=True)
     shutil.copy(s3_logrotate_config_file, cron_dir)
     logger.info("logrotate config file copied successfully to cron directory")
+
+def create_symbolic_link(src_path: str, dst_path: str):
+  """create symbolic link."""
+  logger.info(f"symbolic link source path: {src_path}")
+  logger.info(f"symbolic link destination path: {dst_path}")
+  if os.path.exists(dst_path):
+    logger.info(f"symbolic link is already present")
+    os.unlink(dst_path)
+    logger.info("symbolic link is unlinked")
+  os.symlink(src_path, dst_path)
+  logger.info(f"symbolic link created successfully")
 
 if __name__ == '__main__':
   sys.exit(main())
