@@ -969,7 +969,7 @@ int main(int argc, char **argv) {
 
     struct timeval tv;
     tv.tv_usec = 0;
-    tv.tv_sec = g_option_instance->get_motr_init_retry_time();
+    tv.tv_sec = g_option_instance->get_motr_init_max_timeout();
 
     struct event *timer_event =
         event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
