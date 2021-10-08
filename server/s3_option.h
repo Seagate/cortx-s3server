@@ -456,6 +456,7 @@ class S3Option {
   unsigned int get_motr_first_read_size();
   unsigned int get_motr_reconnect_sleep_time();
   unsigned int get_motr_reconnect_retry_count();
+  unsigned int get_motr_init_retry_time();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();

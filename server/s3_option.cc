@@ -328,6 +328,9 @@ bool S3Option::load_section(std::string section_name,
       motr_reconnect_retry_count =
           s3_option_node["S3_MOTR_RECONNECT_RETRY_COUNT"].as<unsigned int>();
       ;
+      motr_init_retry_time =
+          s3_option_node["S3_MOTR_INIT_RETRY_TIME"].as<unsigned int>();
+      ;
       motr_reconnect_sleep_time =
           s3_option_node["S3_MOTR_SLEEP_DURING_RECONNECT"].as<unsigned int>();
       ;
@@ -1508,6 +1511,10 @@ unsigned int S3Option::get_motr_first_read_size() {
 
 unsigned int S3Option::get_motr_reconnect_retry_count() {
   return motr_reconnect_retry_count;
+}
+
+unsigned int S3Option::get_motr_init_retry_time() {
+  return motr_init_retry_time;
 }
 
 unsigned int S3Option::get_motr_reconnect_sleep_time() {
