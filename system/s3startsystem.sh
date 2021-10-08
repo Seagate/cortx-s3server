@@ -110,9 +110,18 @@ fi
 pid_filename="/var/run/s3server.${fid}.pid"
 set -x
 
-s3server --s3pidfile "$pid_filename" \
-         --motrlocal "$local_ep" --motrha "$ha_ep" \
-         --motrprofilefid "$profile_fid" --motrprocessfid "$process_fid" \
-         --s3port "$s3port" --log_dir "$s3_log_dir" \
-         --s3config "$s3_config_file" \
-         "${extra_options[@]}"
+# Retry if motr init call hangs . if it hangs s3 process will return 100 as exit code.
+# then s3 will retry calling motr init again.
+while true;
+do
+  s3server --s3pidfile "$pid_filename" \
+           --motrlocal "$local_ep" --motrha "$ha_ep" \
+           --motrprofilefid "$profile_fid" --motrprocessfid "$process_fid" \
+           --s3port "$s3port" --log_dir "$s3_log_dir" \
+           --s3config "$s3_config_file" \
+           "${extra_options[@]}"
+  rc=$?
+  if [[ rc -ne 100 ]]; then
+    break
+  fi
+done
