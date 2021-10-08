@@ -59,6 +59,7 @@ class MockS3BucketMetadata : public S3BucketMetadata {
                             std::function<void(void)> on_failed));
   MOCK_METHOD0(deletepolicy, void());
   MOCK_METHOD0(delete_bucket_tags, void());
+  MOCK_METHOD0(delete_bucket_replication_config, void());
   MOCK_METHOD1(set_location_constraint, void(std::string location));
   MOCK_METHOD1(from_json, int(std::string content));
   MOCK_METHOD0(get_owner_canonical_id, const std::string&());

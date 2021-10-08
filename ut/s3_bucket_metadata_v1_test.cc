@@ -245,7 +245,44 @@ TEST_F(S3BucketMetadataV1Test, GetSpecialCharTagsAsXml) {
 
   EXPECT_STREQ(expected_str, action_under_test->get_tags_as_xml().c_str());
 }
+TEST_F(S3BucketMetadataV1Test, GetReplicationConfigAsXml) {
+  char expected_str[] =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>role-string</Role><Rule><Status>Enabled</Status>"
+      "<Priority>1</Priority><ID>Rule-1</ID><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication><Destination>"
+      "<Bucket>dest-bucket</Bucket></"
+      "Destination><Filter><And><Prefix>pr_1</Prefix>"
+      "<Tag><Key>k1</Key><Value>v1</Value></Tag><Tag><Key>k2</Key>"
+      "<Value>v2</Value></Tag></And></Filter></Rule>"
+      "<Rule><Status>Enabled</Status><Priority>2</Priority>"
+      "<ID>Rule-2</ID><DeleteMarkerReplication><Status>Disabled</Status>"
+      "</DeleteMarkerReplication><Destination>"
+      "<Bucket>dest-bucket</Bucket></"
+      "Destination><Filter><And><Prefix>pr_2</Prefix><Tag>"
+      "<Key>k1</Key><Value>v1</Value></Tag><Tag><Key>k2</Key>"
+      "<Value>v2</Value></Tag></And></Filter></Rule></"
+      "ReplicationConfiguration>";
+  std::string bucket_replication_config =
+      "{\"Role\":\"role-string\",\"Rules\":[{\"DeleteMarkerReplication\":{"
+      "\"Status\":\"Disabled\"},\"Destination\":{\"Bucket\":\"dest-bucket\"},"
+      "\"Filter\":{\""
+      "And\":{\"Prefix\":\"pr_1\",\"Tag\":[{\"Key\":\"k1\",\"Value\":\"v1\"},{"
+      "\"Key\":\"k2\",\"Value\":\"v2\"}]}},\"ID\":\"Rule-1\",\"Priority\":1,"
+      "\"Status\":\"Enabled\"},{\"Delete"
+      "MarkerReplication\":{\"Status\":\"Disabled\"},\"Destination\":{"
+      "\"Bucket\":\"dest-bucket\"},\"Filter\":{\"And\":{\"Prefix\":\"pr_2\","
+      "\"Tag\":[{\"Key\":\"k1\",\"Value\""
+      ":\"v1\"},{\"Key\":\"k2\",\"Value\":\"v2\"}]}},\"ID\":\"Rule-2\","
+      "\"Priority\":2,\"Status\":\"Enabled\"}]}";
 
+  action_under_test->set_bucket_replication_configuration(
+      bucket_replication_config);
+
+  EXPECT_STREQ(expected_str,
+               action_under_test->get_replication_config_as_xml().c_str());
+}
 TEST_F(S3BucketMetadataV1Test, AddSystemAttribute) {
   action_under_test->add_system_attribute("LocationConstraint", "us-east");
   EXPECT_STREQ("us-east",

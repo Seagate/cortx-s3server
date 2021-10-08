@@ -47,8 +47,8 @@ class S3PutReplicationBody {
   std::string rule_prefix;
   std::multimap<std::string, std::string> bucket_tags;
   std::string rule_status;
-  unsigned int rule_priority;
-  std::set<unsigned int> rule_priority_set;
+  int rule_priority;
+  std::set<int> rule_priority_set;
   std::string del_rep_status;
   std::string bucket_str;
   bool is_valid;

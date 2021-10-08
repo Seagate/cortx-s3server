@@ -166,6 +166,9 @@ std::string S3BucketMetadata::to_json() {
   root["motr_objects_version_list_index_layout"] =
       S3M0Uint128Helper::to_string(objects_version_list_index_layout);
 
+  if (!bucket_replication_configuration.empty()) {
+    root["ReplicationConfiguration"] = bucket_replication_configuration;
+  }
   S3DateTime current_time;
   current_time.init_current_time();
   root["create_timestamp"] = current_time.get_isoformat_string();
@@ -220,7 +223,131 @@ int S3BucketMetadata::from_json(std::string content) {
   for (const auto& tag : members) {
     bucket_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
   }
+
+  bucket_replication_configuration =
+      newroot["ReplicationConfiguration"].asString();
+
   return 0;
+}
+
+std::string S3BucketMetadata::replication_config_from_json_to_xml(
+    std::string content) {
+  s3_log(S3_LOG_DEBUG, request_id, "Called\n");
+  Json::Value newroot;
+  Json::Reader reader;
+  std::string xml_str = "";
+  std::string node_str;
+  std::map<std::string, std::string> mp;
+  bool parsingSuccessful = reader.parse(content.c_str(), newroot);
+  if (!parsingSuccessful) {
+    s3_log(S3_LOG_ERROR, request_id, "Json Parsing failed.\n");
+    return "";
+  }
+  if (!newroot["Role"].isNull()) {
+    node_str = newroot["Role"].asString();
+    xml_str += "<Role>" + node_str + "</Role>";
+  }
+
+  Json::Value rule_array = newroot["Rules"];
+  Json::Value rule_object;
+
+  // Iterate over the number of rules present in replication configuration
+  for (unsigned int index = 0; index < rule_array.size(); ++index) {
+
+    xml_str += "<Rule>";
+    rule_object = rule_array[index];
+
+    Json::Value rule_child;
+    std::string rule_child_str;
+
+    if (!rule_object["Status"].isNull()) {
+      rule_child_str = rule_object["Status"].asString();
+      xml_str += "<Status>" + rule_child_str + "</Status>";
+    }
+
+    if (!rule_object["Priority"].isNull()) {
+      rule_child_str = rule_object["Priority"].asString();
+      xml_str += "<Priority>" + rule_child_str + "</Priority>";
+    }
+
+    if (!rule_object["ID"].isNull()) {
+      rule_child_str = rule_object["ID"].asString();
+      xml_str += "<ID>" + rule_child_str + "</ID>";
+    }
+
+    if (!rule_object["DeleteMarkerReplication"].isNull()) {
+
+      rule_child_str =
+          rule_object["DeleteMarkerReplication"]["Status"].asString();
+      xml_str += "<DeleteMarkerReplication><Status>" + rule_child_str +
+                 "</Status></DeleteMarkerReplication>";
+    }
+
+    if (!rule_object["Destination"].isNull()) {
+
+      rule_child_str = rule_object["Destination"]["Bucket"].asString();
+      xml_str +=
+          "<Destination><Bucket>" + rule_child_str + "</Bucket></Destination>";
+    }
+
+    std::string key_str, val_str, pre_str;
+    // we only support Filter/Prefix, not Prefix(outside of Filter) as it is
+    // deprecated.
+    if (!rule_object["Filter"].isNull()) {
+      if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
+          rule_object["Filter"]["And"]["Prefix"].isNull()) {
+        // If tag,and nodes are present in filter and Prefix is not present.
+
+        xml_str += "<Filter><And>";
+        Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
+        for (unsigned int index = 0; index < tag_array.size(); ++index) {
+
+          Json::Value tag_object = tag_array[index];
+          key_str = tag_object["Key"].asString();
+          val_str = tag_object["Value"].asString();
+
+          xml_str += "<Tag><Key>" + key_str + "</Key><Value>" + val_str +
+                     "</Value></Tag>";
+        }
+        xml_str += "</And></Filter>";
+      } else if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
+                 !rule_object["Filter"]["And"]["Prefix"].isNull()) {
+        // If tag,and,Prefix nodes are present  in filter
+
+        xml_str += "<Filter><And><Prefix>";
+        pre_str = rule_object["Filter"]["And"]["Prefix"].asString();
+
+        xml_str += pre_str + "</Prefix>";
+        Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
+        for (unsigned int index = 0; index < tag_array.size(); ++index) {
+          Json::Value tag_object = tag_array[index];
+          key_str = tag_object["Key"].asString();
+          val_str = tag_object["Value"].asString();
+
+          xml_str += "<Tag><Key>" + key_str + "</Key><Value>" + val_str +
+                     "</Value></Tag>";
+        }
+        xml_str += "</And></Filter>";
+      } else if (!rule_object["Filter"]["Tag"].isNull()) {
+        // If only tag node is present in filter
+
+        key_str = rule_object["Filter"]["Tag"]["Key"].asString();
+        val_str = rule_object["Filter"]["Tag"]["Value"].asString();
+        xml_str += "<Filter><Tag><Key>" + key_str + "</Key><Value>" + val_str +
+                   "</Value></Tag></Filter>";
+      } else if (!rule_object["Filter"]["Prefix"].isNull()) {
+        // If only Prefix node is present in filter
+
+        pre_str = rule_object["Filter"]["Prefix"].asString();
+        xml_str += "<Filter><Prefix>" + pre_str + "</Prefix></Filter>";
+      } else {
+
+        xml_str += "<Filter></Filter>";
+      }
+    }
+    xml_str += "</Rule>";
+  }
+  return xml_str;
 }
 
 void S3BucketMetadata::acl_from_json(std::string acl_json_str) {
@@ -231,6 +358,10 @@ void S3BucketMetadata::acl_from_json(std::string acl_json_str) {
 void S3BucketMetadata::deletepolicy() { bucket_policy = ""; }
 
 void S3BucketMetadata::delete_bucket_tags() { bucket_tags.clear(); }
+
+void S3BucketMetadata::delete_bucket_replication_config() {
+  bucket_replication_configuration = "";
+}
 
 void S3BucketMetadata::setacl(const std::string& acl_str) {
   encoded_acl = acl_str;
@@ -284,8 +415,36 @@ std::string S3BucketMetadata::get_tags_as_xml() {
   return tags_as_xml_str;
 }
 
+std::string S3BucketMetadata::get_replication_config_as_xml() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  std::string replication_config_as_xml_str;
+  std::string replication_config =
+      replication_config_from_json_to_xml(bucket_replication_configuration);
+
+  if (bucket_replication_configuration.empty()) {
+    return replication_config_as_xml_str;
+  } else {
+
+    replication_config_as_xml_str =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ReplicationConfiguration "
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
+        replication_config + "</ReplicationConfiguration>";
+  }
+  s3_log(S3_LOG_DEBUG, request_id, "ReplicationConfiguration xml: %s\n",
+         replication_config_as_xml_str.c_str());
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit", __func__);
+
+  return replication_config_as_xml_str;
+}
+
 bool S3BucketMetadata::check_bucket_tags_exists() const {
   return !bucket_tags.empty();
+}
+
+bool S3BucketMetadata::check_bucket_replication_exists() const {
+  return !bucket_replication_configuration.empty();
 }
 
 void S3BucketMetadata::load(std::function<void(void)>,
