@@ -105,6 +105,10 @@ class S3BucketMetadata {
   virtual std::string get_tags_as_xml();
   virtual std::string get_acl_as_xml();
 
+  virtual std::string get_replication_config_as_xml();
+  virtual bool check_bucket_replication_exists() const;
+  virtual std::string replication_config_from_json_to_xml(std::string content);
+
   void acl_from_json(std::string acl_json_str);
 
   virtual const struct s3_motr_idx_layout& get_object_list_index_layout() const;
@@ -140,6 +144,7 @@ class S3BucketMetadata {
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
   virtual void deletepolicy();
   virtual void delete_bucket_tags();
+  virtual void delete_bucket_replication_config();
   virtual void setacl(const std::string& acl_str);
   virtual void set_bucket_replication_configuration(
       const std::string& bucket_replication_config);
