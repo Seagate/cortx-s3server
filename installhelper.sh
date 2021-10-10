@@ -73,6 +73,7 @@ mkdir -p $S3_INSTALL_LOCATION/install/ldap/rsyslog.d
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication/cleanup
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
+mkdir -p $S3_INSTALL_LOCATION/install/logrotate
 mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
 mkdir -p $S3_INSTALL_LOCATION/conf
@@ -93,6 +94,9 @@ mkdir -p $S3_MINI_PROV_CFG_LOCATION
 
 # Copy the haproxy dependencies
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
+
+# Copy the logrotate dependencies
+cp -R scripts/logrotate/* $S3_INSTALL_LOCATION/install/logrotate
 
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf

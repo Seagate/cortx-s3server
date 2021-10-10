@@ -271,7 +271,8 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %dir /opt/seagate/cortx/s3/libevent/pkgconfig
 %dir /opt/seagate/cortx/s3/nodejs
 %dir /opt/seagate/cortx/s3/resources
-%dir /opt/seagate/cortx/s3/install
+%dir /opt/seagate/cortx/s3/install/haproxy
+%dir /opt/seagate/cortx/s3/install/logrotate
 %dir /var/log/seagate/
 %dir /var/log/seagate/auth
 %dir /var/log/seagate/s3
