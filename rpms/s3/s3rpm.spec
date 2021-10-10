@@ -329,6 +329,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/install/logrotate/s3logfilerollover.sh
 /opt/seagate/cortx/s3/install/logrotate/s3m0tracelogfilerollover.sh
 /opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3supportbundlefilerollover.sh
 /opt/seagate/cortx/s3/install/haproxy/503.http
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver7.cfg
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver8.cfg
