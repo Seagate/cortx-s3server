@@ -96,7 +96,7 @@ mkdir -p $S3_MINI_PROV_CFG_LOCATION
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
 
 # Copy the logrotate dependencies
-cp -R scripts/logrotate/* $S3_INSTALL_LOCATION/install/logrotate
+cp -R scripts/s3-logrotate/* $S3_INSTALL_LOCATION/install/logrotate
 
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
