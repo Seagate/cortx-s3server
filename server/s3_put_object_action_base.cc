@@ -315,7 +315,7 @@ void S3PutObjectActionBase::create_part_fragment_successful() {
   s3_put_action_state = S3PutObjectActionState::newObjOidCreated;
 
   // New Object or overwrite, create new metadata and release old.
-  if (index == 0) {
+  if (new_object_metadata == nullptr) {
     new_object_metadata = object_metadata_factory->create_object_metadata_obj(
         request, bucket_metadata->get_object_list_index_layout(),
         bucket_metadata->get_objects_version_list_index_layout());
@@ -329,7 +329,7 @@ void S3PutObjectActionBase::create_part_fragment_successful() {
           object_metadata_factory->create_object_ext_metadata_obj(
               request, object_metadata->get_bucket_name(),
               object_metadata->get_object_name(),
-              object_metadata->get_obj_version_key(), 0, 0,
+              new_object_metadata->get_obj_version_key(), 0, 0,
               bucket_metadata->get_extended_metadata_index_layout());
 
       new_object_metadata->set_extended_object_metadata(
@@ -352,7 +352,9 @@ void S3PutObjectActionBase::create_part_fragment_successful() {
            sizeof(struct m0_fid));
     new_part_frag_ctx.versionID = new_object_metadata->get_obj_version_key();
     new_part_frag_ctx.item_size = part_fragment_context_list[index].item_size;
-    if (index == 0) {
+
+    // Get max part size of all parts
+    if (max_part_size == 0) {
       max_part_size = new_part_frag_ctx.item_size;
     } else {
       if (new_part_frag_ctx.item_size > max_part_size) {
