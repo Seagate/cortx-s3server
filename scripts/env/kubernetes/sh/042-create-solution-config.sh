@@ -43,6 +43,7 @@ cp cortx-prvsnr/test/deploy/kubernetes/solution-config/* "$BASE_CONFIG_PATH"/s3/
   # FIXME: Ujjwal said all must use cortx-prvsnr/conf/*.template files, not this test folder
 
 # Modify solution config, set our values
+python3 -m pip install pyyaml
 python3 <<EOF
 #!/usr/bin/python3
 
