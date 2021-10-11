@@ -23,6 +23,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
     2. Add the newly created SSH Public Key to [Github](https://github.com/settings/keys).
     3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
     4. Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.
+    **Note:** Make sure to [enable SSO (Single Sign-on)](https://docs.github.com/en/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on) for your PAT. 
 
        :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
@@ -45,7 +46,9 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
-            * If epel was installed, you'll see it in the output list.
+            * If epel was installed, you'll see it in the output list. Example:
+            * ![image](https://user-images.githubusercontent.com/950172/136825917-d10fce29-b822-4dd0-8f31-cbc90f848c2a.png)
+
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
