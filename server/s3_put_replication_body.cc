@@ -43,6 +43,7 @@ S3PutReplicationBody::S3PutReplicationBody(std::string &xml,
 bool S3PutReplicationBody::isOK() { return is_valid; }
 
 bool S3PutReplicationBody::parse_and_validate() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   /* Sample body(Basic configuration):
   <ReplicationConfiguration>
     <Role>IAM-role-ARN</Role>
@@ -79,6 +80,7 @@ bool S3PutReplicationBody::parse_and_validate() {
   // clear priority and rule id sets
   rule_id_set.clear();
   rule_priority_set.clear();
+  vec_bucket_names.clear();
   is_valid = false;
 
   if (xml_content.empty()) {
@@ -261,10 +263,10 @@ std::string S3PutReplicationBody::get_replication_configuration_as_json() {
   return fastWriter.write(ReplicationConfiguration);
 }
 
-std::string S3PutReplicationBody::get_destination_bucket_name() {
+std::vector<std::string> &S3PutReplicationBody::get_destination_bucket_list() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
-  return bucket_str;
+  return vec_bucket_names;
 }
 
 std::string S3PutReplicationBody::get_additional_error_information() {
@@ -290,6 +292,12 @@ ChildNodes S3PutReplicationBody::convert_str_to_enum(const unsigned char *str) {
     return Destination;
   else if (strcmp(reinterpret_cast<const char *>(str), "Filter") == 0)
     return Filter;
+  else if (strcmp(reinterpret_cast<const char *>(str),
+                  "ExistingObjectReplication") == 0)
+    return ExistingObjectReplication;
+  else if (strcmp(reinterpret_cast<const char *>(str),
+                  "SourceSelectionCriteria") == 0)
+    return SourceSelectionCriteria;
   return Undefined;
 }
 
@@ -453,12 +461,38 @@ bool S3PutReplicationBody::read_rule_node(
         }
 
       } break;
+      case ExistingObjectReplication: {
+        // Account is not a mandatory field
+        // In future scope.(Not supported currently)
+        if ((!xmlStrcmp(rule_child_node->name,
+                        (const xmlChar *)"ExistingObjectReplication"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: ExistingObjectReplication feature "
+                 "is not "
+                 "implemented.\n");
+          s3_error = "ReplicationFieldNotImplemented";
+          return false;
+        }
+      } break;
 
+      case SourceSelectionCriteria: {
+        // Account is not a mandatory field
+        // In future scope.(Not supported currently)
+        if ((!xmlStrcmp(rule_child_node->name,
+                        (const xmlChar *)"SourceSelectionCriteria"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: SourceSelectionCriteria feature is "
+                 "not "
+                 "implemented.\n");
+          s3_error = "ReplicationFieldNotImplemented";
+          return false;
+        }
+      } break;
       default: {
         // Xml nodes should be one of the elements in Enum
         s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
       }
-    }
+    }  // end of switch cases
 
     rule_child_node = rule_child_node->next;
   } while (rule_child_node != nullptr);
@@ -665,29 +699,157 @@ bool S3PutReplicationBody::read_key_value_node(
   return true;
 }
 
+DestinationChildNodes S3PutReplicationBody::convert_str_to_Destination_enum(
+    const unsigned char *str) {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+
+  if (strcmp(reinterpret_cast<const char *>(str), "UndefinedDestChildNode") ==
+      0)
+    return UndefinedDestChildNode;
+  else if (strcmp(reinterpret_cast<const char *>(str),
+                  "AccessControlTranslation") == 0)
+    return AccessControlTranslation;
+  else if (strcmp(reinterpret_cast<const char *>(str), "Account") == 0)
+    return Account;
+  else if (strcmp(reinterpret_cast<const char *>(str), "Bucket") == 0)
+    return Bucket;
+  else if (strcmp(reinterpret_cast<const char *>(str),
+                  "EncryptionConfiguration") == 0)
+    return EncryptionConfiguration;
+  else if (strcmp(reinterpret_cast<const char *>(str), "Metrics") == 0)
+    return Metrics;
+  else if (strcmp(reinterpret_cast<const char *>(str), "ReplicationTime") == 0)
+    return ReplicationTime;
+  else if (strcmp(reinterpret_cast<const char *>(str), "StorageClass") == 0)
+    return StorageClass;
+
+  return UndefinedDestChildNode;
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
+}
+
 bool S3PutReplicationBody::validate_destination_node(
     xmlNodePtr destination_node) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   // bucket is a mandatory field
-  xmlNodePtr bucket_node = destination_node->xmlChildrenNode;
-  if (bucket_node != NULL) {
-    s3_log(S3_LOG_DEBUG, request_id, "Child Node = %s", bucket_node->name);
-    if ((xmlStrcmp(bucket_node->name, (const xmlChar *)"Bucket"))) {
+  xmlNodePtr dest_child_node = destination_node->xmlChildrenNode;
+  do {
+
+    if (dest_child_node == NULL) {
       s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
       return false;
-    } else {
-      xmlChar *val = xmlNodeGetContent(bucket_node);
-      bucket_str = reinterpret_cast<char *>(val);
-      if (bucket_str.empty()) {
-        s3_log(S3_LOG_WARN, request_id, "XML bucket is Empty.\n");
-        s3_error = "InvalidArgumentDestinationBucket";
-        return false;
-      }
-      return true;
     }
-  }
+    s3_log(S3_LOG_DEBUG, request_id, "Child Node = %s", dest_child_node->name);
 
-  return false;  // if bucket_node is null
+    DestinationChildNodes dest_child_nodes = convert_str_to_Destination_enum(
+        (const xmlChar *)(dest_child_node->name));
+
+    s3_log(S3_LOG_DEBUG, request_id, "child_nodes enum value = %d",
+           dest_child_nodes);
+    switch (dest_child_nodes) {
+      case UndefinedDestChildNode: {
+        s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
+        return false;
+      } break;
+
+      case Bucket: {
+        if ((!xmlStrcmp(dest_child_node->name, (const xmlChar *)"Bucket"))) {
+
+          xmlChar *val = xmlNodeGetContent(dest_child_node);
+          bucket_str = reinterpret_cast<char *>(val);
+          if (bucket_str.empty()) {
+            s3_log(S3_LOG_WARN, request_id, "XML bucket is Empty.\n");
+            s3_error = "InvalidArgumentDestinationBucket";
+            return false;
+          }
+          vec_bucket_names.push_back(bucket_str);
+        }
+        break;
+      }
+      case AccessControlTranslation: {
+        // AccessControlTranslation is not a mandatory field
+        // In future scope.(Not supported currently)
+        if ((!xmlStrcmp(dest_child_node->name,
+                        (const xmlChar *)"AccessControlTranslation"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: AccessControlTranslation "
+                 "feature is not implemented.\n");
+          s3_error = "ReplicationFieldNotImplemented";
+          return false;
+        }
+      } break;
+      case Account: {
+        // Account is not a mandatory field
+        // In future scope.(Not supported currently)
+        if ((!xmlStrcmp(dest_child_node->name, (const xmlChar *)"Account"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: Account feature is not "
+                 "implemented.\n");
+          s3_error = "ReplicationFieldNotImplemented";
+          return false;
+        }
+      } break;
+
+      case EncryptionConfiguration: {
+        // EncryptionConfiguration is not a mandatory field
+        // Not supported currently.
+        if ((!xmlStrcmp(dest_child_node->name,
+                        (const xmlChar *)"EncryptionConfiguration"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: EncryptionConfiguration "
+                 "feature is not implemented.\n");
+          s3_error = "ReplicationOperationNotSupported";
+          return false;
+        }
+      } break;
+
+      case Metrics: {
+        // Metrics is not a mandatory field
+        // Not supported currently.
+        if ((!xmlStrcmp(dest_child_node->name, (const xmlChar *)"Metrics"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: Metrics feature is not "
+                 "implemented.\n");
+          s3_error = "ReplicationFieldNotImplemented";
+          return false;
+        }
+      } break;
+
+      case ReplicationTime: {
+        // ReplicationTime is not a mandatory field
+        // Not supported currently.
+        if ((!xmlStrcmp(dest_child_node->name,
+                        (const xmlChar *)"ReplicationTime"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: ReplicationTime "
+                 "feature is not implemented.\n");
+          s3_error = "ReplicationFieldNotImplemented";
+          return false;
+        }
+      } break;
+
+      case StorageClass: {
+        // StorageClass is not a mandatory field
+        // Not supported currently.
+        if ((!xmlStrcmp(dest_child_node->name,
+                        (const xmlChar *)"StorageClass"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: StorageClass feature "
+                 "is not implemented.\n");
+          s3_error = "ReplicationOperationNotSupported";
+          return false;
+        }
+      } break;
+      default: {
+        // Xml nodes should be one of the elements in Enum
+        s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
+      }
+    }
+
+    dest_child_node = dest_child_node->next;
+  } while (dest_child_node != nullptr);
+
+  return true;
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 bool S3PutReplicationBody::validate_delete_marker_replication_status(
     xmlNodePtr del_rep_node) {
