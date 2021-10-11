@@ -37,9 +37,24 @@ else
   cd -
 fi
 
+rm -fR "$BASE_CONFIG_PATH"/s3/solution.cpy/
 mkdir -p "$BASE_CONFIG_PATH"/s3/solution.cpy/
 cp cortx-prvsnr/test/deploy/kubernetes/solution-config/* "$BASE_CONFIG_PATH"/s3/solution.cpy/
   # FIXME: Ujjwal said all must use cortx-prvsnr/conf/*.template files, not this test folder
+
+# Modify solution config, set our values
+python3 <<EOF
+#!/usr/bin/python3
+
+import yaml
+
+with open("$BASE_CONFIG_PATH/s3/solution.cpy/config.yaml") as f:
+  y = yaml.safe_load(f)
+  y['cortx']['common']['storage']['local']  = '$BASE_CONFIG_PATH'
+  y['cortx']['common']['storage']['config'] = '$BASE_CONFIG_PATH'
+with open("$f", 'w') as f:
+  f.write(yaml.dump(y, default_flow_style=False, sort_keys=False))
+EOF
 
 #kubectl apply -f "$BASE_CONFIG_PATH"/s3/solution.cpy/secrets.yaml
 replace_tags_and_apply k8s-blueprints/secrets.yaml.template
