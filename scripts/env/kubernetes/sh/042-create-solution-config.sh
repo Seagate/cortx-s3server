@@ -48,11 +48,12 @@ python3 <<EOF
 
 import yaml
 
-with open("$BASE_CONFIG_PATH/s3/solution.cpy/config.yaml") as f:
+config_yaml = "$BASE_CONFIG_PATH/s3/solution.cpy/config.yaml"
+with open(config_yaml) as f:
   y = yaml.safe_load(f)
   y['cortx']['common']['storage']['local']  = '$BASE_CONFIG_PATH'
   y['cortx']['common']['storage']['config'] = '$BASE_CONFIG_PATH'
-with open("$f", 'w') as f:
+with open(config_yaml, 'w') as f:
   f.write(yaml.dump(y, default_flow_style=False, sort_keys=False))
 EOF
 
