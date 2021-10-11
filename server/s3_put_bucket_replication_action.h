@@ -38,8 +38,11 @@ class S3PutBucketReplicationAction : public S3BucketAction {
 
   std::string new_bucket_replication_content;
   std::string replication_config_json;
+<<<<<<< HEAD
   std::vector<std::string> dest_bucket_list;
   std::string source_bucket_name;
+=======
+>>>>>>> 453b755d4829b88d994709f8f54d901599087387
 
  public:
   S3PutBucketReplicationAction(

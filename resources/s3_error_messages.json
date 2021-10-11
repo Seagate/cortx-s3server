@@ -199,10 +199,13 @@
     "Description": "Destination bucket cannot be null or empty.",
     "httpcode": 400
   },
+<<<<<<< HEAD
   "InvalidRequestDestinationBucket": {
     "Description": "Destination bucket cannot be the same as the source bucket.",
     "httpcode": 400
   },
+=======
+>>>>>>> 453b755d4829b88d994709f8f54d901599087387
   "InvalidArgumentDuplicateRuleID": {
     "Description": "Rule Id must be unique.",
     "httpcode": 400
@@ -226,6 +229,7 @@
   "InvalidRequestForPriority": {
     "Description": "Priority must be between 0 and 2147483647. ",
     "httpcode": 400
+<<<<<<< HEAD
   },
   "ReplicationFieldNotImplemented": {
     "Description": "Following functionality is not implemented :: AccessControlTranslation, Account, Metrics, ReplicationTime, ExistingObjectReplication, SourceSelectionCriteria",
@@ -235,4 +239,7 @@
     "Description": "Following operation is not supported :: StorageClass, EncryptionConfiguration",
     "httpcode":    401
     }
+=======
+  }
+>>>>>>> 453b755d4829b88d994709f8f54d901599087387
 }

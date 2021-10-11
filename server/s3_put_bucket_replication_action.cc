@@ -210,11 +210,11 @@ S3PutBucketReplicationAction::save_replication_config_to_bucket_metadata() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+<<<<<<< HEAD
 // Check while saving replication configuration to bucket metadata, metadata
 // failed to launch
+>>>>>>> 453b755d4829b88d994709f8f54d901599087387
 void S3PutBucketReplicationAction::
-    save_replication_configuration_to_bucket_metadata_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save Bucket metadata operation failed due to prelaunch failure\n");

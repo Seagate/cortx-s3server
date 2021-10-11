@@ -291,7 +291,8 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
     }
 
     std::string key_str, val_str, pre_str;
-
+    // we only support Filter/Prefix, not Prefix(outside of Filter) as it is
+    // deprecated.
     if (!rule_object["Filter"].isNull()) {
       if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
           rule_object["Filter"]["And"]["Prefix"].isNull()) {
@@ -308,7 +309,7 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
           xml_str += "<Tag><Key>" + key_str + "</Key><Value>" + val_str +
                      "</Value></Tag>";
         }
-        xml_str += "</And> </Filter> ";
+        xml_str += "</And></Filter>";
       } else if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
                  !rule_object["Filter"]["And"]["Prefix"].isNull()) {
         // If tag,and,Prefix nodes are present  in filter
@@ -326,7 +327,7 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
           xml_str += "<Tag><Key>" + key_str + "</Key><Value>" + val_str +
                      "</Value></Tag>";
         }
-        xml_str += "</And> </Filter> ";
+        xml_str += "</And></Filter>";
       } else if (!rule_object["Filter"]["Tag"].isNull()) {
         // If only tag node is present in filter
 
