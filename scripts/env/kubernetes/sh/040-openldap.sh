@@ -49,7 +49,7 @@ else
   echo "ldap:x:55:55:OpenLDAP server:/var/lib/ldap:/sbin/nologin" >> /etc/passwd
   chown -R ldap.ldap /var/lib/ldap
 
-  replace_tags_and_apply cat ./k8s-blueprints/openldap-pv.yaml.template
+  replace_tags_and_apply  ./k8s-blueprints/openldap-pv.yaml.template
 
   replace_tags_and_create_pod  ./k8s-blueprints/openldap-stateful.yaml  openldap
 
