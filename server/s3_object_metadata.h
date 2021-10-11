@@ -466,6 +466,7 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   std::string bucket_name;
   std::string object_name;
   std::string last_object;
+  std::string prefix_of_unique_object;
   std::string version_id;
   struct s3_motr_idx_layout extended_list_index_layout = {};
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;

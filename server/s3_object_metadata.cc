@@ -77,7 +77,6 @@ S3ObjectMetadataFactory::create_object_ext_metadata_obj(
     const struct s3_motr_idx_layout& obj_idx_lo) {
   s3_log(S3_LOG_DEBUG, req->get_request_id(),
          "S3ObjectMetadataFactory::create_object_metadata_obj\n");
-
   std::shared_ptr<S3ObjectExtendedMetadata> meta =
       std::make_shared<S3ObjectExtendedMetadata>(
           std::move(req), str_bucket_name, str_object_name, str_versionid,
@@ -1059,7 +1058,7 @@ S3ObjectExtendedMetadata::S3ObjectExtendedMetadata(
   } else {
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
-  last_object = objectname + '|' + version_id;
+  prefix_of_unique_object = last_object = objectname + '|' + version_id;
 }
 
 void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
@@ -1109,9 +1108,10 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
     s3_log(S3_LOG_DEBUG, request_id, "Read extended object Value = %s\n",
            kv.second.second.c_str());
     last_object = kv.first;
-    // Check if fetched key starts with object prefix
-    std::string object_prefix = object_name;
-    bool prefix_match = (kv.first.find(object_prefix) == 0) ? true : false;
+    // Check if fetched key starts with unique object prefix(object name +
+    // version id)
+    bool prefix_match =
+        (kv.first.find(prefix_of_unique_object) == 0) ? true : false;
     if (!prefix_match) {
       end_of_enumeration = true;
       // No further keys belong to extended entries of object
