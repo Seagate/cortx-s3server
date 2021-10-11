@@ -24,6 +24,7 @@ set -x
 s3_repo_dir=/var/data/cortx/cortx-s3server
 src_dir="$s3_repo_dir"/scripts/env/kubernetes
 
+source "$src_dir/config"
 source "$src_dir/env.sh"
 source "$src_dir/sh/functions.sh"
 
