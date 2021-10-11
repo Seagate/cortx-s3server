@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: io-pod
   annotations:
-    "cni.projectcalico.org/ipAddrs": "[\"192.168.134.219\"]"
+    "cni.projeetcalico.org/ipAddrs": "[\"192.168.134.219\"]"
 spec:
   containers:
     - name: haproxy
@@ -11,7 +11,7 @@ spec:
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
-          mountPath: /etc/cortx
+          mountPath: <etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
@@ -32,19 +32,19 @@ spec:
          - "-c"
          - "--"
       args:
-         - "/etc/cortx/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service haproxy -c yaml:///etc/cortx/cluster.conf"
+         - "<etc-cortx>/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service haproxy -c yaml://<etc-cortx>/cluster.conf"
 #        - "/opt/seagate/cortx/s3/bin/s3_start"
 #     args:
 #        - "--service"
 #        - "haproxy"
 #        - "-c"
-#        - "yaml:///etc/cortx/cluster.conf"
+#        - "yaml://<etc-cortx>/cluster.conf"
     - name: authserver
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
-          mountPath: /etc/cortx
+          mountPath: <etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
@@ -54,13 +54,13 @@ spec:
          - "-c"
          - "--"
       args:
-         - "/etc/cortx/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3authserver -c yaml:///etc/cortx/cluster.conf"
+         - "<etc-cortx>/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3authserver -c yaml://<etc-cortx>/cluster.conf"
 #        - "/opt/seagate/cortx/s3/bin/s3_start"
 #     args:
 #        - "--service"
 #        - "s3authserver"
 #        - "-c"
-#        - "yaml:///etc/cortx/cluster.conf"
+#        - "yaml://<etc-cortx>/cluster.conf"
     - name: hare-motr
       image: <motr-cortx-all-image>
       imagePullPolicy: Never
@@ -68,7 +68,7 @@ spec:
         - name: var-motr
           mountPath: /var/motr
         - name: etc-cortx
-          mountPath: /etc/cortx
+          mountPath: <etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
@@ -105,7 +105,7 @@ spec:
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
-          mountPath: /etc/cortx
+          mountPath: <etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
@@ -115,7 +115,7 @@ spec:
          - "-c"
          - "--"
       args:
-         - "/etc/cortx/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1 -c yaml:///etc/cortx/cluster.conf"
+         - "<etc-cortx>/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1 -c yaml://<etc-cortx>/cluster.conf"
 #     command:
 #        - "/opt/seagate/cortx/s3/bin/s3_start"
 #     args:
@@ -124,13 +124,13 @@ spec:
 #        - "--index"
 #        - "1"
 #        - "-c"
-#        - "yaml:///etc/cortx/cluster.conf"
+#        - "yaml://<etc-cortx>/cluster.conf"
     - name: s3server-2
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
-          mountPath: /etc/cortx
+          mountPath: <etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
@@ -140,7 +140,7 @@ spec:
          - "-c"
          - "--"
       args:
-         - "/etc/cortx/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 2 -c yaml:///etc/cortx/cluster.conf"
+         - "<etc-cortx>/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 2 -c yaml://<etc-cortx>/cluster.conf"
 #     command:
 #        - "/opt/seagate/cortx/s3/bin/s3_start"
 #     args:
@@ -149,13 +149,13 @@ spec:
 #        - "--index"
 #        - "2"
 #        - "-c"
-#        - "yaml:///etc/cortx/cluster.conf"
+#        - "yaml://<etc-cortx>/cluster.conf"
     - name: s3-bg-consumer
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
-          mountPath: /etc/cortx
+          mountPath: <etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
@@ -165,13 +165,13 @@ spec:
          - "-c"
          - "--"
       args:
-         - "/etc/cortx/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3bgconsumer -c yaml:///etc/cortx/cluster.conf"
+         - "<etc-cortx>/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3bgconsumer -c yaml://<etc-cortx>/cluster.conf"
 #       - "/opt/seagate/cortx/s3/bin/s3_start"
 #     args:
 #       - "--service"
 #       - "s3bgconsumer"
 #       - "-c"
-#       - "yaml:///etc/cortx/cluster.conf"
+#       - "yaml://<etc-cortx>/cluster.conf"
   volumes:
       - name: etc-cortx
         persistentVolumeClaim:

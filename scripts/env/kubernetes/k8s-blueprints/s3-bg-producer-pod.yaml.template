@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: s3-bg-producer-pod
   annotations:
-    "cni.projectcalico.org/ipAddrs": "[\"192.168.134.12\"]"
+    "cni.projeetcalico.org/ipAddrs": "[\"192.168.134.12\"]"
 spec:
   containers:
     - name: s3-bg-producer
@@ -11,7 +11,7 @@ spec:
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
-          mountPath: /etc/cortx
+          mountPath: <etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
@@ -21,14 +21,14 @@ spec:
          - "-c"
          - "--"
       args:
-         - "/etc/cortx/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3bgproducer -c yaml:///etc/cortx/cluster.conf"
+         - "<etc-cortx>/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3bgproducer -c yaml://<etc-cortx>/cluster.conf"
 #     command:
 #        - "/opt/seagate/cortx/s3/bin/s3_start"
 #     args:
 #        - "--service"
 #        - "s3bgproducer"
 #        - -c
-#        - yaml:///etc/cortx/cluster.conf
+#        - yaml://<etc-cortx>/cluster.conf
   volumes:
       - name: etc-cortx
         persistentVolumeClaim:

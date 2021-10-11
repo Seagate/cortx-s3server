@@ -11,15 +11,15 @@ spec:
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
-          mountPath: /etc/cortx
+          mountPath: <etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
         - name: cortx-secret
-          mountPath: /etc/cortx/solution/secret
+          mountPath: <etc-cortx>/solution/secret
         - name: solution-node-for-storage
-          mountPath: /etc/cortx/solution/node
+          mountPath: <etc-cortx>/solution/node
       command:
          - "/bin/bash"
          - "-c"

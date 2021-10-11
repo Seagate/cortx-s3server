@@ -13,7 +13,7 @@ spec:
     namespace: default
     name: etc-cortx
   local:
-    path: /etc/cortx
+    path: <etc-cortx>
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -88,7 +88,7 @@ spec:
     namespace: default
     name: solution-node-for-ctrl
   local:
-    path: /etc/cortx/solution/control-node
+    path: <etc-cortx>/solution/control-node
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -113,7 +113,7 @@ spec:
     namespace: default
     name: solution-node-for-storage
   local:
-    path: /etc/cortx/solution/storage-node1
+    path: <etc-cortx>/solution/storage-node1
   nodeAffinity:
     required:
       nodeSelectorTerms:
