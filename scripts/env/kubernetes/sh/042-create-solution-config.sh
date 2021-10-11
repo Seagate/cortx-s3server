@@ -37,12 +37,12 @@ else
   cd -
 fi
 
-mkdir -p /etc/cortx/s3/solution.cpy/
-cp cortx-prvsnr/test/deploy/kubernetes/solution-config/* /etc/cortx/s3/solution.cpy/
+mkdir -p "$BASE_CONFIG_PATH"/s3/solution.cpy/
+cp cortx-prvsnr/test/deploy/kubernetes/solution-config/* "$BASE_CONFIG_PATH"/s3/solution.cpy/
   # FIXME: Ujjwal said all must use cortx-prvsnr/conf/*.template files, not this test folder
 
-#kubectl apply -f /etc/cortx/s3/solution.cpy/secrets.yaml
-kubectl apply -f k8s-blueprints/secrets.yaml
+#kubectl apply -f "$BASE_CONFIG_PATH"/s3/solution.cpy/secrets.yaml
+replace_tags_and_apply k8s-blueprints/secrets.yaml.template
   # FIXME: using local copy until it's not merged upstream
 
 add_separator SUCCESSFULLY CREATED SOLUTION CONFIG TEMPLATE.

@@ -28,18 +28,6 @@ set -x # print each statement before execution
 
 add_separator Creating BG POD.
 
-# update image link for bgdelete-producer pod
-cat k8s-blueprints/s3-bg-producer-pod.yaml.template \
-| sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
-> k8s-blueprints/s3-bg-producer-pod.yaml
-
-# pull the images
-pull_images_for_pod k8s-blueprints/s3-bg-producer-pod.yaml
-
-delete_pod_if_exists "s3-bg-producer-pod"
-
-kubectl apply -f k8s-blueprints/s3-bg-producer-pod.yaml
-
-wait_till_pod_is_Running  s3-bg-producer-pod
+replace_tags_and_create_pod  k8s-blueprints/s3-bg-producer-pod.yaml.template  s3-bg-producer-pod
 
 add_separator SUCCESSFULLY CREATED BG POD.

@@ -38,13 +38,7 @@ fi
 
 if [ "$ldap_kind" = symas ]; then
   # update image link for containers
-  cat k8s-blueprints/symas-pod.yaml.template \
-    | sed "s,<symas-image>,'$SYMAS_IMAGE'," \
-    > k8s-blueprints/symas-pod.yaml
-  pull_images_for_pod k8s-blueprints/symas-pod.yaml
-  delete_pod_if_exists  symas-pod
-  kubectl apply -f k8s-blueprints/symas-pod.yaml
-  wait_till_pod_is_Running  symas-pod
+  replace_tags_and_create_pod  k8s-blueprints/symas-pod.yaml.template  symas-pod
   add_separator SUCCESSFULLY CREATED SYMAS POD.
 else
 
@@ -55,18 +49,9 @@ else
   echo "ldap:x:55:55:OpenLDAP server:/var/lib/ldap:/sbin/nologin" >> /etc/passwd
   chown -R ldap.ldap /var/lib/ldap
 
-  cat ./k8s-blueprints/openldap-pv.yaml.template \
-    | sed "s/<vm-hostname>/${HOST_FQDN}/" \
-    > ./k8s-blueprints/openldap-pv.yaml
+  replace_tags_and_apply cat ./k8s-blueprints/openldap-pv.yaml.template
 
-  kubectl apply -f ./k8s-blueprints/openldap-pv.yaml
-
-  # download images using docker -- 'kubectl init' is not able to apply user
-  # credentials, and so is suffering from rate limits.
-  pull_images_for_pod ./k8s-blueprints/openldap-stateful.yaml
-  delete_pod_if_exists  openldap
-  kubectl apply -f ./k8s-blueprints/openldap-stateful.yaml
-  wait_till_pod_is_Running  openldap
+  replace_tags_and_create_pod  ./k8s-blueprints/openldap-stateful.yaml  openldap
 
   add_separator SUCCESSFULLY CREATED OPENLDAP POD
 fi

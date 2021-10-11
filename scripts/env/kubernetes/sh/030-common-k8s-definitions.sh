@@ -27,27 +27,27 @@ source ./sh/functions.sh
 add_separator "Creating common k8s definitions"
 
 # cleanup -- remove all config files from previous runs
-if [ -d /etc/cortx ]; then
-  rm -fR /etc/cortx/*
+if [ -d "$BASE_CONFIG_PATH" ]; then
+  rm -fR "$BASE_CONFIG_PATH"/*
 fi
 
-kubectl apply -f k8s-blueprints/storage-class.yaml
+replace_tags_and_apply k8s-blueprints/storage-class.yaml.template
 
 mkdir -p /var/motr
-mkdir -p /etc/cortx /share/var/log/cortx /var/data/cortx
+mkdir -p "$BASE_CONFIG_PATH" /share/var/log/cortx /var/data/cortx
 
 # Create node/id files.
-mkdir -p /etc/cortx/solution/control-node
-touch /etc/cortx/solution/control-node/id
-mkdir -p /etc/cortx/solution/storage-node1
-touch /etc/cortx/solution/storage-node1/id
+mkdir -p "$BASE_CONFIG_PATH"/solution/control-node
+touch "$BASE_CONFIG_PATH"/solution/control-node/id
+mkdir -p "$BASE_CONFIG_PATH"/solution/storage-node1
+touch "$BASE_CONFIG_PATH"/solution/storage-node1/id
 
-kubectl apply -f k8s-blueprints/motr-pv.yaml
-kubectl apply -f k8s-blueprints/motr-pvc.yaml
-kubectl apply -f k8s-blueprints/var-motr-pv.yaml
-kubectl apply -f k8s-blueprints/var-motr-pvc.yaml
-kubectl apply -f k8s-blueprints/s3-pv.yaml
-kubectl apply -f k8s-blueprints/s3-pvc.yaml
+replace_tags_and_apply k8s-blueprints/motr-pv.yaml.template
+replace_tags_and_apply k8s-blueprints/motr-pvc.yaml.template
+replace_tags_and_apply k8s-blueprints/var-motr-pv.yaml.template
+replace_tags_and_apply k8s-blueprints/var-motr-pvc.yaml.template
+replace_tags_and_apply k8s-blueprints/s3-pv.yaml.template
+replace_tags_and_apply k8s-blueprints/s3-pvc.yaml.template
 
 set +x
 

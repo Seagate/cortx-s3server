@@ -35,10 +35,10 @@ src_dir="$s3_repo_dir"/scripts/env/kubernetes
 # Message Bus #
 ###############
 
-mkdir -p /etc/cortx/utils/
+mkdir -p "$BASE_CONFIG_PATH"/utils/
 cat message-bus/message_bus.conf.template | \
   sed -e "s/<kafka-external-ip>/$KAFKA_EXTERNAL_IP/" \
-  > /etc/cortx/utils/message_bus.conf
+  > "$BASE_CONFIG_PATH"/utils/message_bus.conf
 
 mkdir -p /share/var/log/cortx/utils/message_bus
 chmod 755 /share/var/log/cortx/utils/*
@@ -46,9 +46,9 @@ chmod 755 /share/var/log/cortx/utils/message_bus
 touch /share/var/log/cortx/utils/message_bus/message_bus.log
 chmod 755 /share/var/log/cortx/utils/message_bus/message_bus.log
 
-mkdir -p /etc/cortx/utils/conf/
-cp message-bus/cortx.conf /etc/cortx
-cp message-bus/cortx.conf /etc/cortx/utils/conf/
+mkdir -p "$BASE_CONFIG_PATH"/utils/conf/
+cp message-bus/cortx.conf "$BASE_CONFIG_PATH"
+cp message-bus/cortx.conf "$BASE_CONFIG_PATH"/utils/conf/
 
 
 add_separator SUCCESSFULLY CREATED PREREQUISITES.

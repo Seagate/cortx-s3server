@@ -137,3 +137,35 @@ delete_pod_if_exists() {
     kubectl delete pod "$pod_name"
   fi
 }
+
+replace_tags() {
+  ( dn=$(dirname "$1")
+    fn=$(basename "$1" .template)
+    blueprint="$dn/$fn"
+    cat "$1" \
+      | sed -e "s,<etc-cortx>,$BASE_CONFIG_PATH,g" \
+            -e "s,<symas-image>,'$SYMAS_IMAGE'," \
+            -e "s/<vm-hostname>/${HOST_FQDN}/g" \
+            -e "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
+            -e "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
+      > "$blueprint"
+    if [ -n ${DO_APPLY+x} ]; then
+      if [ -n ${THIS_IS_POD+x} ]; then
+        pull_images_for_pod "$blueprint"
+        delete_pod_if_exists  "$2"
+      fi
+      kubectl apply -f "$dn/$fn"
+      if [ -n ${THIS_IS_POD+x} ]; then
+        wait_till_pod_is_Running  "$2"
+      fi
+    fi
+  )
+}
+
+replace_tags_and_apply() {
+  env DO_APPLY=1 replace_tags "$1"
+}
+
+replace_tags_and_create_pod() {
+  env DO_APPLY=1 THIS_IS_POD=1 replace_tags "$1" "$2"
+}

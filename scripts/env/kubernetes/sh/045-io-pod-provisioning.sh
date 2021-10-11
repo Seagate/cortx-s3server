@@ -35,21 +35,7 @@ src_dir="$s3_repo_dir"/scripts/env/kubernetes
 # Create SHIM-POD #
 ###################
 
-# update image link for containers
-cat k8s-blueprints/shim-pod.yaml.template \
-  | sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
-  | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
-  > k8s-blueprints/shim-pod.yaml
-
-# download images using docker -- 'kubectl init' is not able to apply user
-# credentials, and so is suffering from rate limits.
-pull_images_for_pod k8s-blueprints/shim-pod.yaml
-
-delete_pod_if_exists shim-pod
-
-kubectl apply -f k8s-blueprints/shim-pod.yaml
-
-wait_till_pod_is_Running  shim-pod
+replace_tags_and_create_pod  k8s-blueprints/shim-pod.yaml.template  shim-pod
 
 kube_run() {
   kubectl exec -i shim-pod -c shim -- "$@"

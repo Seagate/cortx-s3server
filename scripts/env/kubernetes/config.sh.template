@@ -56,3 +56,5 @@ USE_PROVISIONING=yes
   # yes/no.
   # When yes, it will try to create confstore from solution config.
   # When no, it will use S3 template files.
+
+BASE_CONFIG_PATH=/var/custom # /etc/cortx

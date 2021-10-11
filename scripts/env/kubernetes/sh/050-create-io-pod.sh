@@ -30,23 +30,10 @@ add_separator Creating IO POD and containers.
 
 sysctl -w vm.max_map_count=30000000
 
-# update image link for containers
-cat k8s-blueprints/io-pod.yaml.template \
-  | sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
-  | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
-  > k8s-blueprints/io-pod.yaml
-
 # FIXME: work-arounds for s3 containers
-cp s3server/fix-container.sh /etc/cortx/s3
+cp s3server/fix-container.sh "$BASE_CONFIG_PATH"/s3
 
-# pull the images
-pull_images_for_pod k8s-blueprints/io-pod.yaml
-
-delete_pod_if_exists io-pod
-
-kubectl apply -f k8s-blueprints/io-pod.yaml
-
-wait_till_pod_is_Running io-pod
+replace_tags_and_create_pod  k8s-blueprints/io-pod.yaml.template  io-pod
 
 set_var_POD_IP io-pod
 echo "IO_POD_IP='$POD_IP'" >> env.sh
@@ -56,9 +43,9 @@ add_separator SUCCESSFULLY CREATED IO POD AND CONTAINERS.
 add_separator Creating Service for IO Pod
 
 # Creating endpoint for service
-kubectl apply -f k8s-blueprints/cortx-io-ep.yaml
+replace_tags_and_apply  k8s-blueprints/cortx-io-ep.yaml.template
 # Creating service
-kubectl apply -f k8s-blueprints/cortx-io-svc.yaml
+replace_tags_and_apply  k8s-blueprints/cortx-io-svc.yaml.template
 
 if [ "$(kubectl get svc | safe_grep cortx-io-svc | wc -l)" -lt 1 ]
 then
