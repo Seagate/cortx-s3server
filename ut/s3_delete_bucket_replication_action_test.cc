@@ -56,7 +56,7 @@ class S3DeleteBucketReplicationActionTest : public testing::Test {
   std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
   std::shared_ptr<S3DeleteBucketReplicationAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
-  int call_count_one;
+  int call_count_one {0};
   std::string bucket_name;
 
  public:
