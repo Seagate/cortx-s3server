@@ -230,6 +230,7 @@ int S3BucketMetadata::from_json(std::string content) {
   return 0;
 }
 
+// Converting replication configuration from json to xml
 std::string S3BucketMetadata::replication_config_from_json_to_xml(
     std::string content) {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
@@ -359,6 +360,7 @@ void S3BucketMetadata::deletepolicy() { bucket_policy = ""; }
 
 void S3BucketMetadata::delete_bucket_tags() { bucket_tags.clear(); }
 
+// Clear replication configuration
 void S3BucketMetadata::delete_bucket_replication_config() {
   bucket_replication_configuration = "";
 }
@@ -415,6 +417,7 @@ std::string S3BucketMetadata::get_tags_as_xml() {
   return tags_as_xml_str;
 }
 
+// Get replication configuration as XML
 std::string S3BucketMetadata::get_replication_config_as_xml() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -443,6 +446,7 @@ bool S3BucketMetadata::check_bucket_tags_exists() const {
   return !bucket_tags.empty();
 }
 
+// Check if repliaction configuration exists for a bucket
 bool S3BucketMetadata::check_bucket_replication_exists() const {
   return !bucket_replication_configuration.empty();
 }
