@@ -59,7 +59,7 @@ kube_run "$src_dir/s3server/shim-provisioner.sh" ctrl-pod
 #import sys
 #import yaml
 #
-#data = yaml.load(open("/etc/cortx/s3/solution.cpy/config.yaml"))
+#data = yaml.load(open("$BASE_CONFIG_PATH/s3/solution.cpy/config.yaml"))
 #
 #data['cortx']['external']['kafka']['endpoints'] = ['$KAFKA_EXTERNAL_IP']
 #
@@ -68,7 +68,7 @@ kube_run "$src_dir/s3server/shim-provisioner.sh" ctrl-pod
 #
 #data['cortx']['s3']['internal']['endpoints'] = 'http://cortx-io-svc:28049'
 #
-#with open("/etc/cortx/s3/solution.cpy/config.yaml", 'w') as f:
+#with open("$BASE_CONFIG_PATH/s3/solution.cpy/config.yaml", 'w') as f:
 #  f.write(yaml.dump(data))
 #EOF
 

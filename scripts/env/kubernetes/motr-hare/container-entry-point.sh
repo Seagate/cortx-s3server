@@ -21,13 +21,16 @@
 set -euo pipefail # exit on failures
 set -x
 
+source /var/data/cortx/cortx-s3server/scripts/env/kubernetes/config.sh
+source /var/data/cortx/cortx-s3server/scripts/env/kubernetes/env.sh
+
 sync_file_path=/var/data/cortx/motr-hare-is-up.txt
   # This file will be created after Motr is up and rummings -- so that other
   # containers can know when motr is ready.
 rm -f "$sync_file_path"
 
 #echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id
-cat /etc/cortx/s3/machine-id > /etc/machine-id
+cat "$BASE_CONFIG_PATH"/s3/machine-id > /etc/machine-id
 sed -i '103,107 s/^/#/'                                  /usr/libexec/cortx-motr/motr-server
 sed -i '243,243 s/^/#/'                                  /usr/libexec/cortx-motr/motr-server
 sed -i '209 i fi'                                        /usr/libexec/cortx-motr/motr-server
@@ -37,7 +40,7 @@ sed -i '209 i svc_tag=$(echo $service | cut -d ":" -f2)' /usr/libexec/cortx-motr
 
 mkdir /etc/motr
 
-src_dir=/var/data/cortx/cortx-s3server/scripts/env/kubernetes/motr-hare/
+src_dir="$AUTOMATION_BASE_DIR/motr-hare/"
 
 cp "$src_dir"/confd.xc                    /etc/motr/confd.xc
 cp "$src_dir"/m0d-0x7200000000000001-0x1a /etc/sysconfig/m0d-0x7200000000000001:0x1a

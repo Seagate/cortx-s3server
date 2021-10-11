@@ -36,24 +36,24 @@ else
   exit 1
 fi
 
-rm -f /etc/cortx/cluster.conf
+rm -f "$BASE_CONFIG_PATH"/cluster.conf
 
 # FIXME: use hard-coded cortx-utils version
 rpm -e --nodeps cortx-py-utils
 #yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/github/integration-custom-ci/centos-7.9.2009/custom-build-223/cortx_iso/cortx-py-utils-2.0.0-423_411caf9.noarch.rpm
 yum install -y http://ssc-vm-g2-rhev4-0613.colo.seagate.com/ivan.tishchenko/public2/-/raw/main/saved-rpms/cortx-py-utils-2.0.0-423_411caf9.noarch.rpm
 
-cortx_setup config apply -f yaml:///etc/cortx/s3/solution.cpy/cluster.yaml -c yaml:///etc/cortx/cluster.conf
-cortx_setup config apply -f yaml:///etc/cortx/s3/solution.cpy/config.yaml  -c yaml:///etc/cortx/cluster.conf
+cortx_setup config apply -f yaml://"$BASE_CONFIG_PATH"/s3/solution.cpy/cluster.yaml -c yaml://"$BASE_CONFIG_PATH"/cluster.conf
+cortx_setup config apply -f yaml://"$BASE_CONFIG_PATH"/s3/solution.cpy/config.yaml  -c yaml://"$BASE_CONFIG_PATH"/cluster.conf
 
-yq -r '.node | map_values(.name) ' /etc/cortx/cluster.conf \
+yq -r '.node | map_values(.name) ' "$BASE_CONFIG_PATH"/cluster.conf \
   | grep "$node_name" \
   | awk -F: '{print $1}' \
   | sed 's,[ "],,g' > /etc/machine-id
 
 # FIXME: copying FID files, till we ingtegrate HARE provisioner to automation
 MACHINE_ID="$(cat /etc/machine-id)"
-sysconfig_dir="/etc/cortx/s3/sysconfig/$MACHINE_ID/"
+sysconfig_dir="$BASE_CONFIG_PATH/s3/sysconfig/$MACHINE_ID/"
 mkdir -p "$sysconfig_dir"
 ( set -exuo pipefail # print all commands and exit on failures
   for f in "$src_dir"/s3server/s3server-*; do
@@ -66,8 +66,8 @@ mkdir -p "$sysconfig_dir"
 # FIXME: hotfix for issue with libmotr that needs no-dashes, vs s3server that needs dashes
 MACHINE_ID_NO_DASHES="$(cat /etc/machine-id | sed s,-,,g)"
 if [ "$MACHINE_ID" != "$MACHINE_ID_NO_DASHES" ]; then
-  tgt="/etc/cortx/s3/sysconfig/$MACHINE_ID_NO_DASHES"
-  ln -fs "/etc/cortx/s3/sysconfig/$MACHINE_ID" "$tgt"
+  tgt="$BASE_CONFIG_PATH/s3/sysconfig/$MACHINE_ID_NO_DASHES"
+  ln -fs "$BASE_CONFIG_PATH/s3/sysconfig/$MACHINE_ID" "$tgt"
 fi
 
-cortx_setup cluster bootstrap -c yaml:///etc/cortx/cluster.conf
+cortx_setup cluster bootstrap -c yaml://"$BASE_CONFIG_PATH"/cluster.conf

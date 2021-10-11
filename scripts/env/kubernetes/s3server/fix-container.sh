@@ -21,6 +21,9 @@
 set -euo pipefail # exit on failures
 set -x
 
+source /var/data/cortx/cortx-s3server/scripts/env/kubernetes/config.sh
+source /var/data/cortx/cortx-s3server/scripts/env/kubernetes/env.sh
+
 ###########################################################################
 #
 # This script runs in every s3 IO container right before entry-point
@@ -32,7 +35,7 @@ set -x
 ###########################################################################
 
 # FIXME: motr/provisioner dependency on machine-id file
-cat /etc/cortx/s3/machine-id > /etc/machine-id
+cat "$BASE_CONFIG_PATH"/s3/machine-id > /etc/machine-id
 
 # FIXME: use hard-coded cortx-utils version; newer ones have some unknown changes
 rpm -e --nodeps cortx-py-utils

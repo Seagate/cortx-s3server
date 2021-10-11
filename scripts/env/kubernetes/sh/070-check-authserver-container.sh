@@ -32,7 +32,7 @@ kube_run() {
   kubectl exec -i io-pod -c authserver -- "$@"
 }
 
-#kube_run sh -c '/opt/seagate/cortx/auth/startauth.sh /etc/cortx/s3 &>/root/authserver.log &'
+#kube_run sh -c '/opt/seagate/cortx/auth/startauth.sh "$BASE_CONFIG_PATH"/s3 &>/root/authserver.log &'
 
 sleep 1
 

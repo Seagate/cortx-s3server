@@ -57,14 +57,14 @@ fi
 # #############
 
 # 'manual' step for machine-id (until proper solution is merged) FIXME
-kube_run sh -c 'cat /etc/machine-id > /etc/cortx/s3/machine-id-with-dashes'
-kube_run sh -c 'cat /etc/machine-id | sed "s,-,,g" > /etc/cortx/s3/machine-id'
+kube_run sh -c "cat /etc/machine-id > '$BASE_CONFIG_PATH/s3/machine-id-with-dashes'"
+kube_run sh -c "cat /etc/machine-id | sed ,s,-,,g, > '$BASE_CONFIG_PATH/s3/machine-id'"
 
 # Increase retry interval
 sed -i \
   -e 's/S3_SERVER_BGDELETE_BIND_ADDR *:.*/S3_SERVER_BGDELETE_BIND_ADDR: 0.0.0.0/' \
   -e 's/S3_MOTR_RECONNECT_RETRY_COUNT *:.*/S3_MOTR_RECONNECT_RETRY_COUNT: 30/' \
-  /etc/cortx/s3/conf/s3config.yaml
+  "$BASE_CONFIG_PATH"/s3/conf/s3config.yaml
 
 
 # ##################
@@ -74,7 +74,7 @@ sed -i \
 set_bg_config_param() {
   key="$1"
   val="$2"
-  sed -i -e "s,$key:.*,$key: $val," /etc/cortx/s3/s3backgrounddelete/config.yaml
+  sed -i -e "s,$key:.*,$key: $val," "$BASE_CONFIG_PATH"/s3/s3backgrounddelete/config.yaml
 }
 
 # adjust delay delete parameters to speed up testing
