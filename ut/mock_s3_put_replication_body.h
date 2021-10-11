@@ -36,7 +36,10 @@ class MockS3PutReplicationBody : public S3PutReplicationBody {
       : S3PutReplicationBody(xml, request_id) {}
   MOCK_METHOD0(isOK, bool());
   MOCK_METHOD0(get_replication_configuration_as_json, std::string());
+<<<<<<< HEAD
   MOCK_METHOD0(get_additional_error_information, std::string());
+=======
+>>>>>>> 453b755d4829b88d994709f8f54d901599087387
 };
 
 #endif
