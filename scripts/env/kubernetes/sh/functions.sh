@@ -139,7 +139,8 @@ delete_pod_if_exists() {
 }
 
 replace_tags() {
-  ( dn=$(dirname "$1")
+  ( set -xeuo pipefail
+    dn=$(dirname "$1")
     fn=$(basename "$1" .template)
     blueprint="$dn/$fn"
     cat "$1" \
@@ -163,9 +164,14 @@ replace_tags() {
 }
 
 replace_tags_and_apply() {
-  env DO_APPLY=1 replace_tags "$1"
+  ( DO_APPLY=1
+    replace_tags "$1"
+  )
 }
 
 replace_tags_and_create_pod() {
-  env DO_APPLY=1 THIS_IS_POD=1 replace_tags "$1" "$2"
+  ( DO_APPLY=1
+    THIS_IS_POD=1
+    replace_tags "$1" "$2"
+  )
 }

@@ -24,6 +24,8 @@ source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
 
+set -x
+
 add_separator "Creating common k8s definitions"
 
 # cleanup -- remove all config files from previous runs
@@ -31,7 +33,7 @@ if [ -d "$BASE_CONFIG_PATH" ]; then
   rm -fR "$BASE_CONFIG_PATH"/*
 fi
 
-replace_tags_and_apply k8s-blueprints/storage-class.yaml.template
+replace_tags_and_apply  k8s-blueprints/storage-class.yaml.template
 
 mkdir -p /var/motr
 mkdir -p "$BASE_CONFIG_PATH" /share/var/log/cortx /var/data/cortx
