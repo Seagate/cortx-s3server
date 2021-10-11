@@ -36,7 +36,6 @@ enum ChildNodes {
   Priority,
   DeleteMarkerReplication,
   Destination,
-<<<<<<< HEAD
   Filter,
   ExistingObjectReplication,
   SourceSelectionCriteria
@@ -51,9 +50,6 @@ enum DestinationChildNodes {
   Metrics,
   ReplicationTime,
   StorageClass
-=======
-  Filter
->>>>>>> 453b755d4829b88d994709f8f54d901599087387
 };
 class S3PutReplicationBody {
   std::string xml_content;
