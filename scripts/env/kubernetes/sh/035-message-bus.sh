@@ -26,20 +26,19 @@ source ./sh/functions.sh
 
 add_separator "Creating Message Bus PODs"
 
-# download images using docker -- 'kubectl init' is not able to apply user
-# credentials, and so is suffering from rate limits.
-pull_images_for_pod ./k8s-blueprints/zookeper.yaml
-pull_images_for_pod ./k8s-blueprints/kafka.yaml
-
 if kubectl get pods | grep zookeeper; then
   add_separator  zookeeper pod is already deployed.
 else
+  replace_tags ./k8s-blueprints/zookeper.yaml.template
+  pull_images_for_pod ./k8s-blueprints/zookeper.yaml
   kubectl create -f ./k8s-blueprints/zookeper.yaml
 fi
 
 if kubectl get pods | grep kafka; then
   add_separator  kafka pod is already deployed.
 else
+  replace_tags ./k8s-blueprints/kafka.yaml.template
+  pull_images_for_pod ./k8s-blueprints/kafka.yaml
   kubectl create -f ./k8s-blueprints/kafka.yaml
 fi
 
