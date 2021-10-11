@@ -36,6 +36,7 @@ where:
 haproxy_log_files_max_count=5
 haproxy_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_SYSCONF_SYMLINK")
 haproxy_log_file=$(s3confstore "properties://$haproxy_config" getkey --key="LOG_FILE")
+echo "haproxy log file: $haproxy_log_file"
 
 while getopts ":n:" option; do
     case "${option}" in
@@ -55,10 +56,12 @@ done
 echo "Max haproxy log file count: $haproxy_log_files_max_count"
 echo "Rotating haproxy log files"
 
-if [[ -n "$haproxy_log_file" && -d "$haproxy_log_file" ]]
+haproxy_log_dir=$(dirname $haproxy_log_file)
+echo "haproxy dir: $haproxy_log_dir"
+
+if [ -n "$haproxy_log_dir" ]
 then
      # Find haproxy log files
-     haproxy_log_dir='dirname $haproxy_log_file'
      haproxy_log_files=`find $haproxy_log_dir -maxdepth 1 -type f -name "haproxy.*"`
      haproxy_log_files_count=`echo "$haproxy_log_files" | grep -v "^$" | wc -l`
      echo "## found $haproxy_log_files_count file(s) in log directory($haproxy_log_dir) ##"
@@ -74,7 +77,7 @@ then
             echo "## ($remove_file_count) haproxy log file(s) can be removed from log directory($haproxy_log_dir) ##"
             # get the files sorted by time modified (most recently modified comes last), that is oldest files will come on top
             # ignore first file since we need to maintain first haproxy log file using 'sed' command
-            files_to_remove=`ls -tr "$haproxy_log_dir" | grep m0trace |sed "1 d" | head -n $remove_file_count`
+            files_to_remove=`ls -tr "$haproxy_log_dir" | grep haproxy |sed "1 d" | head -n $remove_file_count`
             for file in $files_to_remove
             do
               rm -f "$haproxy_log_dir/$file"
@@ -82,11 +85,11 @@ then
             echo "## deleted ($remove_file_count) haproxy log file(s) from log directory($haproxy_log_dir) ##"
 
          else
-            echo "## No haproxy log files to remove ##"
+            echo "## No haproxy log files to remove ##1"
          fi
      else
-         echo "## No haproxy log files to remove ##"
+         echo "## No haproxy log files to remove ##2"
      fi
 else
-    echo "## No haproxy log files to remove ##"
+    echo "## No haproxy log files to remove ##3"
 fi

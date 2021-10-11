@@ -35,7 +35,7 @@ where:
 # max m0trace files count in each s3 instance log directory
 m0trace_files_max_count=5
 s3server_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_CONF_SYMLINK")
-s3_daemon_working_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_DAEMON_WORKING_DIR")
+s3_daemon_working_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 
 while getopts ":n:" option; do
     case "${option}" in

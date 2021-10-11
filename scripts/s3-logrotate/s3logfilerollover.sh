@@ -40,7 +40,7 @@ s3server_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_co
 log_severity="INFO WARNING ERROR FATAL"
 # get log directory from s3 server config file
 # TODO: have to check alternatives to get log dorectory
-s3server_logdir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_LOG_DIR")
+s3server_logdir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_LOG_DIR")
 
 while getopts ":n:" option; do
     case "${option}" in
