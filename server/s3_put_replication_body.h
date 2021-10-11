@@ -60,13 +60,8 @@ class S3PutReplicationBody {
   std::string rule_prefix;
   std::multimap<std::string, std::string> bucket_tags;
   std::string rule_status;
-<<<<<<< HEAD
-  unsigned int rule_priority;
-  std::set<unsigned int> rule_priority_set;
-=======
   int rule_priority;
   std::set<int> rule_priority_set;
->>>>>>> 453b755d4829b88d994709f8f54d901599087387
   std::string del_rep_status;
   std::string bucket_str;
   bool is_valid;
@@ -74,10 +69,7 @@ class S3PutReplicationBody {
   bool parse_and_validate();
   Json::Value ReplicationConfiguration;
   int rule_number_cnt{-1};
-<<<<<<< HEAD
   std::vector<std::string> vec_bucket_names;
-=======
->>>>>>> 453b755d4829b88d994709f8f54d901599087387
 
  public:
   S3PutReplicationBody(std::string &xml, std::string &request);
@@ -92,15 +84,10 @@ class S3PutReplicationBody {
   bool validate_rule_status(const std::string &status, xmlNodePtr &node_name,
                             int &number_of_rules_enable);
   ChildNodes convert_str_to_enum(const unsigned char *str);
-<<<<<<< HEAD
   DestinationChildNodes convert_str_to_Destination_enum(
       const unsigned char *str);
   virtual std::string get_replication_configuration_as_json();
   std::vector<std::string> &get_destination_bucket_list();
-=======
-  virtual std::string get_replication_configuration_as_json();
-  std::string get_destination_bucket_name();
->>>>>>> 453b755d4829b88d994709f8f54d901599087387
   bool validate_child_nodes_of_filter(
       xmlNodePtr filter_node, std::map<std::string, std::string> &rule_tags,
       bool &is_and_node_present, bool &is_rule_prefix_present,
