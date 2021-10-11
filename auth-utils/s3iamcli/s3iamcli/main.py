@@ -38,6 +38,7 @@ class S3IamCli:
     def iam_usage(self):
         return '''
         CreateAccount -n <Account Name> -e <Email Id> --ldapuser <ldap-user> --ldappasswd <ldap-password>
+            [--access_key <access-key> --secret_key <secret-key>]
         CreateUserLoginProfile -n <User Name>
             --password <User Password>
             [--password-reset-required | --no-password-reset-required]
