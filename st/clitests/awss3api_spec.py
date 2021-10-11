@@ -663,11 +663,16 @@ AwsTest('Aws can copy object to different bucket')\
     .copy_object("source-bucket/10Mbfile", "destination-bucket", "10Mbfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
-# Positive: copy multipart object to same destination bucket with different name.
+#get-object after copying
+AwsTest('Aws can get object').get_object("destination-bucket", "10Mbfile-copy").execute_test().command_is_successful()
 
+# Positive: copy multipart object to same destination bucket with different name.
 AwsTest('Aws can copy object to same bucket')\
     .copy_object("source-bucket/10Mbfile", "source-bucket", "10Mbfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
+
+#get-object after copying
+AwsTest('Aws can get object').get_object("source-bucket", "10Mbfile-copy").execute_test().command_is_successful()
 
 # *******************************UnAligned Copy********************************************
 #************** Create a multipart upload ********
@@ -695,11 +700,16 @@ AwsTest('Aws can copy object to different bucket')\
     .copy_object("source-bucket/10.4Mbfile", "destination-bucket", "10.4Mbfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
-# Positive: copy multipart object to same destination bucket with different name.
+#get-object after copying
+AwsTest('Aws can get object').get_object("destination-bucket", "10.4Mbfile-copy").execute_test().command_is_successful()
 
+# Positive: copy multipart object to same destination bucket with different name.
 AwsTest('Aws can copy object to same bucket')\
     .copy_object("source-bucket/10.4Mbfile", "source-bucket", "10.4Mbfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
+
+#get-object after copying
+AwsTest('Aws can get object').get_object("source-bucket", "10.4Mbfile-copy").execute_test().command_is_successful()
 
 # ***************Overwrite case*******************
 # A ---> multipart object upload
@@ -750,6 +760,9 @@ print(parts)
 #************** Complete multipart upload ********
 result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete_multipart_upload("source-bucket", "10MbAAfile", parts, upload_id).execute_test().command_is_successful().command_response_should_have("source-bucket/10MbAAfile")
 
+#get-object after overwrite
+AwsTest('Aws can get object').get_object("source-bucket", "10MbAAfile").execute_test().command_is_successful()
+
 #CASE 2 : AB (overwrite simple object with multipart object)
 #simple object upload
 AwsTest('Aws can put object').put_object("source-bucket", "10MbABfile", 1024)\
@@ -776,6 +789,8 @@ print(parts)
 #************** Complete multipart upload ********
 result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete_multipart_upload("source-bucket", "10MbABfile", parts, upload_id).execute_test().command_is_successful().command_response_should_have("source-bucket/10MbABfile")
 
+#get-object after overwrite
+AwsTest('Aws can get object').get_object("source-bucket", "10MbABfile").execute_test().command_is_successful()
 
 #CASE 3 : BA (overwrite multipart object with simple object)
 #multipart object upload
@@ -803,6 +818,9 @@ result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete
 AwsTest('Aws can put object').put_object("source-bucket", "10MbBAfile", 1024)\
     .execute_test().command_is_successful()
 
+#get-object after overwrite
+AwsTest('Aws can get object').get_object("source-bucket", "10MbBAfile").execute_test().command_is_successful()
+
 #CASE 4 : BB (overwrite simple object with simple object)
 #simple object upload
 AwsTest('Aws can put object').put_object("source-bucket", "10MbBBfile", 1024)\
@@ -811,6 +829,9 @@ AwsTest('Aws can put object').put_object("source-bucket", "10MbBBfile", 1024)\
 #overwrite with simple object upload
 AwsTest('Aws can put object').put_object("source-bucket", "10MbBBfile", 1024)\
     .execute_test().command_is_successful()
+
+#get-object after overwrite
+AwsTest('Aws can get object').get_object("source-bucket", "10MbBBfile").execute_test().command_is_successful()
 
 # Delete source and destination buckets and objects from them.
 AwsTest('Aws can delete sourceobj').delete_object("source-bucket", "10MbAAfile").execute_test().command_is_successful()
@@ -838,8 +859,6 @@ AwsTest('Aws can delete source bucket').delete_bucket("source-bucket").execute_t
 AwsTest('Aws can delete destination bucket').delete_bucket("destination-bucket").execute_test().command_is_successful()
 
 # ************ CopyObject API supported *****************************************************************
-
-
 
 AwsTest('Aws can create bucket').create_bucket("sourcebucket").execute_test().command_is_successful()
 AwsTest('Aws can create object with canned acl input').put_object("sourcebucket", "sourceobj", canned_acl="public-read").execute_test().command_is_successful()
