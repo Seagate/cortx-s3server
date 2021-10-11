@@ -272,7 +272,6 @@ void S3PostCompleteAction::fetch_multipart_info_success() {
   new_object_oid = multipart_metadata->get_oid();
   layout_id = multipart_metadata->get_layout_id();
   new_pvid = multipart_metadata->get_pvid();
-
   if (old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL) {
     old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
   }
@@ -534,44 +533,44 @@ bool S3PostCompleteAction::validate_parts() {
 
 void S3PostCompleteAction::add_part_object_to_object_extended(
     const std::shared_ptr<S3PartMetadata>& part_metadata,
-    std::shared_ptr<S3ObjectMetadata>& object_metadata) {
+    std::shared_ptr<S3ObjectMetadata>& obj_metadata) {
   s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
-  if (!object_metadata) {
+  if (!obj_metadata) {
     // Create new object metadata
-    object_metadata = object_metadata_factory->create_object_metadata_obj(
+    obj_metadata = object_metadata_factory->create_object_metadata_obj(
         request, bucket_metadata->get_object_list_index_layout());
-    object_metadata->set_objects_version_list_index_layout(
+    obj_metadata->set_objects_version_list_index_layout(
         bucket_metadata->get_objects_version_list_index_layout());
     // Dummy oid and layout id for new object
-    object_metadata->set_oid(new_object_oid);
-    object_metadata->set_layout_id(layout_id);
+    obj_metadata->set_oid(new_object_oid);
+    obj_metadata->set_layout_id(layout_id);
 
     // Generate version id for the new obj as it will become live to s3 clients.
-    object_metadata->regenerate_version_id();
+    obj_metadata->regenerate_version_id();
     // Create extended metadata object and add object parts to it.
     const std::shared_ptr<S3ObjectExtendedMetadata>& ext_object_metadata =
-        object_metadata->get_extended_object_metadata();
+        obj_metadata->get_extended_object_metadata();
     if (!ext_object_metadata) {
       std::shared_ptr<S3ObjectExtendedMetadata> new_ext_object_metadata =
           object_metadata_factory->create_object_ext_metadata_obj(
               request, request->get_bucket_name(), request->get_object_name(),
-              object_metadata->get_obj_version_key(), 0, 0,
+              obj_metadata->get_obj_version_key(), 0, 0,
               bucket_metadata->get_extended_metadata_index_layout());
 
-      object_metadata->set_extended_object_metadata(new_ext_object_metadata);
+      obj_metadata->set_extended_object_metadata(new_ext_object_metadata);
       s3_log(S3_LOG_DEBUG, stripped_request_id,
              "Created extended object metadata to store object parts");
     }
   }
   const std::shared_ptr<S3ObjectExtendedMetadata>& new_object_ext_metadata =
-      object_metadata->get_extended_object_metadata();
+      obj_metadata->get_extended_object_metadata();
 
   if (new_object_ext_metadata) {
     // Add object part to new object's extended metadata
     struct s3_part_frag_context part_frag_ctx = {};
     part_frag_ctx.motr_OID = part_metadata->get_oid();
     part_frag_ctx.PVID = part_metadata->get_pvid();
-    part_frag_ctx.versionID = object_metadata->get_obj_version_key();
+    part_frag_ctx.versionID = obj_metadata->get_obj_version_key();
     part_frag_ctx.item_size = part_metadata->get_content_length();
     part_frag_ctx.layout_id = part_metadata->get_layout_id();
     part_frag_ctx.is_multipart = true;
@@ -580,9 +579,9 @@ void S3PostCompleteAction::add_part_object_to_object_extended(
     // For multipart object, pass the part_no as object part number
     // and fragment_no=1 (part is not further fragmented)
     new_object_ext_metadata->add_extended_entry(part_frag_ctx, 1, part_number);
-    object_metadata->set_number_of_fragments(
+    obj_metadata->set_number_of_fragments(
         new_object_ext_metadata->get_fragment_count());
-    object_metadata->set_number_of_parts(
+    obj_metadata->set_number_of_parts(
         new_object_ext_metadata->get_part_count());
     s3_log(S3_LOG_DEBUG, request_id,
            "Added object part [%d] with object oid"
@@ -681,13 +680,15 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
 
 void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
   new_object_metadata->set_oid(new_object_oid);
   new_object_metadata->set_layout_id(layout_id);
   new_object_metadata->set_pvid(&new_pvid);
   // Generate version id for the new obj as it will become live to s3 clients.
-  new_object_metadata->regenerate_version_id();
-
+  // In case of extends during add_part_object_to_object_extended()
+  // it will be created
+  if ((new_object_metadata->get_obj_version_id()).size() == 0) {
+    new_object_metadata->regenerate_version_id();
+  }
   if (!motr_kv_writer) {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
