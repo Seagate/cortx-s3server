@@ -33,8 +33,8 @@ where:
 
 # max addb files count in each s3 instance log directory
 addb_dirs_max_count=2
-s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
-s3_daemon_working_dir=`cat $s3server_config | grep "S3_DAEMON_WORKING_DIR:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
+s3server_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_CONF_SYMLINK")
+s3_daemon_working_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 
 while getopts ":n:" option; do
     case "${option}" in
