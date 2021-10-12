@@ -26,11 +26,6 @@ source ./sh/functions.sh
 
 set -x # print each statement before execution
 
-if [ "$USE_PROVISIONING" != yes ]; then
-  # ctrl node provisioning only makes sense when using provisioner
-  exit 0
-fi
-
 add_separator Running CTRL-POD provisioning.
 
 s3_repo_dir=/var/data/cortx/cortx-s3server

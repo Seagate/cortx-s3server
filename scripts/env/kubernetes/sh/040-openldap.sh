@@ -30,11 +30,8 @@ add_separator "CREATING LDAP POD"
 
 # FIXME: use image and scripts from services team
 
-if [ "$USE_PROVISIONING" = yes ]; then
-  ldap_kind=symas
-else
-  ldap_kind=openldap
-fi
+ldap_kind=symas
+# ldap_kind=openldap
 
 if [ "$ldap_kind" = symas ]; then
   # update image link for containers

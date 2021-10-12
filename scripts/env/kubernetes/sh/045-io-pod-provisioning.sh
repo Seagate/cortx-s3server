@@ -46,11 +46,8 @@ kube_run() {
 # S3 mini provisioner call #
 ############################
 
-if [ "$USE_PROVISIONING" = yes ]; then
-  kube_run "$src_dir/s3server/shim-provisioner.sh" io-pod
-else
-  kube_run "$src_dir/s3server/s3-mini-prov.sh"
-fi
+kube_run "$src_dir/s3server/shim-provisioner.sh" io-pod
+# kube_run "$src_dir/s3server/s3-mini-prov.sh"
 
 # #############
 # # S3 server #
