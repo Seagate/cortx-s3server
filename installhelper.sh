@@ -295,6 +295,7 @@ cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/cn=s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/ldap/iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/s3-iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-admin.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-constraints.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ldap-init.ldif $S3_INSTALL_LOCATION/install/ldap/

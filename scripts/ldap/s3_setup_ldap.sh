@@ -117,7 +117,7 @@ ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$ADMIN_USERS_FILE" -h "$host" || /bin/true
 rm -f $ADMIN_USERS_FILE
 
-ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/iam-admin-access.ldif -h "$host"
+ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3-iam-admin-access.ldif -h "$host"
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
