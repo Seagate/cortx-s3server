@@ -515,11 +515,9 @@ backend s3-auth
     #Check for destination dirs and create if needed
     if not os.path.exists('/etc/haproxy/errors/'):
         os.makedirs('/etc/haproxy/errors/')
-    if not os.path.exists('/etc/cron.hourly/logrotate'):
-        os.makedirs('/etc/cron.hourly/logrotate')
 
     #Run config commands
-    shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/503.http", "/etc/haproxy/errors/")
+    shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/503.http", "/etc/haproxy/errors/503.http")
     shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy", "/etc/logrotate.d/haproxy")
     shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf", "/etc/rsyslog.d/haproxy.conf")
     shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate", "/etc/cron.hourly/logrotate")
