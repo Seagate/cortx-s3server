@@ -47,6 +47,8 @@ yum install -y http://ssc-vm-g2-rhev4-0613.colo.seagate.com/ivan.tishchenko/publ
 cortx_setup config apply -f yaml://"$BASE_CONFIG_PATH"/s3/solution.cpy/cluster.yaml -c yaml://"$BASE_CONFIG_PATH"/cluster.conf
 cortx_setup config apply -f yaml://"$BASE_CONFIG_PATH"/s3/solution.cpy/config.yaml  -c yaml://"$BASE_CONFIG_PATH"/cluster.conf
 
+# FIXME: motr/provisioner dependency on machine-id file
+rm -f /etc/machine-id
 yq -r '.node | map_values(.name) ' "$BASE_CONFIG_PATH"/cluster.conf \
   | grep "$node_name" \
   | awk -F: '{print $1}' \
