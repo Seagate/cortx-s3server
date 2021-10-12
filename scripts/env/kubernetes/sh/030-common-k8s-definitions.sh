@@ -32,11 +32,15 @@ add_separator "Creating common k8s definitions"
 if [ -d "$BASE_CONFIG_PATH" ]; then
   rm -fR "$BASE_CONFIG_PATH"/*
 fi
+if [ -d "$STUB_CONFIG_PATH" ]; then
+  rm -fR "$STUB_CONFIG_PATH"/*
+fi
 
 replace_tags_and_apply  k8s-blueprints/storage-class.yaml.template
 
 mkdir -p /var/motr
-mkdir -p "$BASE_CONFIG_PATH" /share/var/log/cortx /var/data/cortx
+mkdir -p "$BASE_CONFIG_PATH" "$STUB_CONFIG_PATH" \
+         /share/var/log/cortx /var/data/cortx
 
 replace_tags_and_apply k8s-blueprints/motr-pv.yaml.template
 replace_tags_and_apply k8s-blueprints/motr-pvc.yaml.template
