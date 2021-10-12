@@ -73,6 +73,7 @@ mkdir -p $S3_INSTALL_LOCATION/install/ldap/rsyslog.d
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication/cleanup
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
+mkdir -p $S3_INSTALL_LOCATION/install/logrotate
 mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
 mkdir -p $S3_INSTALL_LOCATION/conf
@@ -93,6 +94,9 @@ mkdir -p $S3_MINI_PROV_CFG_LOCATION
 
 # Copy the haproxy dependencies
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
+
+# Copy the logrotate dependencies
+cp -R scripts/s3-logrotate/* $S3_INSTALL_LOCATION/install/logrotate
 
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
@@ -192,15 +196,6 @@ cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
 
 # Copy the s3 service file for systemctl multiple instance support.
 cp ./system/s3server@.service $SERVICE_FILE_LOCATION
-
-# Copy the s3 log rotate script for retaining recent modified log files
-cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
-
-# Copy m0trace log rotation script for retaining recent m0trace files
-cp -f scripts/s3-logrotate/s3m0tracelogfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
-
-# Copy addb log rotation script for retaining recent addb files
-cp -f scripts/s3-logrotate/s3addblogfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 
 # Copy s3server support bundle script
 cp -f scripts/s3-support-bundles/s3_bundle_generate.sh $S3_INSTALL_LOCATION/scripts/
@@ -332,12 +327,6 @@ cp ./scripts/rsyslog-tcp-audit.conf $RSYSLOG_CFG_DIR_LOCATION
 
 # Copy elasticsearch config
 cp ./scripts/elasticsearch/elasticsearch.conf $RSYSLOG_CFG_DIR_LOCATION
-
-# Copy audit logrotate config
-cp ./scripts/s3-logrotate/s3auditlog $LOGROTATE_CFG_DIR_LOCATION
-
-# Copy openldap logrotate config
-cp ./scripts/ldap/logrotate/openldap $LOGROTATE_CFG_DIR_LOCATION
 
 # Copy the keepalived config
 cp ./scripts/keepalived/keepalived.conf.main $KEEPALIVED_CFG_DIR_LOCATION
