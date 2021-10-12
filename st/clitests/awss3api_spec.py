@@ -507,6 +507,7 @@ os.system("rm -rf " + upload_content)
 os.rmdir(temp_dir)
 
 #*********************Range Read***************************
+
 #Creating a multipart upload
 AwsTest('Aws can create bucket').create_bucket("rangereadbucket").execute_test().command_is_successful()
 
