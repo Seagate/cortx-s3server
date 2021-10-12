@@ -10,16 +10,16 @@ spec:
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
-        - name: etc-cortx
-          mountPath: <etc-cortx>
+        - name: base-etc-cortx
+          mountPath: <base-etc-cortx>
+        - name: stub-etc-cortx
+          mountPath: <stub-etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
         - name: cortx-secret
-          mountPath: <etc-cortx>/solution/secret
-        - name: solution-node-for-storage
-          mountPath: <etc-cortx>/solution/node
+          mountPath: <base-etc-cortx>/solution/secret
       command:
          - "/bin/bash"
          - "-c"
@@ -27,15 +27,15 @@ spec:
       args:
          - 'sleep infinity'
   volumes:
-      - name: solution-node-for-storage
-        persistentVolumeClaim:
-          claimName: solution-node-for-storage
       - name: cortx-secret
         secret:
           secretName: cortx-secret
-      - name: etc-cortx
+      - name: base-etc-cortx
         persistentVolumeClaim:
-          claimName: etc-cortx
+          claimName: base-etc-cortx
+      - name: stub-etc-cortx
+        persistentVolumeClaim:
+          claimName: stub-etc-cortx
       - name: var-log-cortx
         persistentVolumeClaim:
           claimName: var-log-cortx

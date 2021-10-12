@@ -35,6 +35,7 @@ source /var/data/cortx/cortx-s3server/scripts/env/kubernetes/env.sh
 ###########################################################################
 
 # FIXME: motr/provisioner dependency on machine-id file
+rm -f /etc/machine-id
 cat "$BASE_CONFIG_PATH"/s3/machine-id > /etc/machine-id
 
 # FIXME: use hard-coded cortx-utils version; newer ones have some unknown changes

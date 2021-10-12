@@ -29,8 +29,10 @@ sync_file_path=/var/data/cortx/motr-hare-is-up.txt
   # containers can know when motr is ready.
 rm -f "$sync_file_path"
 
-#echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id
+# FIXME: motr/provisioner dependency on machine-id file
+rm -f /etc/machine-id
 cat "$BASE_CONFIG_PATH"/s3/machine-id > /etc/machine-id
+
 sed -i '103,107 s/^/#/'                                  /usr/libexec/cortx-motr/motr-server
 sed -i '243,243 s/^/#/'                                  /usr/libexec/cortx-motr/motr-server
 sed -i '209 i fi'                                        /usr/libexec/cortx-motr/motr-server

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: etc-cortx
+  name: base-etc-cortx
 spec:
   capacity:
     storage: 5Gi
@@ -11,9 +11,34 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   claimRef:
     namespace: default
-    name: etc-cortx
+    name: base-etc-cortx
   local:
-    path: <etc-cortx>
+    path: <base-etc-cortx>
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-name
+          operator: In
+          values:
+          - node1
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stub-etc-cortx
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: default
+    name: stub-etc-cortx
+  local:
+    path: <stub-etc-cortx>
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -64,56 +89,6 @@ spec:
     name: var-data-cortx
   local:
     path: /var/data/cortx
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: node-name
-          operator: In
-          values:
-          - node1
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: solution-node-for-ctrl
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  volumeMode: Filesystem
-  persistentVolumeReclaimPolicy: Retain
-  claimRef:
-    namespace: default
-    name: solution-node-for-ctrl
-  local:
-    path: <etc-cortx>/solution/control-node
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: node-name
-          operator: In
-          values:
-          - node1
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: solution-node-for-storage
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  volumeMode: Filesystem
-  persistentVolumeReclaimPolicy: Retain
-  claimRef:
-    namespace: default
-    name: solution-node-for-storage
-  local:
-    path: <etc-cortx>/solution/storage-node1
   nodeAffinity:
     required:
       nodeSelectorTerms:

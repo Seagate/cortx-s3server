@@ -144,7 +144,9 @@ replace_tags() {
     fn=$(basename "$1" .template)
     blueprint="$dn/$fn"
     cat "$1" \
-      | sed -e "s,<etc-cortx>,$BASE_CONFIG_PATH,g" \
+      | sed \
+            -e "s,<base-etc-cortx>,$BASE_CONFIG_PATH,g" \
+            -e "s,<stub-etc-cortx>,$STUB_CONFIG_PATH,g" \
             -e "s,<symas-image>,'$SYMAS_IMAGE'," \
             -e "s/<vm-hostname>/${HOST_FQDN}/g" \
             -e "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \

@@ -38,12 +38,6 @@ replace_tags_and_apply  k8s-blueprints/storage-class.yaml.template
 mkdir -p /var/motr
 mkdir -p "$BASE_CONFIG_PATH" /share/var/log/cortx /var/data/cortx
 
-# Create node/id files.
-mkdir -p "$BASE_CONFIG_PATH"/solution/control-node
-touch "$BASE_CONFIG_PATH"/solution/control-node/id
-mkdir -p "$BASE_CONFIG_PATH"/solution/storage-node1
-touch "$BASE_CONFIG_PATH"/solution/storage-node1/id
-
 replace_tags_and_apply k8s-blueprints/motr-pv.yaml.template
 replace_tags_and_apply k8s-blueprints/motr-pvc.yaml.template
 replace_tags_and_apply k8s-blueprints/var-motr-pv.yaml.template

@@ -10,8 +10,10 @@ spec:
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
-        - name: etc-cortx
-          mountPath: <etc-cortx>
+        - name: base-etc-cortx
+          mountPath: <base-etc-cortx>
+        - name: stub-etc-cortx
+          mountPath: <stub-etc-cortx>
         - name: var-log-cortx
           mountPath: /share/var/log/cortx
         - name: var-data-cortx
@@ -21,18 +23,21 @@ spec:
          - "-c"
          - "--"
       args:
-         - "<etc-cortx>/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3bgproducer -c yaml://<etc-cortx>/cluster.conf"
+         - "<base-etc-cortx>/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3bgproducer -c yaml://<base-etc-cortx>/cluster.conf"
 #     command:
 #        - "/opt/seagate/cortx/s3/bin/s3_start"
 #     args:
 #        - "--service"
 #        - "s3bgproducer"
 #        - -c
-#        - yaml://<etc-cortx>/cluster.conf
+#        - yaml://<base-etc-cortx>/cluster.conf
   volumes:
-      - name: etc-cortx
+      - name: base-etc-cortx
         persistentVolumeClaim:
-          claimName: etc-cortx
+          claimName: base-etc-cortx
+      - name: stub-etc-cortx
+        persistentVolumeClaim:
+          claimName: stub-etc-cortx
       - name: var-log-cortx
         persistentVolumeClaim:
           claimName: var-log-cortx

@@ -52,4 +52,5 @@ DOCKER_PASSWORD=
 #                  #
 ####################
 
-BASE_CONFIG_PATH=/etc/cortx # /var/custom # /etc/cortx
+BASE_CONFIG_PATH=/var/custom # for S3, and components which do support
+STUB_CONFIG_PATH=/etc/cortx  # for stubbed out components, which do not support custom path
