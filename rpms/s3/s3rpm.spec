@@ -367,6 +367,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/install/ldap/cn=s3user.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-admin-access.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-admin.ldif
+/opt/seagate/cortx/s3/install/ldap/s3-iam-admin-access.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-constraints.ldif
 /opt/seagate/cortx/s3/install/ldap/ldap-init.ldif
 /opt/seagate/cortx/s3/install/ldap/s3-ldap-init.ldif
