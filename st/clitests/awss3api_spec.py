@@ -77,6 +77,10 @@ def get_upload_id(response):
     key_pairs = response.split('\t')
     return key_pairs[2]
 
+def get_etag(response):
+    key_pairs = response.split('\t')
+    return key_pairs[3]
+
 def load_test_config():
     conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
     with open(conf_file, 'r') as f:
@@ -663,16 +667,22 @@ AwsTest('Aws can copy object to different bucket')\
     .copy_object("source-bucket/20Mbfile", "destination-bucket", "20Mbfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
-#get-object after copying
-AwsTest('Aws can get object').get_object("destination-bucket", "20Mbfile-copy").execute_test().command_is_successful()
-
 # Positive: copy multipart object to same destination bucket with different name.
 AwsTest('Aws can copy object to same bucket')\
     .copy_object("source-bucket/20Mbfile", "source-bucket", "20Mbfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
-#get-object after copying
-AwsTest('Aws can get object').get_object("source-bucket", "20Mbfile-copy").execute_test().command_is_successful()
+#get-object after copying and validating Etag
+dest_obj_data = AwsTest('Aws can get object').get_object("destination-bucket", "20Mbfile-copy").execute_test().command_is_successful()
+dest_obj_etag = get_etag(dest_obj_data.status.stdout)
+print(dest_obj_etag)
+
+source_obj_data = AwsTest('Aws can get object').get_object("source-bucket", "20Mbfile-copy").execute_test().command_is_successful()
+source_obj_etag = get_etag(source_obj_data.status.stdout)
+print(source_obj_etag)
+
+if dest_obj_etag != source_obj_etag:
+    assert False, "Copy object Tests Failed***************"
 
 # *******************************UnAligned Copy********************************************
 #************** Create a multipart upload ********
@@ -700,16 +710,22 @@ AwsTest('Aws can copy object to different bucket')\
     .copy_object("source-bucket/10.4Mbfile", "destination-bucket", "10.4Mbfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
-#get-object after copying
-AwsTest('Aws can get object').get_object("destination-bucket", "10.4Mbfile-copy").execute_test().command_is_successful()
-
 # Positive: copy multipart object to same destination bucket with different name.
 AwsTest('Aws can copy object to same bucket')\
     .copy_object("source-bucket/10.4Mbfile", "source-bucket", "10.4Mbfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
-#get-object after copying
-AwsTest('Aws can get object').get_object("source-bucket", "10.4Mbfile-copy").execute_test().command_is_successful()
+#get-object after copying and validating Etag
+dest_obj_data = AwsTest('Aws can get object').get_object("destination-bucket", "10.4Mbfile-copy").execute_test().command_is_successful()
+dest_obj_etag = get_etag(dest_obj_data.status.stdout)
+print(dest_obj_etag)
+
+source_obj_data = AwsTest('Aws can get object').get_object("source-bucket", "10.4Mbfile-copy").execute_test().command_is_successful()
+source_obj_etag = get_etag(source_obj_data.status.stdout)
+print(source_obj_etag)
+
+if dest_obj_etag != source_obj_etag:
+    assert False, "Copy object Tests Failed***************"
 
 # ***************Overwrite case*******************
 # A ---> multipart object upload
