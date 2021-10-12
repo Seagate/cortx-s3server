@@ -502,6 +502,130 @@ delete_object_list_file(object_list_file)
 os.system("rm -rf " + upload_content)
 os.rmdir(temp_dir)
 
+#*********************Range Read***************************
+#Creating a multipart upload
+AwsTest('Aws can create bucket').create_bucket("rangereadbucket").execute_test().command_is_successful()
+
+result=AwsTest('Aws can upload 10Mb file with tags').create_multipart_upload("rangereadbucket", "10Mbfile", 10485760, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+result=AwsTest('Aws can upload 5Mb first part').upload_part("rangereadbucket", "firstpart", 5242880, "10Mbfile", "1" , upload_id).execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+print(e_tag_1)
+
+result=AwsTest('Aws can upload 5Mb second part').upload_part("rangereadbucket", "secondpart", 5242880, "10Mbfile", "2" , upload_id).execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+print(e_tag_2)
+
+parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete_multipart_upload("rangereadbucket", "10Mbfile", parts, upload_id).execute_test().command_is_successful().command_response_should_have("rangereadbucket/10Mbfile")
+
+# Range read after multipart upload such that the range is within a part
+AwsTest('Aws can get object').get_object("rangereadbucket", "10Mbfile", start_range = '0', end_range = '1000000')\
+    .execute_test().command_is_successful()
+
+# Range read after multipart upload such that the range is across parts
+AwsTest('Aws can get object').get_object("rangereadbucket", "10Mbfile", start_range = '2000000', end_range = '7242880')\
+    .execute_test().command_is_successful()
+
+# Range read after multipart upload such that the range is exactly a part
+AwsTest('Aws can get object').get_object("rangereadbucket", "10Mbfile", start_range = '0', end_range = '5242879')\
+    .execute_test().command_is_successful()
+
+# Range read after multipart upload such that the range is complete object itself
+AwsTest('Aws can get object').get_object("rangereadbucket", "10Mbfile", start_range = '0', end_range = '10485759')\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete sourceobj').delete_object("rangereadbucket", "10Mbfile").execute_test().command_is_successful()
+
+AwsTest('Aws can delete source bucket').delete_bucket("rangereadbucket")\
+    .execute_test().command_is_successful()
+
+#********************Deleting bucket after multiple object uploads********************
+#negative case
+
+#for multiple simple objects in a bucket
+AwsTest('Aws can create bucket').create_bucket("simple-bucket").execute_test().command_is_successful()
+
+AwsTest('Aws can put simple object').put_object("simple-bucket", "simpleobj1", 1024)\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can put simple object').put_object("simple-bucket", "simpleobj2", 1024)\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can put simple object').put_object("simple-bucket", "simpleobj3", 1024)\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws cannot delete source bucket since the bucket is not empty')\
+    .delete_bucket("simple-bucket")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketNotEmpty")
+
+#for multiple multipart objects in a bucket
+#creating a bucket
+AwsTest('Aws can create bucket').create_bucket("multipart-bucket").execute_test().command_is_successful()
+
+#Creating a first multipart upload
+result=AwsTest('Aws can upload 10Mb file with tags').create_multipart_upload("multipart-bucket", "10Mbfile1", 10485760, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+result=AwsTest('Aws can upload 5Mb first part').upload_part("multipart-bucket", "firstpart", 5242880, "10Mbfile1", "1" , upload_id).execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+print(e_tag_1)
+
+result=AwsTest('Aws can upload 5Mb second part').upload_part("multipart-bucket", "secondpart", 5242880, "10Mbfile1", "2" , upload_id).execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+print(e_tag_2)
+
+parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete_multipart_upload("multipart-bucket", "10Mbfile1", parts, upload_id).execute_test().command_is_successful().command_response_should_have("multipart-bucket/10Mbfile1")
+
+#Creating a second multipart upload
+result=AwsTest('Aws can upload 10Mb file with tags').create_multipart_upload("multipart-bucket", "10Mbfile2", 10485760, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+result=AwsTest('Aws can upload 5Mb first part').upload_part("multipart-bucket", "firstpart", 5242880, "10Mbfile2", "1" , upload_id).execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+print(e_tag_1)
+
+result=AwsTest('Aws can upload 5Mb second part').upload_part("multipart-bucket", "secondpart", 5242880, "10Mbfile2", "2" , upload_id).execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+print(e_tag_2)
+
+parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete_multipart_upload("multipart-bucket", "10Mbfile2", parts, upload_id).execute_test().command_is_successful().command_response_should_have("multipart-bucket/10Mbfile2")
+
+AwsTest('Aws cannot delete source bucket')\
+    .delete_bucket("multipart-bucket")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketNotEmpty")
+
+#deleting a bucket after deleting objects(simple object case)
+AwsTest('Aws can delete sourceobj').delete_object("simple-bucket", "simpleobj1").execute_test().command_is_successful()
+
+AwsTest('Aws can delete sourceobj').delete_object("simple-bucket", "simpleobj2").execute_test().command_is_successful()
+
+AwsTest('Aws can delete sourceobj').delete_object("simple-bucket", "simpleobj3").execute_test().command_is_successful()
+
+AwsTest('Aws can delete source bucket').delete_bucket("simple-bucket")\
+    .execute_test().command_is_successful()
+
+#deleting a bucket after deleting objects(multipart object case)
+AwsTest('Aws can delete sourceobj').delete_object("multipart-bucket", "10Mbfile1").execute_test().command_is_successful()
+
+AwsTest('Aws can delete sourceobj').delete_object("multipart-bucket", "10Mbfile2").execute_test().command_is_successful()
+
+AwsTest('Aws can delete source bucket').delete_bucket("multipart-bucket")\
+    .execute_test().command_is_successful()
+
+
 # **************** Multipart CopyObject API supported *********************************
 AwsTest('Aws can create bucket').create_bucket("source-bucket").execute_test().command_is_successful()
 
