@@ -40,7 +40,7 @@ class S3AwsEtag {
  public:
   S3AwsEtag() : part_count(0) {}
 
-  void add_part_etag(std::string etag);
+  void add_part_etag(const std::string& etag);
   std::string finalize();
   std::string get_final_etag();
   FRIEND_TEST(S3AwsEtagTest, Constructor);

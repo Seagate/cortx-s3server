@@ -28,9 +28,11 @@
 
 S3GetAuditLogSchemaAction::S3GetAuditLogSchemaAction(
     std::shared_ptr<S3RequestObject> req)
-    : S3Action(req, true, nullptr, true, true), request(req) {
-  schema = "";
-  path = "/opt/seagate/cortx/s3/resources/s3_audit_log_schema.json";
+    : S3Action(req, true, nullptr, true, true),
+      schema(""),
+      path("/opt/seagate/cortx/s3/resources/s3_audit_log_schema.json"),
+      request(req) {
+
   setup_steps();
 }
 S3GetAuditLogSchemaAction::~S3GetAuditLogSchemaAction() {

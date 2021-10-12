@@ -529,8 +529,7 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest) {
   S3Option::get_instance()->set_eventbase(evbase);
 
   buffer->add_content(get_evbuf_t_with_data(fourk_buffer), false, false, true);
-  buffer->add_content(get_evbuf_t_with_data(sdata.c_str()), false, is_last_buf,
-                      true);
+  buffer->add_content(get_evbuf_t_with_data(sdata), false, is_last_buf, true);
   buffer->freeze();
 
   motr_writer_ptr->write_content(
