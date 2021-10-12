@@ -24,6 +24,7 @@ import traceback
 import errno
 import logging
 import os
+import shutil
 import socket
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
@@ -43,13 +44,17 @@ def main():
 
   args = parser.parse_args()
 
+  # global variables
+  global s3_confkeys_store
+  global base_config_path
+  global logger
+
   try:
     if not args.c:
       raise Exception("provide confstore_url")
     confstore_url = args.c
 
     # Load confstore file
-    global s3_confkeys_store
     s3_confkeys_store = S3CortxConfStore\
         (f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', \
           's3_index')
@@ -60,7 +65,6 @@ def main():
     # Get Config entries
     config_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_CONFIG_PATH")
-    global base_config_path
     base_config_path = prov_confkeys_store.get_config(config_key)
     logdir_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_LOG_PATH")
@@ -82,6 +86,15 @@ def main():
     if args.service == 's3server':
       if not args.index:
         raise Exception("provide instance id")
+
+      # configure s3server, s3m0trace, s3addb logrotate
+      configure_log_rotate("S3_LOGROTATE_S3LOG", "/etc/cron.hourly/")
+      configure_log_rotate("S3_LOGROTATE_M0TRACE", "/etc/cron.hourly/")
+      configure_log_rotate("S3_LOGROTATE_ADDB", "/etc/cron.hourly/")
+      configure_log_rotate("S3_LOGROTATE_AUDITLOG", "/etc/cron.daily/")
+
+      # start crond
+      os.system("/usr/sbin/crond start")
 
       #Sys config path
       sysconfig_path = os.path.join(base_config_path, "s3", machine_id, "sysconfig")
@@ -147,6 +160,12 @@ def main():
       # Print last few line of S3 bgdelete consumer log  file
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
     elif args.service == 'haproxy':
+      # configure haproxy logrotate
+      configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
+
+      # start crond
+      os.system("/usr/sbin/crond start")
+
       # Start haproxy
       logger.info(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
       logger.info(f"Starting HAProxy...")
@@ -244,6 +263,13 @@ def get_fid(fid_path):
     Fid = Fid.strip("''")
 
     return Fid
+
+def configure_log_rotate(key_to_read: str, cron_dir: str):
+    s3_logrotate_config_file = s3_confkeys_store.get_config(key_to_read)
+    logger.info(f"s3_logrotate_config_file : {s3_logrotate_config_file}")
+    os.makedirs(os.path.dirname(cron_dir), exist_ok=True)
+    shutil.copy(s3_logrotate_config_file, cron_dir)
+    logger.info("logrotate config file copied successfully to cron directory")
 
 if __name__ == '__main__':
   sys.exit(main())
