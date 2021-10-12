@@ -278,6 +278,7 @@ class ConfigCmd(SetupCmd):
     """Configure haproxy service."""
     self.logger.info('haproxy configuration started')
     try:
+
       # create empty haproxy syconfi file (e.g. /etc/cortx/s3/sysconfig/haproxy)
       sysconfig_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
       self.logger.info(f"sysconfig_file: {sysconfig_file}")

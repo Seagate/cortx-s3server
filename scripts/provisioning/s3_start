@@ -45,6 +45,7 @@ def main():
 
   args = parser.parse_args()
 
+
   # global variables
   global s3_confkeys_store
   global base_config_path
@@ -66,6 +67,7 @@ def main():
     # Get Config entries
     config_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_CONFIG_PATH")
+
     base_config_path = prov_confkeys_store.get_config(config_key)
     logdir_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_LOG_PATH")
@@ -183,7 +185,6 @@ def main():
 
       # start crond
       os.system("/usr/sbin/crond start")
-
       # Start haproxy
       logger.info(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
       logger.info(f"Starting HAProxy...")
