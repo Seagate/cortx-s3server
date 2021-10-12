@@ -17,7 +17,7 @@ spec:
         - name: var-data-cortx
           mountPath: /var/data/cortx
         - name: cortx-secret
-          mountPath: <base-etc-cortx>/solution/secret
+          mountPath: <stub-etc-cortx>/solution/secret
       command:
          - "/bin/bash"
          - "-c"
