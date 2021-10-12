@@ -19,6 +19,7 @@
 #
 
 import os
+import shutil
 import sys
 import socket
 import logging
@@ -514,20 +515,10 @@ backend s3-auth
     #Check for destination dirs and create if needed
     if not os.path.exists('/etc/haproxy/errors/'):
         os.makedirs('/etc/haproxy/errors/')
-    if not os.path.exists('/etc/logrotate.d/haproxy'):
-        os.makedirs('/etc/logrotate.d/haproxy')
-    if not os.path.exists('/etc/rsyslog.d/haproxy.conf'):
-        os.makedirs('/etc/rsyslog.d/haproxy.conf')
-    if not os.path.exists('/etc/cron.hourly/logrotate'):
-        os.makedirs('/etc/cron.hourly/logrotate')
-    if not os.path.exists('/etc/cron.daily/logrotate'):
-        os.makedirs('/etc/cron.daily/logrotate')
 
     #Run config commands
-    os.system("cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/")
-    os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy /etc/logrotate.d/haproxy")
-    os.system("cp /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf /etc/rsyslog.d/haproxy.conf")
-    os.system("rm -rf /etc/cron.daily/logrotate")
-    os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate")
+    shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/503.http", "/etc/haproxy/errors/503.http")
+    shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy", "/etc/logrotate.d/haproxy")
+    shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf", "/etc/rsyslog.d/haproxy.conf")
+    shutil.copyfile("/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate", "/etc/cron.hourly/logrotate")
     os.system("systemctl restart rsyslog")
-
