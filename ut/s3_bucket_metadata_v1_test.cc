@@ -246,6 +246,27 @@ TEST_F(S3BucketMetadataV1Test, GetSpecialCharTagsAsXml) {
   EXPECT_STREQ(expected_str, action_under_test->get_tags_as_xml().c_str());
 }
 
+TEST_F(S3BucketMetadataV1Test, GetDefaultBucketVersioningStatusAsXml) {
+  char expected_str[] =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+      "<VersioningConfiguration/>";
+  EXPECT_STREQ(
+      expected_str,
+      action_under_test->get_bucket_versioning_status_as_xml().c_str());
+}
+
+TEST_F(S3BucketMetadataV1Test, GetEnabledBucketVersioningStatusAsXml) {
+  char expected_str[] =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+      "<VersioningConfiguration>"
+      "<Status>Enabled</Status>"
+      "</VersioningConfiguration>";
+  action_under_test->set_bucket_versioning("Enabled");
+  EXPECT_STREQ(
+      expected_str,
+      action_under_test->get_bucket_versioning_status_as_xml().c_str());
+}
+
 TEST_F(S3BucketMetadataV1Test, AddSystemAttribute) {
   action_under_test->add_system_attribute("LocationConstraint", "us-east");
   EXPECT_STREQ("us-east",
