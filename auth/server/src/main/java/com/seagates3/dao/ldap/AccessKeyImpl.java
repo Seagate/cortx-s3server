@@ -122,6 +122,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
                     entry.getAttribute(LDAPUtils.TOKEN).getStringValue());
             }
           }
+          lc.abandon(ldapResults);
         }
         catch (LDAPException ex) {
           LOGGER.error("Failed to find Access Key.");
