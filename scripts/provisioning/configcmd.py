@@ -382,6 +382,10 @@ class ConfigCmd(SetupCmd):
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
       if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
+        # update the haproxy log rotate config file in /etc/logrotate.d/haproxy
+        self.find_and_replace("/etc/logrotate.d/haproxy", "/var/log/cortx", self.base_log_file_path)
+        self.find_and_replace("/etc/rsyslog.d/haproxy.conf", "/var/log/cortx", self.base_log_file_path)
+
         # reload haproxy service
         try:
           self.logger.info("Reloading haproxy service...")
@@ -757,3 +761,15 @@ class ConfigCmd(SetupCmd):
       os.makedirs(os.path.dirname(dest_directory), exist_ok=True)
       shutil.copy(config_file, dest_directory)
       self.logger.info("Config file copied successfully to cron directory")
+
+  def find_and_replace(self, filename: str,
+                       content_to_search: str,
+                       content_to_replace: str):
+    """find and replace the given string."""
+    self.logger.info(f"content_to_search: {content_to_search}")
+    self.logger.info(f"content_to_replace: {content_to_replace}")
+    with open(filename) as f:
+      newText=f.read().replace(content_to_search, content_to_replace)
+    with open(filename, "w") as f:
+      f.write(newText)
+    self.logger.info(f"find and replace completed successfully for the file {filename}.")
