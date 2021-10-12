@@ -32,7 +32,6 @@ import com.seagates3.dao.UserDAO;
 import com.seagates3.dao.ldap.LDAPUtils;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.Role;
@@ -41,6 +40,7 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
+import com.seagates3.service.AccessKeyService;
 import com.seagates3.service.GlobalDataStore;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -96,6 +96,8 @@ public class AccountController extends AbstractController {
     public ServerResponse create() {
         String name = requestBody.get("AccountName");
         String email = requestBody.get("Email");
+        String accessKey = requestBody.get("AccessKey");
+        String secretKey = requestBody.get("SecretKey");
         Account account;
         int accountCount = 0;
         LOGGER.info("Creating account: " + name);
@@ -148,6 +150,20 @@ public class AccountController extends AbstractController {
 
         account.setEmail(email);
 
+        if (accessKey != null) {
+          AccessKey existingAccessKey;
+          try {
+            existingAccessKey = accessKeyDAO.find(accessKey);
+          }
+          catch (DataAccessException ex) {
+            LOGGER.error("Failed to find access key in ldap -" + ex);
+            return accountResponseGenerator.internalServerError();
+          }
+          if (existingAccessKey.exists()) {
+            return accountResponseGenerator.accessKeyAlreadyExists();
+          }
+        }
+
         try {
             accountDao.save(account);
         } catch (DataAccessException ex) {
@@ -175,8 +191,14 @@ public class AccountController extends AbstractController {
         }
 
         AccessKey rootAccessKey;
+
         try {
-            rootAccessKey = createRootAccessKey(root);
+          if (accessKey == null) {
+            rootAccessKey = AccessKeyService.createAccessKey(root);
+          } else {
+            rootAccessKey =
+                AccessKeyService.createAccessKey(root, accessKey, secretKey);
+          }
         } catch (DataAccessException ex) {
             return accountResponseGenerator.internalServerError();
         }
@@ -289,7 +311,7 @@ public class AccountController extends AbstractController {
         LOGGER.debug("Creating new access key for account: " + name);
         AccessKey rootAccessKey;
         try {
-            rootAccessKey = createRootAccessKey(root);
+          rootAccessKey = AccessKeyService.createAccessKey(root);
         } catch (DataAccessException ex) {
             return accountResponseGenerator.internalServerError();
         }
@@ -322,21 +344,6 @@ public class AccountController extends AbstractController {
 
         userDAO.save(user);
         return user;
-    }
-
-    /*
-     * Create access keys for the root user.
-     */
-    private AccessKey createRootAccessKey(User root) throws DataAccessException {
-        AccessKey accessKey = new AccessKey();
-        accessKey.setUserId(root.getId());
-        accessKey.setId(KeyGenUtil.createUserAccessKeyId(true));
-        accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
-        accessKey.setStatus(AccessKeyStatus.ACTIVE);
-
-        accessKeyDAO.save(accessKey);
-
-        return accessKey;
     }
 
     @Override
