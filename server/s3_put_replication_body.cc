@@ -420,7 +420,7 @@ bool S3PutReplicationBody::read_rule_node(
       } break;
 
       case Filter: {
-        // Filter is not a mandatory field
+
         if ((!xmlStrcmp(rule_child_node->name, (const xmlChar *)"Filter"))) {
           is_filter_present = true;
           // validate child nodes of filter
@@ -429,15 +429,14 @@ bool S3PutReplicationBody::read_rule_node(
           // Filter can be empty
           if (Filter_child_count == 0) {
             is_filter_empty = true;
+          } else {
+            if (!validate_child_nodes_of_filter(
+                     rule_child_node, rule_tags, is_and_node_present,
+                     is_rule_prefix_present, is_rule_tag_present)) {
 
-            return true;
-          }
-          bool bstatus = validate_child_nodes_of_filter(
-              rule_child_node, rule_tags, is_and_node_present,
-              is_rule_prefix_present, is_rule_tag_present);
-          if (bstatus == false) {
-            s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
-            return false;
+              s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
+              return false;
+            }
           }
         }
       } break;
@@ -480,16 +479,20 @@ bool S3PutReplicationBody::read_rule_node(
     rule_child_node = rule_child_node->next;
   } while (rule_child_node != nullptr);
 
-  if (is_destination_node_present == false) {
+  if (!is_destination_node_present) {
     s3_log(S3_LOG_WARN, request_id,
            "XML request body Invalid.Destination node not present\n");
     return false;
   }
 
-  // If filter is present DeleteMarkerReplication and priority is mandetory
+  if (!is_filter_present) {
+    s3_log(S3_LOG_WARN, request_id,
+           "XML request body Invalid.Filter node not present\n");
+    return false;
+  }
 
-  if (is_filter_present && (is_delete_marker_replication_present == false ||
-                            is_priority_present == false)) {
+  // If filter is present DeleteMarkerReplication and priority is mandetory
+  if (!is_delete_marker_replication_present || !is_priority_present) {
     s3_log(S3_LOG_WARN, request_id,
            "XML request body Invalid.If filter is present then "
            "DeleteMarkerReplication and priority must be present\n");
