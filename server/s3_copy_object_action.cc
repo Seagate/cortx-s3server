@@ -406,6 +406,8 @@ void S3CopyObjectAction::save_metadata() {
       additional_object_metadata->get_number_of_fragments());
   new_object_metadata->set_primary_obj_size(
       additional_object_metadata->get_primary_obj_size());
+  new_object_metadata->set_layout_id(
+      additional_object_metadata->get_layout_id());
 
   // put source object tags on new object
   s3_log(S3_LOG_DEBUG, stripped_request_id,
