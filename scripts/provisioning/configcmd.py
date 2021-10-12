@@ -91,9 +91,20 @@ class ConfigCmd(SetupCmd):
       self.copy_config_files()
       self.logger.info("copy config files completed")
 
+      # copy s3 authserver resources to base dir of config files (/etc/cortx)
       self.logger.info("copy s3 authserver resources started")
       self.copy_s3authserver_resources()
       self.logger.info("copy s3 authserver resources completed")
+
+      if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
+        # Copy log rotation config files from install directory to cron directory.
+        self.logger.info("copy log rotate config started")
+        self.copy_logrotate_files()
+        self.logger.info("copy log rotate config completed")
+
+      # create symbolic link for this config file to be used by log rotation
+      self.create_symbolic_link(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                self.get_confkey("S3_CONF_SYMLINK"))
 
       # update all the config files
       self.logger.info("update all services config files started")
@@ -132,9 +143,7 @@ class ConfigCmd(SetupCmd):
         for src_path in list_matching:
           file_name = 's3server-' + str(index)
           dst_path = os.path.join(sysconfig_path, file_name)
-          if os.path.exists(dst_path):
-            os.unlink(dst_path)
-          os.symlink(src_path, dst_path)
+          self.create_symbolic_link(src_path, dst_path)
           index += 1
 
       if(self.services is None or 'openldap' in self.services):
@@ -163,6 +172,16 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
+  def create_symbolic_link(self, src_path: str, dst_path: str):
+    """create symbolic link."""
+    self.logger.info(f"symbolic link source path: {src_path}")
+    self.logger.info(f"symbolic link destination path: {dst_path}")
+    if os.path.exists(dst_path):
+      self.logger.info(f"symbolic link is already present")
+      os.unlink(dst_path)
+      self.logger.info("symbolic link is unlinked")
+    os.symlink(src_path, dst_path)
+    self.logger.info(f"symbolic link created successfully")
 
   def get_endpoint(self, confstore_key, expected_token,  endpoint_type):
     """1.Fetch confstore value from given key i.e. confstore_key
@@ -260,17 +279,35 @@ class ConfigCmd(SetupCmd):
     """Configure haproxy service."""
     self.logger.info('haproxy configuration started')
     try:
-      # Create sysconfig file for haproxy.
+
+      # create empty haproxy syconfi file (e.g. /etc/cortx/s3/sysconfig/haproxy)
       sysconfig_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
+      self.logger.info(f"sysconfig_file: {sysconfig_file}")
       os.makedirs(os.path.dirname(sysconfig_file), exist_ok=True)
-      with open(sysconfig_file, 'w') as sysconfig:
-        log_file = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        sysconfig.write(f"LOG_FILE='{log_file}'\n")
+      with open(sysconfig_file, 'w') as fp_haproxy_sys_config:
+        pass
+      self.logger.info("haproxy sys config file created successfully")
+      # load with confstore with properties format
+      haproxy_sysconfigfile_confstore = S3CortxConfStore(f'properties://{sysconfig_file}',
+                                                          'update_haproxy_sysconfig_file_idx')
+      # set key LOG_FILE with value {haproxy_sysconfig_log_file}
+      haproxy_sysconfig_log_file = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
+      self.logger.info(f"haproxy_sysconfig_log_file : {haproxy_sysconfig_log_file}")
+      haproxy_sysconfigfile_confstore.set_config("LOG_FILE", haproxy_sysconfig_log_file, True)
+      self.logger.info("haproxy sys config file updated successfully")
+      # create haproxy log directory path
+      os.makedirs(os.path.dirname(haproxy_sysconfig_log_file), exist_ok=True)
+
+      # create symbolic link for this config file to be used by log rotation
+      self.create_symbolic_link(sysconfig_file, self.get_confkey("S3_HAPROXY_SYSCONF_SYMLINK"))
 
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
       if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
+        # update the haproxy log rotate config file in /etc/logrotate.d/haproxy
+        self.find_and_replace("/etc/logrotate.d/haproxy", "/var/log/cortx", self.base_log_file_path)
+        self.find_and_replace("/etc/rsyslog.d/haproxy.conf", "/var/log/cortx", self.base_log_file_path)
+
         # reload haproxy service
         try:
           self.logger.info("Reloading haproxy service...")
@@ -624,3 +661,38 @@ class ConfigCmd(SetupCmd):
         shutil.copytree(source, destination)
       else:
           shutil.copy2(source, destination)
+
+  def copy_logrotate_files(self):
+    """Copy log rotation config files from install directory to cron directory."""
+    # Copy log rotate config files to /etc/logrotate.d/
+    config_files = [self.get_confkey('S3_LOGROTATE_AUDITLOG'),
+                    self.get_confkey('S3_LOGROTATE_HAPROXY')]
+    self.copy_logrotate_files_crond(config_files, "/etc/logrotate.d/")
+
+    # Copy log rotate config files to /etc/cron.hourly/
+    config_files = [self.get_confkey('S3_LOGROTATE_S3LOG'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_LOGROTATE_ADDB')]
+    self.copy_logrotate_files_crond(config_files, "/etc/cron.hourly/")
+
+  def copy_logrotate_files_crond(self, config_files, dest_directory):
+    """Copy log rotation config files from install directory to cron directory."""
+    # Copy log rotation config files from install directory to cron directory
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      self.logger.info(f"Dest dir: {dest_directory}")
+      os.makedirs(os.path.dirname(dest_directory), exist_ok=True)
+      shutil.copy(config_file, dest_directory)
+      self.logger.info("Config file copied successfully to cron directory")
+
+  def find_and_replace(self, filename: str,
+                       content_to_search: str,
+                       content_to_replace: str):
+    """find and replace the given string."""
+    self.logger.info(f"content_to_search: {content_to_search}")
+    self.logger.info(f"content_to_replace: {content_to_replace}")
+    with open(filename) as f:
+      newText=f.read().replace(content_to_search, content_to_replace)
+    with open(filename, "w") as f:
+      f.write(newText)
+    self.logger.info(f"find and replace completed successfully for the file {filename}.")

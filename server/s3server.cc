@@ -811,12 +811,14 @@ int main(int argc, char **argv) {
 
   // Call this function at starting as we need to make use of our own
   // memory allocation/deallocation functions
-  rc = event_use_mempool(g_option_instance->get_libevent_pool_buffer_size(),
-                         g_option_instance->get_libevent_pool_initial_size(),
-                         g_option_instance->get_libevent_pool_expandable_size(),
-                         g_option_instance->get_libevent_pool_max_threshold(),
-                         mem_log_msg_func, libevent_mempool_flags);
-
+  // Do not pass log function in non-debug(i.e. release) mode of S3server
+  rc = event_use_mempool(
+      g_option_instance->get_libevent_pool_buffer_size(),
+      g_option_instance->get_libevent_pool_initial_size(),
+      g_option_instance->get_libevent_pool_expandable_size(),
+      g_option_instance->get_libevent_pool_max_threshold(),
+      g_option_instance->get_log_level() == "DEBUG" ? mem_log_msg_func : NULL,
+      libevent_mempool_flags);
   if (rc != 0) {
     s3daemon.delete_pidfile();
     finalize_cli_options();
