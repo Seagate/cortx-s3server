@@ -37,7 +37,7 @@ usage() {
   exit 1
 }
 
-while getopts "b:t:c:s:" opt: do
+while getopts "b:t:c:s:" opt; do
   case "${opt}" in
     b) bundle_id=${OPTARG} ;;
     t) bundle_path=${OPTARG} ;;
@@ -47,11 +47,19 @@ while getopts "b:t:c:s:" opt: do
   esac
 done
 
+echo "Bundle_id: $bundle_id"
+echo "bundle_path: $bundle_path"
+echo "confstore_url: $confstore_url"
+echo "services: $services"
+
+
 s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
 s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
 
-base_config_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_log_key")
-base_log_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_config_key")
+base_config_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_config_key")
+base_log_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_log_key")
+echo "base_config_file_path: $base_config_file_path"
+echo "base_log_file_path: $base_log_file_path"
 
 # Fetch iamuser password from properties file and decrypt it.
 sgiamadminpwd=''
@@ -83,7 +91,6 @@ backgrounddelete_config="$base_config_file_path/s3/s3backgrounddelete/config.yam
 s3cluster_config="$base_config_file_path/s3/s3backgrounddelete/s3_cluster.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
-s3_motr_dir="$base_log_file_path/motr/s3server-*"
 
 s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
@@ -134,9 +141,10 @@ fi
 
 # 1. Get log directory path from config file
 s3server_logdir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_LOG_DIR")
-authserver_logdir=$(s3confstore "property://$authserver_config" getkey --key="logFilePath")
+authserver_logdir=$(s3confstore "properties://$authserver_config" getkey --key="logFilePath")
 backgrounddelete_producer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>scheduler_logger_directory")
 backgrounddelete_consumer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>processor_logger_directory")
+s3_motr_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 
 # Collect call stack of latest <s3_core_files_max_count> s3server core files
 # from s3_core_dir directory, if available
@@ -215,20 +223,19 @@ collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
 
-  dir="$base_log_file_path/motr"
   tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
   # if $base_log_file_path/motr missing then return
 
-  if [ ! -d "$dir" ];
+  if [ ! -d "$s3_motr_dir" ];
   then
       return;
   fi
 
-  cd $dir
+  cd $s3_motr_dir
   for s3_dir in s3server-*/;
   do
-    cd $dir
+    cd $s3_motr_dir
     mkdir -p $tmpr_dir
     cd $s3_dir
     (ls -t $m0trace_filename_pattern 2>/dev/null | head -$m0trace_files_count) | xargs -I '{}' cp '{}' $tmpr_dir
@@ -269,12 +276,12 @@ collect_first_m0trace_file(){
 
   cwd=$(pwd)
   m0trace_filename_pattern="*/m0trace.*"
-  if [ ! -d "$dir" ];
+  if [ ! -d "$s3_motr_dir" ];
   then
       return;
   fi
 
-  cd $dir
+  cd $s3_motr_dir
   file_path=$(ls -t */m0trace* 2>/dev/null | tail -1)
   # if m0trace are available
   if [ -f "$file_path" ];
@@ -477,6 +484,9 @@ then
     echo "ERROR: ldap admin password: '$sgiamadminpwd' is not correct, skipping collection of ldap data."
 else
     # Run ldap commands
+    ldap_endpoint_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS")
+    ldapendpoint=$(s3confstore "yaml://$confstore_url" getkey --key="$ldap_endpoint_key")
+
     ldapsearch -b "cn=config" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///  > "$ldap_config"  2>&1
     ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
     ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
