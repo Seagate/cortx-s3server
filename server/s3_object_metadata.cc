@@ -1138,7 +1138,8 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
   }  // End of for loop
 
   if (end_of_enumeration ||
-      (kvps.size() < S3Option::get_instance()->get_motr_idx_fetch_count())) {
+      (kvps.size() <
+       (size_t)S3Option::get_instance()->get_motr_idx_fetch_count())) {
     state = S3ObjectMetadataState::present;
     this->handler_on_success();
   } else {
