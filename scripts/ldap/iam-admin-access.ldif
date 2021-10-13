@@ -26,3 +26,10 @@ olcAccess: {1}to dn.sub="ou=accounts,dc=s3,dc=seagate,dc=com" by dn.base="cn=sgi
 olcAccess: {1}to dn.sub="ou=accesskeys,dc=s3,dc=seagate,dc=com" by dn.base="cn=sgiamadmin,dc=seagate,dc=com" write by self
 olcAccess: {1}to dn.sub="ou=idp,dc=s3,dc=seagate,dc=com" by dn.base="cn=sgiamadmin,dc=seagate,dc=com" write by self
 
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}to attrs=userPassword by self write by dn.base="cn=sgiamadmin,dc=seagate,dc=com" write by anonymous auth by * none
+-
+add: olcAccess
+olcAccess: {1}to * by dn.base="cn=sgiamadmin,dc=seagate,dc=com" write by self write by * none
