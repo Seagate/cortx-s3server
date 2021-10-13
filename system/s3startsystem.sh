@@ -55,6 +55,17 @@ else
   source $ha_config
 fi
 
+# read s3_prov_conf.yaml
+# read s3config path (/opt/seagate/cortx/s3/conf/s3config.yaml)
+# replace /opt/seagate/cortx with base_config_path
+# read symbolic link path (/opt/seagate/cortx/s3/install/logrotate/s3config.yaml)
+# create symboloc link
+# copy /opt/seagate/cortx/s3/install/logrotate/s3m0tracelogfilerollover.sh to /etc/cron.hourly/
+# copy /opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollover.sh to /etc/cron.hourly/
+# copy /opt/seagate/cortx/s3/install/logrotate/s3logfilerollover.sh to /etc/cron.hourly/
+# copy /opt/seagate/cortx/s3/install/logrotate/s3auditlog to /etc/cron.daily/
+# start crond
+
 
 # Ensure default working dir is present
 # e.g. /var/log/cortx/motr/<machine-id>/s3server-<fid>
