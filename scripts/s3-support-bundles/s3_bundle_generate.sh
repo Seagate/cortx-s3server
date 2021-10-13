@@ -486,11 +486,22 @@ else
     # Run ldap commands
     ldap_endpoint_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS")
     ldapendpoint=$(s3confstore "yaml://$confstore_url" getkey --key="$ldap_endpoint_key")
-
-    ldapsearch -b "cn=config" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///  > "$ldap_config"  2>&1
-    ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
-    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
-    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
+    # o/p of ldapendpoint -> ['ldap://127.0.0.1:389', 'ssl://127.0.0.1:636']
+    ldapendpoint=${ldapendpoint// /} # remove spaces
+    ldapendpoint=${ldapendpoint:1:-1} # remove [ and ]
+    IFS=',' # comma seperator
+    for endpoint in $ldapendpoint
+    do
+        endpoint=${endpoint:1:-1} # Remove ' and '
+        echo "endpoint: $endpoint" # ldap://127.0.0.1:389 or ssl://127.0.0.1:636
+        # TODO
+        # Need to verify the endpoint works with ldapsearch as is or not
+        # Also, need to verify on container
+        ldapsearch -b "cn=config" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H $endpoint  > "$ldap_config"  2>&1
+        ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H $endpoint > "$ldap_subschema"  2>&1
+        ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=Account" -H $endpoint -LLL ldapentrycount > "$ldap_accounts" 2>&1
+        ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=iamUser" -H $endpoint -LLL ldapentrycount > "$ldap_users"  2>&1
+    done
     if [ -f "$ldap_config" ];
     then
         args=$args" "$ldap_config
