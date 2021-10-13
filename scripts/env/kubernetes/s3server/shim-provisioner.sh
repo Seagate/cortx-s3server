@@ -40,8 +40,7 @@ rm -f /etc/cortx/cluster.conf
 
 # FIXME: use hard-coded cortx-utils version
 rpm -e --nodeps cortx-py-utils
-#yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/github/integration-custom-ci/centos-7.9.2009/custom-build-223/cortx_iso/cortx-py-utils-2.0.0-423_411caf9.noarch.rpm
-yum install -y http://ssc-vm-g2-rhev4-0613.colo.seagate.com/ivan.tishchenko/public2/-/raw/main/saved-rpms/cortx-py-utils-2.0.0-423_411caf9.noarch.rpm
+yum install -y "$src_dir"/message-bus/cortx-py-utils-2.0.0-423_411caf9.noarch.rpm
 
 cortx_setup config apply -f yaml:///etc/cortx/s3/solution.cpy/cluster.yaml -c yaml:///etc/cortx/cluster.conf
 cortx_setup config apply -f yaml:///etc/cortx/s3/solution.cpy/config.yaml  -c yaml:///etc/cortx/cluster.conf
