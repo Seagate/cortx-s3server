@@ -1083,10 +1083,10 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries(std::string last_object) {
          last_object.c_str());
   unsigned int fetch_count = fragments;
   // We expect only 'fragments' extended entries for the object.
-  if (fetch_count == 0) {
-    fetch_count = S3Option::get_instance()->get_motr_idx_fetch_count();
-    s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_count);
-  }
+  // if (fetch_count == 0) {
+  fetch_count = S3Option::get_instance()->get_motr_idx_fetch_count();
+  s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_count);
+  //}
   motr_kv_reader->next_keyval(
       extended_list_index_layout, last_object, fetch_count,
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_successful,
@@ -1137,7 +1137,8 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
     }
   }  // End of for loop
 
-  if (end_of_enumeration || (kvps.size() <= fragments)) {
+  if (end_of_enumeration ||
+      (kvps.size() < S3Option::get_instance()->get_motr_idx_fetch_count())) {
     state = S3ObjectMetadataState::present;
     this->handler_on_success();
   } else {
