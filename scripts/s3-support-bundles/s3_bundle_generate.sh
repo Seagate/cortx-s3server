@@ -23,23 +23,36 @@
 # Generate Support bundle for S3Server #
 #######################################################
 
-USAGE="USAGE: bash $(basename "$0") <bundleid> <path>
+USAGE="USAGE: bash $(basename "$0") -b <bundleid> -t <path> -c <confstore_url> -s <services>
 Generate support bundle for s3server.
 
 where:
-bundleid         Unique bundle-id used to identify support bundles.
-path             Location at which support bundle needs to be copied."
+-b        Unique bundle-id used to identify support bundles.
+-t        Location at which support bundle needs to be copied.
+-c        Confstore URL.
+-s        services list."
 
-if [ $# -lt 2 ]
-then
+usage() {
   echo "$USAGE"
   exit 1
-fi
+}
 
-bundle_id=$1
-bundle_path=$2
-base_config_file_path=${3:-/etc/cortx}
-base_log_file_path=${4:-/var/log/cortx}
+while getopts "b:t:c:s:" opt: do
+  case "${opt}" in
+    b) bundle_id=${OPTARG} ;;
+    t) bundle_path=${OPTARG} ;;
+    c) confstore_url=${OPTARG} ;;
+    s) services=${OPTARG} ;;
+    *) usage ;;
+  esac
+done
+
+s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
+s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
+
+base_config_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_log_key")
+base_log_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_config_key")
+
 # Fetch iamuser password from properties file and decrypt it.
 sgiamadminpwd=''
 constkey=cortx
@@ -59,7 +72,10 @@ haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
 
 haproxy_log="$base_log_file_path/haproxy.log"
-ldap_log="$base_log_file_path/slapd.log"
+haproxy_status_log="$base_log_file_path/haproxy-status.log"
+
+haproxy_sysconfig=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_SYSCONF_SYMLINK")
+haproxy_sysconfig_log_file=$(s3confstore "properties://$haproxy_sysconfig" getkey --key="LOG_FILE")
 
 s3server_config="$base_config_file_path/s3/conf/s3config.yaml"
 authserver_config="$base_config_file_path/auth/resources/authserver.properties"
@@ -117,9 +133,10 @@ then
 fi
 
 # 1. Get log directory path from config file
-s3server_logdir=`cat $s3server_config | grep "S3_LOG_DIR" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
-authserver_logdir=`cat $authserver_config | grep "logFilePath" | cut -f2 -d'=' | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
-backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
+s3server_logdir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_LOG_DIR")
+authserver_logdir=$(s3confstore "property://$authserver_config" getkey --key="logFilePath")
+backgrounddelete_producer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>scheduler_logger_directory")
+backgrounddelete_consumer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>processor_logger_directory")
 
 # Collect call stack of latest <s3_core_files_max_count> s3server core files
 # from s3_core_dir directory, if available
@@ -315,22 +332,22 @@ then
     fi
 fi
 
-# Collect ldap logs along with rotated logs if available
-if [ -f "$ldap_log" ];
-then
-    args=$args" "$ldap_log*
-fi
-
 # Collect System Audit logs if available
 if [ -d "$sys_auditlog_dir" ];
 then
     args=$args" "$sys_auditlog_dir
 fi
 
-# Collect s3 backgrounddelete logs if available
-if [ -d "$backgrounddelete_logdir" ];
+# Collect s3 backgrounddelete producer logs if available
+if [ -d "$backgrounddelete_producer_logdir" ];
 then
-    args=$args" "$backgrounddelete_logdir
+    args=$args" "$backgrounddelete_producer_logdir
+fi
+
+# Collect s3 backgrounddelete consumer logs if available
+if [ -d "$backgrounddelete_consumer_logdir" ];
+then
+    args=$args" "$backgrounddelete_consumer_logdir
 fi
 
 # Collect s3server log directory if available
@@ -391,6 +408,18 @@ fi
 if [ -f "$haproxy_log" ];
 then
     args=$args" "$haproxy_log*
+fi
+
+# Collect haproxy status log along with rotated logs if available
+if [ -f "$haproxy_status_log" ];
+then
+    args=$args" "$haproxy_status_log*
+fi
+
+# Collect haproxy k8s log along with rotated logs if available
+if [ -f "$haproxy_sysconfig_log_file" ];
+then
+    args=$args" "$haproxy_sysconfig_log_file*
 fi
 
 # Create temporary directory for creating other files as below
