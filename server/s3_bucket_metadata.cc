@@ -288,13 +288,17 @@ std::string S3BucketMetadata::get_bucket_versioning_status_as_xml() {
     return versioning_status_as_xml_str;
   } else {
     if (bucket_versioning_status.compare("Unversioned") != 0) {
-      versioning_status += "<VersioningConfiguration>" +
-                           S3CommonUtilities::format_xml_string(
-                               "Status", bucket_versioning_status.c_str()) +
-                           "</VersioningConfiguration>";
+      versioning_status +=
+          "<VersioningConfiguration "
+          "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
+          S3CommonUtilities::format_xml_string(
+              "Status", bucket_versioning_status.c_str()) +
+          "</VersioningConfiguration>";
 
     } else {
-      versioning_status += "<VersioningConfiguration/>";
+      versioning_status +=
+          "<VersioningConfiguration "
+          "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"/>";
     }
     versioning_status_as_xml_str =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + versioning_status;

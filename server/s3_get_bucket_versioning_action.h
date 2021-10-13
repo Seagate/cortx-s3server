@@ -39,14 +39,11 @@ class S3GetBucketVersioningAction : public S3BucketAction {
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
-  void validate_request();
-  void consume_incoming_content();
   void fetch_bucket_info_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose
   FRIEND_TEST(S3GetBucketVersioningActionTest, Constructor);
-  FRIEND_TEST(S3GetBucketVersioningActionTest, ValidateRequest);
   FRIEND_TEST(S3GetBucketVersioningActionTest,
               SetVersioningStateWhenBucketFailedToLaunch);
   FRIEND_TEST(S3GetBucketVersioningActionTest,

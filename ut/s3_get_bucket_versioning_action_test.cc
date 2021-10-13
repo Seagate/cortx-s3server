@@ -73,20 +73,6 @@ TEST_F(S3GetBucketVersioningActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
 }
 
-TEST_F(S3GetBucketVersioningActionTest, ValidateRequest) {
-  call_count_one = 0;
-  EXPECT_CALL(*request_mock, has_all_body_content())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(true));
-
-  action_under_test_ptr->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
-                         S3GetBucketVersioningActionTest::func_callback_one,
-                         this);
-  action_under_test_ptr->validate_request();
-  EXPECT_EQ(1, call_count_one);
-}
-
 TEST_F(S3GetBucketVersioningActionTest,
        SetVersioningStateWhenBucketFailedToLaunch) {
   action_under_test_ptr->bucket_metadata =

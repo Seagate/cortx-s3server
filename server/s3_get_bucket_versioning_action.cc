@@ -37,37 +37,9 @@ S3GetBucketVersioningAction::S3GetBucketVersioningAction(
 
 void S3GetBucketVersioningAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  ACTION_TASK_ADD(S3GetBucketVersioningAction::validate_request, this);
   ACTION_TASK_ADD(S3GetBucketVersioningAction::send_response_to_s3_client,
                   this);
   // ...
-}
-
-void S3GetBucketVersioningAction::validate_request() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  if (request->has_all_body_content()) {
-    next();
-  } else {
-    // Start streaming, logically pausing action till we get data.
-    request->listen_for_incoming_data(
-        std::bind(&S3GetBucketVersioningAction::consume_incoming_content, this),
-        request->get_data_length() /* we ask for all */
-        );
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3GetBucketVersioningAction::consume_incoming_content() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "Consume data\n");
-  if (request->is_s3_client_read_error()) {
-    client_read_error();
-  } else if (request->has_all_body_content()) {
-    next();
-  } else {
-    // else just wait till entire body arrives. rare.
-    request->resume();
-  }
 }
 
 void S3GetBucketVersioningAction::fetch_bucket_info_failed() {
