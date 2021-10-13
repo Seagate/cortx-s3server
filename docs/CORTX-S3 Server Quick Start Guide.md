@@ -23,8 +23,10 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
     2. Add the newly created SSH Public Key to [Github](https://github.com/settings/keys).
     3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
     4. Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.
-
-       :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
+    
+     :page_with_curl: **Note:** Make sure to [enable SSO (Single Sign-on)](https://docs.github.com/en/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on) for your PAT. 
+     
+     :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
 4. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`
@@ -45,12 +47,14 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
-            * If epel was installed, you'll see it in the output list.
+            * If epel was installed, you'll see it in the output list. Example:
+            * ![image](https://user-images.githubusercontent.com/950172/136825917-d10fce29-b822-4dd0-8f31-cbc90f848c2a.png)
+
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
     * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress`
-    * Make sure that PATH variable has `/usr/local/sbin`,`/usr/sbin`,`/usr/bin`, `/usr/local/bin` directories 
+    * Make sure that PATH variable has `/usr/local/sbin`,`/usr/sbin`,`/usr/bin`, `/usr/local/bin` directories. You can check your PATH variable by running `echo $PATH`
     
 6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`. Try `sudo' if the command fails
 
@@ -372,6 +376,7 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
+- Oct 7, 2021: Justin Woo (justin.woo@seagate.com), tested CentOS Linux release 7.9.2009 (Core)
 - Sep 03, 2021: Sanal Kaarthikeyan (sanal.kaarthikeyan@segate.com), tested CentOS Linux release 7.9.2009 (Core)
                 verified with git #948f22cc07955bf5c1d6ec77c3a7ec2da6933251 on main branch
 - Aug 30, 2021: Yanqing Fu (yanqing.f.fu@seagate.com) in CentOS Linux release 7.9.2009 (Core)
