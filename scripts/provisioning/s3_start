@@ -87,6 +87,16 @@ def main():
       if not args.index:
         raise Exception("provide instance id")
 
+      # delete the /etc/logrotate.d/haproxy as it is installed by haproxy rpm
+      filename = "/etc/logrotate.d/haproxy"
+      if os.path.exists(filename):
+        os.remove(filename)
+      # get the s3 config file path from S3 Provisioner config file
+      s3configfile = s3_confkeys_store.get_config("S3_CONFIG_FILE").replace("/opt/seagate/cortx", base_config_path)
+      logger.info(f"s3configfile : {s3configfile}")
+      # create symbolic link for this config file to be used by log rotation
+      create_symbolic_link(s3configfile, s3_confkeys_store.get_confkey("S3_CONF_SYMLINK"))
+
       # configure s3server, s3m0trace, s3addb logrotate
       configure_log_rotate("S3_LOGROTATE_S3LOG", "/etc/cron.hourly/")
       configure_log_rotate("S3_LOGROTATE_M0TRACE", "/etc/cron.hourly/")
@@ -102,9 +112,6 @@ def main():
       fid_file = "s3server-" + args.index
       fid_path = os.path.join(sysconfig_path, fid_file)
       Fid = get_fid(fid_path)
-
-      # get the s3 config file path from S3 Provisioner config file
-      s3configfile = s3_confkeys_store.get_config("S3_CONFIG_FILE").replace("/opt/seagate/cortx", base_config_path)
 
       logger.info(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
       logger.info(f"Starting S3 Server with FID {Fid}...")
@@ -160,6 +167,15 @@ def main():
       # Print last few line of S3 bgdelete consumer log  file
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
     elif args.service == 'haproxy':
+      # delete the /etc/logrotate.d/haproxy as it is installed by haproxy rpm
+      filename = "/etc/logrotate.d/haproxy"
+      if os.path.exists(filename):
+        os.remove(filename)
+      # create symbolic link for this config file to be used by log rotation
+      s3_haproxy_config_file = os.path.join(base_config_path, s3_confkeys_store.get_config("S3_HAPROXY_LOG_CONFIG_FILE"))
+      logger.info(f"s3_haproxy_config_file : {s3_haproxy_config_file}")
+      create_symbolic_link(s3_haproxy_config_file, s3_confkeys_store.get_confkey("S3_HAPROXY_SYSCONF_SYMLINK"))
+
       # configure haproxy logrotate
       configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
 
@@ -172,8 +188,6 @@ def main():
       os.system(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
 
       # Read the log directory path from haproxy config file (e.g /etc/cortx/s3/sysconfig/haproxy)
-      s3_haproxy_config_file = os.path.join(base_logdir_path, s3_confkeys_store.get_config("S3_HAPROXY_LOG_CONFIG_FILE"))
-      logger.info(f"s3_haproxy_config_file : {s3_haproxy_config_file}")
       s3_haproxy_log_path = read_config_value(s3_haproxy_config_file, "properties", "LOG_FILE")
       logger.info(f"s3_haproxy_log_path : {s3_haproxy_log_path}")
 
@@ -270,6 +284,17 @@ def configure_log_rotate(key_to_read: str, cron_dir: str):
     os.makedirs(os.path.dirname(cron_dir), exist_ok=True)
     shutil.copy(s3_logrotate_config_file, cron_dir)
     logger.info("logrotate config file copied successfully to cron directory")
+
+def create_symbolic_link(src_path: str, dst_path: str):
+  """create symbolic link."""
+  logger.info(f"symbolic link source path: {src_path}")
+  logger.info(f"symbolic link destination path: {dst_path}")
+  if os.path.exists(dst_path):
+    logger.info(f"symbolic link is already present")
+    os.unlink(dst_path)
+    logger.info("symbolic link is unlinked")
+  os.symlink(src_path, dst_path)
+  logger.info(f"symbolic link created successfully")
 
 if __name__ == '__main__':
   sys.exit(main())
