@@ -101,10 +101,9 @@ class ConfigCmd(SetupCmd):
         self.logger.info("copy log rotate config started")
         self.copy_logrotate_files()
         self.logger.info("copy log rotate config completed")
-
-      # create symbolic link for this config file to be used by log rotation
-      self.create_symbolic_link(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-                                self.get_confkey("S3_CONF_SYMLINK"))
+        # create symbolic link for this config file to be used by log rotation
+        self.create_symbolic_link(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                  self.get_confkey("S3_CONF_SYMLINK"))
 
       # update all the config files
       self.logger.info("update all services config files started")
@@ -375,9 +374,6 @@ class ConfigCmd(SetupCmd):
       self.logger.info("haproxy sys config file updated successfully")
       # create haproxy log directory path
       os.makedirs(os.path.dirname(haproxy_sysconfig_log_file), exist_ok=True)
-
-      # create symbolic link for this config file to be used by log rotation
-      self.create_symbolic_link(sysconfig_file, self.get_confkey("S3_HAPROXY_SYSCONF_SYMLINK"))
 
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
@@ -742,13 +738,12 @@ class ConfigCmd(SetupCmd):
   def copy_logrotate_files(self):
     """Copy log rotation config files from install directory to cron directory."""
     # Copy log rotate config files to /etc/logrotate.d/
-    config_files = [self.get_confkey('S3_LOGROTATE_AUDITLOG'),
-                    self.get_confkey('S3_LOGROTATE_HAPROXY')]
+    config_files = [self.get_confkey('S3_LOGROTATE_AUDITLOG')]
     self.copy_logrotate_files_crond(config_files, "/etc/logrotate.d/")
 
     # Copy log rotate config files to /etc/cron.hourly/
     config_files = [self.get_confkey('S3_LOGROTATE_S3LOG'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_LOGROTATE_M0TRACE'),
                     self.get_confkey('S3_LOGROTATE_ADDB')]
     self.copy_logrotate_files_crond(config_files, "/etc/cron.hourly/")
 
