@@ -31,6 +31,9 @@ set -x
 #
 ###########################################################################
 
+s3_repo_dir=/var/data/cortx/cortx-s3server
+src_dir="$s3_repo_dir"/scripts/env/kubernetes
+
 # FIXME: motr/provisioner dependency on machine-id file
 cat /etc/cortx/s3/machine-id > /etc/machine-id
 
