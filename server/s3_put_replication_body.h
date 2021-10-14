@@ -36,7 +36,20 @@ enum ChildNodes {
   Priority,
   DeleteMarkerReplication,
   Destination,
-  Filter
+  Filter,
+  ExistingObjectReplication,
+  SourceSelectionCriteria
+};
+
+enum DestinationChildNodes {
+  UndefinedDestChildNode,
+  AccessControlTranslation,
+  Account,
+  Bucket,
+  EncryptionConfiguration,
+  Metrics,
+  ReplicationTime,
+  StorageClass
 };
 class S3PutReplicationBody {
   std::string xml_content;
@@ -56,6 +69,7 @@ class S3PutReplicationBody {
   bool parse_and_validate();
   Json::Value ReplicationConfiguration;
   int rule_number_cnt{-1};
+  std::vector<std::string> vec_bucket_names;
 
  public:
   S3PutReplicationBody(std::string &xml, std::string &request);
@@ -70,8 +84,10 @@ class S3PutReplicationBody {
   bool validate_rule_status(const std::string &status, xmlNodePtr &node_name,
                             int &number_of_rules_enable);
   ChildNodes convert_str_to_enum(const unsigned char *str);
+  DestinationChildNodes convert_str_to_Destination_enum(
+      const unsigned char *str);
   virtual std::string get_replication_configuration_as_json();
-  std::string get_destination_bucket_name();
+  std::vector<std::string> &get_destination_bucket_list();
   bool validate_child_nodes_of_filter(
       xmlNodePtr filter_node, std::map<std::string, std::string> &rule_tags,
       bool &is_and_node_present, bool &is_rule_prefix_present,
@@ -83,6 +99,7 @@ class S3PutReplicationBody {
   bool read_key_value_node(xmlNodePtr &tag_node,
                            std::map<std::string, std::string> &rule_tags);
   std::string get_additional_error_information();
+  void not_implemented_rep_field(xmlNodePtr destination_node, const char *str);
 
   // For Testing purpose
   FRIEND_TEST(S3PutReplicationBodyTest, ValidateRequestBodyXml);
