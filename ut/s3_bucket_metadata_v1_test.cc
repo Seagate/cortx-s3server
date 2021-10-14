@@ -249,7 +249,8 @@ TEST_F(S3BucketMetadataV1Test, GetSpecialCharTagsAsXml) {
 TEST_F(S3BucketMetadataV1Test, GetDefaultBucketVersioningStatusAsXml) {
   char expected_str[] =
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-      "<VersioningConfiguration/>";
+      "<VersioningConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"/>";
   EXPECT_STREQ(
       expected_str,
       action_under_test->get_bucket_versioning_status_as_xml().c_str());
@@ -258,7 +259,8 @@ TEST_F(S3BucketMetadataV1Test, GetDefaultBucketVersioningStatusAsXml) {
 TEST_F(S3BucketMetadataV1Test, GetEnabledBucketVersioningStatusAsXml) {
   char expected_str[] =
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-      "<VersioningConfiguration>"
+      "<VersioningConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
       "<Status>Enabled</Status>"
       "</VersioningConfiguration>";
   action_under_test->set_bucket_versioning("Enabled");
