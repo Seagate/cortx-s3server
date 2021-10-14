@@ -185,7 +185,7 @@ def main():
       # configure haproxy logrotate
       configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
 
-      haproxy_log_path = os.path.join(base_log_file_path, 's3', machine_id, 'haproxy/haproxy.log')
+      haproxy_log_path = os.path.join(base_logdir_path, 's3', machine_id, 'haproxy/haproxy.log')
 
       # create haproxy log directory path
       os.makedirs(os.path.dirname(haproxy_log_path), exist_ok=True)
@@ -197,7 +197,7 @@ def main():
       logger.info(f"Starting HAProxy...")
       os.system(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path} {haproxy_log_path}")
 
-      haproxy_log_cfgstore = S3CortxConfStore(f'properties://{s3_haproxy_config_file}', 'read_haproxy_log_dir')
+      #haproxy_log_cfgstore = S3CortxConfStore(f'properties://{s3_haproxy_config_file}', 'read_haproxy_log_dir')
 
       # read the given key from the config file
       # s3_haproxy_log_path = haproxy_log_cfgstore.get_config("LOG_FILE")

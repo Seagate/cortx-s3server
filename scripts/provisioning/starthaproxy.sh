@@ -20,10 +20,10 @@
 
 set -e -x
 
-if [ $# -ne 1 ]
+if [ $# -ne 2 ]
 then
   echo "Invalid number of arguments passed to the script"
-  echo "Usage: starthaproxy.sh <haproxy config path>"
+  echo "Usage: starthaproxy.sh <config path> <log path>"
   exit 1
 fi
 
