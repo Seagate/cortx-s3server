@@ -28,10 +28,10 @@ S3PutBucketReplicationAction::S3PutBucketReplicationAction(
     std::shared_ptr<S3PutReplicationBodyFactory> bucket_body_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
-
+  source_bucket_name = request->get_bucket_name();
   s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: Put Bucket Replication. Bucket[%s]\n",
-         request->get_bucket_name().c_str());
+         source_bucket_name.c_str());
 
   if (bucket_body_factory) {
     put_bucket_replication_body_factory = bucket_body_factory;
@@ -39,9 +39,12 @@ S3PutBucketReplicationAction::S3PutBucketReplicationAction(
     put_bucket_replication_body_factory =
         std::make_shared<S3PutReplicationBodyFactory>();
   }
+
+  destination_bucket_list.clear();
   setup_steps();
 }
 
+// Action task list
 void S3PutBucketReplicationAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   ACTION_TASK_ADD(S3PutBucketReplicationAction::validate_request, this);
@@ -52,6 +55,10 @@ void S3PutBucketReplicationAction::setup_steps() {
                   this);
 }
 
+// Validates incoming request - it gets the full request body contents and
+// validate it against the available XML schema.
+// It calls validate_request_body function which internally call
+// send_response_to_s3_client() to send error or success response to client.
 void S3PutBucketReplicationAction::validate_request() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -83,6 +90,7 @@ void S3PutBucketReplicationAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+// Validate request body
 void S3PutBucketReplicationAction::validate_request_body(std::string content) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   put_bucket_replication_body =
@@ -90,46 +98,75 @@ void S3PutBucketReplicationAction::validate_request_body(std::string content) {
           content, request_id);
   if (put_bucket_replication_body->isOK()) {
 
-    replication_config_json =
-        put_bucket_replication_body->get_replication_configuration_as_json();
+    destination_bucket_list =
+        put_bucket_replication_body->get_destination_bucket_list();
+    bool is_dest_source_bucket_same = is_destination_source_bucket_same();
 
-    if (!replication_config_json.empty())
-      s3_log(S3_LOG_INFO, stripped_request_id, "replication_config_json = %s\n",
-             replication_config_json.c_str());
+    if (is_dest_source_bucket_same) {
+      set_s3_error("InvalidRequestDestinationBucket");
+      send_response_to_s3_client();
+      return;
+    } else {
+      replication_config_json =
+          put_bucket_replication_body->get_replication_configuration_as_json();
 
-    next();
+      if (!replication_config_json.empty())
+        s3_log(S3_LOG_INFO, stripped_request_id,
+               "replication_config_json = %s\n",
+               replication_config_json.c_str());
+
+      next();
+    }
   } else {
+
     std::string s3_error =
         put_bucket_replication_body->get_additional_error_information();
-    if (s3_error.compare("InvalidTag") == 0) {
-      set_s3_error("InvalidTag");
-      send_response_to_s3_client();
-    } else if (s3_error.compare("InvalidRequestForFilter") == 0) {
-      set_s3_error("InvalidRequestForFilter");
-      send_response_to_s3_client();
-
-    } else if (s3_error.compare("InvalidRequestForTagFilter") == 0) {
-      set_s3_error("InvalidRequestForTagFilter");
-      send_response_to_s3_client();
-
-    } else if (s3_error.compare("InvalidArgumentDuplicateRulePriority") == 0) {
-      set_s3_error("InvalidArgumentDuplicateRulePriority");
-      send_response_to_s3_client();
-
-    } else if (s3_error.compare("InvalidArgumentDuplicateRuleID") == 0) {
-      set_s3_error("InvalidArgumentDuplicateRuleID");
-      send_response_to_s3_client();
-    } else if (s3_error.compare("InvalidRequestForPriority") == 0) {
-      set_s3_error("InvalidRequestForPriority");
-      send_response_to_s3_client();
-    } else {
-      set_s3_error("MalformedXML");
-      send_response_to_s3_client();
-    }
+    get_additional_error_information(s3_error);
+    send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
 }
 
+// To check if source and destination buckets are same
+bool S3PutBucketReplicationAction::is_destination_source_bucket_same() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  for (auto bucket_name : destination_bucket_list) {
+    if (bucket_name.compare(source_bucket_name) == 0) return true;
+  }
+  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
+  return false;
+}
+
+// Get additional error information
+void S3PutBucketReplicationAction::get_additional_error_information(
+    const std::string& s3_error) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "s3Error -%s \n", s3_error.c_str());
+  if (s3_error.compare("InvalidTag") == 0) {
+    set_s3_error("InvalidTag");
+  } else if (s3_error.compare("InvalidRequestForFilter") == 0) {
+    set_s3_error("InvalidRequestForFilter");
+  } else if (s3_error.compare("InvalidRequestForTagFilter") == 0) {
+    set_s3_error("InvalidRequestForTagFilter");
+  } else if (s3_error.compare("InvalidArgumentDuplicateRulePriority") == 0) {
+    set_s3_error("InvalidArgumentDuplicateRulePriority");
+  } else if (s3_error.compare("InvalidArgumentDuplicateRuleID") == 0) {
+    set_s3_error("InvalidArgumentDuplicateRuleID");
+  } else if (s3_error.compare("InvalidRequestForPriority") == 0) {
+    set_s3_error("InvalidRequestForPriority");
+  } else if (s3_error.compare("ReplicationFieldNotImplemented") == 0) {
+    set_s3_error("ReplicationFieldNotImplemented");
+  } else if (s3_error.compare("ReplicationOperationNotSupported") == 0) {
+    set_s3_error("ReplicationOperationNotSupported");
+  } else {
+    set_s3_error("MalformedXML");
+  }
+  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
+}
+
+// Check for missing metadata for bucket
 void S3PutBucketReplicationAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -146,6 +183,7 @@ void S3PutBucketReplicationAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+// Save replication configuration to bucket metadata
 void
 S3PutBucketReplicationAction::save_replication_config_to_bucket_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -166,6 +204,8 @@ S3PutBucketReplicationAction::save_replication_config_to_bucket_metadata() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+// This function will get called if saving to metadata operation is failed due
+// to some internal error.
 void S3PutBucketReplicationAction::
     save_replication_configuration_to_bucket_metadata_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -181,6 +221,7 @@ void S3PutBucketReplicationAction::
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+// Send appropriate success code or error message to client.
 void S3PutBucketReplicationAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
