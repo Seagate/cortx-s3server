@@ -29,17 +29,18 @@ fi
 
 haproxy_config_path=$1
 
-log_file_source_path="$haproxy_config_path/s3/sysconfig/haproxy"
 haproxy_cfg_file_path="$haproxy_config_path/s3/haproxy.cfg"
 
+haproxy_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_LOG_CONFIG_FILE")
+haproxy_log_file=$(s3confstore "properties://$haproxy_config_path/$haproxy_config" getkey --key="LOG_FILE")
 #source "$log_file_source_path"
-#if [ -z "$LOG_FILE" ]; then
-#  echo 'LOG_FILE is not specified.'
-#  exit 1
-#fi
-#
-## Create log dir
-#mkdir -p "$(dirname "$LOG_FILE")"
+if [ -z "$LOG_FILE" ]; then
+  echo 'LOG_FILE is not specified.'
+  exit 1
+fi
+
+# Create log dir
+mkdir -p "$(dirname "$LOG_FILE")"
 
 # Run the configured haproxy
 /usr/sbin/haproxy -Ws -f $haproxy_cfg_file_path -p /run/haproxy.pid 1>>/dev/null 2>&1

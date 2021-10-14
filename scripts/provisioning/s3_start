@@ -181,7 +181,7 @@ def main():
       # create symbolic link for this config file to be used by log rotation
       s3_haproxy_config_file = os.path.join(base_config_path, s3_confkeys_store.get_config("S3_HAPROXY_LOG_CONFIG_FILE"))
       logger.info(f"s3_haproxy_config_file : {s3_haproxy_config_file}")
-      create_symbolic_link(s3_haproxy_config_file, s3_confkeys_store.get_config("S3_HAPROXY_SYSCONF_SYMLINK"))
+      create_symbolic_link(s3_haproxy_config_file, s3_confkeys_store.get_config("S3_HAPROXY_INI_SYMLINK"))
 
       # configure haproxy logrotate
       configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
@@ -193,10 +193,12 @@ def main():
       logger.info(f"Starting HAProxy...")
       os.system(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
 
-      # Read the log directory path from haproxy config file (e.g /etc/cortx/s3/sysconfig/haproxy)
-      s3_haproxy_log_path = read_config_value(s3_haproxy_config_file, "properties", "LOG_FILE")
-      logger.info(f"s3_haproxy_log_path : {s3_haproxy_log_path}")
+      haproxy_log_cfgstore = S3CortxConfStore(f'properties://{s3_haproxy_config_file}', 'read_haproxy_log_dir')
 
+      # read the given key from the config file
+      s3_haproxy_log_path = haproxy_log_cfgstore.get_config("LOG_FILE")
+      
+      #haproxy_logfile = os.path.join(base_log_file_path, 's3', machine_id, 'haproxy/haproxy.log')
       # Print last few line of S3 bgdelete consumer log  file
       os.system(f"tail -f {s3_haproxy_log_path}")
     else:
