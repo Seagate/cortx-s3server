@@ -223,7 +223,7 @@ collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
 
-  tmpr_dir="$tmp_dir/m0trraces_tmp"
+  tmpr_dir="$tmp_dir/m0traces_tmp"
   cwd=$(pwd)
   # if $base_log_file_path/motr missing then return
 
@@ -307,24 +307,25 @@ then
 fi
 
 ## Add file/directory locations for bundling
+args=()
 
 # Collect S3 deployment log
 if [ -f "$s3deployment_log" ];
 then
-    args=$args" "$s3deployment_log*
+    args+=($s3deployment_log*)
 fi
 
 # Collect s3 core files if available
 collect_core_files
 if [ -d "$s3_core_files" ];
 then
-    args=$args" "$s3_core_files
+    args+=($s3_core_files)
 fi
 
 collect_first_m0trace_file
 if [ -d "$first_s3_m0trace_file" ];
 then
-   args=$args" "$first_s3_m0trace_file
+    args+=($first_s3_m0trace_file)
 fi
 
 # collect latest 5 m0trace files from /var/log/cortx/motr/s3server-* directory
@@ -335,98 +336,98 @@ then
     collect_m0trace_files
     if [ -d "$s3_m0trace_files" ];
     then
-        args=$args" "$s3_m0trace_files
+        args+=($s3_m0trace_files)
     fi
 fi
 
 # Collect System Audit logs if available
 if [ -d "$sys_auditlog_dir" ];
 then
-    args=$args" "$sys_auditlog_dir
+    args+=($sys_auditlog_dir)
 fi
 
 # Collect s3 backgrounddelete producer logs if available
 if [ -d "$backgrounddelete_producer_logdir" ];
 then
-    args=$args" "$backgrounddelete_producer_logdir
+    args+=($backgrounddelete_producer_logdir)
 fi
 
 # Collect s3 backgrounddelete consumer logs if available
 if [ -d "$backgrounddelete_consumer_logdir" ];
 then
-    args=$args" "$backgrounddelete_consumer_logdir
+    args+=($backgrounddelete_consumer_logdir)
 fi
 
 # Collect s3server log directory if available
 if [ -d "$s3server_logdir" ];
 then
-    args=$args" "$s3server_logdir
+    args+=($s3server_logdir)
 fi
 
 # Collect authserver log directory if available
 if [ -d "$authserver_logdir" ];
 then
-    args=$args" "$authserver_logdir
+    args+=($authserver_logdir)
 fi
 
 # Collect s3 server config file if available
 if [ -f "$s3server_config" ];
 then
-    args=$args" "$s3server_config
+    args+=($s3server_config)
 fi
 
 # Collect authserver config file if available
 if [ -f "$authserver_config" ];
 then
-    args=$args" "$authserver_config
+    args+=($authserver_config)
 fi
 
 # Collect backgrounddelete config file if available
 if [ -f "$backgrounddelete_config" ];
 then
-    args=$args" "$backgrounddelete_config
+    args+=($backgrounddelete_config)
 fi
 
 # Collect s3cluster config file if available
 if [ -f "$s3cluster_config" ];
 then
-    args=$args" "$s3cluster_config
+    args+=($s3cluster_config)
 fi
 
 # Collect s3startsystem script file if available
 if [ -f "$s3startsystem_script" ];
 then
-    args=$args" "$s3startsystem_script
+    args+=($s3startsystem_script)
 fi
 
 # Collect s3server binary file if available
 if [ -f "$s3server_binary" ];
 then
-    args=$args" "$s3server_binary
+    args+=($s3server_binary)
 fi
 
 # Collect haproxy config file if available
 if [ -f "$haproxy_config" ];
 then
-    args=$args" "$haproxy_config
+    args+=($haproxy_config)
 fi
 
 # Collect haproxy log along with rotated logs if available
 if [ -f "$haproxy_log" ];
 then
-    args=$args" "$haproxy_log*
+    args+=($haproxy_log*)
 fi
 
 # Collect haproxy status log along with rotated logs if available
 if [ -f "$haproxy_status_log" ];
 then
-    args=$args" "$haproxy_status_log*
+    args+=($haproxy_status_log*)
 fi
 
 # Collect haproxy k8s log along with rotated logs if available
 if [ -f "$haproxy_sysconfig_log_file" ];
 then
-    args=$args" "$haproxy_sysconfig_log_file*
+    args+=($haproxy_sysconfig_log_file*)
 fi
 
 # Create temporary directory for creating other files as below
@@ -434,30 +435,30 @@ mkdir -p $tmp_dir
 
 # Collect disk usage info
 df -k > $disk_usage
-args=$args" "$disk_usage
+args+=($disk_usage)
 
 # Collect ram usage
 free -h > $ram_usage
-args=$args" "$ram_usage
+args+=($ram_usage)
 
 # Colelct CPU info
 cat /proc/cpuinfo > $cpu_info
-args=$args" "$cpu_info
+args+=($cpu_info)
 
 # Collect listening port numbers
 netstat -tulpn | grep -i listen > $node_port_info 2>&1
-args=$args" "$node_port_info
+args+=($node_port_info)
 
 # Collect rpm package names of s3
 rpm -qa | grep cortx-s3 > $rpm_info 2>&1
-args=$args" "$rpm_info
+args+=($rpm_info)
 
 # Collect statistics of running s3server services
 s3_pids=($(pgrep 's3server'))
 if [ "${#s3_pids[@]}" -gt 0 ];
 then
    top -b -n 1 "${s3_pids[@]/#/-p}" > $s3server_pids
-   args=$args" "$s3server_pids
+   args+=($s3server_pids)
 fi
 
 # Collect statistics of running haproxy services
@@ -465,7 +466,7 @@ ha_pids=( $(pgrep 'haproxy') )
 if [ "${#ha_pids[@]}" -gt 0 ];
 then
    top -b -n 1 "${ha_pids[@]/#/-p}" > $haproxy_pids
-   args=$args" "$haproxy_pids
+   args+=($haproxy_pids)
 fi
 
 # Collect statistics of running m0d services
@@ -473,7 +474,7 @@ m0_pids=( $(pgrep 'm0d') )
 if [ "${#m0_pids[@]}" -gt 0 ];
 then
    top -b -n 1 "${m0_pids[@]/#/-p}" > $m0d_pids
-   args=$args" "$m0d_pids
+   args+=($m0d_pids)
 fi
 
 ## Collect LDAP data
@@ -497,29 +498,33 @@ else
         # TODO
         # Need to verify the endpoint works with ldapsearch as is or not
         # Also, need to verify on container
-        ldapsearch -b "cn=config" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H $endpoint  > "$ldap_config"  2>&1
-        ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H $endpoint > "$ldap_subschema"  2>&1
-        ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=Account" -H $endpoint -LLL ldapentrycount > "$ldap_accounts" 2>&1
-        ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=iamUser" -H $endpoint -LLL ldapentrycount > "$ldap_users"  2>&1
+        echo "ldapsearch -b "cn=config" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H $endpoint" >> "$ldap_config"
+        ldapsearch -b "cn=config" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H $endpoint  >> "$ldap_config"  2>&1
+        echo "ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H $endpoint" >> "$ldap_subschema"
+        ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H $endpoint >> "$ldap_subschema"  2>&1
+        echo "ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=Account" -H $endpoint -LLL ldapentrycount" >> "$ldap_accounts"
+        ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=Account" -H $endpoint -LLL ldapentrycount >> "$ldap_accounts" 2>&1
+        echo "ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=iamUser" -H $endpoint -LLL ldapentrycount" >> "$ldap_users"
+        ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=iamUser" -H $endpoint -LLL ldapentrycount >> "$ldap_users"  2>&1
     done
     if [ -f "$ldap_config" ];
     then
-        args=$args" "$ldap_config
+        args+=($ldap_config)
     fi
 
     if [ -f "$ldap_subschema" ];
     then
-        args=$args" "$ldap_subschema
+        args+=($ldap_subschema)
     fi
 
     if [ -f "$ldap_accounts" ];
     then
-        args=$args" "$ldap_accounts
+        args+=($ldap_accounts)
     fi
 
     if [ -f "$ldap_users" ];
     then
-        args=$args" "$ldap_users
+        args+=($ldap_users)
     fi
 fi
 
@@ -536,7 +541,10 @@ mkdir -p $s3_bundle_location
 # Build tar file
 echo "Generating tar..."
 
-tar -cf - $args --warning=no-file-changed 2>/dev/null | xz -1e --thread=0 > $s3_bundle_location/$bundle_name 2>/dev/null
+#tar -cf - $args --warning=no-file-changed 2>/dev/null | xz -1e --thread=0 > $s3_bundle_location/$bundle_name 2>/dev/null
+
+echo $args
+tar -cvJf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-changed
 
 # Clean up temp files
 cleanup_tmp_files
