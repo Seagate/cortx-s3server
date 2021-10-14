@@ -60,7 +60,7 @@
 #define MIN_RESERVE_SIZE 32768
 
 #define WEBSTORE "/home/seagate/webstore"
-#define MOTR_INIT_MAX_ALLOWED_TIME 15
+#define MOTR_INIT_MAX_ALLOWED_TIME 120
 
 /* Program options */
 #include <unistd.h>
