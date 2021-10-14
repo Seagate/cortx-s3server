@@ -38,6 +38,7 @@ class S3IamCli:
     def iam_usage(self):
         return '''
         CreateAccount -n <Account Name> -e <Email Id> --ldapuser <ldap-user> --ldappasswd <ldap-password>
+            [--access_key <access-key> --secret_key <secret-key>]
         CreateUserLoginProfile -n <User Name>
             --password <User Password>
             [--password-reset-required | --no-password-reset-required]
@@ -288,6 +289,11 @@ class S3IamCli:
                     message = "Provide Ldap password."
                     CLIResponse.send_error_out(message)
 
+            # Take access key and secret key if user provides.
+            cli_args.user_provided_access_key = cli_args.access_key
+            cli_args.user_provided_secret_key = cli_args.secret_key
+
+            # This assignment is done at the end as user may provide access key and secret key.
             cli_args.access_key = cli_args.ldapuser
             cli_args.secret_key = cli_args.ldappasswd
 

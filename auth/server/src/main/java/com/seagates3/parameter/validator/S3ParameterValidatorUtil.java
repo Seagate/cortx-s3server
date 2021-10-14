@@ -31,6 +31,10 @@ public class S3ParameterValidatorUtil {
 
     final static int MAX_ARN_LENGTH = 2048;
     final static int MAX_ACCESS_KEY_ID_LENGTH = 32;
+    final static int MIN_CUSTOM_ACCESS_KEY_LENGTH = 16;
+    final static int MAX_CUSTOM_ACCESS_KEY_LENGTH = 128;
+    final static int MIN_CUSTOM_SECRET_KEY_LENGTH = 8;
+    final static int MAX_CUSTOM_SECRET_KEY_LENGTH = 40;
     final static int MAX_ACCESS_KEY_USER_NAME_LENGTH = 128;
     final static int MAX_ASSUME_ROLE_POLICY_DOC_LENGTH = 2048;
     final static int MAX_DESCRIPTION_LENGTH = 1000;
@@ -53,6 +57,7 @@ public class S3ParameterValidatorUtil {
      * TODO Fix ACCESS_KEY_ID_PATTERN. It should be "[\\w]+"
      */
     final static String ACCESS_KEY_ID_PATTERN = "[\\w-]+";
+    final static String CUSTOM_ACCESS_KEY_PATTERN = "[\\w]+";
     final static String ASSUME_ROLE_POLICY_DOC_PATTERN
             = "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+";
     final static String POLICY_DOC_PATTERN
@@ -217,6 +222,44 @@ public class S3ParameterValidatorUtil {
 
         return !(accessKeyId.length() < MIN_ACCESS_KEY_ID_LENGTH
                 || accessKeyId.length() > MAX_ACCESS_KEY_ID_LENGTH);
+    }
+
+    /**
+     * Validate the custom access key. Length should be between 16 and
+     * 128 characters. It should match the pattern "[\\w]+".
+     *
+     * @param accessKey access key to be validated.
+     * @return true if access key is valid.
+     */
+   public
+    static Boolean isValidCustomAccessKey(String accessKey) {
+      if (accessKey == null) {
+        return false;
+      }
+
+      if (!accessKey.matches(CUSTOM_ACCESS_KEY_PATTERN)) {
+        return false;
+      }
+
+      return !(accessKey.length() < MIN_CUSTOM_ACCESS_KEY_LENGTH ||
+               accessKey.length() > MAX_CUSTOM_ACCESS_KEY_LENGTH);
+    }
+
+    /**
+     * Validate the custom access key. Length should be between 8 and
+     * 40 characters.
+     *
+     * @param secretKey secret key to be validated.
+     * @return true if secret key is valid.
+     */
+   public
+    static Boolean isValidCustomSecretKey(String secretKey) {
+      if (secretKey == null) {
+        return false;
+      }
+
+      return !(secretKey.length() < MIN_CUSTOM_SECRET_KEY_LENGTH ||
+               secretKey.length() > MAX_CUSTOM_SECRET_KEY_LENGTH);
     }
 
     /**

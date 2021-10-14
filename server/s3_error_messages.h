@@ -35,7 +35,7 @@ class S3ErrorDetails {
  public:
   S3ErrorDetails() : description("Unknown Error"), http_return_code(520) {}
 
-  S3ErrorDetails(std::string message, int http_code) {
+  S3ErrorDetails(const std::string& message, int http_code) {
     description = message;
     http_return_code = http_code;
   }
@@ -51,7 +51,7 @@ class S3ErrorDetails {
 class S3ErrorMessages {
  private:
   static S3ErrorMessages* instance;
-  S3ErrorMessages(std::string config_file);
+  S3ErrorMessages(const std::string& config_file);
   ~S3ErrorMessages();
 
   std::map<std::string, S3ErrorDetails> error_list;
@@ -59,7 +59,7 @@ class S3ErrorMessages {
  public:
   // Loads messages and creates singleton
   static void init_messages(
-      std::string config_file =
+      const std::string& config_file =
           "/opt/seagate/cortx/s3/resources/s3_error_messages.json");
 
   // Cleans up the singleton instance
@@ -67,7 +67,7 @@ class S3ErrorMessages {
 
   static S3ErrorMessages* get_instance();
 
-  S3ErrorDetails& get_details(std::string code);
+  S3ErrorDetails& get_details(const std::string& code);
 
   FRIEND_TEST(S3ErrorMessagesTest, Constructor);
 };
