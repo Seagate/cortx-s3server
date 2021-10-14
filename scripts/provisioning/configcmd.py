@@ -280,22 +280,22 @@ class ConfigCmd(SetupCmd):
     try:
 
       # create empty haproxy syconfi file (e.g. /etc/cortx/s3/sysconfig/haproxy)
-      haproxy_ini_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
-      self.logger.info(f"haproxy_ini_file: {haproxy_ini_file}")
-      os.makedirs(os.path.dirname(haproxy_ini_file), exist_ok=True)
-      with open(haproxy_ini_file, 'w') as fp_haproxy_ini:
-        pass
-      self.logger.info("haproxy ini file created successfully")
-      # load with confstore with properties format
-      haproxy_ini_confstore = S3CortxConfStore(f'properties://{haproxy_ini_file}',
-                                                          'update_haproxy_ini_file_idx')
-      # set key LOG_FILE with value {haproxy_sysconfig_log_file}
-      haproxy_logfile = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
-      self.logger.info(f"haproxy_sysconfig_log_file : {haproxy_logfile}")
-      haproxy_ini_confstore.set_config("LOG_FILE", haproxy_logfile, True)
-      self.logger.info("haproxy sys config file updated successfully")
-      # create haproxy log directory path
-      os.makedirs(os.path.dirname(haproxy_logfile), exist_ok=True)
+#      haproxy_ini_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
+#      self.logger.info(f"haproxy_ini_file: {haproxy_ini_file}")
+#      os.makedirs(os.path.dirname(haproxy_ini_file), exist_ok=True)
+#      with open(haproxy_ini_file, 'w') as fp_haproxy_ini:
+#        pass
+#      self.logger.info("haproxy ini file created successfully")
+#      # load with confstore with properties format
+#      haproxy_ini_confstore = S3CortxConfStore(f'properties://{haproxy_ini_file}',
+#                                                          'update_haproxy_ini_file_idx')
+#      # set key LOG_FILE with value {haproxy_sysconfig_log_file}
+#      haproxy_logfile = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
+#      self.logger.info(f"haproxy_sysconfig_log_file : {haproxy_logfile}")
+#      haproxy_ini_confstore.set_config("LOG_FILE", haproxy_logfile, True)
+#      self.logger.info("haproxy sys config file updated successfully")
+#      # create haproxy log directory path
+#      os.makedirs(os.path.dirname(haproxy_logfile), exist_ok=True)
 
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
