@@ -96,6 +96,7 @@ cc_test(
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
       "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
+      "-iquote", ".", "-include", "config.h",
       "-I/usr/include/libxml2", MOTR_DYNAMIC_INCLUDES,
     ],
 
@@ -147,6 +148,7 @@ cc_test(
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
       "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
+      "-iquote", ".", "-include", "config.h",
       "-I/usr/include/libxml2", MOTR_DYNAMIC_INCLUDES,
     ],
 
@@ -317,6 +319,7 @@ cc_test(
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
       "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
+      "-iquote", ".", "-include", "config.h",
       "-I/usr/include/libxml2", MOTR_DYNAMIC_INCLUDES,
     ],
 
