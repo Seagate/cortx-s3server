@@ -56,6 +56,7 @@ s3_bundle_location=$bundle_path/s3
 haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
 haproxy_log="/var/log/haproxy.log"
+haproxy_status_log="/var/log/haproxy-status.log"
 ldap_log="/var/log/slapd.log"
 
 s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
@@ -374,6 +375,12 @@ fi
 if [ -f "$haproxy_log" ];
 then
     args=$args" "$haproxy_log*
+fi
+
+# Collect haproxy status log
+if [ -f "$haproxy_status_log" ];
+then
+    args=$args" "$haproxy_status_log*
 fi
 
 # Create temporary directory for creating other files as below
