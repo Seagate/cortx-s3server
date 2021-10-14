@@ -38,6 +38,8 @@ class S3PutBucketReplicationAction : public S3BucketAction {
 
   std::string new_bucket_replication_content;
   std::string replication_config_json;
+  std::vector<std::string> destination_bucket_list;
+  std::string source_bucket_name;
 
  public:
   S3PutBucketReplicationAction(
@@ -54,6 +56,8 @@ class S3PutBucketReplicationAction : public S3BucketAction {
   void save_replication_configuration_to_bucket_metadata_failed();
   void fetch_bucket_info_failed();
   void send_response_to_s3_client();
+  void get_additional_error_information(const std::string& s3_error);
+  bool is_destination_source_bucket_same();
   // void fetch_additional_bucket_info_failed();
 
   // For Testing purpose

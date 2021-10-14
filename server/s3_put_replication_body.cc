@@ -31,6 +31,8 @@
 
 // This might change in future
 #define NO_OF_RULES_SUPPORTED 50
+#define _STR_MATCHED(str, plain_str) \
+  strcmp(reinterpret_cast<const char *>(str), plain_str) == 0
 
 S3PutReplicationBody::S3PutReplicationBody(std::string &xml,
                                            std::string &request)
@@ -45,6 +47,7 @@ S3PutReplicationBody::S3PutReplicationBody(std::string &xml,
 bool S3PutReplicationBody::isOK() { return is_valid; }
 
 bool S3PutReplicationBody::parse_and_validate() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   /* Sample body(Basic configuration):
   <ReplicationConfiguration>
     <Role>IAM-role-ARN</Role>
@@ -81,6 +84,7 @@ bool S3PutReplicationBody::parse_and_validate() {
   // clear priority and rule id sets
   rule_id_set.clear();
   rule_priority_set.clear();
+  vec_bucket_names.clear();
   is_valid = false;
 
   if (xml_content.empty()) {
@@ -254,19 +258,17 @@ bool S3PutReplicationBody::parse_and_validate() {
   ReplicationConfiguration["Rules"] = rule_array;
 
   xmlFreeDoc(document);
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
   return is_valid;
 }
 
 std::string S3PutReplicationBody::get_replication_configuration_as_json() {
-  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   Json::FastWriter fastWriter;
   return fastWriter.write(ReplicationConfiguration);
 }
 
-std::string S3PutReplicationBody::get_destination_bucket_name() {
-  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
-
-  return bucket_str;
+std::vector<std::string> &S3PutReplicationBody::get_destination_bucket_list() {
+  return vec_bucket_names;
 }
 
 std::string S3PutReplicationBody::get_additional_error_information() {
@@ -277,21 +279,24 @@ std::string S3PutReplicationBody::get_additional_error_information() {
 ChildNodes S3PutReplicationBody::convert_str_to_enum(const unsigned char *str) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
-  if (strcmp(reinterpret_cast<const char *>(str), "Undefined") == 0)
+  if (_STR_MATCHED(str, "Undefined"))
     return Undefined;
-  else if (strcmp(reinterpret_cast<const char *>(str), "ID") == 0)
+  else if (_STR_MATCHED(str, "ID"))
     return ID;
-  else if (strcmp(reinterpret_cast<const char *>(str), "Status") == 0)
+  else if (_STR_MATCHED(str, "Status"))
     return Status;
-  else if (strcmp(reinterpret_cast<const char *>(str), "Priority") == 0)
+  else if (_STR_MATCHED(str, "Priority"))
     return Priority;
-  else if (strcmp(reinterpret_cast<const char *>(str),
-                  "DeleteMarkerReplication") == 0)
+  else if (_STR_MATCHED(str, "DeleteMarkerReplication"))
     return DeleteMarkerReplication;
-  else if (strcmp(reinterpret_cast<const char *>(str), "Destination") == 0)
+  else if (_STR_MATCHED(str, "Destination"))
     return Destination;
-  else if (strcmp(reinterpret_cast<const char *>(str), "Filter") == 0)
+  else if (_STR_MATCHED(str, "Filter"))
     return Filter;
+  else if (_STR_MATCHED(str, "ExistingObjectReplication"))
+    return ExistingObjectReplication;
+  else if (_STR_MATCHED(str, "SourceSelectionCriteria"))
+    return SourceSelectionCriteria;
   return Undefined;
 }
 
@@ -378,7 +383,6 @@ bool S3PutReplicationBody::read_rule_node(
 
           xmlChar *val = xmlNodeGetContent(rule_child_node);
           std::string rule_priority_str = reinterpret_cast<char *>(val);
-
           if (!S3CommonUtilities::stoi(rule_priority_str.c_str(),
                                        rule_priority) ||
               rule_priority < 0) {
@@ -454,12 +458,24 @@ bool S3PutReplicationBody::read_rule_node(
         }
 
       } break;
+      case ExistingObjectReplication: {
+        // Account is not a mandatory field
+        // In future scope.(Not supported currently)
+        not_implemented_rep_field(rule_child_node, "ExistingObjectReplication");
+        return false;
+      } break;
 
+      case SourceSelectionCriteria: {
+        // Account is not a mandatory field
+        // In future scope.(Not supported currently)
+        not_implemented_rep_field(rule_child_node, "SourceSelectionCriteria");
+        return false;
+      } break;
       default: {
         // Xml nodes should be one of the elements in Enum
         s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
       }
-    }
+    }  // end of switch cases
 
     rule_child_node = rule_child_node->next;
   } while (rule_child_node != nullptr);
@@ -489,6 +505,7 @@ bool S3PutReplicationBody::read_rule_node(
     return false;
   }
 
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
   return true;
 }
 
@@ -666,29 +683,141 @@ bool S3PutReplicationBody::read_key_value_node(
   return true;
 }
 
+DestinationChildNodes S3PutReplicationBody::convert_str_to_Destination_enum(
+    const unsigned char *str) {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+
+  if (_STR_MATCHED(str, "UndefinedDestChildNode"))
+    return UndefinedDestChildNode;
+  else if (_STR_MATCHED(str, "AccessControlTranslation"))
+    return AccessControlTranslation;
+  else if (_STR_MATCHED(str, "Account"))
+    return Account;
+  else if (_STR_MATCHED(str, "Bucket"))
+    return Bucket;
+  else if (_STR_MATCHED(str, "EncryptionConfiguration"))
+    return EncryptionConfiguration;
+  else if (_STR_MATCHED(str, "Metrics"))
+    return Metrics;
+  else if (_STR_MATCHED(str, "ReplicationTime"))
+    return ReplicationTime;
+  else if (_STR_MATCHED(str, "StorageClass"))
+    return StorageClass;
+
+  return UndefinedDestChildNode;
+}
+
+void S3PutReplicationBody::not_implemented_rep_field(xmlNodePtr dest_child_node,
+                                                     const char *str) {
+  if ((!xmlStrcmp(dest_child_node->name, (const xmlChar *)str))) {
+    s3_log(S3_LOG_WARN, request_id,
+           "XML request body Invalid: %s "
+           "feature is not implemented.\n",
+           str);
+    s3_error = "ReplicationFieldNotImplemented";
+  }
+}
 bool S3PutReplicationBody::validate_destination_node(
     xmlNodePtr destination_node) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   // bucket is a mandatory field
-  xmlNodePtr bucket_node = destination_node->xmlChildrenNode;
-  if (bucket_node != NULL) {
-    s3_log(S3_LOG_DEBUG, request_id, "Child Node = %s", bucket_node->name);
-    if ((xmlStrcmp(bucket_node->name, (const xmlChar *)"Bucket"))) {
-      s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
-      return false;
-    } else {
-      xmlChar *val = xmlNodeGetContent(bucket_node);
-      bucket_str = reinterpret_cast<char *>(val);
-      if (bucket_str.empty()) {
-        s3_log(S3_LOG_WARN, request_id, "XML bucket is Empty.\n");
-        s3_error = "InvalidArgumentDestinationBucket";
+  xmlNodePtr dest_child_node = destination_node->xmlChildrenNode;
+  if (dest_child_node == NULL) {
+    s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
+    return false;
+  }
+  while (dest_child_node != nullptr) {
+    s3_log(S3_LOG_DEBUG, request_id, "Child Node = %s", dest_child_node->name);
+
+    DestinationChildNodes dest_child_nodes = convert_str_to_Destination_enum(
+        (const xmlChar *)(dest_child_node->name));
+
+    s3_log(S3_LOG_DEBUG, request_id, "child_nodes enum value = %d",
+           dest_child_nodes);
+    switch (dest_child_nodes) {
+      case UndefinedDestChildNode: {
+        s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
         return false;
+      } break;
+
+      case Bucket: {
+        if ((!xmlStrcmp(dest_child_node->name, (const xmlChar *)"Bucket"))) {
+
+          xmlChar *val = xmlNodeGetContent(dest_child_node);
+          bucket_str = reinterpret_cast<char *>(val);
+          if (bucket_str.empty()) {
+            s3_log(S3_LOG_WARN, request_id, "XML bucket is Empty.\n");
+            s3_error = "InvalidArgumentDestinationBucket";
+            return false;
+          }
+          vec_bucket_names.push_back(bucket_str);
+        }
+      } break;
+
+      case AccessControlTranslation: {
+        // AccessControlTranslation is not a mandatory field
+        // In future scope.(Not supported currently)
+        not_implemented_rep_field(dest_child_node, "AccessControlTranslation");
+        return false;
+      } break;
+
+      case Account: {
+        // Account is not a mandatory field
+        // In future scope.(Not supported currently)
+        not_implemented_rep_field(dest_child_node, "Account");
+        return false;
+      } break;
+
+      case EncryptionConfiguration: {
+        // EncryptionConfiguration is not a mandatory field
+        // Not supported currently.
+        if ((!xmlStrcmp(dest_child_node->name,
+                        (const xmlChar *)"EncryptionConfiguration"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: EncryptionConfiguration "
+                 "feature is not implemented.\n");
+          s3_error = "ReplicationOperationNotSupported";
+          return false;
+        }
+      } break;
+
+      case Metrics: {
+        // Metrics is not a mandatory field
+        // Not supported currently.
+        not_implemented_rep_field(dest_child_node, "Metrics");
+        return false;
+      } break;
+
+      case ReplicationTime: {
+        // ReplicationTime is not a mandatory field
+        // Not supported currently.
+        not_implemented_rep_field(dest_child_node, "ReplicationTime");
+        return false;
+      } break;
+
+      case StorageClass: {
+        // StorageClass is not a mandatory field
+        // Not supported currently.
+        if ((!xmlStrcmp(dest_child_node->name,
+                        (const xmlChar *)"StorageClass"))) {
+          s3_log(S3_LOG_WARN, request_id,
+                 "XML request body Invalid: StorageClass feature "
+                 "is not implemented.\n");
+          s3_error = "ReplicationOperationNotSupported";
+          return false;
+        }
+      } break;
+      default: {
+        // Xml nodes should be one of the elements in Enum
+        s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
       }
-      return true;
     }
+
+    dest_child_node = dest_child_node->next;
   }
 
-  return false;  // if bucket_node is null
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
+  return true;
 }
 bool S3PutReplicationBody::validate_delete_marker_replication_status(
     xmlNodePtr del_rep_node) {
@@ -717,6 +846,7 @@ bool S3PutReplicationBody::validate_delete_marker_replication_status(
       return false;
     }
   }
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
   return true;
 }
 
@@ -741,5 +871,6 @@ bool S3PutReplicationBody::validate_rule_status(const std::string &status,
   }
   s3_log(S3_LOG_WARN, request_id,
          "rule_status = %s. XML rule_status  Invalid.\n", rule_status.c_str());
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
   return false;
 }
