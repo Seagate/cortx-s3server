@@ -1204,10 +1204,9 @@ void S3ObjectExtendedMetadata::save_extended_metadata() {
   // objects_version_list_index_oid should be set before using this method
 
   assert(non_zero(extended_list_index_layout.oid));
-
-  std::map<std::string, std::string> key_values =
-      get_kv_list_of_extended_entries();
-  if (key_values.size() > 0) {
+  key_values = get_kv_list_of_extended_entries();
+  if ((key_values.size() > 0) &&
+      (key_values.size() <= MAX_PUT_MULTIPART_EXTENDED_ENTRIES)) {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
     // TODO: Saves all entries in one call. May hit RPC limit.
@@ -1218,6 +1217,8 @@ void S3ObjectExtendedMetadata::save_extended_metadata() {
                   this),
         std::bind(&S3ObjectExtendedMetadata::save_extended_metadata_failed,
                   this));
+  } else if (key_values.size() > MAX_PUT_MULTIPART_EXTENDED_ENTRIES) {
+    save_partial_extended_metadata();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -1234,6 +1235,67 @@ void S3ObjectExtendedMetadata::save_extended_metadata_successful() {
 void S3ObjectExtendedMetadata::save_extended_metadata_failed() {
   // TBD
   this->handler_on_failed();
+}
+
+void S3ObjectExtendedMetadata::save_partial_extended_metadata() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  // objects_version_list_index_oid should be set before using this method
+  assert(key_values.size());
+  unsigned int kv_to_be_processed = key_values.size() - total_processed_count;
+  unsigned int how_many_kv_to_write =
+      ((kv_to_be_processed - MAX_PUT_MULTIPART_EXTENDED_ENTRIES) >
+       MAX_PUT_MULTIPART_EXTENDED_ENTRIES)
+          ? MAX_PUT_MULTIPART_EXTENDED_ENTRIES
+          : kv_to_be_processed;
+  if (motr_kv_writer == nullptr) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+
+  motr_kv_writer->put_partial_keyval(
+      extended_list_index_layout, key_values,
+      std::bind(
+          &S3ObjectExtendedMetadata::save_partial_extended_metadata_successful,
+          this, std::placeholders::_1),
+      std::bind(
+          &S3ObjectExtendedMetadata::save_partial_extended_metadata_failed,
+          this, std::placeholders::_1),
+      total_processed_count, how_many_kv_to_write);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ObjectExtendedMetadata::save_partial_extended_metadata_successful(
+    unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  total_processed_count += processed_count;
+  s3_log(S3_LOG_INFO, request_id,
+         "%u Extended metadatas saved for Object [%s]. "
+         "total_processed_count[%u]\n",
+         processed_count, object_name.c_str(), total_processed_count);
+  if (total_processed_count < ext_objects.size()) {
+    if (request->client_connected() &&
+        request->get_response_started_by_action()) {
+      // send white space to client, if it has already been initiated by action
+      // class
+      request->send_reply_body(xml_spaces, sizeof(xml_spaces) - 1);
+    }
+    save_partial_extended_metadata();
+  } else {
+    // save_metadata();
+    this->handler_on_success();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ObjectExtendedMetadata::save_partial_extended_metadata_failed(
+    unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id,
+         "Failed to save %u extended metadata's for Object [%s] "
+         "total_processed_count[%u]\n",
+         processed_count, object_name.c_str(), total_processed_count);
+  this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
