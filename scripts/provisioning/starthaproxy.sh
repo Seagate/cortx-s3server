@@ -32,8 +32,5 @@ haproxy_log_path=$2
 
 haproxy_cfg_file_path="$base_config_path/s3/haproxy.cfg"
 
-# Create log dir
-mkdir -p "$(dirname "$haproxy_log_path")"
-
 # Run the configured haproxy
 /usr/sbin/haproxy -Ws -f $haproxy_cfg_file_path -p /run/haproxy.pid 1>>"$haproxy_log_path" 2>&1

@@ -63,26 +63,25 @@ echo "haproxy dir: $haproxy_log_dir"
 
 if [ -n "$haproxy_log_dir" ]
 then
+     # check haproxy log file needs log rotation or not. if required then rotate first and then apply max_count algorithm
+     #Get size in bytes
+     $haproxy_file_size=`du -b $haproxy_log_file | tr -s '\t' ' ' | cut -d' ' -f1`
+     if [ $haproxy_file_size -gt $haproxy_max_file_size ];then
+         echo "haproxy file size [$haproxy_file_size] is grater than max size [$haproxy_max_file_size]"
+         timestamp=`date +%s`
+         mv $haproxy_log_file $haproxy_log_file.$timestamp
+         # create new haproxy log file
+         touch $haproxy_log_file
+         echo "haproxy log file rotated successfully"
+     else
+         break
+     fi
+
      # Find haproxy log files
      haproxy_log_files=`find $haproxy_log_dir -maxdepth 1 -type f -name "haproxy.*"`
      haproxy_log_files_count=`echo "$haproxy_log_files" | grep -v "^$" | wc -l`
      echo "## found $haproxy_log_files_count file(s) in log directory($haproxy_log_dir) ##"
-     # check haproxy log file needs log rotation or not. if required then rotate first and then apply max_count algorithm
-     while true
-     do
-         #Get size in bytes
-         $haproxy_file_size=`du -b $haproxy_log_file | tr -s '\t' ' ' | cut -d' ' -f1`
-         if [ $haproxy_file_size -gt $haproxy_max_file_size ];then
-             echo "haproxy file size [$haproxy_file_size] is grater than max size [$haproxy_max_file_size]"
-             timestamp=`date +%s`
-             mv $haproxy_log_file $haproxy_log_file.$timestamp
-             # create new haproxy log file
-             touch $haproxy_log_file
-             echo "haproxy log file rotated successfully"
-         else
-             break
-         fi
-     done
+
      # check log files count is greater than max log file count or not
      if [ $haproxy_log_files_count -ge $haproxy_log_files_max_count ]
      then

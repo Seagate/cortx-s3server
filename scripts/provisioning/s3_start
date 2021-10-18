@@ -174,8 +174,12 @@ def main():
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
     elif args.service == 'haproxy':
       haproxy_log_path = os.path.join(base_logdir_path, 's3', machine_id, 'haproxy/haproxy.log')
+      logger.info(f"haproxy_log_path: {haproxy_log_path}")
       # create haproxy log directory path if does not exist
       os.makedirs(os.path.dirname(haproxy_log_path), exist_ok=True)
+      # create empty haproxy log file
+      with open(haproxy_log_path, 'w') as fp:
+          pass
       # create symbolic link for this config file to be used by log rotation
       create_symbolic_link(haproxy_log_path,s3_confkeys_store.get_config("S3_HAPROXY_LOG_SYMLINK"))
 
