@@ -316,6 +316,30 @@ TEST_F(S3MotrKVSWritterTest, PutKeyVal) {
   EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
 
+TEST_F(S3MotrKVSWritterTest, PutPartialKeyVal) {
+  S3CallBack s3motrkvscallbackobj;
+
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_op(_, _, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_motr_idx_op));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
+  std::map<std::string, std::string> key_values = {{"key1", "vlv1"},
+                                                   {"key2", "vlv2"}};
+  action_under_test->put_partial_keyval(
+      {oid}, key_values,
+      std::bind(&S3CallBack::on_success_with_arg, &s3motrkvscallbackobj,
+                std::placeholders::_1),
+      std::bind(&S3CallBack::on_failed_with_arg, &s3motrkvscallbackobj,
+                std::placeholders::_1),
+      0, 1);
+
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
+}
+
 TEST_F(S3MotrKVSWritterTest, PutKeyValSuccessful) {
   S3CallBack s3motrkvscallbackobj;
 
@@ -354,6 +378,55 @@ TEST_F(S3MotrKVSWritterTest, PutKeyValFailed) {
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
   action_under_test->put_keyval_failed();
+
+  EXPECT_EQ(S3MotrKVSWriterOpState::failed, action_under_test->get_state());
+  EXPECT_FALSE(s3motrkvscallbackobj.success_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.fail_called);
+}
+
+TEST_F(S3MotrKVSWritterTest, PutPartialKeyValSuccessful) {
+  S3CallBack s3motrkvscallbackobj;
+
+  action_under_test->writer_context.reset(
+      new S3AsyncMotrKVSWriterContext(ptr_mock_request, NULL, NULL));
+
+  action_under_test->on_success_for_extends =
+      std::bind(&S3CallBack::on_success_with_arg, &s3motrkvscallbackobj,
+                std::placeholders::_1);
+  action_under_test->on_failure_for_extends =
+      std::bind(&S3CallBack::on_failed_with_arg, &s3motrkvscallbackobj,
+                std::placeholders::_1);
+
+  action_under_test->put_partial_keyval_successful();
+
+  EXPECT_EQ(S3MotrKVSWriterOpState::created, action_under_test->get_state());
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
+}
+
+TEST_F(S3MotrKVSWritterTest, PutPartialKeyValFailed) {
+  S3CallBack s3motrkvscallbackobj;
+
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_op(_, _, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_motr_idx_op));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
+      .WillOnce(Invoke(s3_test_motr_op_launch_fail));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-EPERM));
+  action_under_test->writer_context.reset(new S3AsyncMotrKVSWriterContext(
+      ptr_mock_request, NULL, NULL, 1, ptr_mock_s3motr));
+  std::map<std::string, std::string> key_values = {{"key1", "vlv1"},
+                                                   {"key2", "vlv2"}};
+  action_under_test->put_partial_keyval(
+      {oid}, key_values,
+      std::bind(&S3CallBack::on_success_with_arg, &s3motrkvscallbackobj,
+                std::placeholders::_1),
+      std::bind(&S3CallBack::on_failed_with_arg, &s3motrkvscallbackobj,
+                std::placeholders::_1),
+      0, 1);
+  action_under_test->put_partial_keyval_failed();
 
   EXPECT_EQ(S3MotrKVSWriterOpState::failed, action_under_test->get_state());
   EXPECT_FALSE(s3motrkvscallbackobj.success_called);

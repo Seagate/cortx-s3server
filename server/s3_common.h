@@ -39,8 +39,14 @@
 #endif
 
 #define MAX_COLLISION_RETRY_COUNT 20
+#define MAX_MULTIPART_EXTENDED_ENTRIES 30
+// Max extended entries (kv pair) being saved per idx op
+#define MAX_PUT_MULTIPART_EXTENDED_ENTRIES 50
 
 #define ACCOUNT_USER_INDEX_NAME "ACCOUNTUSERINDEX"
+
+const char xml_spaces[] = "        ";
+// Shall be 8 bytes (size of cipher block)
 
 // We reserve 255 oids after M0_ID_APP for S3 servers internal use.
 #define S3_OID_RESERVED_COUNT 255

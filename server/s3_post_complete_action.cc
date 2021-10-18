@@ -34,9 +34,6 @@
 
 extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
-const char xml_spaces[] = "        ";
-// Shall be 8 bytes (size of cipher block)
-
 const char xml_decl[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 const char xml_comment_begin[] = "<!--   \n";
 const char xml_comment_end[] = "\n   -->\n";
@@ -333,7 +330,7 @@ void S3PostCompleteAction::start_response() {
   request->send_reply_start(S3HttpSuccess200);
   request->send_reply_body(xml_decl, sizeof(xml_decl) - 1);
   request->send_reply_body(xml_comment_begin, sizeof(xml_comment_begin) - 1);
-
+  request->set_response_started_by_action(true);
   response_started = true;
 }
 
