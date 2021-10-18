@@ -24,137 +24,134 @@ import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AESEncryptDecryptUtil {
+public
+class AESEncryptDecryptUtil {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AESEncryptDecryptUtil.class.getName());
-        private
-         static final String ENCRYPT_ALGO = "AES/GCM/NoPadding";
-        private
-         static final String SECRET_KEY_ALGO = "PBKDF2WithHmacSHA256";
+ private
+  static final Logger LOGGER =
+      LoggerFactory.getLogger(AESEncryptDecryptUtil.class.getName());
+ private
+  static final String ENCRYPT_ALGO = "AES/GCM/NoPadding";
+ private
+  static final String SECRET_KEY_ALGO = "PBKDF2WithHmacSHA256";
 
-        private
-         static final int TAG_LENGTH_BIT = 128;
-        private
-         static final int IV_LENGTH_IN_BYTES = 12;
-        private
-         static final int SALT_LENGTH_IN_BYTES = 16;
-        private
-         static final Charset UTF_8 = StandardCharsets.UTF_8;
+ private
+  static final int TAG_LENGTH_BIT = 128;
+ private
+  static final int IV_LENGTH_IN_BYTES = 12;
+ private
+  static final int SALT_LENGTH_IN_BYTES = 16;
+ private
+  static final Charset UTF_8 = StandardCharsets.UTF_8;
 
-         /**
-          * Encrypt plain text provided using AES
-          *
-          * @param plainText - Text to encrypt
-          * @param password  - Const key
-          * @return return a base64 encoded AES encrypted text
-          */
-        public
-         static String encrypt(String plainText, String password) {
+  /**
+   * Encrypt plain text provided using AES
+   *
+   * @param plainText - Text to encrypt
+   * @param password  - Const key
+   * @return return a base64 encoded AES encrypted text
+   */
+ public
+  static String encrypt(String plainText, String password) {
 
-                String encryptedText = null;
+    String encryptedText = null;
 
-                byte[] salt = getRandomNonce(SALT_LENGTH_IN_BYTES);
-                byte[] iv = getRandomNonce(IV_LENGTH_IN_BYTES);
+    byte[] salt = getRandomNonce(SALT_LENGTH_IN_BYTES);
+    byte[] iv = getRandomNonce(IV_LENGTH_IN_BYTES);
 
-                try {
-                  SecretKey aesKeyFromPassword =
-                      getAESKeyFromPassword(password.toCharArray(), salt);
-                  Cipher cipher = Cipher.getInstance(ENCRYPT_ALGO);
-                  cipher.init(Cipher.ENCRYPT_MODE, aesKeyFromPassword,
-                              new GCMParameterSpec(TAG_LENGTH_BIT, iv));
-                  byte[] cipherText = cipher.doFinal(plainText.getBytes(UTF_8));
-                  byte[] cipherTextWithIvSalt =
-                      ByteBuffer.allocate(iv.length + salt.length +
-                                          cipherText.length)
-                          .put(iv)
-                          .put(salt)
-                          .put(cipherText)
-                          .array();
-                  encryptedText =
-                      Base64.getEncoder().encodeToString(cipherTextWithIvSalt);
-                }
-                catch (NoSuchAlgorithmException | InvalidKeySpecException |
-                       NoSuchPaddingException | InvalidKeyException |
-                       InvalidAlgorithmParameterException |
-                       IllegalBlockSizeException | BadPaddingException e) {
-                  LOGGER.error("Error occurred while encrypting text. Cause: " +
-                               e.getCause() + ". Message: " + e.getMessage());
-                  LOGGER.debug("Stacktrace: " + e);
-                }
+    try {
+      SecretKey aesKeyFromPassword =
+          getAESKeyFromPassword(password.toCharArray(), salt);
+      Cipher cipher = Cipher.getInstance(ENCRYPT_ALGO);
+      cipher.init(Cipher.ENCRYPT_MODE, aesKeyFromPassword,
+                  new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+      byte[] cipherText = cipher.doFinal(plainText.getBytes(UTF_8));
+      byte[] cipherTextWithIvSalt =
+          ByteBuffer.allocate(iv.length + salt.length + cipherText.length)
+              .put(iv)
+              .put(salt)
+              .put(cipherText)
+              .array();
+      encryptedText = Base64.getEncoder().encodeToString(cipherTextWithIvSalt);
+    }
+    catch (NoSuchAlgorithmException | InvalidKeySpecException |
+           NoSuchPaddingException | InvalidKeyException |
+           InvalidAlgorithmParameterException | IllegalBlockSizeException |
+           BadPaddingException e) {
+      LOGGER.error("Error occurred while encrypting text. Cause: " +
+                   e.getCause() + ". Message: " + e.getMessage());
+      LOGGER.debug("Stacktrace: " + e);
+    }
 
-		return encryptedText;
-	}
+    return encryptedText;
+  }
 
-        /**
-         * Decrypt the encrypted text provided.
-         *
-         * @param encryptedText
-         * @param password      - Const key
-         * @return
-         */
-       public
-        static String decrypt(String encryptedText, String password) {
+  /**
+   * Decrypt the encrypted text provided.
+   *
+   * @param encryptedText
+   * @param password      - Const key
+   * @return
+   */
+ public
+  static String decrypt(String encryptedText, String password) {
 
-                String decryptedText = null;
+    String decryptedText = null;
 
-                byte[] decode =
-                    Base64.getDecoder().decode(encryptedText.getBytes(UTF_8));
+    byte[] decode = Base64.getDecoder().decode(encryptedText.getBytes(UTF_8));
 
-                ByteBuffer bb = ByteBuffer.wrap(decode);
+    ByteBuffer bb = ByteBuffer.wrap(decode);
 
-                byte[] iv = new byte[IV_LENGTH_IN_BYTES];
-                bb.get(iv);
+    byte[] iv = new byte[IV_LENGTH_IN_BYTES];
+    bb.get(iv);
 
-                byte[] salt = new byte[SALT_LENGTH_IN_BYTES];
-                bb.get(salt);
+    byte[] salt = new byte[SALT_LENGTH_IN_BYTES];
+    bb.get(salt);
 
-                byte[] cipherText = new byte[bb.remaining()];
-                bb.get(cipherText);
+    byte[] cipherText = new byte[bb.remaining()];
+    bb.get(cipherText);
 
-                try {
-                  SecretKey aesKeyFromPassword =
-                      getAESKeyFromPassword(password.toCharArray(), salt);
-                  Cipher cipher = Cipher.getInstance(ENCRYPT_ALGO);
-                  cipher.init(Cipher.DECRYPT_MODE, aesKeyFromPassword,
-                              new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+    try {
+      SecretKey aesKeyFromPassword =
+          getAESKeyFromPassword(password.toCharArray(), salt);
+      Cipher cipher = Cipher.getInstance(ENCRYPT_ALGO);
+      cipher.init(Cipher.DECRYPT_MODE, aesKeyFromPassword,
+                  new GCMParameterSpec(TAG_LENGTH_BIT, iv));
 
-                  byte[] plainText = cipher.doFinal(cipherText);
+      byte[] plainText = cipher.doFinal(cipherText);
 
-                  decryptedText = new String(plainText, UTF_8);
-                }
-                catch (NoSuchAlgorithmException | InvalidKeySpecException |
-                       NoSuchPaddingException | InvalidKeyException |
-                       InvalidAlgorithmParameterException |
-                       IllegalBlockSizeException | BadPaddingException e) {
-                  LOGGER.error(
-                      "Error occurred while decrypting the encrypted text. " +
-                      "Cause: " + e.getCause() + ". Message: " +
-                      e.getMessage());
-                  LOGGER.debug("Stacktrace: " + e);
-                }
+      decryptedText = new String(plainText, UTF_8);
+    }
+    catch (NoSuchAlgorithmException | InvalidKeySpecException |
+           NoSuchPaddingException | InvalidKeyException |
+           InvalidAlgorithmParameterException | IllegalBlockSizeException |
+           BadPaddingException e) {
+      LOGGER.error("Error occurred while decrypting the encrypted text. " +
+                   "Cause: " + e.getCause() + ". Message: " + e.getMessage());
+      LOGGER.debug("Stacktrace: " + e);
+    }
 
-		return decryptedText;
-	}
+    return decryptedText;
+  }
 
-       private
-        static SecretKey getAESKeyFromPassword(char[] password, byte[] salt)
-            throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
+ private
+  static SecretKey getAESKeyFromPassword(char[] password, byte[] salt)
+      throws NoSuchAlgorithmException,
+      InvalidKeySpecException {
 
-          SecretKeyFactory factory =
-              SecretKeyFactory.getInstance(SECRET_KEY_ALGO);
-          // iterationCount = 65536
-          // keyLength = 256
-          KeySpec spec = new PBEKeySpec(password, salt, 65536, 256);
-          SecretKey secret = new SecretKeySpec(
-              factory.generateSecret(spec).getEncoded(), "AES");
-          return secret;
-        }
+    SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRET_KEY_ALGO);
+    // iterationCount = 65536
+    // keyLength = 256
+    KeySpec spec = new PBEKeySpec(password, salt, 65536, 256);
+    SecretKey secret =
+        new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
+    return secret;
+  }
 
-       private
-        static byte[] getRandomNonce(int numBytes) {
-          byte[] nonce = new byte[numBytes];
-          new SecureRandom().nextBytes(nonce);
-          return nonce;
-        }
+ private
+  static byte[] getRandomNonce(int numBytes) {
+    byte[] nonce = new byte[numBytes];
+    new SecureRandom().nextBytes(nonce);
+    return nonce;
+  }
 }

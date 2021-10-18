@@ -250,11 +250,11 @@ public class KeyGenUtil {
           try {
             reader.close();
           }
-        catch (IOException e) {
-          LOGGER.error("Error closing buffered reader. Cause: " + e.getCause() +
-                       ". Message: " + e.getMessage());
-          LOGGER.debug("Stacktrace: " + e);
-        }
+          catch (IOException e) {
+            LOGGER.error("Error closing buffered reader. Cause: " +
+                         e.getCause() + ". Message: " + e.getMessage());
+            LOGGER.debug("Stacktrace: " + e);
+          }
         }
       }
 
