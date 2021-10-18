@@ -51,18 +51,18 @@ class MotrKVListResponse {
   std::string get_response_format_key_value(const std::string& key_value);
 
  public:
-  MotrKVListResponse(std::string encoding_type = "");
+  MotrKVListResponse(const std::string& encoding_type = "");
 
-  void set_index_id(std::string name);
-  void set_request_prefix(std::string prefix);
-  void set_request_delimiter(std::string delimiter);
-  void set_request_marker_key(std::string marker);
-  void set_max_keys(std::string count);
+  void set_index_id(const std::string& name);
+  void set_request_prefix(const std::string& prefix);
+  void set_request_delimiter(const std::string& delimiter);
+  void set_request_marker_key(const std::string& marker);
+  void set_max_keys(const std::string& count);
   void set_response_is_truncated(bool flag);
-  void set_next_marker_key(std::string next);
+  void set_next_marker_key(const std::string& next);
 
   void add_kv(const std::string& key, const std::string& value);
-  void add_common_prefix(std::string);
+  void add_common_prefix(const std::string&);
   unsigned int size();
   unsigned int common_prefixes_size();
 

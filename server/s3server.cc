@@ -675,7 +675,7 @@ evhtp_t *create_evhtp_handle(evbase_t *evbase_handle, Router *router,
 #else
   if (g_option_instance->is_s3_reuseport_enabled()) {
     s3_log(
-        S3_LOG_ERROR,
+        S3_LOG_ERROR, "",
         "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
     return NULL;
   }
@@ -704,7 +704,7 @@ evhtp_t *create_evhtp_handle_for_motr(evbase_t *evbase_handle,
 #else
   if (g_option_instance->is_motr_http_reuseport_enabled()) {
     s3_log(
-        S3_LOG_ERROR,
+        S3_LOG_ERROR, "",
         "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
     return NULL;
   }

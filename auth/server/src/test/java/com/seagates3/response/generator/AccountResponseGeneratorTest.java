@@ -137,4 +137,22 @@ public class AccountResponseGeneratorTest {
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.CONFLICT, response.getResponseStatus());
     }
+
+    @Test public void testAccessKeyAlreadyExists() {
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>AccessKeyAlreadyExists</Code>" +
+          "<Message>The request was rejected because " +
+          "account with this access key already exists.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      AccountResponseGenerator responseGenerator =
+          new AccountResponseGenerator();
+      ServerResponse response = responseGenerator.accessKeyAlreadyExists();
+
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.CONFLICT,
+                          response.getResponseStatus());
+    }
 }

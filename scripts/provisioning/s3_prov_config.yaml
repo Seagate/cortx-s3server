@@ -178,4 +178,3 @@ S3_CONF_SYMLINK: "/opt/seagate/cortx/s3/install/logrotate/s3config.yaml"
 
 # HAProxy log file symbolic link
 S3_HAPROXY_LOG_SYMLINK: "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy.log"
-

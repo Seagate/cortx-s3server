@@ -110,7 +110,7 @@ std::string S3AwsEtag::convert_hex_bin(std::string hex) {
   return binary;
 }
 
-void S3AwsEtag::add_part_etag(std::string etag) {
+void S3AwsEtag::add_part_etag(const std::string& etag) {
   hex_etag += etag;
   part_count++;
 }

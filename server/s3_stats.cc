@@ -206,8 +206,11 @@ int S3Stats::form_and_send_msg(const std::string& key, const std::string& type,
                                const std::string& value, int retry,
                                float sample_rate) {
   // validate key/value name
-  assert(is_keyname_valid(key));
-  assert(is_keyname_valid(value));
+  bool isValid = is_keyname_valid(key);
+  if (false == isValid)  // to avoid unused variable error
+    assert(isValid);
+  isValid = is_keyname_valid(value);
+  assert(isValid);
 
   // check if metric is present in the allowlist
   if (!is_allowed_to_publish(key)) {

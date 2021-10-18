@@ -31,7 +31,9 @@ void S3ServiceListResponse::set_owner_name(std::string name) {
   owner_name = name;
 }
 
-void S3ServiceListResponse::set_owner_id(std::string id) { owner_id = id; }
+void S3ServiceListResponse::set_owner_id(const std::string& id) {
+  owner_id = id;
+}
 
 void S3ServiceListResponse::add_bucket(
     std::shared_ptr<S3BucketMetadata> bucket) {

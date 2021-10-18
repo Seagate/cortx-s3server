@@ -58,6 +58,13 @@ class AuthTest(PyCliTest):
     def create_account(self, **account_args):
         cmd = "s3iamcli createaccount -n %s -e %s --ldapuser %s --ldappasswd %s" % (
             account_args['AccountName'], account_args['Email'], account_args['ldapuser'], account_args['ldappasswd'])
+
+        if account_args.get('access_key') is not None:
+            cmd = f"{cmd} --access_key {account_args.get('access_key')}"
+
+        if account_args.get('secret_key') is not None:
+            cmd = f"{cmd} --secret_key {account_args.get('secret_key')}"
+
         self.with_cli(cmd)
         return self
 
@@ -72,9 +79,15 @@ class AuthTest(PyCliTest):
         return self
 
     def delete_account(self, **account_args):
+        access_key_id = account_args.get('access_key')
+        secret_key = account_args.get('secret_key')
+
+        if access_key_id is None:
+            access_key_id = S3ClientConfig.access_key_id
+            secret_key = S3ClientConfig.secret_key
+
         cmd = "s3iamcli deleteaccount -n %s --access_key '%s' --secret_key '%s'" % (
-                 account_args['AccountName'], S3ClientConfig.access_key_id,
-                 S3ClientConfig.secret_key)
+                 account_args['AccountName'], access_key_id, secret_key)
 
         if(not S3ClientConfig.token is ""):
             cmd += " --session_token '%s'" % S3ClientConfig.token

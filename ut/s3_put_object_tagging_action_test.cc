@@ -51,6 +51,7 @@ class S3PutObjectTaggingActionTest : public testing::Test {
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     bucket_name = "seagatebucket";
     object_name = "objname";
+    call_count_one = 0;
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     EXPECT_CALL(*request_mock, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));

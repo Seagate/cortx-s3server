@@ -37,6 +37,7 @@ class S3PutBucketTaggingActionTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     bucket_name = "seagatebucket";
+    call_count_one = 0;
 
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     EXPECT_CALL(*request_mock, get_bucket_name())

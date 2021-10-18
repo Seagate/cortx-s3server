@@ -103,8 +103,8 @@ bool S3AuthResponseError::parse_and_validate() {
     } else if ((!xmlStrcmp(child->name, (const xmlChar*)"RequestId"))) {
       key = xmlNodeGetContent(child);
       s3_log(S3_LOG_DEBUG, "", "RequestId = %s\n", (const char*)key);
-      request_id = (const char*)key;
       if (key != NULL) {
+        request_id = (const char*)key;
         xmlFree(key);
         key = NULL;
       }
