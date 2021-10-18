@@ -1027,6 +1027,7 @@ S3ObjectExtendedMetadata::S3ObjectExtendedMetadata(
     version_id = versionid;
   }
   total_size = 0;
+  fragments_read = 0;
   request = std::move(req);
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
@@ -1081,12 +1082,11 @@ void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
 void S3ObjectExtendedMetadata::get_obj_ext_entries(std::string last_object) {
   s3_log(S3_LOG_DEBUG, request_id, "Searching index from start key = [%s]\n",
          last_object.c_str());
-  unsigned int fetch_count = fragments;
-  // We expect only 'fragments' extended entries for the object.
-  if (fetch_count == 0) {
-    fetch_count = S3Option::get_instance()->get_motr_idx_fetch_count();
-    s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_count);
-  }
+
+  unsigned int fetch_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
+  s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_count);
+
   motr_kv_reader->next_keyval(
       extended_list_index_layout, last_object, fetch_count,
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_successful,
@@ -1137,7 +1137,12 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
     }
   }  // End of for loop
 
-  if (end_of_enumeration || (kvps.size() <= fragments)) {
+  fragments_read += kvps.size();
+  s3_log(S3_LOG_DEBUG, "", "Total fragments read count %u", fragments_read);
+
+  if (end_of_enumeration || (fragments_read >= fragments)) {
+    s3_log(S3_LOG_DEBUG, "", "All fragments read.");
+    fragments_read = 0;
     state = S3ObjectMetadataState::present;
     this->handler_on_success();
   } else {

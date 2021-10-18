@@ -69,6 +69,7 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void setup_steps();
 
   void fetch_bucket_info_failed();
+  void fetch_ext_object_info_failed();
   void fetch_object_info_failed();
   void delete_metadata();
   void delete_metadata_failed();
