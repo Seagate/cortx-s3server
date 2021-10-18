@@ -82,12 +82,8 @@ s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
-
 haproxy_log="$base_log_file_path/haproxy.log"
 haproxy_status_log="$base_log_file_path/haproxy-status.log"
-
-haproxy_sysconfig=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_SYSCONF_SYMLINK")
-haproxy_sysconfig_log_file=$(s3confstore "properties://$haproxy_sysconfig" getkey --key="LOG_FILE")
 
 s3server_config="$base_config_file_path/s3/conf/s3config.yaml"
 authserver_config="$base_config_file_path/auth/resources/authserver.properties"
@@ -227,11 +223,12 @@ collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
 
-  tmpr_dir="$tmp_dir/m0traces_tmp"
+  dir="$base_log_file_path/motr"
+  tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
   # if $base_log_file_path/motr missing then return
 
-  if [ ! -d "$s3_motr_dir" ];
+  if [ ! -d "$dir" ];
   then
       return;
   fi
@@ -395,6 +392,12 @@ fi
 if [ -f "$s3cluster_config" ];
 then
     args+=($s3cluster_config)
+fi
+
+# Collect s3cluster config file if available
+if [ -f "$s3cluster_config" ];
+then
+    args=$args" "$s3cluster_config
 fi
 
 # Collect s3cluster config file if available
