@@ -1881,6 +1881,29 @@ AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")
 AwsTest('Aws can delete bucket').delete_bucket("target-bucket")\
     .execute_test().command_is_successful()
 
+#******** Create Bucket ********
+AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+#******** Enable Versioning on Bucket ********
+AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("seagatebucket", "Enabled").execute_test().command_is_successful()
+
+#******** Suspend Versioning on Bucket ********
+AwsTest('Aws can suspend versioning on bucket').put_bucket_versioning("seagatebucket", "Suspended").execute_test().command_is_successful()
+
+#********** Negative case to check versioning status cannot be changed back to unversioned ***********
+
+AwsTest('Aws can not change the versioning status back to unversioned')\
+    .put_bucket_versioning("seagatebucket", "Unversioned")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("IllegalVersioningConfigurationException")
+
+#************Negative case to enable versioning on non-existant bucket*******
+AwsTest('Aws can not enable versioning on non-existant bucket').put_bucket_versioning("seagate1", "Enabled")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
+#******** Delete Bucket ********
+AwsTest('Aws can delete bucket').delete_bucket("seagatebucket")\
+    .execute_test().command_is_successful()
+
 #-------------------Delete Accounts------------------
 test_msg = "Delete account sourceAccount"
 s3test_access_key = S3ClientConfig.access_key_id
