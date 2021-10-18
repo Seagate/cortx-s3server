@@ -47,6 +47,10 @@ while getopts "b:t:c:s:" opt; do
   esac
 done
 
+if [ -z "$bundle_id" ] || [ -z "$bundle_path" ] || [ -z "$confstore_url" ] || [ -z "$services" ] ; then
+  usage
+fi
+
 echo "Bundle_id: $bundle_id"
 echo "bundle_path: $bundle_path"
 echo "confstore_url: $confstore_url"
