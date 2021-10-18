@@ -233,7 +233,7 @@ public class KeyGenUtil {
         String line = reader.readLine();
         if (line == null || line.isEmpty()) {
           throw new IOException(
-              "S3 cipher returned empty stream while fetching openldap "
+              "S3 cipher returned empty stream while fetching openldap " +
               "cipher " +
               "key.");
         }
