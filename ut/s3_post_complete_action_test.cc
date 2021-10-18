@@ -806,6 +806,8 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
   action_under_test_ptr->old_object_oid = old_object_oid;
   action_under_test_ptr->old_layout_id = old_layout_id;
   action_under_test_ptr->old_obj_oids.push_back(old_object_oid);
+  action_under_test_ptr->old_obj_pvids.push_back(pv_id);
+  action_under_test_ptr->old_obj_layout_ids.push_back(old_layout_id);
   action_under_test_ptr->set_abort_multipart(true);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_pvid())
       .WillRepeatedly(Return(pv_id));
