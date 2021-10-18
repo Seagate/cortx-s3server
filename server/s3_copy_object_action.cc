@@ -135,9 +135,6 @@ void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-const char xml_spaces[] = "        ";
-// Shall be 8 bytes (size of cipher block)
-
 bool S3CopyObjectAction::copy_object_cb() {
   if (check_shutdown_and_rollback() || !request->client_connected()) {
     return true;
@@ -484,6 +481,7 @@ void S3CopyObjectAction::start_response() {
   request->send_reply_body(xml_comment_begin, sizeof(xml_comment_begin) - 1);
 
   response_started = true;
+  request->set_response_started_by_action(true);
 }
 
 void S3CopyObjectAction::send_response_to_s3_client() {
