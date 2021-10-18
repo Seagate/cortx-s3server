@@ -73,8 +73,6 @@ then
          # create new haproxy log file
          touch $haproxy_log_file
          echo "haproxy log file rotated successfully"
-     else
-         break
      fi
 
      # Find haproxy log files

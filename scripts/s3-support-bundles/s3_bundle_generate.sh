@@ -91,7 +91,6 @@ backgrounddelete_config="$base_config_file_path/s3/s3backgrounddelete/config.yam
 s3cluster_config="$base_config_file_path/s3/s3backgrounddelete/s3_cluster.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
-s3_motr_dir="$base_log_file_path/motr/s3server-*"
 
 s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
