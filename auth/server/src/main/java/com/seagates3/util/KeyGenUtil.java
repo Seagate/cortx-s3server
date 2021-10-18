@@ -20,17 +20,26 @@
 
 package com.seagates3.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Random;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.seagates3.authserver.AuthServerConstants;
 
 public class KeyGenUtil {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(KeyGenUtil.class.getName());
   private
    static final int SALT_LENGTH = 4;
+  private static final String S3CIPHER_GENERATE_KEY_CMD = "s3cipher generate_key --const_key ";
     /*
      * TODO
      * UserId and userAccessKeyIds are generated from uuid encoding it to base 64.
@@ -202,4 +211,39 @@ public class KeyGenUtil {
       long account_id = min + (long)(Math.random() * ((max - min) + 1));
       return String.valueOf(account_id);
     }
+   
+	public static String generateKeyByS3CipherUtil(String constKey) throws IOException {
+		String generatedKey = null;
+		String generateKeyCmd = S3CIPHER_GENERATE_KEY_CMD + constKey;
+		BufferedReader reader = null;
+		try {
+			Process s3Cipher = Runtime.getRuntime().exec(generateKeyCmd);
+			int exitVal = s3Cipher.waitFor();
+			if (exitVal != 0) {
+				throw new IOException("S3 cipher util exited with error.");
+			}
+			reader = new BufferedReader(new InputStreamReader(s3Cipher.getInputStream()));
+			String line = reader.readLine();
+			if (line == null || line.isEmpty()) {
+				throw new IOException("S3 cipher returned empty stream while fetching openldap cipher key.");
+			}
+			generatedKey = line;
+		} catch (IOException | InterruptedException e) {
+			LOGGER.error("Error occurred while generating key using s3cipher util. Cause: " + e.getCause()
+					+ ". Message: " + e.getMessage());
+			LOGGER.debug("Stacktrace: " + e);
+			throw new IOException("S3 cipher util exited with error.");
+		} finally {
+			if (reader != null)
+				try {
+					reader.close();
+				} catch (IOException e) {
+					LOGGER.error(
+							"Error closing buffered reader. Cause: " + e.getCause() + ". Message: " + e.getMessage());
+					LOGGER.debug("Stacktrace: " + e);
+				}
+		}
+
+		return generatedKey;
+	}
 }

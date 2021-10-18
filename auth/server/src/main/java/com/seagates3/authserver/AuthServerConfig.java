@@ -42,6 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import com.seagates3.util.KeyGenUtil;
+
 /**
  * Store the auth server configuration properties like default endpoint and
  * server end points.
@@ -137,30 +139,24 @@ public class AuthServerConfig {
 
        String encryptedPasswd = authServerConfig.getProperty("ldapLoginPW");
        String ldap_const_key = authServerConfig.getProperty("ldap_const_key");
-       String ldapCipherCmd =
-           "s3cipher generate_key --const_key " + ldap_const_key;
-       BufferedReader reader1 = null;
-       BufferedReader reader2 = null;
+       
+       // 1. Generate cipher key for openldap and aes util. 
        try {
-         // 1. Generate openldap cipher key
-         Process s3Cipher = Runtime.getRuntime().exec(ldapCipherCmd);
-         int exitVal = s3Cipher.waitFor();
-         if (exitVal != 0) {
+    	   ldapCipherKey = KeyGenUtil.generateKeyByS3CipherUtil(ldap_const_key);
+    	   
+    	   String keyForAESUtil = KeyGenUtil.generateKeyByS3CipherUtil(
+    			   								authServerConfig.getProperty("aesConstKey"));
+    	   authServerConfig.put("aesKey", keyForAESUtil);
+       } catch (IOException e) {
            logger.error(
-               "S3 Cipher util failed to generate openldap cipher key");
-           throw new IOException("S3 cipher util exited with error.");
-         }
-         reader1 = new BufferedReader(
-             new InputStreamReader(s3Cipher.getInputStream()));
-         String line = reader1.readLine();
-         if (line == null || line.isEmpty()) {
-           throw new IOException(
-               "S3 cipher returned empty stream while fetching openldap " +
-               "cipher " + "key.");
-         } else {
-           ldapCipherKey = line;
-         }
-         // 2. Decrypt openldap password using cipher Key.
+                   e.getMessage() +
+                   " Error occured in S3 cipher while generating key.");
+               System.exit(1);
+       }
+       
+       BufferedReader reader2 = null;
+       // 2. Decrypt openldap password using cipher Key.
+       try {
          String decryptCmd = "s3cipher decrypt --data=" + encryptedPasswd +
                              " --key=" + ldapCipherKey;
          Process s3CipherDecrypt = Runtime.getRuntime().exec(decryptCmd);
@@ -188,7 +184,6 @@ public class AuthServerConfig {
          System.exit(1);
        }
        finally {
-         if (reader1 != null) reader1.close();
          if (reader2 != null) reader2.close();
        }
     }
@@ -280,6 +275,10 @@ public class AuthServerConfig {
 
     public static int getLdapSSLPort() {
         return Integer.parseInt(authServerConfig.getProperty("ldapSSLPort"));
+    }
+    
+    public static String getAESKey() {
+        return authServerConfig.getProperty("aesKey");
     }
 
     public static Boolean isSSLToLdapEnabled() {

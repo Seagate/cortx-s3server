@@ -208,9 +208,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
      */
    private
     String getEncryptedSecretKey(String secretKey) {
-      return AESEncryptDecryptUtil.encrypt(secretKey,
-                                           AuthServerConfig.getAESConstKey(),
-                                           AuthServerConfig.getAESSalt());
+      return AESEncryptDecryptUtil.encrypt(secretKey, AuthServerConfig.getAESKey());
     }
 
     /**
@@ -223,8 +221,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
       String encryptedSecretKey =
           entry.getAttribute(LDAPUtils.SECRET_KEY).getStringValue();
       String decryptedSecretKey = AESEncryptDecryptUtil.decrypt(
-          encryptedSecretKey, AuthServerConfig.getAESConstKey(),
-          AuthServerConfig.getAESSalt());
+          encryptedSecretKey, AuthServerConfig.getAESKey());
       return decryptedSecretKey;
     }
 
