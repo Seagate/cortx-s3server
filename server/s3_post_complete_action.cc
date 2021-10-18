@@ -644,6 +644,18 @@ void S3PostCompleteAction::save_metadata() {
     new_object_metadata->set_md5(etag);
     new_object_metadata->set_pvid_str(multipart_metadata->get_pvid_str());
 
+    // If replication is enable on bucket then enable replication state in
+    // Object metadata
+    if ((bucket_metadata->check_bucket_replication_exists())) {
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Replication policy exists for bucket :: %s.\n",
+             request->get_bucket_name().c_str());
+      std::string rep_config_json =
+          bucket_metadata->get_replication_config_as_json();
+
+      new_object_metadata->set_replication_status_and_dest_bucket(
+          true, multipart_metadata->get_tags(), rep_config_json);
+    }
     new_object_metadata->save(
         std::bind(&S3PostCompleteAction::save_object_metadata_succesful, this),
         std::bind(&S3PostCompleteAction::save_object_metadata_failed, this));
