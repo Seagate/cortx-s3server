@@ -127,7 +127,7 @@ public class AESEncryptDecryptUtil {
                        InvalidAlgorithmParameterException |
                        IllegalBlockSizeException | BadPaddingException e) {
                   LOGGER.error(
-                      "Error occurred while decrypting the encrypted text. "
+                      "Error occurred while decrypting the encrypted text. " +
                       "Cause: " +
                       e.getCause() + ". Message: " + e.getMessage());
                   LOGGER.debug("Stacktrace: " + e);
