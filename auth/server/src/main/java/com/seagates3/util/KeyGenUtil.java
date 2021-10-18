@@ -234,8 +234,7 @@ public class KeyGenUtil {
         if (line == null || line.isEmpty()) {
           throw new IOException(
               "S3 cipher returned empty stream while fetching openldap " +
-              "cipher " +
-              "key.");
+              "cipher " + "key.");
         }
         generatedKey = line;
       }
