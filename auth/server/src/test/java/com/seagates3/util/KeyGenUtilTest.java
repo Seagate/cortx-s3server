@@ -45,15 +45,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.seagates3.authserver.AuthServerConstants;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({KeyGenUtil.class})
-@PowerMockIgnore("javax.management.*")
-public class KeyGenUtilTest {
+@RunWith(PowerMockRunner.class) @PrepareForTest({KeyGenUtil.class})
+    @PowerMockIgnore("javax.management.*") public class KeyGenUtilTest {
 
-    @Before
-    public void setUp() throws Exception {
-        mockStatic(Runtime.class);
-    }
+  @Before public void setUp() throws Exception {
+    mockStatic(Runtime.class);
+  }
 
     @Test
     public void createUserIdTest() {
@@ -161,25 +158,28 @@ public class KeyGenUtilTest {
         assertEquals(17, id.length());
       }
     }
-    
-    @Test
-    public void testGenerateKeyByS3CipherUtil() throws Exception {
-    	String sampleKey = "-WMAT3gNMCBIBEvfNwsxGHUNWFIzJa6iA-SLaI_hFZw=";
-    	Runtime mockedRuntime = mock(Runtime.class);
-    	InputStream mockedInputStream = mock(InputStream.class);
-    	Process mockedS3Cipher = mock(Process.class);
-    	InputStreamReader mockedInputStreamReader = mock(InputStreamReader.class);
-    	BufferedReader mockedBufferedReader = mock(BufferedReader.class);
 
-    	when(Runtime.getRuntime()).thenReturn(mockedRuntime);
-    	when(mockedRuntime.exec(any(String.class))).thenReturn(mockedS3Cipher);
-    	when(mockedS3Cipher.waitFor()).thenReturn(0);
-    	when(mockedS3Cipher.getInputStream()).thenReturn(mockedInputStream);
-    	when(mockedBufferedReader.readLine()).thenReturn(sampleKey);
-        whenNew(InputStreamReader.class).withArguments(mockedInputStream).thenReturn(mockedInputStreamReader);
-        whenNew(BufferedReader.class).withArguments(mockedInputStreamReader).thenReturn(mockedBufferedReader);
-        
-        String key = KeyGenUtil.generateKeyByS3CipherUtil("cortx-s3-secret-key");
-		assertNotNull(key);
+    @Test public void testGenerateKeyByS3CipherUtil() throws Exception {
+      String sampleKey = "-WMAT3gNMCBIBEvfNwsxGHUNWFIzJa6iA-SLaI_hFZw=";
+      Runtime mockedRuntime = mock(Runtime.class);
+      InputStream mockedInputStream = mock(InputStream.class);
+      Process mockedS3Cipher = mock(Process.class);
+      InputStreamReader mockedInputStreamReader = mock(InputStreamReader.class);
+      BufferedReader mockedBufferedReader = mock(BufferedReader.class);
+
+      when(Runtime.getRuntime()).thenReturn(mockedRuntime);
+      when(mockedRuntime.exec(any(String.class))).thenReturn(mockedS3Cipher);
+      when(mockedS3Cipher.waitFor()).thenReturn(0);
+      when(mockedS3Cipher.getInputStream()).thenReturn(mockedInputStream);
+      when(mockedBufferedReader.readLine()).thenReturn(sampleKey);
+      whenNew(InputStreamReader.class)
+          .withArguments(mockedInputStream)
+          .thenReturn(mockedInputStreamReader);
+      whenNew(BufferedReader.class)
+          .withArguments(mockedInputStreamReader)
+          .thenReturn(mockedBufferedReader);
+
+      String key = KeyGenUtil.generateKeyByS3CipherUtil("cortx-s3-secret-key");
+      assertNotNull(key);
     }
 }
