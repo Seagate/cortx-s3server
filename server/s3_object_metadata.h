@@ -473,7 +473,9 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   unsigned int fragments;
   unsigned int parts;
+  unsigned int total_processed_count = 0;
   std::vector<std::string> extended_keys;
+  std::map<std::string, std::string> key_values;
   S3ObjectMetadataState state;
   // Total size of all fragments/parts
   size_t total_size;
@@ -520,6 +522,11 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
                     std::function<void(void)> on_failed);
   virtual void save(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
+  virtual void save_partial_extended_metadata();
+
+  virtual void save_partial_extended_metadata_successful(unsigned int);
+  virtual void save_partial_extended_metadata_failed(unsigned int);
+
   virtual void set_extended_list_index_layout(
       const struct s3_motr_idx_layout& lo);
   virtual const struct s3_motr_idx_layout& get_extended_list_index_layout()
