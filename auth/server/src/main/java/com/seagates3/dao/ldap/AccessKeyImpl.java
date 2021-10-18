@@ -32,6 +32,7 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.fi.FaultPoints;
@@ -39,6 +40,7 @@ import com.seagates3.model.AccessKey;
 import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Account;
 import com.seagates3.model.User;
+import com.seagates3.util.AESEncryptDecryptUtil;
 import com.seagates3.util.DateUtil;
 
 public class AccessKeyImpl implements AccessKeyDAO {
@@ -98,8 +100,8 @@ public class AccessKeyImpl implements AccessKeyDAO {
 
             accessKey.setUserId(
                 entry.getAttribute(LDAPUtils.USER_ID).getStringValue());
-            accessKey.setSecretKey(
-                entry.getAttribute(LDAPUtils.SECRET_KEY).getStringValue());
+
+            accessKey.setSecretKey(getDecryptedSecretKey(entry));
             AccessKeyStatus status =
                 AccessKeyStatus.valueOf(entry.getAttribute(LDAPUtils.STATUS)
                                             .getStringValue()
@@ -171,8 +173,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
 
             accKey.setUserId(
                 ldapEntry.getAttribute(LDAPUtils.USER_ID).getStringValue());
-            accKey.setSecretKey(
-                ldapEntry.getAttribute(LDAPUtils.SECRET_KEY).getStringValue());
+            accKey.setSecretKey(getDecryptedSecretKey(ldapEntry));
             AccessKeyStatus status =
                 AccessKeyStatus.valueOf(ldapEntry.getAttribute(LDAPUtils.STATUS)
                                             .getStringValue()
@@ -198,6 +199,33 @@ public class AccessKeyImpl implements AccessKeyDAO {
         }
 
         return accKey;
+    }
+
+    /**
+     * Encrypt provided secret key.
+     * @param secretKey
+     * @return
+     */
+   private
+    String getEncryptedSecretKey(String secretKey) {
+      return AESEncryptDecryptUtil.encrypt(secretKey,
+                                           AuthServerConfig.getAESConstKey(),
+                                           AuthServerConfig.getAESSalt());
+    }
+
+    /**
+     * Decrypt the secret key returned from LDAP.
+     * @param entry
+     * @return
+     */
+   private
+    String getDecryptedSecretKey(LDAPEntry entry) {
+      String encryptedSecretKey =
+          entry.getAttribute(LDAPUtils.SECRET_KEY).getStringValue();
+      String decryptedSecretKey = AESEncryptDecryptUtil.decrypt(
+          encryptedSecretKey, AuthServerConfig.getAESConstKey(),
+          AuthServerConfig.getAESSalt());
+      return decryptedSecretKey;
     }
 
     /**
@@ -379,8 +407,9 @@ public class AccessKeyImpl implements AccessKeyDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.USER_ID, accessKey.getUserId()));
         attributeSet.add(new LDAPAttribute(LDAPUtils.ACCESS_KEY_ID,
                 accessKey.getId()));
-        attributeSet.add(new LDAPAttribute(LDAPUtils.SECRET_KEY,
-                accessKey.getSecretKey()));
+        attributeSet.add(
+            new LDAPAttribute(LDAPUtils.SECRET_KEY,
+                              getEncryptedSecretKey(accessKey.getSecretKey())));
         attributeSet.add(new LDAPAttribute(LDAPUtils.STATUS,
                 accessKey.getStatus()));
 
@@ -411,8 +440,9 @@ public class AccessKeyImpl implements AccessKeyDAO {
                 accessKey.getUserId()));
         attributeSet.add(new LDAPAttribute(LDAPUtils.ACCESS_KEY_ID,
                 accessKey.getId()));
-        attributeSet.add(new LDAPAttribute(LDAPUtils.SECRET_KEY,
-                accessKey.getSecretKey()));
+        attributeSet.add(
+            new LDAPAttribute(LDAPUtils.SECRET_KEY,
+                              getEncryptedSecretKey(accessKey.getSecretKey())));
         attributeSet.add(new LDAPAttribute(LDAPUtils.TOKEN,
                 accessKey.getToken()));
         attributeSet.add(new LDAPAttribute(LDAPUtils.EXPIRY,
@@ -602,8 +632,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
 
         accessKey.setId(
             entry.getAttribute(LDAPUtils.ACCESS_KEY_ID).getStringValue());
-        accessKey.setSecretKey(
-            entry.getAttribute(LDAPUtils.SECRET_KEY).getStringValue());
+        accessKey.setSecretKey(getDecryptedSecretKey(entry));
         accessKeystatus =
             AccessKeyStatus.valueOf(entry.getAttribute(LDAPUtils.STATUS)
                                         .getStringValue()
