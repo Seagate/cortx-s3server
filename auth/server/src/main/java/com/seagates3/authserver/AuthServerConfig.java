@@ -139,21 +139,21 @@ public class AuthServerConfig {
 
        String encryptedPasswd = authServerConfig.getProperty("ldapLoginPW");
        String ldap_const_key = authServerConfig.getProperty("ldap_const_key");
-       
-       // 1. Generate cipher key for openldap and aes util. 
+
+       // 1. Generate cipher key for openldap and aes util.
        try {
-    	   ldapCipherKey = KeyGenUtil.generateKeyByS3CipherUtil(ldap_const_key);
-    	   
-    	   String keyForAESUtil = KeyGenUtil.generateKeyByS3CipherUtil(
-    			   								authServerConfig.getProperty("aesConstKey"));
-    	   authServerConfig.put("aesKey", keyForAESUtil);
-       } catch (IOException e) {
-           logger.error(
-                   e.getMessage() +
-                   " Error occured in S3 cipher while generating key.");
-               System.exit(1);
+         ldapCipherKey = KeyGenUtil.generateKeyByS3CipherUtil(ldap_const_key);
+
+         String keyForAESUtil = KeyGenUtil.generateKeyByS3CipherUtil(
+             authServerConfig.getProperty("aesConstKey"));
+         authServerConfig.put("aesKey", keyForAESUtil);
        }
-       
+       catch (IOException e) {
+         logger.error(e.getMessage() +
+                      " Error occured in S3 cipher while generating key.");
+         System.exit(1);
+       }
+
        BufferedReader reader2 = null;
        // 2. Decrypt openldap password using cipher Key.
        try {
@@ -276,10 +276,9 @@ public class AuthServerConfig {
     public static int getLdapSSLPort() {
         return Integer.parseInt(authServerConfig.getProperty("ldapSSLPort"));
     }
-    
-    public static String getAESKey() {
-        return authServerConfig.getProperty("aesKey");
-    }
+
+   public
+    static String getAESKey() { return authServerConfig.getProperty("aesKey"); }
 
     public static Boolean isSSLToLdapEnabled() {
         return Boolean.valueOf(authServerConfig.getProperty("enableSSLToLdap"));

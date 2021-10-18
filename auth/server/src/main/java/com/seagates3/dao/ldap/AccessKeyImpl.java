@@ -208,7 +208,8 @@ public class AccessKeyImpl implements AccessKeyDAO {
      */
    private
     String getEncryptedSecretKey(String secretKey) {
-      return AESEncryptDecryptUtil.encrypt(secretKey, AuthServerConfig.getAESKey());
+      return AESEncryptDecryptUtil.encrypt(secretKey,
+                                           AuthServerConfig.getAESKey());
     }
 
     /**
