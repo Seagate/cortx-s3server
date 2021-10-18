@@ -279,24 +279,6 @@ class ConfigCmd(SetupCmd):
     self.logger.info('haproxy configuration started')
     try:
 
-      # create empty haproxy syconfi file (e.g. /etc/cortx/s3/sysconfig/haproxy)
-      sysconfig_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
-      self.logger.info(f"sysconfig_file: {sysconfig_file}")
-      os.makedirs(os.path.dirname(sysconfig_file), exist_ok=True)
-      with open(sysconfig_file, 'w') as fp_haproxy_sys_config:
-        pass
-      self.logger.info("haproxy sys config file created successfully")
-      # load with confstore with properties format
-      haproxy_sysconfigfile_confstore = S3CortxConfStore(f'properties://{sysconfig_file}',
-                                                          'update_haproxy_sysconfig_file_idx')
-      # set key LOG_FILE with value {haproxy_sysconfig_log_file}
-      haproxy_sysconfig_log_file = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
-      self.logger.info(f"haproxy_sysconfig_log_file : {haproxy_sysconfig_log_file}")
-      haproxy_sysconfigfile_confstore.set_config("LOG_FILE", haproxy_sysconfig_log_file, True)
-      self.logger.info("haproxy sys config file updated successfully")
-      # create haproxy log directory path
-      os.makedirs(os.path.dirname(haproxy_sysconfig_log_file), exist_ok=True)
-
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
       if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
