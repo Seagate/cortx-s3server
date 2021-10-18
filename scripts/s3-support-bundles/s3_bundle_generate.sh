@@ -84,6 +84,7 @@ haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
 haproxy_log="$base_log_file_path/haproxy.log"
 haproxy_status_log="$base_log_file_path/haproxy-status.log"
+haproxy_log_k8s=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_LOG_SYMLINK")
 
 s3server_config="$base_config_file_path/s3/conf/s3config.yaml"
 authserver_config="$base_config_file_path/auth/resources/authserver.properties"
@@ -437,15 +438,9 @@ then
 fi
 
 # Collect haproxy k8s log along with rotated logs if available
-if [ -f "$haproxy_sysconfig_log_file" ];
+if [ -f "$haproxy_log_k8s" ];
 then
-    args+=($haproxy_sysconfig_log_file*)
-fi
-
-# Collect haproxy status log
-if [ -f "$haproxy_status_log" ];
-then
-    args=$args" "$haproxy_status_log*
+    args+=($haproxy_log_k8s*)
 fi
 
 # Create temporary directory for creating other files as below
