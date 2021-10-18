@@ -128,8 +128,8 @@ public class AESEncryptDecryptUtil {
                        IllegalBlockSizeException | BadPaddingException e) {
                   LOGGER.error(
                       "Error occurred while decrypting the encrypted text. " +
-                      "Cause: " +
-                      e.getCause() + ". Message: " + e.getMessage());
+                      "Cause: " + e.getCause() + ". Message: " +
+                      e.getMessage());
                   LOGGER.debug("Stacktrace: " + e);
                 }
 

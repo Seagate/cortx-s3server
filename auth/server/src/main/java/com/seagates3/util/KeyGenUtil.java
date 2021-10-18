@@ -233,7 +233,8 @@ public class KeyGenUtil {
         String line = reader.readLine();
         if (line == null || line.isEmpty()) {
           throw new IOException(
-              "S3 cipher returned empty stream while fetching openldap cipher " +
+              "S3 cipher returned empty stream while fetching openldap "
+              "cipher " +
               "key.");
         }
         generatedKey = line;
@@ -246,7 +247,8 @@ public class KeyGenUtil {
         throw new IOException("S3 cipher util exited with error.");
       }
       finally {
-        if (reader != null) { try {
+        if (reader != null) {
+          try {
             reader.close();
           }
         catch (IOException e) {
@@ -254,7 +256,7 @@ public class KeyGenUtil {
                        ". Message: " + e.getMessage());
           LOGGER.debug("Stacktrace: " + e);
         }
-		}
+        }
       }
 
       return generatedKey;
