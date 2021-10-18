@@ -517,17 +517,74 @@ void S3MotrKVSWriter::put_keyval(
   writer_context->init_kvs_write_op_ctx(kv_list.size());
 
   // Ret code can be ignored as its already handled in async case.
-  put_keyval_impl(kv_list, true);
+  put_keyval_impl(kv_list, true, false, 0, 0);
+}
+
+void S3MotrKVSWriter::put_partial_keyval(
+    const struct s3_motr_idx_layout &idx_lo,
+    const std::map<std::string, std::string> &kv_list,
+    std::function<void(unsigned int)> on_success,
+    std::function<void(unsigned int)> on_failed, unsigned int offset,
+    unsigned int how_many) {
+  std::map<std::string, std::string>::const_iterator it;
+  unsigned int record_count = 0;
+  assert(how_many != 0);
+  assert(offset < kv_list.size());
+  assert(how_many <= kv_list.size());
+  how_many_being_processed = how_many;
+
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid = %" SCNx64 " : %" SCNx64
+         " and %zu key/value pairs\n",
+         __func__, idx_lo.oid.u_hi, idx_lo.oid.u_lo, kv_list.size());
+
+  it = kv_list.begin();
+  if (offset) {
+    std::advance(it, offset);
+  }
+  for (; it != kv_list.end(); ++it) {
+    s3_log(S3_LOG_DEBUG, request_id, "record%u:key = %s, value = %s\n",
+           ++record_count, it->first.c_str(), it->second.c_str());
+    assert(!(it->first.empty()));
+    // Add error when any key is empty
+    if (it->first.empty()) {
+      s3_log(S3_LOG_ERROR, request_id, "Empty key in PUT KV\n");
+    }
+    if (record_count == how_many) {
+      break;
+    }
+  }
+  idx_los.clear();
+  idx_los.push_back(idx_lo);
+
+  this->on_success_for_extends = std::move(on_success);
+  this->on_failure_for_extends = std::move(on_failed);
+
+  if (idx_ctx) {
+    // clean up any old allocations
+    clean_up_contexts();
+  }
+  idx_ctx = create_idx_context(1);
+  writer_context.reset(new S3AsyncMotrKVSWriterContext(
+      request, std::bind(&S3MotrKVSWriter::put_partial_keyval_successful, this),
+      std::bind(&S3MotrKVSWriter::put_partial_keyval_failed, this), 1,
+      s3_motr_api));
+
+  writer_context->init_kvs_write_op_ctx(how_many_being_processed);
+
+  // Ret code can be ignored as its already handled in async case.
+  put_keyval_impl(kv_list, true, true, offset, how_many);
 }
 
 int S3MotrKVSWriter::put_keyval_impl(
-    const std::map<std::string, std::string> &kv_list, bool is_async) {
+    const std::map<std::string, std::string> &kv_list, bool is_async,
+    bool put_keyval_partially, int offset, unsigned int how_many) {
 
   int rc = 0;
   struct s3_motr_idx_op_context *idx_op_ctx = NULL;
   struct s3_motr_kvs_op_context *kvs_ctx = NULL;
   struct s3_motr_context_obj *op_ctx = NULL;
-
+  std::map<std::string, std::string>::const_iterator it;
   if (is_async) {
 
     idx_op_ctx = writer_context->get_motr_idx_op_ctx();
@@ -557,9 +614,18 @@ int S3MotrKVSWriter::put_keyval_impl(
   }
 
   size_t i = 0;
-  for (const auto &kv : kv_list) {
-    set_up_key_value_store(kvs_ctx, kv.first, kv.second, i);
+  it = kv_list.begin();
+  if (put_keyval_partially && offset) {
+    std::advance(it, offset);
+  }
+  for (; it != kv_list.end(); ++it) {
+    set_up_key_value_store(kvs_ctx, it->first, it->second, i);
     ++i;
+    if (put_keyval_partially) {
+      if (i == how_many) {
+        break;
+      }
+    }
   }
   s3_motr_api->motr_idx_init(&(idx_ctx->idx[0]), &motr_container.co_realm,
                              &idx_los[0].oid);
@@ -741,6 +807,27 @@ void S3MotrKVSWriter::put_keyval_failed() {
     state = S3MotrKVSWriterOpState::failed;
   }
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3MotrKVSWriter::put_partial_keyval_successful() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_stats_inc("put_keyval_success_count");
+  // todo: Add check, verify if (kvs_ctx->rcs == 0)
+  // do this when cassandra + motr-kvs rcs implementation completed
+  // in motr
+  state = S3MotrKVSWriterOpState::created;
+  this->on_success_for_extends(how_many_being_processed);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3MotrKVSWriter::put_partial_keyval_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id, "Writing of key value failed\n");
+  if (state != S3MotrKVSWriterOpState::failed_to_launch) {
+    state = S3MotrKVSWriterOpState::failed;
+  }
+  this->on_failure_for_extends(how_many_being_processed);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
