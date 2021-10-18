@@ -99,6 +99,13 @@ void S3DeleteObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3DeleteObjectAction::fetch_ext_object_info_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  set_s3_error("InternalError");
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3DeleteObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_del_obj_action_state = S3DeleteObjectActionState::validationFailed;

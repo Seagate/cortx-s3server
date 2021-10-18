@@ -140,6 +140,7 @@ void S3ObjectAction::fetch_ext_object_info_failed() {
   // Add code in derived class to better handle
   // failure in loading extended entries.
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  next();
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit\n", __func__);
 }
 
