@@ -125,11 +125,17 @@ void S3BucketMetadata::set_tags(
   bucket_tags = tags_as_map;
 }
 
+void S3BucketMetadata::set_bucket_versioning(
+    const std::string& bucket_version_status) {
+  bucket_versioning_status = bucket_version_status;
+}
+
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
+  root["Versioning-Status"] = bucket_versioning_status;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -180,6 +186,7 @@ int S3BucketMetadata::from_json(std::string content) {
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
+  bucket_versioning_status = newroot["Versioning-Status"].asString();
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for (auto it : members) {

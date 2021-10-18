@@ -41,6 +41,7 @@
 #include "mock_s3_put_tag_body.h"
 #include "mock_s3_global_bucket_index_metadata.h"
 #include "s3_factory.h"
+#include "mock_s3_put_versioning_body.h"
 
 class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
  public:
@@ -273,6 +274,23 @@ class MockS3PutTagBodyFactory : public S3PutTagsBodyFactory {
 
   // Use this to setup your expectations.
   std::shared_ptr<MockS3PutTagBody> mock_put_bucket_tag_body;
+};
+
+class MockS3PutVersioningBodyFactory : public S3PutBucketVersioningBodyFactory {
+ public:
+  MockS3PutVersioningBodyFactory(std::string& xml, std::string& request_id)
+      : S3PutBucketVersioningBodyFactory() {
+    mock_put_bucket_versioning_body =
+        std::make_shared<MockS3PutVersioningBody>(xml, request_id);
+  }
+
+  std::shared_ptr<S3PutVersioningBody> create_put_resource_versioning_body(
+      std::string& xml, std::string& request_id) override {
+    return mock_put_bucket_versioning_body;
+  }
+
+  // Use this to setup your expectations.
+  std::shared_ptr<MockS3PutVersioningBody> mock_put_bucket_versioning_body;
 };
 
 class MockS3AuthClientFactory : public S3AuthClientFactory {
