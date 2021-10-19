@@ -22,7 +22,7 @@
 
 #ifndef __S3_SERVER_S3_BUCKET_METADATA_H__
 #define __S3_SERVER_S3_BUCKET_METADATA_H__
-
+#include <json/json.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -106,9 +106,11 @@ class S3BucketMetadata {
   virtual std::string get_acl_as_xml();
 
   virtual std::string get_replication_config_as_xml();
+  virtual std::string get_replication_config_as_json_string();
   virtual bool check_bucket_replication_exists() const;
   virtual std::string replication_config_from_json_to_xml(std::string content);
-
+  void get_replication_policy_tags_from_json_to_xml(
+      const Json::Value& rule_object, std::string& xml_str);
   void acl_from_json(std::string acl_json_str);
 
   virtual const struct s3_motr_idx_layout& get_object_list_index_layout() const;

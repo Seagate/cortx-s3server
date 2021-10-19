@@ -22,7 +22,7 @@
 
 #ifndef __S3_SERVER_S3_OBJECT_METADATA_H__
 #define __S3_SERVER_S3_OBJECT_METADATA_H__
-
+#include <json/json.h>
 #include <gtest/gtest_prod.h>
 #include <functional>
 #include <map>
@@ -93,6 +93,9 @@ class S3ObjectMetadataCopyable {
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
   std::map<std::string, std::string> object_tags;
+  std::string obj_replication_status;
+  std::string destination_bucket_name;
+  bool is_rep_policy_applicable{false};
 
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<MotrAPI> s3_motr_api;
@@ -359,6 +362,17 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual int from_json(std::string content);
   virtual void setacl(const std::string& input_acl);
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
+  virtual void set_replication_status_and_dest_bucket(
+      bool is_rep_applicable,
+      const std::map<std::string, std::string>& new_object_tags_map,
+      const std::string& rep_config_json);
+  std::string get_repliaction_status();
+  bool check_bucket_replication_policy(
+      const std::map<std::string, std::string>& new_object_tags_map,
+      const std::string& rep_config_json);
+  void get_tags_from_replication_policy(
+      std::map<std::string, std::string>& rep_config_object_tags_map,
+      Json::Value tag_array);
   virtual const std::map<std::string, std::string>& get_tags();
   virtual void delete_object_tags();
   virtual std::string get_tags_as_xml();
