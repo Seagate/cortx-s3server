@@ -127,7 +127,12 @@ void S3HeadObjectAction::send_response_to_s3_client() {
                                   object_metadata->get_content_length_str());
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
-
+    // If Object replication status is enabled on this object then only show
+    // following field
+    if (!object_metadata->get_repliaction_status().empty()) {
+      request->set_out_header_value("x-amz-replication-status",
+                                    object_metadata->get_repliaction_status());
+    }
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
     }

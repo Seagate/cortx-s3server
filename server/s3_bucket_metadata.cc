@@ -294,63 +294,59 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
     std::string key_str, val_str, pre_str;
     // we only support Filter/Prefix, not Prefix(outside of Filter) as it is
     // deprecated.
-    if (!rule_object["Filter"].isNull()) {
-      if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
-          rule_object["Filter"]["And"]["Prefix"].isNull()) {
-        // If tag,and nodes are present in filter and Prefix is not present.
+    if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
+        rule_object["Filter"]["And"]["Prefix"].isNull()) {
+      // If tag,and nodes are present in filter and Prefix is not present.
 
-        xml_str += "<Filter><And>";
-        Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
-        for (unsigned int index = 0; index < tag_array.size(); ++index) {
+      xml_str += "<Filter><And>";
+      get_replication_policy_tags_from_json_to_xml(rule_object, xml_str);
 
-          Json::Value tag_object = tag_array[index];
-          key_str = tag_object["Key"].asString();
-          val_str = tag_object["Value"].asString();
+    } else if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
+               !rule_object["Filter"]["And"]["Prefix"].isNull()) {
+      // If tag,and,Prefix nodes are present  in filter
 
-          xml_str += "<Tag><Key>" + key_str + "</Key><Value>" + val_str +
-                     "</Value></Tag>";
-        }
-        xml_str += "</And></Filter>";
-      } else if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
-                 !rule_object["Filter"]["And"]["Prefix"].isNull()) {
-        // If tag,and,Prefix nodes are present  in filter
+      xml_str += "<Filter><And><Prefix>";
+      pre_str = rule_object["Filter"]["And"]["Prefix"].asString();
 
-        xml_str += "<Filter><And><Prefix>";
-        pre_str = rule_object["Filter"]["And"]["Prefix"].asString();
+      xml_str += pre_str + "</Prefix>";
+      get_replication_policy_tags_from_json_to_xml(rule_object, xml_str);
 
-        xml_str += pre_str + "</Prefix>";
-        Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
-        for (unsigned int index = 0; index < tag_array.size(); ++index) {
-          Json::Value tag_object = tag_array[index];
-          key_str = tag_object["Key"].asString();
-          val_str = tag_object["Value"].asString();
+    } else if (!rule_object["Filter"]["Tag"].isNull()) {
+      // If only tag node is present in filter
 
-          xml_str += "<Tag><Key>" + key_str + "</Key><Value>" + val_str +
-                     "</Value></Tag>";
-        }
-        xml_str += "</And></Filter>";
-      } else if (!rule_object["Filter"]["Tag"].isNull()) {
-        // If only tag node is present in filter
+      key_str = rule_object["Filter"]["Tag"]["Key"].asString();
+      val_str = rule_object["Filter"]["Tag"]["Value"].asString();
+      xml_str += "<Filter><Tag><Key>" + key_str + "</Key><Value>" + val_str +
+                 "</Value></Tag></Filter>";
+    } else if (!rule_object["Filter"]["Prefix"].isNull()) {
+      // If only Prefix node is present in filter
 
-        key_str = rule_object["Filter"]["Tag"]["Key"].asString();
-        val_str = rule_object["Filter"]["Tag"]["Value"].asString();
-        xml_str += "<Filter><Tag><Key>" + key_str + "</Key><Value>" + val_str +
-                   "</Value></Tag></Filter>";
-      } else if (!rule_object["Filter"]["Prefix"].isNull()) {
-        // If only Prefix node is present in filter
-
-        pre_str = rule_object["Filter"]["Prefix"].asString();
-        xml_str += "<Filter><Prefix>" + pre_str + "</Prefix></Filter>";
-      } else {
-
-        xml_str += "<Filter></Filter>";
-      }
+      pre_str = rule_object["Filter"]["Prefix"].asString();
+      xml_str += "<Filter><Prefix>" + pre_str + "</Prefix></Filter>";
+    } else {
+     
+      xml_str += "<Filter></Filter>";
     }
     xml_str += "</Rule>";
   }
   return xml_str;
 }
 
+void S3BucketMetadata::get_replication_policy_tags_from_json_to_xml(
+    const Json::Value& rule_object, std::string& xml_str) {
+  std::string key_str, val_str;
+  Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
+  for (unsigned int index = 0; index < tag_array.size(); ++index) {
+
+    Json::Value tag_object = tag_array[index];
+    key_str = tag_object["Key"].asString();
+    val_str = tag_object["Value"].asString();
+
+    xml_str +=
+        "<Tag><Key>" + key_str + "</Key><Value>" + val_str + "</Value></Tag>";
+  }
+  xml_str += "</And></Filter>";
+}
 void S3BucketMetadata::acl_from_json(std::string acl_json_str) {
   s3_log(S3_LOG_DEBUG, "", "Called\n");
   encoded_acl = std::move(acl_json_str);
@@ -417,7 +413,10 @@ std::string S3BucketMetadata::get_tags_as_xml() {
   return tags_as_xml_str;
 }
 
-// Get replication configuration as XML
+std::string S3BucketMetadata::get_replication_config_as_json_string() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  return bucket_replication_configuration;
+}
 std::string S3BucketMetadata::get_replication_config_as_xml() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 

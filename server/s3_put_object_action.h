@@ -99,6 +99,9 @@ class S3PutObjectAction : public S3ObjectAction {
   void create_object();
   void create_object_successful();
   void create_object_failed();
+  void get_tags_from_replication_policy(
+      std::map<std::string, std::string>& rep_config_object_tags_map,
+      Json::Value tag_array);
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
