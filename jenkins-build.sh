@@ -677,7 +677,7 @@ tail -50 /var/log/cortx/s3/s3server.ERROR || echo "No Errors"
 # jenkins pipeline to give this argument.
 if [ ! -z "$generate_support_bundle" ]
 then
-  /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh "$gid-$job_id" "$generate_support_bundle"
+  /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh -b "$gid-$job_id" -t "$generate_support_bundle" -c "/opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node" -s service
 fi
 
 cd $MOTR_SRC
