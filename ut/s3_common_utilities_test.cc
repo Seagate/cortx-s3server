@@ -291,6 +291,10 @@ TEST_F(S3CommonUtilitiesTest, SizeBucketingOfObjects) {
 
   std::string original_string = "XYZ";
   S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
+  EXPECT_EQ("JXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 10);
   EXPECT_EQ("IXYZ", original_string);
 
   original_string = "XYZ";

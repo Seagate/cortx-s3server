@@ -54,6 +54,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   int layout_id;
+  int number_of_parts;
   unsigned motr_write_payload_size;
   struct m0_uint128 old_object_oid;
   int old_layout_id;
@@ -77,10 +78,15 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
 
   // Probable delete record for old object OID in case of overwrite
   std::string old_oid_str;  // Key for old probable delete rec
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
+      old_probable_del_rec_list;
   std::unique_ptr<S3ProbableDeleteRecord> old_probable_del_rec;
   // Probable delete record for new object OID in case of current req failure
   std::string new_oid_str;  // Key for new probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+  std::vector<struct m0_uint128> old_obj_oids;
+  std::vector<struct m0_fid> old_obj_pvids;
+  std::vector<int> old_obj_layout_ids;
 
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
@@ -120,6 +126,9 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void create_object();
   void create_object_failed();
   void create_object_successful();
+  void fetch_ext_object_info_failed();
+  void fetch_ext_object_info_success();
+
   void parse_x_amz_tagging_header(std::string content);
 
   void initiate_data_streaming();
@@ -137,6 +146,9 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
+  void add_part_object_to_probable_dead_oid_list(
+      const std::shared_ptr<S3ObjectMetadata> &,
+      std::vector<std::unique_ptr<S3ProbableDeleteRecord>> &);
 
   // Rollback tasks
   void startcleanup() override;
@@ -145,6 +157,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void remove_old_oid_probable_record();
   void remove_new_oid_probable_record();
   void delete_old_object();
+  void delete_old_object_success();
   void remove_old_object_version_metadata();
   void delete_new_object();
 
