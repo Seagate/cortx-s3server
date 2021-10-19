@@ -293,15 +293,17 @@ void S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list() {
     s3_log(S3_LOG_DEBUG, request_id,
            "Adding part probable del rec with key [%s]\n",
            part_oid_str.c_str());
+    unsigned int part_no = stoi(part_metadata->get_part_number());
     // TODO -- Verify whether background delete process it appropriately
     probable_del_rec.reset(new S3ProbableDeleteRecord(
         part_oid_str, {0ULL, 0ULL}, part_metadata->get_part_number(),
         part_metadata->get_oid(), part_metadata->get_layout_id(),
         part_metadata->get_pvid_str(),
-        part_metadata->get_part_index_layout().oid,
-        bucket_metadata->get_objects_version_list_index_layout().oid, "",
+        part_metadata->get_part_index_layout().oid, {0ULL, 0ULL}, "",
         false /* force_delete */, true,
-        part_metadata->get_part_index_layout().oid));
+        part_metadata->get_part_index_layout().oid, 1, part_no, {0ULL, 0ULL},
+        "",
+        object_multipart_metadata->get_oid() /* parent oid of multipart */));
     probable_oid_list[probable_del_rec->get_key()] =
         probable_del_rec->to_json();
     probable_del_rec_list.push_back(std::move(probable_del_rec));

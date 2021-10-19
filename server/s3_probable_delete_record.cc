@@ -36,7 +36,7 @@ S3ProbableDeleteRecord::S3ProbableDeleteRecord(
     struct m0_uint128 objs_version_list_idx_oid, std::string ver_key_in_index,
     bool force_del, bool is_multipart, struct m0_uint128 part_list_oid,
     unsigned int frg, unsigned int prt, struct m0_uint128 extended_idx,
-    std::string ext_version_id)
+    std::string ext_version_id, struct m0_uint128 parent_oid)
     : record_key(rec_key),
       old_object_oid(old_oid),
       object_key_in_index(obj_key_in_index),
@@ -52,7 +52,8 @@ S3ProbableDeleteRecord::S3ProbableDeleteRecord(
       fragment(frg),
       part(prt),
       extended_md_idx_oid(extended_idx),
-      ext_version_id(ext_version_id) {
+      ext_version_id(ext_version_id),
+      mp_parent_oid(parent_oid) {
   // Assertions
   s3_log(S3_LOG_DEBUG, "", "object_key_in_index = %s\n",
          object_key_in_index.c_str());
@@ -103,7 +104,6 @@ std::string S3ProbableDeleteRecord::to_json() {
     root["is_multipart"] = "true";
     root["part_list_idx_oid"] = S3M0Uint128Helper::to_string(part_list_idx_oid);
     root["version_key_in_index"] = version_key_in_index;
-    root["ext_version_id"] = ext_version_id;
   } else {
     root["is_multipart"] = "false";
     root["version_key_in_index"] = version_key_in_index;
@@ -117,7 +117,9 @@ std::string S3ProbableDeleteRecord::to_json() {
     root["part"] = part;
   }
   if (fragment || part) {
-    // Add extended metadata(a.k.a fragment) index index oid
+    root["ext_version_id"] = ext_version_id;
+    root["parent_oid"] = S3M0Uint128Helper::to_string(mp_parent_oid);
+    // Add extended metadata(a.k.a fragment) index oid
     root["extended_md_idx_oid"] =
         S3M0Uint128Helper::to_string(extended_md_idx_oid);
   }

@@ -72,7 +72,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   }
   // Note valid value is set during create object
   layout_id = -1;
-
+  number_of_parts = 0;
   s3_put_chunk_action_state = S3PutChunkUploadObjectActionState::empty;
 
   old_object_oid = {0ULL, 0ULL};
@@ -290,6 +290,7 @@ void S3PutChunkUploadObjectAction::fetch_object_info_success() {
     old_object_oid = object_metadata->get_oid();
     old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
     old_layout_id = object_metadata->get_layout_id();
+    number_of_parts = object_metadata->get_number_of_parts();
     create_new_oid(old_object_oid);
     next();
   } else {
@@ -366,7 +367,24 @@ void S3PutChunkUploadObjectAction::create_object_successful() {
   new_object_metadata->set_layout_id(layout_id);
   new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
-  add_object_oid_to_probable_dead_oid_list();
+  if (object_metadata->is_object_extended()) {
+    // Read the extended parts of the object from extended index table
+    std::shared_ptr<S3ObjectExtendedMetadata> extended_obj_metadata =
+        object_metadata_factory->create_object_ext_metadata_obj(
+            request, request->get_bucket_name(), request->get_object_name(),
+            object_metadata->get_obj_version_key(),
+            object_metadata->get_number_of_parts(),
+            object_metadata->get_number_of_fragments(),
+            bucket_metadata->get_extended_metadata_index_layout());
+    extended_obj_metadata->load(
+        std::bind(&S3PutChunkUploadObjectAction::fetch_ext_object_info_success,
+                  this),
+        std::bind(&S3PutChunkUploadObjectAction::fetch_ext_object_info_failed,
+                  this));
+    object_metadata->set_extended_object_metadata(extended_obj_metadata);
+  } else {
+    add_object_oid_to_probable_dead_oid_list();
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -712,27 +730,40 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
   // store old object oid
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     assert(!old_oid_str.empty());
+    if (number_of_parts != 0) {
+      // This object was uploaded previously in multipart fashion
+      add_part_object_to_probable_dead_oid_list(object_metadata,
+                                                old_probable_del_rec_list);
+      for (auto& probable_rec : old_probable_del_rec_list) {
+        probable_oid_list[probable_rec->get_key()] = probable_rec->to_json();
+      }
+    } else {
+      // Simple object
+      // prepending a char depending on the size of the object (size based
+      // bucketing of object)
+      S3CommonUtilities::size_based_bucketing_of_objects(
+          old_oid_str, object_metadata->get_content_length());
 
-    // prepending a char depending on the size of the object (size based
-    // bucketing of object)
-    S3CommonUtilities::size_based_bucketing_of_objects(
-        old_oid_str, object_metadata->get_content_length());
+      // key = oldoid + "-" + newoid
+      std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Adding old_probable_del_rec with key [%s]\n",
+             old_oid_rec_key.c_str());
+      old_probable_del_rec.reset(new S3ProbableDeleteRecord(
+          old_oid_rec_key, {0ULL, 0ULL}, object_metadata->get_object_name(),
+          old_object_oid, old_layout_id, object_metadata->get_pvid_str(),
+          bucket_metadata->get_object_list_index_layout().oid,
+          bucket_metadata->get_objects_version_list_index_layout().oid,
+          object_metadata->get_version_key_in_index(),
+          false /* force_delete */));
 
-    // key = oldoid + "-" + newoid
-    std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Adding old_probable_del_rec with key [%s]\n",
-           old_oid_rec_key.c_str());
-    old_probable_del_rec.reset(new S3ProbableDeleteRecord(
-        old_oid_rec_key, {0ULL, 0ULL}, object_metadata->get_object_name(),
-        old_object_oid, old_layout_id, object_metadata->get_pvid_str(),
-        bucket_metadata->get_object_list_index_layout().oid,
-        bucket_metadata->get_objects_version_list_index_layout().oid,
-        object_metadata->get_version_key_in_index(), false /* force_delete */));
-
-    probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
+      probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
+      old_probable_del_rec_list.push_back(std::move(old_probable_del_rec));
+      old_obj_oids.push_back(old_object_oid);
+      old_obj_pvids.push_back(object_metadata->get_pvid());
+      old_obj_layout_ids.push_back(old_layout_id);
+    }
   }
-
   // prepending a char depending on the size of the object (size based
   // bucketing of object)
   S3CommonUtilities::size_based_bucketing_of_objects(
@@ -777,6 +808,107 @@ void S3PutChunkUploadObjectAction::
   // Clean up will be done after response.
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutChunkUploadObjectAction::fetch_ext_object_info_success() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  add_object_oid_to_probable_dead_oid_list();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit\n", __func__);
+}
+
+void S3PutChunkUploadObjectAction::fetch_ext_object_info_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id, "%s Failed Reading Ext md info.\n",
+         __func__);
+
+  s3_put_chunk_action_state = S3PutChunkUploadObjectActionState::writeFailed;
+  set_s3_error("InternalError");
+
+  // Clean up will be done after response.
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit\n", __func__);
+}
+
+// Add object parts of specified object to
+// the specified probable dead oid list
+void S3PutChunkUploadObjectAction::add_part_object_to_probable_dead_oid_list(
+    const std::shared_ptr<S3ObjectMetadata>& object_metadata,
+    std::vector<std::unique_ptr<S3ProbableDeleteRecord>>&
+        parts_probable_del_rec_list) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  const std::shared_ptr<S3ObjectExtendedMetadata>& object_ext_metadata =
+      object_metadata->get_extended_object_metadata();
+  unsigned int total_parts =
+      object_ext_metadata ? object_ext_metadata->get_part_count() : 0;
+  if (total_parts) {
+    s3_log(S3_LOG_DEBUG, request_id, "Total parts available [%u]\n",
+           total_parts);
+    // object has some parts
+    const std::map<int, std::vector<struct s3_part_frag_context>>&
+        ext_entries_mp = object_ext_metadata->get_raw_extended_entries();
+
+    std::map<int, std::vector<struct s3_part_frag_context>>::const_iterator it =
+        ext_entries_mp.begin();
+
+    while (it != ext_entries_mp.end()) {
+      const std::vector<struct s3_part_frag_context>& part_entry = it->second;
+      // Assuming part is not fragmented, the only part is at part_entry[0]
+      if (part_entry.size() != 0 &&
+          (part_entry[0].motr_OID.u_hi || part_entry[0].motr_OID.u_lo)) {
+        std::string ext_oid_str =
+            S3M0Uint128Helper::to_string(part_entry[0].motr_OID);
+        // prepending a char depending on the size of the object (size based
+        // bucketing of object)
+        S3CommonUtilities::size_based_bucketing_of_objects(
+            ext_oid_str, part_entry[0].item_size);
+
+        old_obj_oids.push_back(part_entry[0].motr_OID);
+        old_obj_pvids.push_back(part_entry[0].PVID);
+        old_obj_layout_ids.push_back(part_entry[0].layout_id);
+
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Adding part object, with oid [%" SCNx64 " : %" SCNx64
+               "]"
+               ", key [%s] to probable delete record\n",
+               part_entry[0].motr_OID.u_hi, part_entry[0].motr_OID.u_lo,
+               ext_oid_str.c_str());
+        std::string pvid_str;
+        S3M0Uint128Helper::to_string(part_entry[0].PVID, pvid_str);
+        std::unique_ptr<S3ProbableDeleteRecord> ext_del_rec;
+        ext_del_rec.reset(new S3ProbableDeleteRecord(
+            ext_oid_str, {0ULL, 0ULL}, object_metadata->get_object_name(),
+            part_entry[0].motr_OID, part_entry[0].layout_id, pvid_str,
+            bucket_metadata->get_object_list_index_layout().oid,
+            bucket_metadata->get_objects_version_list_index_layout().oid,
+            object_metadata->get_version_key_in_index(),
+            false /* force_delete */, false, {0ULL, 0ULL}, 1, it->first,
+            bucket_metadata->get_extended_metadata_index_layout().oid,
+            part_entry[0].versionID, object_metadata->get_oid()));
+        parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
+        ++it;
+      }
+    }  // End of For
+    // Add one more entry for parent multipart object so that S3 BD can erase
+    // it from the version index, once it is marked for deletion
+    std::string oid_str =
+        S3M0Uint128Helper::to_string(object_metadata->get_oid());
+    // For multiart parent object, size is 0 (as it is dummy object)
+    S3CommonUtilities::size_based_bucketing_of_objects(oid_str, 0);
+    std::unique_ptr<S3ProbableDeleteRecord> probable_del_rec;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Adding multipart parent probable del rec with key [%s]\n",
+           oid_str.c_str());
+    probable_del_rec.reset(new S3ProbableDeleteRecord(
+        oid_str, {0ULL, 0ULL}, object_metadata->get_object_name(),
+        object_metadata->get_oid(), 0, "",
+        bucket_metadata->get_object_list_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid,
+        object_metadata->get_version_key_in_index(), false /* force_delete */,
+        false, {0ULL, 0ULL}, 1, total_parts /* Total parts in parent object */,
+        bucket_metadata->get_extended_metadata_index_layout().oid,
+        object_metadata->get_obj_version_key(), {0ULL, 0ULL}));
+    parts_probable_del_rec_list.push_back(std::move(probable_del_rec));
+  }
 }
 
 void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
@@ -933,21 +1065,24 @@ void S3PutChunkUploadObjectAction::mark_old_oid_for_deletion() {
   assert(!old_oid_str.empty());
   assert(!new_oid_str.empty());
 
-  std::string prepended_new_oid_str = new_oid_str;
-  // key = oldoid + "-" + newoid
-  std::string old_oid_rec_key =
-      old_oid_str + '-' + prepended_new_oid_str.erase(0, 1);
+  if (old_probable_del_rec_list.size() == 0) {
+    next();
+    return;
+  }
 
-  // update old oid, force_del = true
-  old_probable_del_rec->set_force_delete(true);
-
+  std::map<std::string, std::string> oid_key_val_mp;
+  for (auto& delete_rec : old_probable_del_rec_list) {
+    // force_del = true
+    delete_rec->set_force_delete(true);
+    std::string old_oid_rec_key = delete_rec->get_key();
+    oid_key_val_mp[old_oid_rec_key] = delete_rec->to_json();
+  }
   if (!motr_kv_writer) {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_layout, old_oid_rec_key,
-      old_probable_del_rec->to_json(),
+      global_probable_dead_object_list_index_layout, oid_key_val_mp,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -958,15 +1093,22 @@ void S3PutChunkUploadObjectAction::remove_old_oid_probable_record() {
   assert(!old_oid_str.empty());
   assert(!new_oid_str.empty());
 
-  // key = oldoid + "-" + newoid
-  std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+  if (old_probable_del_rec_list.size() == 0) {
+    next();
+    return;
+  }
+  std::vector<std::string> keys_to_delete;
+  for (auto& probable_rec : old_probable_del_rec_list) {
+    std::string old_oid_rec_key = probable_rec->get_key();
+    keys_to_delete.push_back(old_oid_rec_key);
+  }
 
   if (!motr_kv_writer) {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->delete_keyval(
-      global_probable_dead_object_list_index_layout, old_oid_rec_key,
+      global_probable_dead_object_list_index_layout, keys_to_delete,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -1000,13 +1142,48 @@ void S3PutChunkUploadObjectAction::delete_old_object() {
            "BD.\n");
     // Call next task in the pipeline
     next();
-  } else {
+    return;
+  }
+  size_t object_count = old_obj_oids.size();
+  if (object_count > 0) {
+    assert(old_obj_oids.size() == old_obj_layout_ids.size());
+    assert(old_obj_oids.size() == old_obj_pvids.size());
+    struct m0_uint128 old_oid = old_obj_oids.back();
+    struct m0_fid pvid = old_obj_pvids.back();
+    int layout_id = old_obj_layout_ids.back();
+    motr_writer->set_oid(old_oid);
     motr_writer->delete_object(
-        std::bind(
-            &S3PutChunkUploadObjectAction::remove_old_object_version_metadata,
-            this),
-        std::bind(&S3PutChunkUploadObjectAction::next, this), old_object_oid,
-        old_layout_id, object_metadata->get_pvid());
+        std::bind(&S3PutChunkUploadObjectAction::delete_old_object_success,
+                  this),
+        std::bind(&S3PutChunkUploadObjectAction::next, this), old_oid,
+        layout_id, pvid);
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutChunkUploadObjectAction::delete_old_object_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  size_t object_count = old_obj_oids.size();
+  if (object_count == 0) {
+    // There is no OID within the list
+    next();
+    return;
+  }
+  s3_log(S3_LOG_INFO, request_id,
+         "Deleted old part object oid "
+         "[%" SCNx64 " : %" SCNx64 "]",
+         (old_obj_oids.back()).u_hi, (old_obj_oids.back()).u_lo);
+  old_obj_oids.pop_back();
+  old_obj_pvids.pop_back();
+  old_obj_layout_ids.pop_back();
+
+  if (old_obj_oids.size() > 0) {
+    delete_old_object();
+  } else {
+    // Finally remove version metadata
+    remove_old_object_version_metadata();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

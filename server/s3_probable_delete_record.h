@@ -55,6 +55,10 @@ class S3ProbableDeleteRecord {
   struct m0_uint128 extended_md_idx_oid;
 
   std::string ext_version_id;
+  // Parent dummy oid of multipart object
+  // This is provided for every part entry into probable delete list index
+  // to help S3 BD in leak determination when force_delete is false.
+  struct m0_uint128 mp_parent_oid;
 
  public:
   S3ProbableDeleteRecord(
@@ -65,7 +69,8 @@ class S3ProbableDeleteRecord {
       bool force_del = false, bool is_multipart = false,
       struct m0_uint128 part_list_oid = {0ULL, 0ULL}, unsigned int frg = 0,
       unsigned int prt = 0, struct m0_uint128 extended_idx = {0ULL, 0ULL},
-      std::string ext_version_id = {});
+      std::string ext_version_id = {},
+      struct m0_uint128 parent_oid = {0ULL, 0ULL});
   virtual ~S3ProbableDeleteRecord() {}
 
   virtual const std::string& get_key() const { return record_key; }
