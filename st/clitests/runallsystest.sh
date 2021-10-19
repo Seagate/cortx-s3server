@@ -81,8 +81,8 @@ sed -i "s/password :.*/password : $ldap_root_pwd/g" test_data/ldap_config.yaml
 #Using Python 3.6 version for Running System Tests
 PythonV="python3.6"
 
-#echo "`date -u`: Running backgrounddelete_spec.py"
-#$PythonV backgrounddelete_spec.py
+echo "`date -u`: Running backgrounddelete_spec.py"
+$PythonV backgrounddelete_spec.py
 
 echo "`date -u`: Running auth_spec.py..."
 $PythonV auth_spec.py
