@@ -683,6 +683,19 @@ void S3PutChunkUploadObjectAction::save_metadata() {
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
 
+  // If replication is enable on bucket then enable replication state in Object
+  // metadata
+  if ((bucket_metadata->check_bucket_replication_exists())) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Replication policy exists for bucket :: %s.\n",
+           request->get_bucket_name().c_str());
+    std::string rep_config_json =
+        bucket_metadata->get_replication_config_as_json();
+
+    new_object_metadata->set_replication_status_and_dest_bucket(
+        true, new_object_tags_map, rep_config_json);
+  }
+
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
       s3_log(S3_LOG_DEBUG, request_id,
