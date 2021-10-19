@@ -150,6 +150,7 @@ class S3Option {
   unsigned int motr_first_obj_read_size;
   unsigned int motr_reconnect_retry_count;
   unsigned int motr_reconnect_sleep_time;
+  unsigned int motr_init_max_timeout;
 
   unsigned bucket_metadata_cache_max_size;
   unsigned bucket_metadata_cache_expire_sec;
@@ -456,6 +457,7 @@ class S3Option {
   unsigned int get_motr_first_read_size();
   unsigned int get_motr_reconnect_sleep_time();
   unsigned int get_motr_reconnect_retry_count();
+  unsigned int get_motr_init_max_timeout();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
