@@ -284,25 +284,21 @@ std::string S3BucketMetadata::get_bucket_versioning_status_as_xml() {
   std::string versioning_status;
   std::string versioning_status_as_xml_str;
 
-  if (bucket_versioning_status.empty()) {
-    return versioning_status_as_xml_str;
-  } else {
-    if (bucket_versioning_status.compare("Unversioned") != 0) {
-      versioning_status +=
-          "<VersioningConfiguration "
-          "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
-          S3CommonUtilities::format_xml_string(
-              "Status", bucket_versioning_status.c_str()) +
-          "</VersioningConfiguration>";
+  if (bucket_versioning_status != "Unversioned") {
+    versioning_status +=
+        "<VersioningConfiguration "
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
+        S3CommonUtilities::format_xml_string("Status",
+                                             bucket_versioning_status.c_str()) +
+        "</VersioningConfiguration>";
 
-    } else {
-      versioning_status +=
-          "<VersioningConfiguration "
-          "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"/>";
-    }
-    versioning_status_as_xml_str =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + versioning_status;
+  } else {
+    versioning_status +=
+        "<VersioningConfiguration "
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"/>";
   }
+  versioning_status_as_xml_str =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + versioning_status;
   s3_log(S3_LOG_DEBUG, request_id, "Version xml: %s\n",
          versioning_status_as_xml_str.c_str());
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit", __func__);

@@ -39,7 +39,6 @@ void S3GetBucketVersioningAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   ACTION_TASK_ADD(S3GetBucketVersioningAction::send_response_to_s3_client,
                   this);
-  // ...
 }
 
 void S3GetBucketVersioningAction::fetch_bucket_info_failed() {
