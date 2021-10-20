@@ -136,10 +136,10 @@ else
 fi
 
 if rpm -qa | grep libfabric 2>&1 > /dev/null ; then
-  rpm -e libfabric libfabric-devel
+  rpm -e libfabric libfabric-devel --nodeps
 fi
-yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-7.9.2009/s3server_uploads/libfabric-1.11.2-1.el7.x86_64.rpm 2>&1 > /dev/null
-yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-7.9.2009/s3server_uploads/libfabric-devel-1.11.2-1.el7.x86_64.rpm 2>&1 > /dev/null
+yum install -y libfabric
+yum install -y libfabric-devel
 
 # validate and configure lnet
 sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
