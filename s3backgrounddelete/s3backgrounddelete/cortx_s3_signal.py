@@ -47,3 +47,16 @@ class DynamicConfigHandler(object):
         sighupArg.logger.setLevel(sighupArg.config.get_file_log_level())
 
         sighupArg.logger.info("Logging level has been changed")
+
+class SigTermHandler(object):
+    """SigTerm Signal handler class for exiting gracefully"""
+
+    shutdown_signal = False
+
+    def __init__(self):
+        """Init the signal handler"""
+        signal.signal(signal.SIGTERM,partial(self.sigterm_handler_callback))
+
+    def sigterm_handler_callback(self, *args):
+        """Set shutdown"""
+        self.shutdown_signal = True

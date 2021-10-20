@@ -41,6 +41,7 @@ from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
+from s3backgrounddelete.cortx_s3_signal import SigTermHandler
 #from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
@@ -56,6 +57,7 @@ class ObjectRecoveryScheduler(object):
         self.logger.info("Initialising the Object Recovery Scheduler")
         self.producer = None
         self.producer_name = producer_name
+        self.term_signal = SigTermHandler()
 
     @staticmethod
     def isObjectLeakEntryOlderThan(leakRecord, OlderInMins = 15):
@@ -78,6 +80,8 @@ class ObjectRecoveryScheduler(object):
                     self.logger)
             threshold = self.config.get_threshold()
             self.logger.debug("Threshold is : " + str(threshold))
+            if self.term_signal.shutdown_signal == True:
+                sys.exit(0)
             count = self.producer.get_count()
             self.logger.debug("Count of unread msgs is : " + str(count))
 
@@ -89,17 +93,19 @@ class ObjectRecoveryScheduler(object):
                 return
             # Cleanup all entries and enqueue only 1000 entries
             #PurgeAPI Here
+            if self.term_signal.shutdown_signal == True:
+                sys.exit(0)
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
                 self.config, connectionType=CONNECTION_TYPE_PRODUCER, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
-            if result:
+            if result and not self.term_signal.shutdown_signal:
                 self.logger.info("Index listing result :" +
                                  str(index_response.get_index_content()))
                 probable_delete_json = index_response.get_index_content()
                 probable_delete_oid_list = probable_delete_json["Keys"]
                 is_truncated = probable_delete_json["IsTruncated"]
-                if (probable_delete_oid_list is not None):
+                if (probable_delete_oid_list is not None and not self.term_signal.shutdown_signal):
                     for record in probable_delete_oid_list:
                         # Check if record is older than the pre-configured 'time to process' delay
                         leak_processing_delay = self.config.get_leak_processing_delay_in_mins()
@@ -151,7 +157,7 @@ class ObjectRecoveryScheduler(object):
         self.logger.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
 
-        def periodic_run(scheduler):
+        def one_periodic_run(scheduler):
             """Add key value to queue using scheduler."""
             if self.config.get_messaging_platform() == MESSAGE_BUS:
                 self.add_kv_to_msgbus()
@@ -161,11 +167,13 @@ class ObjectRecoveryScheduler(object):
                 return
 
             scheduled_run.enter(
-                self.config.get_schedule_interval(), 1, periodic_run, (scheduler,))
-
-        scheduled_run.enter(self.config.get_schedule_interval(),
-                            1, periodic_run, (scheduled_run,))
-        scheduled_run.run()
+                1, 1, one_periodic_run, (scheduler,))
+        while(int(self.config.get_schedule_interval()) - 1):
+            if self.term_signal.shutdown_signal == True:
+                break
+            scheduled_run.enter(1,
+                               1, one_periodic_run, (scheduled_run,))
+            scheduled_run.run()
 
     def create_logger(self):
         """Create logger, file handler, console handler and formatter."""
