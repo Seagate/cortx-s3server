@@ -784,6 +784,8 @@ TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
   action_under_test_ptr->new_object_oid = oid;
   action_under_test_ptr->layout_id = layout_id;
   action_under_test_ptr->new_obj_oids.push_back(oid);
+  action_under_test_ptr->new_obj_pvids.push_back(pv_id);
+  action_under_test_ptr->new_obj_layout_ids.push_back(layout_id);
   action_under_test_ptr->set_abort_multipart(true);
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
@@ -806,6 +808,8 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
   action_under_test_ptr->old_object_oid = old_object_oid;
   action_under_test_ptr->old_layout_id = old_layout_id;
   action_under_test_ptr->old_obj_oids.push_back(old_object_oid);
+  action_under_test_ptr->old_obj_pvids.push_back(pv_id);
+  action_under_test_ptr->old_obj_layout_ids.push_back(old_layout_id);
   action_under_test_ptr->set_abort_multipart(true);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_pvid())
       .WillRepeatedly(Return(pv_id));
@@ -917,6 +921,8 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
       S3PostCompleteActionState::abortedSinceValidationFailed;
   action_under_test_ptr->new_obj_oids.push_back(
       action_under_test_ptr->new_object_oid);
+  action_under_test_ptr->new_obj_pvids.push_back(pv_id);
+  action_under_test_ptr->new_obj_layout_ids.push_back(layout_id);
   action_under_test_ptr->new_parts_probable_del_rec_list.push_back(std::move(
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
           oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",

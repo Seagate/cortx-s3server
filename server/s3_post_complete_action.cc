@@ -460,8 +460,8 @@ void S3PostCompleteAction::set_abort_multipart(bool abortit) {
 }
 
 bool S3PostCompleteAction::is_abort_multipart() {
-  // If this returns true it means that request is bad (say parts (apart from
-  // last part) are not of same size) so we continue further in cleanup mode.
+  // If this returns true it means that request is bad
+  // so we continue further in cleanup mode.
   // We dont save metadata and delete object/indexes.
   // Its set to true by set_abort_multipart()
   return delete_multipart_object;
@@ -672,6 +672,15 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
             part_entry[0].versionID,
             object_metadata->get_oid() /* parent oid of multipart */));
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
+        if (is_old_object) {
+          old_obj_oids.push_back(part_entry[0].motr_OID);
+          old_obj_pvids.push_back(part_entry[0].PVID);
+          old_obj_layout_ids.push_back(part_entry[0].layout_id);
+        } else {
+          new_obj_oids.push_back(part_entry[0].motr_OID);
+          new_obj_pvids.push_back(part_entry[0].PVID);
+          new_obj_layout_ids.push_back(part_entry[0].layout_id);
+        }
       }
     }  // End of For
     // Add one more entry for parent multipart object to erase it
@@ -744,7 +753,6 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
     std::map<std::string, std::string> kv_list;
     for (auto& probable_rec : new_parts_probable_del_rec_list) {
       kv_list[probable_rec->get_key()] = probable_rec->to_json();
-      new_obj_oids.push_back(probable_rec->get_current_object_oid());
     }
     if (!kv_list.empty()) {
       // S3 Background delete will delete new object parts, when multipart
@@ -772,7 +780,6 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
       std::map<std::string, std::string> kv_list;
       for (auto& probable_rec : old_parts_probable_del_rec_list) {
         kv_list[probable_rec->get_key()] = probable_rec->to_json();
-        old_obj_oids.push_back(probable_rec->get_current_object_oid());
       }
       if (!kv_list.empty()) {
         // S3 Background delete will delete old object parts, when current
@@ -1132,14 +1139,15 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
 }
 
 void S3PostCompleteAction::delete_old_object() {
-
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  assert(old_obj_oids.size() == old_obj_pvids.size());
+  assert(old_obj_oids.size() == old_obj_layout_ids.size());
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
   }
 
   // process to delete old object
   assert(old_object_oid.u_hi || old_object_oid.u_lo);
-
   // If old object exists and deletion of old is disabled, then return
   if ((old_object_oid.u_hi || old_object_oid.u_lo) &&
       S3Option::get_instance()->is_s3server_obj_delayed_del_enabled()) {
@@ -1153,27 +1161,27 @@ void S3PostCompleteAction::delete_old_object() {
   size_t object_count = old_obj_oids.size();
   if (object_count > 0) {
     struct m0_uint128 old_oid = old_obj_oids.back();
+    struct m0_fid pvid = old_obj_pvids.back();
+    int layout_id = old_obj_layout_ids.back();
     motr_writer->set_oid(old_oid);
     motr_writer->delete_object(
         std::bind(&S3PostCompleteAction::delete_old_object_success, this),
-        std::bind(&S3PostCompleteAction::next, this), old_oid, layout_id,
-        object_metadata->get_pvid());
+        std::bind(&S3PostCompleteAction::next, this), old_oid, layout_id, pvid);
+  } else {
+    next();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PostCompleteAction::delete_old_object_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  size_t object_count = old_obj_oids.size();
-  if (object_count == 0) {
-    next();
-    return;
-  }
   s3_log(S3_LOG_INFO, request_id,
          "Deleted old part object oid "
          "[%" SCNx64 " : %" SCNx64 "]",
          (old_obj_oids.back()).u_hi, (old_obj_oids.back()).u_lo);
   old_obj_oids.pop_back();
+  old_obj_pvids.pop_back();
+  old_obj_layout_ids.pop_back();
 
   if (old_obj_oids.size() > 0) {
     delete_old_object();
@@ -1291,33 +1299,35 @@ void S3PostCompleteAction::delete_new_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(new_object_oid.u_hi || new_object_oid.u_lo);
   assert(is_abort_multipart());
-
+  assert(new_obj_oids.size() == new_obj_pvids.size());
+  assert(new_obj_oids.size() == new_obj_layout_ids.size());
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   unsigned int object_count = new_obj_oids.size();
   if (object_count > 0) {
     struct m0_uint128 new_oid = new_obj_oids.back();
+    struct m0_fid pvid = new_obj_pvids.back();
+    int layout_id = new_obj_layout_ids.back();
     motr_writer->set_oid(new_oid);
     motr_writer->delete_object(
         std::bind(&S3PostCompleteAction::delete_new_object_success, this),
-        std::bind(&S3PostCompleteAction::next, this), new_oid, layout_id,
-        multipart_metadata->get_pvid());
+        std::bind(&S3PostCompleteAction::next, this), new_oid, layout_id, pvid);
+  } else {
+    next();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PostCompleteAction::delete_new_object_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  unsigned int object_count = new_obj_oids.size();
-  if (object_count == 0) {
-    return;
-  }
   s3_log(S3_LOG_INFO, request_id,
          "Deleted new object oid "
          "[%" SCNx64 " : %" SCNx64 "]",
          (new_obj_oids.back()).u_hi, (new_obj_oids.back()).u_lo);
   new_obj_oids.pop_back();
+  new_obj_pvids.pop_back();
+  new_obj_layout_ids.pop_back();
 
   if (new_obj_oids.size() > 0) {
     delete_new_object();
