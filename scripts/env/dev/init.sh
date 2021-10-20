@@ -256,6 +256,15 @@ then
   ./s3motr-build-depencies.sh
 fi
 
+#Fetch eth interface value form /etc/libfab.conf, add it to lnet and restart lnet
+iface=$(cat /etc/libfab.conf | cut -d "(" -f2 | cut -d ")" -f1)
+echo "options lnet networks=tcp($iface) config_on_load=1" > '/etc/modprobe.d/lnet.conf'
+service lnet restart
+if ! lctl list_nids ; then
+  echo "lctl list_nids returned empty"
+  exit 1
+fi
+
 # install all rpms which requires gcc as dependency
 if [ "$is_open_source" = false ];
 then
