@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_GET_BUCKET_VERSION_ACTION_H__
-#define __S3_SERVER_S3_GET_BUCKET_VERSION_ACTION_H__
+#ifndef __S3_SERVER_S3_GET_BUCKET_VERSIONING_ACTION_H__
+#define __S3_SERVER_S3_GET_BUCKET_VERSIONING_ACTION_H__
 
 #include <memory>
 #include <string>
