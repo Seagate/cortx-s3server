@@ -56,6 +56,7 @@ class S3DeleteObjectAction : public S3ObjectAction {
   std::vector<std::unique_ptr<S3ProbableDeleteRecord>> probable_del_rec_list;
   std::vector<struct S3ExtendedObjectInfo> extended_objects;
   S3DeleteObjectActionState s3_del_obj_action_state;
+  unsigned int total_processed_count = 0;
 
  public:
   S3DeleteObjectAction(
@@ -92,6 +93,8 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void remove_fragments_successful();
   void remove_oids_from_probable_record_index();
   void add_oids_to_probable_dead_oid_list();
+  void save_partial_extended_metadata_successful(unsigned int processed_count);
+  void save_partial_extended_metadata_failed(unsigned int processed_count);
 
   void send_response_to_s3_client();
 
