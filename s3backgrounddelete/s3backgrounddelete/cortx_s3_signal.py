@@ -50,7 +50,6 @@ class DynamicConfigHandler(object):
 
 class SigTermHandler(object):
     """SigTerm Signal handler class for exiting gracefully"""
-
     shutdown_signal = False
 
     def __init__(self):
@@ -58,5 +57,5 @@ class SigTermHandler(object):
         signal.signal(signal.SIGTERM,partial(self.sigterm_handler_callback))
 
     def sigterm_handler_callback(self, *args):
-        """Set shutdown"""
+        """Set shutdown flag"""
         self.shutdown_signal = True

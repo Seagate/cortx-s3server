@@ -81,6 +81,7 @@ class ObjectRecoveryScheduler(object):
             threshold = self.config.get_threshold()
             self.logger.debug("Threshold is : " + str(threshold))
             if self.term_signal.shutdown_signal == True:
+                self.logger.info("Shutting down s3backgroundproducer service.")
                 sys.exit(0)
             count = self.producer.get_count()
             self.logger.debug("Count of unread msgs is : " + str(count))
@@ -94,6 +95,7 @@ class ObjectRecoveryScheduler(object):
             # Cleanup all entries and enqueue only 1000 entries
             #PurgeAPI Here
             if self.term_signal.shutdown_signal == True:
+                self.logger.info("Shutting down s3backgroundproducer service.")
                 sys.exit(0)
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
@@ -159,7 +161,7 @@ class ObjectRecoveryScheduler(object):
        
         def one_sec_run(scheduler):
             pass
-        
+
         def divide_interval():
             for i in range(int(self.config.get_schedule_interval()) - 1):
                 if self.term_signal.shutdown_signal == True:
