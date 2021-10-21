@@ -84,11 +84,12 @@ public class AuthEncryptConfig {
     static String getCipherUtil() {
       return authEncryptConfig.getProperty("s3CipherUtil");
     }
-   
+
    public
-   static String getCipherUtilGenKeyAes() {
-     return authEncryptConfig.getProperty("s3CipherUtilGenKeyAes                                     ,");
-   }
+    static String getCipherUtilGenKeyAes() {
+      return authEncryptConfig.getProperty(
+          "s3CipherUtilGenKeyAes                                     ,");
+    }
 
     public static String getLogLevel() {
         return authEncryptConfig.getProperty("logLevel");

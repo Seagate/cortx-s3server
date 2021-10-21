@@ -159,8 +159,9 @@ class AESEncryptDecryptUtil {
     new SecureRandom().nextBytes(nonce);
     return nonce;
   }
- 
- private static boolean isTextNotEmpty(String text) {
-	 return text != null && !text.equals("");
- }
+
+ private
+  static boolean isTextNotEmpty(String text) {
+    return text != null && !text.equals("");
+  }
 }
