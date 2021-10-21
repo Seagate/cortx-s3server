@@ -690,7 +690,7 @@ void S3PutChunkUploadObjectAction::save_metadata() {
            "Replication policy exists for bucket :: %s.\n",
            request->get_bucket_name().c_str());
     std::string rep_config_json =
-        bucket_metadata->get_replication_config_as_json();
+        bucket_metadata->get_replication_config_as_json_string();
 
     new_object_metadata->set_replication_status_and_dest_bucket(
         true, new_object_tags_map, rep_config_json);
