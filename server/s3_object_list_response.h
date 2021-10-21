@@ -64,25 +64,25 @@ class S3ObjectListResponse {
   std::string get_response_format_key_value(const std::string& key_value);
 
  public:
-  S3ObjectListResponse(std::string encoding_type = "");
+  S3ObjectListResponse(const std::string& encoding_type = "");
 
-  void set_bucket_name(std::string name);
-  void set_object_name(std::string name);
-  void set_user_id(std::string);
-  void set_user_name(std::string);
-  void set_canonical_id(std::string);
-  void set_account_id(std::string);
-  void set_account_name(std::string);
-  void set_storage_class(std::string);
-  void set_upload_id(std::string upload_id);
-  void set_request_prefix(std::string prefix);
-  void set_request_delimiter(std::string delimiter);
-  void set_request_marker_key(std::string marker);
-  void set_request_marker_uploadid(std::string marker);
-  void set_max_keys(std::string count);
+  void set_bucket_name(const std::string& name);
+  void set_object_name(const std::string& name);
+  void set_user_id(const std::string&);
+  void set_user_name(const std::string&);
+  void set_canonical_id(const std::string&);
+  void set_account_id(const std::string&);
+  void set_account_name(const std::string&);
+  void set_storage_class(const std::string&);
+  void set_upload_id(const std::string& upload_id);
+  void set_request_prefix(const std::string& prefix);
+  void set_request_delimiter(const std::string& delimiter);
+  void set_request_marker_key(const std::string& marker);
+  void set_request_marker_uploadid(const std::string& marker);
+  void set_max_keys(const std::string& count);
   void set_key_count(size_t& keys);
-  void set_max_uploads(std::string count);
-  void set_max_parts(std::string count);
+  void set_max_uploads(const std::string& count);
+  void set_max_parts(const std::string& count);
   void set_response_is_truncated(bool flag);
   void set_next_marker_key(std::string next, bool url_encode = true);
   void set_next_marker_uploadid(std::string next);
@@ -100,8 +100,8 @@ class S3ObjectListResponse {
 
   void add_object(std::shared_ptr<S3ObjectMetadata> object);
   void add_part(std::shared_ptr<S3PartMetadata> part);
-  void add_common_prefix(std::string);
-  bool is_prefix_in_common_prefix(std::string& check_prefix);
+  void add_common_prefix(const std::string&);
+  bool is_prefix_in_common_prefix(const std::string& check_prefix);
   unsigned int size();
   unsigned int common_prefixes_size();
 

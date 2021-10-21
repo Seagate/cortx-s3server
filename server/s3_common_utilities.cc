@@ -85,7 +85,7 @@ std::string s3xmlEncodeSpecialChars(const std::string &input) {
   return data;
 }
 
-std::string format_xml_string(std::string tag, const std::string &value,
+std::string format_xml_string(const std::string &tag, const std::string &value,
                               bool append_quotes) {
 
   std::string format_string = s3xmlEncodeSpecialChars(value);

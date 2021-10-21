@@ -29,14 +29,15 @@
 class S3AuditInfoLoggerRsyslogTcp : public S3AuditInfoLoggerBase {
  public:
   S3AuditInfoLoggerRsyslogTcp(struct event_base *base,
-                              std::string dest_host = "localhost",
+                              const std::string &dest_host = "localhost",
                               int dest_port = 514, int retry_cnt = 5,
-                              std::string message_id = "s3server-audit-logging",
+                              const std::string &message_id =
+                                  "s3server-audit-logging",
                               int facility = 21,  // Rsyslog facility "local5"
                               int severity = 5,   // Rsyslog severity "notice"
-                              std::string hostname = "-",  // no hostname
-                              std::string app = "s3server",
-                              std::string app_procid = "-",  // no procid
+                              const std::string &hostname = "-",  // no hostname
+                              const std::string &app = "s3server",
+                              const std::string &app_procid = "-",  // no procid
                               S3LibeventSocketWrapper *sock_api = nullptr);
   virtual ~S3AuditInfoLoggerRsyslogTcp();
   virtual int save_msg(std::string const &, std::string const &);

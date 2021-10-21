@@ -67,9 +67,12 @@ bool fn_false_cb() { return false; }
 
 bool fn_true_cb() { return true; }
 
-S3ObjectDataCopierTest::S3ObjectDataCopierTest() {
+S3ObjectDataCopierTest::S3ObjectDataCopierTest()
+    : ptr_mock_s3_motr_api(std::make_shared<MockS3Motr>()),
+      f_success(false),
+      f_failed(false) {
 
-  ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
+  // ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
 
   EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
       .WillRepeatedly(Invoke(dummy_helpers_ufid_next));

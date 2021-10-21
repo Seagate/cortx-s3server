@@ -50,8 +50,10 @@ S3MotrKVSWriter::S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
 
 S3MotrKVSWriter::S3MotrKVSWriter(std::string req_id,
                                  std::shared_ptr<MotrAPI> motr_api)
-    : state(S3MotrKVSWriterOpState::start), idx_ctx(nullptr) {
-  request_id = std::move(req_id);
+    : request_id(std::move(req_id)),
+      state(S3MotrKVSWriterOpState::start),
+      idx_ctx(nullptr) {
+  // request_id = std::move(req_id);
   stripped_request_id = std::string(request_id.end() - 12, request_id.end());
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   if (motr_api) {
@@ -1056,10 +1058,10 @@ void S3MotrKVSWriter::set_up_key_value_store(
   memcpy(kvs_ctx->values->ov_buf[pos], (void *)val.c_str(), val.length());
 
   s3_log(S3_LOG_DEBUG, request_id, "Keys and value in motr buffer\n");
-  s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->keys->ov_buf[%lu] = %s\n", pos,
+  s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->keys->ov_buf[%zu] = %s\n", pos,
          std::string((char *)kvs_ctx->keys->ov_buf[pos],
                      kvs_ctx->keys->ov_vec.v_count[pos]).c_str());
-  s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->vals->ov_buf[%lu] = %s\n", pos,
+  s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->vals->ov_buf[%zu] = %s\n", pos,
          std::string((char *)kvs_ctx->values->ov_buf[pos],
                      kvs_ctx->values->ov_vec.v_count[pos]).c_str());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

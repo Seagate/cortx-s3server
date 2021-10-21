@@ -672,6 +672,7 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
             part_entry[0].versionID,
             object_metadata->get_oid() /* parent oid of multipart */));
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
+
         if (is_old_object) {
           old_obj_oids.push_back(part_entry[0].motr_OID);
           old_obj_pvids.push_back(part_entry[0].PVID);
@@ -681,6 +682,7 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
           new_obj_pvids.push_back(part_entry[0].PVID);
           new_obj_layout_ids.push_back(part_entry[0].layout_id);
         }
+
       }
     }  // End of For
     // Add one more entry for parent multipart object to erase it
@@ -1182,7 +1184,6 @@ void S3PostCompleteAction::delete_old_object_success() {
   old_obj_oids.pop_back();
   old_obj_pvids.pop_back();
   old_obj_layout_ids.pop_back();
-
   if (old_obj_oids.size() > 0) {
     delete_old_object();
   } else {
@@ -1269,7 +1270,9 @@ void S3PostCompleteAction::remove_old_oid_probable_record() {
 void S3PostCompleteAction::mark_new_oid_for_deletion() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!new_oid_str.empty());
-  assert(is_abort_multipart());
+  if (!is_abort_multipart()) {
+    assert(0);
+  }
 
   if (new_parts_probable_del_rec_list.size() == 0) {
     next();

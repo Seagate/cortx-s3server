@@ -150,6 +150,7 @@ class S3Option {
   unsigned int motr_first_obj_read_size;
   unsigned int motr_reconnect_retry_count;
   unsigned int motr_reconnect_sleep_time;
+  unsigned int motr_init_max_timeout;
 
   unsigned bucket_metadata_cache_max_size;
   unsigned bucket_metadata_cache_expire_sec;
@@ -397,14 +398,14 @@ class S3Option {
   bool is_auth_disabled();
 
   std::string get_option_file();
-  void set_option_file(std::string filename);
+  void set_option_file(const std::string& filename);
 
   std::string get_layout_recommendation_file();
-  void set_layout_recommendation_file(std::string filename);
+  void set_layout_recommendation_file(const std::string& filename);
 
   std::string get_daemon_dir();
   unsigned short do_redirection();
-  void set_daemon_dir(std::string path);
+  void set_daemon_dir(const std::string& path);
   void set_redirection(unsigned short redirect);
 
   std::string get_log_dir();
@@ -456,6 +457,7 @@ class S3Option {
   unsigned int get_motr_first_read_size();
   unsigned int get_motr_reconnect_sleep_time();
   unsigned int get_motr_reconnect_retry_count();
+  unsigned int get_motr_init_max_timeout();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
@@ -514,7 +516,7 @@ class S3Option {
   unsigned short get_statsd_max_send_retry();
   std::string get_stats_allowlist_filename();
   uint32_t get_perf_stats_inout_bytes_interval_msec();
-  void set_stats_allowlist_filename(std::string filename);
+  void set_stats_allowlist_filename(const std::string& filename);
 
   // Fault injection Option
   void enable_fault_injection();

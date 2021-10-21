@@ -228,11 +228,10 @@ class RedisKVSBaseTest : public testing::Test {
 class RedisKVSWriterTest : public RedisKVSBaseTest {
 
  public:
-  RedisKVSWriterTest() : RedisKVSBaseTest() {}
+  RedisKVSWriterTest() : RedisKVSBaseTest(), w_ctx(nullptr) {}
 
  protected:
   S3AsyncMotrKVSWriterContext* w_ctx;
-
   void SetUp() {
     check_state();
     w_ctx = new S3AsyncMotrKVSWriterContext(request, []() {}, []() {});
@@ -246,7 +245,7 @@ class RedisKVSWriterTest : public RedisKVSBaseTest {
 class RedisKVSReaderTest : public RedisKVSBaseTest {
 
  public:
-  RedisKVSReaderTest() : RedisKVSBaseTest() {}
+  RedisKVSReaderTest() : RedisKVSBaseTest(), r_ctx(nullptr) {}
 
  protected:
   S3MotrKVSReaderContext* r_ctx;

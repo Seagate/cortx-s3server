@@ -60,7 +60,6 @@
 #define MIN_RESERVE_SIZE 32768
 
 #define WEBSTORE "/home/seagate/webstore"
-#define MOTR_INIT_MAX_ALLOWED_TIME 15
 
 /* Program options */
 #include <unistd.h>
@@ -676,7 +675,7 @@ evhtp_t *create_evhtp_handle(evbase_t *evbase_handle, Router *router,
 #else
   if (g_option_instance->is_s3_reuseport_enabled()) {
     s3_log(
-        S3_LOG_ERROR,
+        S3_LOG_ERROR, "",
         "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
     return NULL;
   }
@@ -705,7 +704,7 @@ evhtp_t *create_evhtp_handle_for_motr(evbase_t *evbase_handle,
 #else
   if (g_option_instance->is_motr_http_reuseport_enabled()) {
     s3_log(
-        S3_LOG_ERROR,
+        S3_LOG_ERROR, "",
         "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
     return NULL;
   }
@@ -812,12 +811,14 @@ int main(int argc, char **argv) {
 
   // Call this function at starting as we need to make use of our own
   // memory allocation/deallocation functions
-  rc = event_use_mempool(g_option_instance->get_libevent_pool_buffer_size(),
-                         g_option_instance->get_libevent_pool_initial_size(),
-                         g_option_instance->get_libevent_pool_expandable_size(),
-                         g_option_instance->get_libevent_pool_max_threshold(),
-                         mem_log_msg_func, libevent_mempool_flags);
-
+  // Do not pass log function in non-debug(i.e. release) mode of S3server
+  rc = event_use_mempool(
+      g_option_instance->get_libevent_pool_buffer_size(),
+      g_option_instance->get_libevent_pool_initial_size(),
+      g_option_instance->get_libevent_pool_expandable_size(),
+      g_option_instance->get_libevent_pool_max_threshold(),
+      g_option_instance->get_log_level() == "DEBUG" ? mem_log_msg_func : NULL,
+      libevent_mempool_flags);
   if (rc != 0) {
     s3daemon.delete_pidfile();
     finalize_cli_options();
@@ -970,7 +971,7 @@ int main(int argc, char **argv) {
 
     struct timeval tv;
     tv.tv_usec = 0;
-    tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
+    tv.tv_sec = g_option_instance->get_motr_init_max_timeout();
 
     struct event *timer_event =
         event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
