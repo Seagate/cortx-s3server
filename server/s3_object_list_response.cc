@@ -108,7 +108,7 @@ void S3ObjectListResponse::set_response_is_truncated(bool flag) {
   response_is_truncated = flag;
 }
 
-void S3ObjectListResponse::set_next_marker_key(const std::string& next,
+void S3ObjectListResponse::set_next_marker_key(const std::string next,
                                                bool url_encode) {
   if (url_encode) {
     next_marker_key = get_response_format_key_value(next);
@@ -117,7 +117,7 @@ void S3ObjectListResponse::set_next_marker_key(const std::string& next,
   }
 }
 
-void S3ObjectListResponse::set_next_marker_uploadid(const std::string& next) {
+void S3ObjectListResponse::set_next_marker_uploadid(const std::string next) {
   next_marker_uploadid = next;
 }
 
