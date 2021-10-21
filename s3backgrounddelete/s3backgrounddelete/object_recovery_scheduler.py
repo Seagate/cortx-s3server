@@ -156,8 +156,19 @@ class ObjectRecoveryScheduler(object):
         # Run producer periodically on hourly basis
         self.logger.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
+       
+        def one_sec_run(scheduler):
+            pass
+        
+        def divide_interval():
+            for i in range(int(self.config.get_schedule_interval()) - 1):
+                if self.term_signal.shutdown_signal == True:
+                    break
+                scheduled_run.enter(1,
+                                   1, one_sec_run, (scheduled_run,))
+                scheduled_run.run()
 
-        def one_periodic_run(scheduler):
+        def periodic_run(scheduler):
             """Add key value to queue using scheduler."""
             if self.config.get_messaging_platform() == MESSAGE_BUS:
                 self.add_kv_to_msgbus()
@@ -165,15 +176,14 @@ class ObjectRecoveryScheduler(object):
                 self.logger.error(
                 "Invalid argument specified in messaging_platform use 'message_bus'")
                 return
-
-            scheduled_run.enter(
-                1, 1, one_periodic_run, (scheduler,))
-        while(int(self.config.get_schedule_interval()) - 1):
-            if self.term_signal.shutdown_signal == True:
-                break
+            divide_interval()
             scheduled_run.enter(1,
-                               1, one_periodic_run, (scheduled_run,))
-            scheduled_run.run()
+                           1, periodic_run, (scheduled_run,))
+ 
+        divide_interval()
+        scheduled_run.enter(1,
+                           1, periodic_run, (scheduled_run,))
+        scheduled_run.run()
 
     def create_logger(self):
         """Create logger, file handler, console handler and formatter."""
