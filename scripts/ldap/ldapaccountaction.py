@@ -349,7 +349,7 @@ class LdapAccountAction:
     return cortx_access_key, cortx_secret_key
 
   def __encrypt_secret_key(self, secret_key):
-    check_output(['java', '-jar', 'AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes']).rstrip()
+    return check_output(['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes']).rstrip().decode()
 
 
   def __get_attr(self, index_key):
