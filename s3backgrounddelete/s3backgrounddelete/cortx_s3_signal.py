@@ -50,6 +50,7 @@ class DynamicConfigHandler(object):
 
 class SigTermHandler(object):
     """SigTerm Signal handler class for exiting gracefully"""
+    
     shutdown_signal = False
 
     def __init__(self):

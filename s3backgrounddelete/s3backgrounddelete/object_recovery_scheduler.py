@@ -163,7 +163,7 @@ class ObjectRecoveryScheduler(object):
             pass
 
         def divide_interval():
-            for i in range(int(self.config.get_schedule_interval()) - 1):
+            for _ in range(int(self.config.get_schedule_interval()) - 1):
                 if self.term_signal.shutdown_signal == True:
                     break
                 scheduled_run.enter(1,
@@ -181,7 +181,7 @@ class ObjectRecoveryScheduler(object):
             divide_interval()
             scheduled_run.enter(1,
                            1, periodic_run, (scheduled_run,))
- 
+
         divide_interval()
         scheduled_run.enter(1,
                            1, periodic_run, (scheduled_run,))
