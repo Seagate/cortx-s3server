@@ -1,4 +1,4 @@
-package com.seagates3.util;
+package com.seagates3.authencryptutil;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -21,7 +21,6 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +56,7 @@ class AESEncryptDecryptUtil {
 
     String encryptedText = null;
 
-    if (StringUtils.isNotEmpty(plainText) && StringUtils.isNotEmpty(password)) {
+    if (isTextNotEmpty(plainText) && isTextNotEmpty(password)) {
       byte[] salt = getRandomNonce(SALT_LENGTH_IN_BYTES);
       byte[] iv = getRandomNonce(IV_LENGTH_IN_BYTES);
 
@@ -102,8 +101,7 @@ class AESEncryptDecryptUtil {
 
     String decryptedText = null;
 
-    if (StringUtils.isNotEmpty(encryptedText) &&
-        StringUtils.isNotEmpty(password)) {
+    if (isTextNotEmpty(encryptedText) && isTextNotEmpty(password)) {
       byte[] decode = Base64.getDecoder().decode(encryptedText.getBytes(UTF_8));
 
       ByteBuffer bb = ByteBuffer.wrap(decode);
@@ -161,4 +159,8 @@ class AESEncryptDecryptUtil {
     new SecureRandom().nextBytes(nonce);
     return nonce;
   }
+ 
+ private static boolean isTextNotEmpty(String text) {
+	 return text != null && !text.equals("");
+ }
 }

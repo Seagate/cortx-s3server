@@ -41,12 +41,12 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authencryptutil.AESEncryptDecryptUtil;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.User;
-import com.seagates3.util.AESEncryptDecryptUtil;
 
 @RunWith(PowerMockRunner.class)
     @PrepareForTest({LDAPUtils.class,             AccessKeyImpl.class,
