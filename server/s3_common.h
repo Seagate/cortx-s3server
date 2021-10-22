@@ -43,6 +43,7 @@
 // Max extended entries (kv pair) being saved per idx op
 #define MAX_PUT_MULTIPART_EXTENDED_ENTRIES 50
 #define MAX_OIDS_FOR_DELETION 30
+#define MAX_PUT_MULTIPART_PART_ENTRIES 100
 
 #define ACCOUNT_USER_INDEX_NAME "ACCOUNTUSERINDEX"
 

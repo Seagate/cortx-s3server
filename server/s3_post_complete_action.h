@@ -91,9 +91,12 @@ class S3PostCompleteAction : public S3ObjectAction {
 
   // List of part object oids belong to new object
   std::vector<struct m0_uint128> new_obj_oids;
+  std::vector<struct m0_fid> new_obj_pvids;
+  std::vector<int> new_obj_layout_ids;
   // List of part object oids belong to old object
   std::vector<struct m0_uint128> old_obj_oids;
-
+  std::vector<struct m0_fid> old_obj_pvids;
+  std::vector<int> old_obj_layout_ids;
   void start_response();
   // Probable delete record for object parts
   std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
@@ -103,6 +106,11 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::map<unsigned int, std::string> part_etags;
   std::string generate_etag();
   bool mp_completion_send_space_chk_shutdown();
+  // Following state used during partial put kv
+  // - while adding probbale leak entries for parts
+  unsigned int total_processed_count = 0;
+  unsigned int total_keys = 0;
+  std::map<std::string, std::string> kv_list;
 
  public:
   S3PostCompleteAction(
@@ -161,6 +169,11 @@ class S3PostCompleteAction : public S3ObjectAction {
       const std::shared_ptr<S3ObjectMetadata> &,
       std::vector<std::unique_ptr<S3ProbableDeleteRecord>> &,
       bool is_old_object = false);
+  void save_probable_list_metadata(std::map<std::string, std::string> &);
+  void save_partial_probable_list_metadata(
+      std::map<std::string, std::string> &);
+  void save_partial_probable_list_metadata_successful(unsigned int);
+  void save_partial_probable_list_metadata_failed(unsigned int);
 
   void startcleanup() override;
   void mark_old_oid_for_deletion();
