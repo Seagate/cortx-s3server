@@ -682,7 +682,6 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
           new_obj_pvids.push_back(part_entry[0].PVID);
           new_obj_layout_ids.push_back(part_entry[0].layout_id);
         }
-
       }
     }  // End of For
     // Add one more entry for parent multipart object to erase it

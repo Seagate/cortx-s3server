@@ -273,7 +273,6 @@ void S3AbortMultipartAction::get_next_parts_failed() {
 
 void S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  std::map<std::string, std::string> probable_oid_list;
 
   if (multipart_parts.size() == 0) {
     s3_log(S3_LOG_DEBUG, request_id, "Parts not there\n");
@@ -314,14 +313,78 @@ void S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list() {
       motr_kv_writer =
           mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
     }
-    motr_kv_writer->put_keyval(
-        global_probable_dead_object_list_index_layout, probable_oid_list,
-        std::bind(&S3AbortMultipartAction::next, this),
-        std::bind(&S3AbortMultipartAction::
-                       add_parts_oids_to_probable_dead_oid_list_failed,
-                  this));
+    if (probable_del_rec_list.size() <= MAX_PUT_MULTIPART_PART_ENTRIES) {
+      motr_kv_writer->put_keyval(
+          global_probable_dead_object_list_index_layout, probable_oid_list,
+          std::bind(&S3AbortMultipartAction::next, this),
+          std::bind(&S3AbortMultipartAction::
+                         add_parts_oids_to_probable_dead_oid_list_failed,
+                    this));
+    } else {
+      save_metadata_in_stages();
+    }
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  }
+}
+
+void S3AbortMultipartAction::save_metadata_in_stages() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  assert(probable_oid_list.size());
+  unsigned int kv_to_be_processed =
+      probable_oid_list.size() - total_processed_count;
+  unsigned int how_many_kv_to_write =
+      ((kv_to_be_processed - MAX_PUT_MULTIPART_PART_ENTRIES) >
+       MAX_PUT_MULTIPART_PART_ENTRIES)
+          ? MAX_PUT_MULTIPART_PART_ENTRIES
+          : kv_to_be_processed;
+  if (motr_kv_writer == nullptr) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
 
+  motr_kv_writer->put_partial_keyval(
+      global_probable_dead_object_list_index_layout, probable_oid_list,
+      std::bind(&S3AbortMultipartAction::save_partial_metadata_successful, this,
+                std::placeholders::_1),
+      std::bind(&S3AbortMultipartAction::save_partial_metadata_failed, this,
+                std::placeholders::_1),
+      total_processed_count, how_many_kv_to_write);
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3AbortMultipartAction::save_partial_metadata_successful(
+    unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  total_processed_count += processed_count;
+  s3_log(S3_LOG_INFO, request_id,
+         "%u Metadata saved for Object [%s]. "
+         "total_processed_count[%u]\n",
+         processed_count, object_name.c_str(), total_processed_count);
+  if (total_processed_count < probable_oid_list.size()) {
+    // TODO -- If there is timeout issue then this has to be enabled
+    // currently disabled
+    if (request->client_connected() &&
+        request->get_response_started_by_action()) {
+      // send white space to client, if it has already been initiated by
+      // action class
+      request->send_reply_body(xml_spaces, sizeof(xml_spaces) - 1);
+    }
+    save_metadata_in_stages();
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3AbortMultipartAction::save_partial_metadata_failed(
+    unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id,
+         "Failed to save %u extended metadata's for Object [%s] "
+         "total_processed_count[%u]\n",
+         processed_count, object_name.c_str(), total_processed_count);
+  add_parts_oids_to_probable_dead_oid_list_failed();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
