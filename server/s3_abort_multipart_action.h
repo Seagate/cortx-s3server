@@ -53,6 +53,7 @@ class S3AbortMultipartAction : public S3BucketAction {
 
   struct s3_motr_idx_layout multipart_index_layout;
   struct s3_motr_idx_layout part_index_layout;
+  std::map<std::string, std::string> probable_oid_list;
 
   // Probable delete record for object OID to be deleted
   std::string oid_str;  // Key for probable delete rec
@@ -66,6 +67,7 @@ class S3AbortMultipartAction : public S3BucketAction {
   std::vector<std::shared_ptr<S3PartMetadata>> multipart_parts;
   std::vector<std::unique_ptr<S3ProbableDeleteRecord>> probable_del_rec_list;
   std::string last_key;
+  unsigned int total_processed_count = 0;
 
   S3AbortMultipartActionState s3_abort_mp_action_state;
 
@@ -99,7 +101,9 @@ class S3AbortMultipartAction : public S3BucketAction {
 
   void add_parts_oids_to_probable_dead_oid_list();
   void add_parts_oids_to_probable_dead_oid_list_failed();
-
+  void save_metadata_in_stages();
+  void save_partial_metadata_failed(unsigned int processed_count);
+  void save_partial_metadata_successful(unsigned int processed_count);
   void startcleanup() override;
   void mark_oids_for_deletion();
   void delete_part();

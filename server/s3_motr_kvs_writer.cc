@@ -537,6 +537,8 @@ void S3MotrKVSWriter::put_partial_keyval(
          "%s Entry with oid = %" SCNx64 " : %" SCNx64
          " and %zu key/value pairs\n",
          __func__, idx_lo.oid.u_hi, idx_lo.oid.u_lo, kv_list.size());
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "offset = %u how_many = %u\n",
+         offset, how_many);
 
   it = kv_list.begin();
   if (offset) {
