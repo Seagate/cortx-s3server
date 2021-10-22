@@ -35,6 +35,7 @@ import java.util.Map;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.List;
 
 public class PolicyController extends AbstractController {
 
@@ -69,7 +70,7 @@ public class PolicyController extends AbstractController {
         if (policy.exists()) {
             return responseGenerator.entityAlreadyExists();
         }
-
+        policy.setAccount(requestor.getAccount());
         policy.setPolicyId(KeyGenUtil.createId());
         policy.setPolicyDoc(requestBody.get("PolicyDocument"));
 
@@ -102,5 +103,68 @@ public class PolicyController extends AbstractController {
 
         return responseGenerator.generateCreateResponse(policy);
     }
+    /**
+       * Delete an IAM Policy.
+       *
+       * @return ServerResponse
+       */
+    @Override public ServerResponse delete () {
+      Policy policy = null;
+      try {
+        policy = policyDAO.find(requestBody.get("PolicyARN"));
+      }
+      catch (DataAccessException ex) {
+        return responseGenerator.internalServerError();
+      }
+      if (policy != null && !policy.exists()) {
+        LOGGER.error("Policy [" + policy.getName() + "] does not exists");
+        return responseGenerator.noSuchEntity();
+      }
+      LOGGER.info("Deleting policy : " + policy.getName());
+      try {
+        policyDAO.delete (policy);
+      }
+      catch (DataAccessException ex) {
+      }
+      return responseGenerator.generateDeleteResponse();
+    }
 
+    /**
+     * List all the IAM policies for requesting account
+     *
+     * @return ServerResponse.
+     */
+    @Override public ServerResponse list() {
+      List<Policy> policyList = null;
+      try {
+        policyList = policyDAO.findAll(requestor.getAccount());
+      }
+      catch (DataAccessException ex) {
+        return responseGenerator.internalServerError();
+      }
+      LOGGER.info("Listing policies of account : " +
+                  requestor.getAccount().getName());
+      return responseGenerator.generateListResponse(policyList);
+    }
+
+    /**
+     * Get policy for requesting ARN
+     *
+     * @return ServerResponse.
+     */
+    @Override public ServerResponse get() {
+      Policy policy = null;
+      try {
+        policy = policyDAO.find(requestBody.get("PolicyARN"));
+      }
+      catch (DataAccessException ex) {
+        return responseGenerator.internalServerError();
+      }
+      if (policy != null && !policy.exists()) {
+        LOGGER.error("Policy [" + policy.getName() + "] does not exists");
+        return responseGenerator.noSuchEntity();
+      }
+      LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
+      return responseGenerator.generateGetResponse(policy);
+    }
 }
