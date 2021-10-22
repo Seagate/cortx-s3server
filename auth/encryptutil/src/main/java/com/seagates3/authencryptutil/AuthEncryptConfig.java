@@ -88,7 +88,7 @@ public class AuthEncryptConfig {
    public
     static String getCipherUtilGenKeyAes() {
       return authEncryptConfig.getProperty(
-          "s3CipherUtilGenKeyAes                                     ,");
+          "s3CipherUtilGenKeyAes");
     }
 
     public static String getLogLevel() {
