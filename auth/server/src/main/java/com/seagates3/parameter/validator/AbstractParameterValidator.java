@@ -34,8 +34,11 @@ public abstract class AbstractParameterValidator {
      * @return true
      */
     public Boolean isValidCreateParams(Map<String, String> requestBody) {
-        return true;
-    }
+       return true;
+     }
+
+    public
+     Boolean isValidGetParams(Map<String, String> requestBody) { return true; }
 
     /**
      * Abstract implementation to check delete request parameters.

@@ -12,6 +12,8 @@ class AuthStoreFactory {
       return new MotrStore();
     } else if ("LDAP".equals(store)) {
       return new LdapStore();
+    } else if ("FILE".equals(store)) {
+      return new FileStore();
     } else {
       return null;
     }

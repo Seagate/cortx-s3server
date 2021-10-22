@@ -67,15 +67,17 @@ public class PolicyController extends AbstractController {
             return responseGenerator.internalServerError();
         }
 
-        if (policy.exists()) {
+        if (policy != null && policy.exists()) {
             return responseGenerator.entityAlreadyExists();
         }
+        policy = new Policy();
+        policy.setName(requestBody.get("PolicyName"));
         policy.setAccount(requestor.getAccount());
         policy.setPolicyId(KeyGenUtil.createId());
         policy.setPolicyDoc(requestBody.get("PolicyDocument"));
 
         String arn = ARNUtil.createARN(requestor.getAccount().getId(), "policy",
-                policy.getPolicyId());
+                                       requestBody.get("PolicyName"));
         policy.setARN(arn);
 
         if (requestBody.containsKey("path")) {
@@ -116,8 +118,8 @@ public class PolicyController extends AbstractController {
       catch (DataAccessException ex) {
         return responseGenerator.internalServerError();
       }
-      if (policy != null && !policy.exists()) {
-        LOGGER.error("Policy [" + policy.getName() + "] does not exists");
+      if (policy == null || !policy.exists()) {
+        LOGGER.error("Policy does not exists");
         return responseGenerator.noSuchEntity();
       }
       LOGGER.info("Deleting policy : " + policy.getName());
@@ -160,8 +162,8 @@ public class PolicyController extends AbstractController {
       catch (DataAccessException ex) {
         return responseGenerator.internalServerError();
       }
-      if (policy != null && !policy.exists()) {
-        LOGGER.error("Policy [" + policy.getName() + "] does not exists");
+      if (policy == null || !policy.exists()) {
+        LOGGER.error("Policy does not exists");
         return responseGenerator.noSuchEntity();
       }
       LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
