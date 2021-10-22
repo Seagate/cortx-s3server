@@ -18,6 +18,7 @@
 #
 
 import os
+import time
 from framework import Config
 from ldap_setup import LdapInfo
 from framework import S3PyCliTest
@@ -54,6 +55,7 @@ def before_all():
     config['cacheTimeout'] = "0"
     config.write()
     os.system('systemctl restart s3authserver')
+    time.sleep(15)
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
 
