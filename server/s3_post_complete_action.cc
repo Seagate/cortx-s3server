@@ -751,21 +751,14 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
     assert(!new_oid_str.empty());
     add_part_object_to_probable_dead_oid_list(new_object_metadata,
                                               new_parts_probable_del_rec_list);
-    std::map<std::string, std::string> kv_list;
     for (auto& probable_rec : new_parts_probable_del_rec_list) {
       kv_list[probable_rec->get_key()] = probable_rec->to_json();
     }
     if (!kv_list.empty()) {
       // S3 Background delete will delete new object parts, when multipart
       // metadata has been deleted
-      motr_kv_writer->put_keyval(
-          global_probable_dead_object_list_index_layout, kv_list,
-          std::bind(&S3PostCompleteAction::
-                         add_object_oid_to_probable_dead_oid_list_success,
-                    this),
-          std::bind(&S3PostCompleteAction::
-                         add_object_oid_to_probable_dead_oid_list_failed,
-                    this));
+      total_keys = kv_list.size();
+      save_probable_list_metadata(kv_list);
     } else {
       next();
     }
@@ -778,7 +771,6 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
       assert(!new_oid_str.empty());
       add_part_object_to_probable_dead_oid_list(
           object_metadata, old_parts_probable_del_rec_list, true);
-      std::map<std::string, std::string> kv_list;
       for (auto& probable_rec : old_parts_probable_del_rec_list) {
         kv_list[probable_rec->get_key()] = probable_rec->to_json();
       }
@@ -786,14 +778,8 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
         // S3 Background delete will delete old object parts, when current
         // object metadata has
         // moved on
-        motr_kv_writer->put_keyval(
-            global_probable_dead_object_list_index_layout, kv_list,
-            std::bind(&S3PostCompleteAction::
-                           add_object_oid_to_probable_dead_oid_list_success,
-                      this),
-            std::bind(&S3PostCompleteAction::
-                           add_object_oid_to_probable_dead_oid_list_failed,
-                      this));
+        total_keys = kv_list.size();
+        save_probable_list_metadata(kv_list);
       } else {
         next();
       }
@@ -802,6 +788,85 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
       next();
     }
   }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PostCompleteAction::save_probable_list_metadata(
+    std::map<std::string, std::string>& key_values) {
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
+  if ((key_values.size() > 0) &&
+      (key_values.size() <= MAX_PUT_MULTIPART_EXTENDED_ENTRIES)) {
+    motr_kv_writer->put_keyval(
+        global_probable_dead_object_list_index_layout, key_values,
+        std::bind(&S3PostCompleteAction::
+                       add_object_oid_to_probable_dead_oid_list_success,
+                  this),
+        std::bind(&S3PostCompleteAction::
+                       add_object_oid_to_probable_dead_oid_list_failed,
+                  this));
+  } else if (key_values.size() > MAX_PUT_MULTIPART_EXTENDED_ENTRIES) {
+    save_partial_probable_list_metadata(key_values);
+  }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3PostCompleteAction::save_partial_probable_list_metadata(
+    std::map<std::string, std::string>& key_values) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  assert(key_values.size());
+  unsigned int kv_to_be_processed = key_values.size() - total_processed_count;
+  unsigned int how_many_kv_to_write =
+      ((kv_to_be_processed - MAX_PUT_MULTIPART_EXTENDED_ENTRIES) >
+       MAX_PUT_MULTIPART_EXTENDED_ENTRIES)
+          ? MAX_PUT_MULTIPART_EXTENDED_ENTRIES
+          : kv_to_be_processed;
+  if (motr_kv_writer == nullptr) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+
+  motr_kv_writer->put_partial_keyval(
+      global_probable_dead_object_list_index_layout, key_values,
+      std::bind(
+          &S3PostCompleteAction::save_partial_probable_list_metadata_successful,
+          this, std::placeholders::_1),
+      std::bind(
+          &S3PostCompleteAction::save_partial_probable_list_metadata_failed,
+          this, std::placeholders::_1),
+      total_processed_count, how_many_kv_to_write);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PostCompleteAction::save_partial_probable_list_metadata_successful(
+    unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  total_processed_count += processed_count;
+  s3_log(S3_LOG_INFO, request_id,
+         "%u probable delete entries saved for Object [%s]. "
+         "total_processed_count[%u]\n",
+         processed_count, object_name.c_str(), total_processed_count);
+  if (total_processed_count < total_keys) {
+    if (request->client_connected() &&
+        request->get_response_started_by_action()) {
+      // send white space to client, if it has already been initiated by action
+      // class
+      request->send_reply_body(xml_spaces, sizeof(xml_spaces) - 1);
+    }
+    save_partial_probable_list_metadata(kv_list);
+  } else {
+    add_object_oid_to_probable_dead_oid_list_success();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PostCompleteAction::save_partial_probable_list_metadata_failed(
+    unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id,
+         "Failed to save %u probbale delete entries for Object [%s] "
+         "total_processed_count[%u]\n",
+         processed_count, object_name.c_str(), total_processed_count);
+  add_object_oid_to_probable_dead_oid_list_failed();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
