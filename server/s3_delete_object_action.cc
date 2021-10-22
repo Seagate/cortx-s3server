@@ -364,6 +364,13 @@ void S3DeleteObjectAction::mark_oids_for_deletion() {
     return;
   }
 
+  unsigned int kv_to_be_processed =
+      probable_del_rec_list.size() - total_processed_count;
+  unsigned int how_many_kv_to_write =
+      ((kv_to_be_processed - MAX_OIDS_FOR_DELETION) > MAX_OIDS_FOR_DELETION)
+          ? MAX_OIDS_FOR_DELETION
+          : kv_to_be_processed;
+
   std::map<std::string, std::string> oids_key_value_in_json;
   for (auto& delete_rec : probable_del_rec_list) {
     // force_del = true
@@ -375,10 +382,50 @@ void S3DeleteObjectAction::mark_oids_for_deletion() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
-                             oids_key_value_in_json,
-                             std::bind(&S3DeleteObjectAction::next, this),
-                             std::bind(&S3DeleteObjectAction::next, this));
+  if (probable_del_rec_list.size() <= MAX_OIDS_FOR_DELETION) {
+    motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
+                               oids_key_value_in_json,
+                               std::bind(&S3DeleteObjectAction::next, this),
+                               std::bind(&S3DeleteObjectAction::next, this));
+  } else {
+    motr_kv_writer->put_partial_keyval(
+        global_probable_dead_object_list_index_layout, oids_key_value_in_json,
+        std::bind(
+            &S3DeleteObjectAction::save_partial_extended_metadata_successful,
+            this, std::placeholders::_1),
+        std::bind(&S3DeleteObjectAction::save_partial_extended_metadata_failed,
+                  this, std::placeholders::_1),
+        total_processed_count, how_many_kv_to_write);
+  }
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3DeleteObjectAction::save_partial_extended_metadata_successful(
+    unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  total_processed_count += processed_count;
+  s3_log(S3_LOG_INFO, request_id,
+         "Processed Count %u "
+         "total_processed_count[%u]\n",
+         processed_count, total_processed_count);
+  if (total_processed_count < probable_del_rec_list.size()) {
+    mark_oids_for_deletion();
+  } else {
+    // save_metadata();
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3DeleteObjectAction::save_partial_extended_metadata_failed(
+    unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, request_id,
+         "Processed Count %u "
+         "total_processed_count[%u]\n",
+         processed_count, total_processed_count);
+  next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
