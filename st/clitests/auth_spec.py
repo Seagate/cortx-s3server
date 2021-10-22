@@ -1864,7 +1864,8 @@ def test_max_account_and_user_limit_value_of_auth_config():
     s3confstore.set_config('maxAccountLimit', '1', True)
     s3confstore.set_config('maxIAMUserLimit', '1', True)
     os.system('systemctl restart s3authserver')
-    time.sleep(1) # sometime authserver takes more time to restart
+    time.sleep(15) # sometime authserver takes more time to restart
+    os.system('systemctl status s3authserver')
     print("auth config values are changed successfully..")
 
     # Try to create two account and it should with MaxAccountLimitExceeded error.
@@ -1926,7 +1927,8 @@ def test_max_account_and_user_limit_value_of_auth_config():
     s3confstore.set_config('maxAccountLimit', old_maxAccountValue, True)
     s3confstore.set_config('maxIAMUserLimit', old_maxIAMUserValue, True)
     os.system('systemctl restart s3authserver')
-    time.sleep(1) # sometime authserver takes more time to restart
+    time.sleep(15) # sometime authserver takes more time to restart
+    os.system('systemctl status s3authserver')
     print("Reverted authserver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) with origional values successfully...")
 
 
@@ -2190,6 +2192,7 @@ def execute_all_system_tests():
     # Do not change the order.
     before_all()
     test_max_account_and_user_limit_value_of_auth_config()
+    # time.sleep(5)
     account_tests()
     user_tests()
     accesskey_tests()
