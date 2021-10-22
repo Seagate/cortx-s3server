@@ -117,7 +117,6 @@ void S3PutMultiObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3PutMultiObjectAction::initiate_data_streaming, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::send_response_to_s3_client, this);
-  // ...
 }
 
 void S3PutMultiObjectAction::validate_multipart_request() {
