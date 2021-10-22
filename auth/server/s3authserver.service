@@ -19,6 +19,8 @@
 
 [Unit]
 Description=Motr-S3 Auth Server
+After=slapd.service
+Requires=slapd.service
 
 [Service]
 Type=simple
