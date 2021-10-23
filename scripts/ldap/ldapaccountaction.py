@@ -24,7 +24,7 @@ import socket
 from ldap.ldapobject import SimpleLDAPObject
 import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
-from subprocess import check_output
+import subprocess
 import logging
 
 LDAP_USER = "cn={},dc=seagate,dc=com"
@@ -349,7 +349,8 @@ class LdapAccountAction:
     return cortx_access_key, cortx_secret_key
 
   def __encrypt_secret_key(self, secret_key):
-    return check_output(['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes']).rstrip().decode()
+    completed_process = subprocess.run(['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return completed_process.stdout.decode().rstrip()
 
 
   def __get_attr(self, index_key):

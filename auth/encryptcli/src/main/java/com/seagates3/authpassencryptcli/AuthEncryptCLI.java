@@ -64,6 +64,8 @@ public class AuthEncryptCLI {
      System.out.println("Usage: java -jar AuthPassEncryptCLI-1.0-0.jar" +
                         " [options]");
      System.out.println("-s  <password>       Specify password");
+     System.out.println(
+         "-e  <encryption algorithm>       Specify encryption algorithm");
      System.out.println("-help");
    }
 
@@ -126,7 +128,7 @@ public class AuthEncryptCLI {
          cliArgs.setPassword(args[1]);
        } else if ((args.length == 4) && (args[0].equals("-s")) &&
                   (args[2].equals("-e"))) {
-         String encryptionAlgorithm = new String(args[3]).toUpperCase();
+         String encryptionAlgorithm = args[3].toUpperCase();
          if (!EncryptionAlgorithm.isEncryptionAlgorithmValid(
                   encryptionAlgorithm)) {
            System.err.println("Invalid encryption algorithm.");
@@ -322,6 +324,10 @@ public class AuthEncryptCLI {
          case AES:
            encryptedPasswd = processEncryptByAesRequest(cliArgs.getPassword());
            break;
+
+         default:
+           System.err.println("Invalid encryption algorithm provided.");
+           System.exit(1);
        }
        // Output to console
        System.out.println(encryptedPasswd);
