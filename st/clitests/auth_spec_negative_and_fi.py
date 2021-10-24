@@ -55,7 +55,7 @@ def before_all():
     config['cacheTimeout'] = "0"
     config.write()
     os.system('systemctl restart s3authserver')
-    time.sleep(15)
+    time.sleep(30)
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
 
@@ -773,3 +773,4 @@ config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
 config['cacheTimeout'] = "30"
 config.write()
 os.system('systemctl restart s3authserver')
+time.sleep(30)
