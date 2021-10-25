@@ -19,7 +19,7 @@
 
 import os
 import yaml
-from subprocess import call
+from subprocess import call, check_output
 from scripts.encrypt_util import EncryptUtil
 import fileinput
 
@@ -36,9 +36,9 @@ class LdapSetup:
 
         for line in fileinput.input("create_test_data.ldif", inplace=True):
             if 'sk: ' in line:
-                secret_key = line[4:]
-                encrypted_secret_key = EncryptUtil.encrypt(secret_key)
-                line = f"sk: {encrypted_secret_key}"
+                secret_key = line[4:].rstrip()
+                encrypted_secret_key = LdapSetup.__encrypt_secret_key(secret_key)
+                line = f"sk: {encrypted_secret_key}\n"
                 
             print(line, end='')
 
@@ -46,6 +46,12 @@ class LdapSetup:
                 self.ldap_config['port'], self.ldap_config['password'],
                 self.ldap_config['login_dn'], ldap_init_file)
         obj = call(cmd, shell=True)
+
+    @staticmethod
+    def __encrypt_secret_key(secret_key):
+        encrypt_cmd = ['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes']
+        completed_process = check_output(encrypt_cmd)
+        return completed_process.decode().rstrip()
 
     def ldap_delete_all(self):
         cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
