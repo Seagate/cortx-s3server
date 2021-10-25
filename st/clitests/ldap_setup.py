@@ -21,6 +21,7 @@ import os
 import yaml
 from subprocess import call, check_output
 import fileinput
+import shutil
 
 class LdapSetup:
     def __init__(self):
@@ -31,11 +32,11 @@ class LdapSetup:
             self.ldap_config = yaml.safe_load(f)
 
     def ldap_init(self):
-        print("I came in ldap setup")
         ldap_init_file = os.path.join(self.test_data_dir, 'create_test_data.ldif')
-        print(ldap_init_file)
+        ldap_init_deploy_file = os.path.join(self.test_data_dir, 'create_test_data_deploy.ldif')
 
-        for line in fileinput.input(ldap_init_file, inplace=True):
+        shutil.copy(ldap_init_file, ldap_init_deploy_file)
+        for line in fileinput.input(ldap_init_deploy_file, inplace=True):
             if 'sk: ' in line:
                 secret_key = line[4:].rstrip()
                 encrypted_secret_key = LdapSetup.__encrypt_secret_key(secret_key)
@@ -43,15 +44,11 @@ class LdapSetup:
                 
             print(line, end='')
 
-        f = open("create_test_data.ldif", "r")
-        print("--------------------Reading create_test_data.ldif--------------------")
-        print(f.read())
-        print("--------------------Reading end--------------------")
-
         cmd = "ldapadd -h %s -p %s -w %s -x -D %s -f %s" % (self.ldap_config['host'],
                 self.ldap_config['port'], self.ldap_config['password'],
-                self.ldap_config['login_dn'], ldap_init_file)
+                self.ldap_config['login_dn'], ldap_init_deploy_file)
         obj = call(cmd, shell=True)
+        os.remove(ldap_init_deploy_file)
 
     @staticmethod
     def __encrypt_secret_key(secret_key):
