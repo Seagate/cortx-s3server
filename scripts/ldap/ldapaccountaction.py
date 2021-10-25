@@ -350,8 +350,8 @@ class LdapAccountAction:
 
   @staticmethod
   def __encrypt_secret_key(secret_key):
-    encrypt_cmd = f"java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes"
-    completed_process = subprocess.check_output(encrypt_cmd, shell=True)
+    encrypt_cmd = ['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes']
+    completed_process = subprocess.check_output(encrypt_cmd)
     return completed_process.decode().rstrip()
 
 
