@@ -32,6 +32,7 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authencryptutil.AESEncryptDecryptUtil;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.exception.DataAccessException;
@@ -40,7 +41,6 @@ import com.seagates3.model.AccessKey;
 import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Account;
 import com.seagates3.model.User;
-import com.seagates3.util.AESEncryptDecryptUtil;
 import com.seagates3.util.DateUtil;
 
 public class AccessKeyImpl implements AccessKeyDAO {

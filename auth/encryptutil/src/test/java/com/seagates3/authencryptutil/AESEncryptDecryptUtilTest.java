@@ -1,11 +1,14 @@
-package com.seagates3.util;
+package com.seagates3.authencryptutil;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+
+import com.seagates3.authencryptutil.AESEncryptDecryptUtil;
 
 public
 class AESEncryptDecryptUtilTest {
@@ -44,7 +47,7 @@ class AESEncryptDecryptUtilTest {
     String decryptedText3 =
         AESEncryptDecryptUtil.decrypt(encryptedText3, const_key);
 
-    assertNull(decryptedText3);
+    assertEquals(password, decryptedText3);
 
     String encryptedText4 = AESEncryptDecryptUtil.encrypt(password, "");
 
