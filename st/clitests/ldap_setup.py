@@ -33,7 +33,7 @@ class LdapSetup:
     def ldap_init(self):
         ldap_init_file = os.path.join(self.test_data_dir, 'create_test_data.ldif')
 
-        for line in fileinput.input("create_test_data.ldif", inplace=True):
+        for line in fileinput.input(ldap_init_file, inplace=True):
             if 'sk: ' in line:
                 secret_key = line[4:].rstrip()
                 encrypted_secret_key = LdapSetup.__encrypt_secret_key(secret_key)
