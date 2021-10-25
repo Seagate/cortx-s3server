@@ -31,7 +31,9 @@ class LdapSetup:
             self.ldap_config = yaml.safe_load(f)
 
     def ldap_init(self):
+        print("I came in ldap setup")
         ldap_init_file = os.path.join(self.test_data_dir, 'create_test_data.ldif')
+        print(ldap_init_file)
 
         for line in fileinput.input(ldap_init_file, inplace=True):
             if 'sk: ' in line:
@@ -40,6 +42,11 @@ class LdapSetup:
                 line = f"sk: {encrypted_secret_key}\n"
                 
             print(line, end='')
+
+        f = open("create_test_data.ldif", "r")
+        print("--------------------Reading create_test_data.ldif--------------------")
+        print(f.read())
+        print("--------------------Reading end--------------------")
 
         cmd = "ldapadd -h %s -p %s -w %s -x -D %s -f %s" % (self.ldap_config['host'],
                 self.ldap_config['port'], self.ldap_config['password'],

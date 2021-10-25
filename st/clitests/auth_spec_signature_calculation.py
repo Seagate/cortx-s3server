@@ -118,6 +118,15 @@ for test in test_data:
     expected_response = test_data[test]['output']
     test_response = AuthHTTPClient().authenticate_user(headers, updated_params)
 
+    print("------------------Auth spec execution response-------------")
+    print(expected_response)
+    print("----")
+    print(test_response)
+    print("----")
+    print(vars(expected_response))
+    print("----")
+    print(vars(test_response))
+    print("----")
     check_response(expected_response, test_response)
     print("Test was successful\n")
 
