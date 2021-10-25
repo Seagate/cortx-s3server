@@ -2189,7 +2189,7 @@ def execute_all_system_tests():
 
     # Do not change the order.
     before_all()
-    #test_max_account_and_user_limit_value_of_auth_config()
+    test_max_account_and_user_limit_value_of_auth_config()
     account_tests()
     user_tests()
     accesskey_tests()
