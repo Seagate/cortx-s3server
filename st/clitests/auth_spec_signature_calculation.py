@@ -123,10 +123,6 @@ for test in test_data:
     print("----")
     print(test_response)
     print("----")
-    print(vars(expected_response))
-    print("----")
-    print(vars(test_response))
-    print("----")
     check_response(expected_response, test_response)
     print("Test was successful\n")
 
