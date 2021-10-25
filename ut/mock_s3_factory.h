@@ -285,7 +285,7 @@ class MockS3PutVersioningBodyFactory : public S3PutBucketVersioningBodyFactory {
   }
 
   std::shared_ptr<S3PutVersioningBody> create_put_resource_versioning_body(
-      std::string& xml, std::string& request_id) override {
+      const std::string& xml, const std::string& request_id) override {
     return mock_put_bucket_versioning_body;
   }
 

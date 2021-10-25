@@ -83,7 +83,8 @@ void S3PutBucketVersioningAction::consume_incoming_content() {
   }
 }
 
-void S3PutBucketVersioningAction::validate_request_body(std::string content) {
+void S3PutBucketVersioningAction::validate_request_body(
+    const std::string& content) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   put_bucket_version_body =
       put_bucket_version_factory->create_put_resource_versioning_body(
@@ -94,7 +95,7 @@ void S3PutBucketVersioningAction::validate_request_body(std::string content) {
   } else {
     std::string s3_error =
         put_bucket_version_body->get_additional_error_information();
-    if (s3_error.compare("OperationNotSupported") == 0) {
+    if ("OperationNotSupported" == s3_error) {
       set_s3_error("OperationNotSupported");
     } else {
       set_s3_error("MalformedXML");

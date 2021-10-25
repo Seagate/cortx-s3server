@@ -211,8 +211,8 @@ class S3PutBucketVersioningBodyFactory {
  public:
   virtual ~S3PutBucketVersioningBodyFactory() {}
   virtual std::shared_ptr<S3PutVersioningBody>
-  create_put_resource_versioning_body(std::string& xml,
-                                      std::string& request_id) {
+  create_put_resource_versioning_body(const std::string& xml,
+                                      const std::string& request_id) {
     s3_log(
         S3_LOG_DEBUG, request_id,
         "S3PutBucketVersioningBodyFactory::create_put_bucket_version_body\n");

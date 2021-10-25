@@ -48,7 +48,7 @@ class S3PutBucketVersioningAction : public S3BucketAction {
   void setup_steps();
   void validate_request();
   void consume_incoming_content();
-  void validate_request_body(std::string content);
+  void validate_request_body(const std::string& content);
   void validate_request_xml_tags();
   void save_versioning_status_to_bucket_metadata();
   void save_versioning_status_to_bucket_metadata_failed();

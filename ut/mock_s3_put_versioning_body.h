@@ -32,7 +32,7 @@ using ::testing::Return;
 
 class MockS3PutVersioningBody : public S3PutVersioningBody {
  public:
-  MockS3PutVersioningBody(std::string& xml, std::string& request_id)
+  MockS3PutVersioningBody(const std::string& xml, const std::string& request_id)
       : S3PutVersioningBody(xml, request_id) {}
   MOCK_METHOD(bool, isOK, (), (override));
   MOCK_METHOD(const std::string&, get_versioning_status, (), (override));

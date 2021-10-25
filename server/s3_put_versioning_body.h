@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_PUT_VERSIONING_H__
-#define __S3_SERVER_S3_PUT_VERSIONING_H__
+#ifndef __S3_SERVER_S3_PUT_VERSIONING_BODY_H__
+#define __S3_SERVER_S3_PUT_VERSIONING_BODY_H__
 
 #include <gtest/gtest_prod.h>
 #include <string>
@@ -31,14 +31,13 @@
 class S3PutVersioningBody {
   std::string xml_content;
   std::string request_id;
-  // std::map<std::string, std::string> bucket_tags;
   std::string versioning_status;
   bool is_valid;
   std::string s3_error;
   bool parse_and_validate();
 
  public:
-  S3PutVersioningBody(std::string& xml, std::string& request);
+  S3PutVersioningBody(const std::string& xml, const std::string& request);
   virtual bool isOK();
   virtual bool read_status_node(xmlNodePtr& sub_child);
   virtual bool validate_bucket_xml_versioning_status(

@@ -27,7 +27,8 @@
 #include "s3_log.h"
 #include "s3_put_versioning_body.h"
 
-S3PutVersioningBody::S3PutVersioningBody(std::string &xml, std::string &request)
+S3PutVersioningBody::S3PutVersioningBody(const std::string &xml,
+                                         const std::string &request)
     : xml_content(xml), request_id(request), is_valid(false), s3_error("") {
 
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
@@ -152,8 +153,7 @@ bool S3PutVersioningBody::validate_bucket_xml_versioning_status(
 
   Unversioned:: If the versioning state has never been set on a bucket, it has
   no versioning state*/
-  if (versioning_status.compare("Enabled") == 0 ||
-      versioning_status.compare("Suspended") == 0) {
+  if (versioning_status == "Enabled" || versioning_status == "Suspended") {
     return true;
   }
   s3_log(S3_LOG_WARN, request_id,
