@@ -24,6 +24,7 @@ import socket
 from ldap.ldapobject import SimpleLDAPObject
 import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
+from scripts.encrypt_util import EncryptUtil
 import subprocess
 import logging
 
@@ -90,7 +91,7 @@ class LdapAccountAction:
                                       input_params['const_cipher_secret_str'],
                                       input_params['const_cipher_access_str'])
 
-    encrypted_secret_key = LdapAccountAction.__encrypt_secret_key(secret_key)
+    encrypted_secret_key = EncryptUtil.encrypt(secret_key)
 
     input_params['access_key'] = access_key
     input_params['secret_key'] = secret_key
@@ -347,13 +348,6 @@ class LdapAccountAction:
     cortx_access_key = CortxS3Cipher(None, True, 22, const_access_string).generate_key()
     cortx_secret_key = CortxS3Cipher(None, False, 40, const_secret_string).generate_key()
     return cortx_access_key, cortx_secret_key
-
-  @staticmethod
-  def __encrypt_secret_key(secret_key):
-    encrypt_cmd = ['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes']
-    completed_process = subprocess.check_output(encrypt_cmd)
-    return completed_process.decode().rstrip()
-
 
   def __get_attr(self, index_key):
     """Fetches attr from map based on index."""
