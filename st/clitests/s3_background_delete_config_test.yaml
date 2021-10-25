@@ -61,7 +61,7 @@ indexid:
    global_instance_index_id: "AAAAAAAAAHg=-BAAQAAAAAAA="      # Index id containing global instance id's. This is also fixed index id shared with s3server.
    global_bucket_index_id:   "AAAAAAAAAHg=-AQAQAAAAAAA="      # Index id containing bucket/account info
    bucket_metadata_index_id: "AAAAAAAAAHg=-AgAQAAAAAAA="      # Index id containing bucket metadata
-   max_keys: 1000                                             # Maximum number of keys in global index to be queried from list of probable delete object oid.
+   max_keys: 30                                               # Maximum number of keys in global index to be queried from list of probable delete object oid.
 
 leakconfig:                                  # Section for object leak config
    leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.
