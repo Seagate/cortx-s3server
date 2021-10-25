@@ -20,7 +20,6 @@
 import os
 import yaml
 from subprocess import call, check_output
-from scripts.encrypt_util import EncryptUtil
 import fileinput
 
 class LdapSetup:
