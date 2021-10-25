@@ -195,22 +195,19 @@ public class AuthEncryptCLI {
     * @throws Exception
     */
   public
-   static String processEncryptByAesRequest(String passwd) throws Exception {
-     String encryptedPasswd = null;
+   static String processEncryptByAesRequest(String passwd)
+       throws IllegalArgumentException {
      if (passwd == null || passwd.isEmpty() || passwd.matches(".*([ \t]).*")) {
        logger.error("Password is null or empty or contains spaces");
        System.err.println("Invalid Password Value.");
-       throw new Exception("Invalid Password Value.");
+       throw new IllegalArgumentException("Invalid Password Value.");
      }
 
      String keystorePasswd = getKey(AuthEncryptConfig.getCipherUtilGenKeyAes());
 
-     encryptedPasswd = AESEncryptDecryptUtil.encrypt(passwd, keystorePasswd);
+     String encryptedPasswd =
+         AESEncryptDecryptUtil.encrypt(passwd, keystorePasswd);
 
-     if (encryptedPasswd == null || encryptedPasswd.isEmpty()) {
-       logger.error("Encrypted Password is null or empty");
-       throw new Exception("Failed to encrypt password.");
-     }
      return encryptedPasswd;
    }
 
@@ -326,11 +323,18 @@ public class AuthEncryptCLI {
            break;
 
          default:
-           System.err.println("Invalid encryption algorithm provided.");
-           System.exit(1);
+           encryptedPasswd = processEncryptRequest(cliArgs.getPassword());
+           break;
        }
        // Output to console
-       System.out.println(encryptedPasswd);
+       if (encryptedPasswd == null || encryptedPasswd.isEmpty()) {
+         logger.error("Failed to encrypt password due to internal error.");
+         System.err.println(
+             "Failed to encrypt password due to internal error.");
+         System.exit(1);
+       } else {
+         System.out.println(encryptedPasswd);
+       }
      }
      catch (GeneralSecurityException e) {
        logger.error("Failed to encrypt password. " + e.getCause() +

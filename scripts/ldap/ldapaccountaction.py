@@ -90,7 +90,7 @@ class LdapAccountAction:
                                       input_params['const_cipher_secret_str'],
                                       input_params['const_cipher_access_str'])
 
-    encrypted_secret_key = self.__encrypt_secret_key(secret_key)
+    encrypted_secret_key = LdapAccountAction.__encrypt_secret_key(secret_key)
 
     input_params['access_key'] = access_key
     input_params['secret_key'] = secret_key
@@ -348,9 +348,11 @@ class LdapAccountAction:
     cortx_secret_key = CortxS3Cipher(None, False, 40, const_secret_string).generate_key()
     return cortx_access_key, cortx_secret_key
 
-  def __encrypt_secret_key(self, secret_key):
-    completed_process = subprocess.run(['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return completed_process.stdout.decode().rstrip()
+  @staticmethod
+  def __encrypt_secret_key(secret_key):
+    encrypt_cmd = f"java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes"
+    completed_process = subprocess.check_output(encrypt_cmd, shell=True)
+    return completed_process.decode().rstrip()
 
 
   def __get_attr(self, index_key):
