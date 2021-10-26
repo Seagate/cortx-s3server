@@ -68,7 +68,7 @@ class LdapSetup:
         env = TestFileEnvironment(base_path=working_dir, start_clear=True)
         status = env.run(f'java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes')
         shutil.rmtree(working_dir, ignore_errors=True)
-        return status.rstrip()
+        return status.stdout.rstrip()
 
 
 class LdapInfo:
