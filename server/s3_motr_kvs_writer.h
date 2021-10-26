@@ -133,6 +133,7 @@ class S3MotrKVSWriter {
   std::unique_ptr<S3AsyncMotrKVSWriterContext> sync_context;
   std::string kvs_key;
   std::string kvs_value;
+  unsigned int how_many_being_processed;
 
   std::string request_id;
   std::string stripped_request_id;
@@ -140,6 +141,8 @@ class S3MotrKVSWriter {
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
+  std::function<void(unsigned int)> on_success_for_extends;
+  std::function<void(unsigned int)> on_failure_for_extends;
 
   S3MotrKVSWriterOpState state;
 
@@ -155,6 +158,8 @@ class S3MotrKVSWriter {
   void delete_indices_failed();
   void put_keyval_successful();
   void put_keyval_failed();
+  void put_partial_keyval_successful();
+  void put_partial_keyval_failed();
   void delete_keyval_successful();
   void delete_keyval_failed();
   // void sync_index_successful();
@@ -163,7 +168,8 @@ class S3MotrKVSWriter {
   // void sync_keyval_failed();
 
   virtual int put_keyval_impl(const std::map<std::string, std::string>& kv_list,
-                              bool is_async);
+                              bool is_async, bool is_partial_write = false,
+                              int offset = 0, unsigned int how_many = 0);
 
  public:
   S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
@@ -213,6 +219,14 @@ class S3MotrKVSWriter {
                           const std::map<std::string, std::string>& kv_list,
                           std::function<void(void)> on_success,
                           std::function<void(void)> on_failed);
+
+  virtual void put_partial_keyval(
+      const struct s3_motr_idx_layout& idx_lo,
+      const std::map<std::string, std::string>& kv_list,
+      std::function<void(unsigned int)> on_success,
+      std::function<void(unsigned int)> on_failed, unsigned int offset = 0,
+      unsigned int how_many = 30);
+
   // Async save operation.
   virtual void put_keyval(const struct s3_motr_idx_layout& idx_lo,
                           const std::string& key, const std::string& val,
@@ -260,6 +274,9 @@ class S3MotrKVSWriter {
   FRIEND_TEST(S3MotrKVSWritterTest, SyncIndexFailedMissingMetadata);
   FRIEND_TEST(S3MotrKVSWritterTest, SyncIndexFailedFailedMetadata);
   FRIEND_TEST(S3MotrKVSWritterTest, PutKeyVal);
+  FRIEND_TEST(S3MotrKVSWritterTest, PutPartialKeyVal);
+  FRIEND_TEST(S3MotrKVSWritterTest, PutPartialKeyValSuccessful);
+  FRIEND_TEST(S3MotrKVSWritterTest, PutPartialKeyValFailed);
   FRIEND_TEST(S3MotrKVSWritterTest, PutKeyValSuccessful);
   FRIEND_TEST(S3MotrKVSWritterTest, PutKeyValFailed);
   FRIEND_TEST(S3MotrKVSWritterTest, PutKeyValEmpty);

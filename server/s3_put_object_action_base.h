@@ -73,10 +73,17 @@ class S3PutObjectActionBase : public S3ObjectAction {
   void fetch_additional_bucket_info_failed() final;
   void fetch_additional_object_info_failed() final;
 
+  // Fetching of extended metadata failed
+  void fetch_ext_object_info_failed();
+
   // Create object
   void create_object();
   void create_object_successful();
   void create_object_failed();
+  void create_objects();
+  void create_parts_fragments(int index);
+  void create_part_fragment_successful();
+  void create_part_fragment_failed();
   void collision_detected();
   void create_new_oid(struct m0_uint128);
 
@@ -85,25 +92,36 @@ class S3PutObjectActionBase : public S3ObjectAction {
   // Rollback tasks
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
+  void add_parts_fragment_oid_to_probable_dead_oid_list();
+  void add_parts_fragment_oid_to_probable_dead_oid_list_success();
+
   void startcleanup() final;
   void mark_new_oid_for_deletion();
   void mark_old_oid_for_deletion();
   void remove_old_oid_probable_record();
   void remove_new_oid_probable_record();
   void delete_old_object();
+  void delete_old_object_success();
   void remove_old_object_version_metadata();
   void delete_new_object();
 
   // Data
   struct m0_uint128 old_object_oid = {};
   struct m0_uint128 new_object_oid = {};
+  struct m0_uint128 new_ext_oid = {};
 
   std::string old_oid_str;  // Key for old probable delete rec
   std::string new_oid_str;  // Key for new probable delete rec
+  std::string new_ext_oid_str;
+  std::vector<std::string> new_oid_str_list;
 
   std::shared_ptr<S3MotrWiter> motr_writer;
+  std::vector<std::shared_ptr<S3MotrWiter>> motr_writer_list;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<S3ObjectExtendedMetadata> extended_obj = nullptr;
+  std::vector<struct s3_part_frag_context> part_fragment_context_list;
+  std::vector<struct s3_part_frag_context> new_part_frag_ctx_list;
 
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
 
@@ -112,16 +130,24 @@ class S3PutObjectActionBase : public S3ObjectAction {
 
   // Probable delete record for old object OID in case of overwrite
   std::unique_ptr<S3ProbableDeleteRecord> old_probable_del_rec;
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>> probable_del_rec_list;
   // Probable delete record for new object OID in case of current req failure
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+  std::vector<struct m0_uint128> old_obj_oids;
+  std::vector<struct m0_fid> old_obj_pvids;
+  std::vector<int> old_obj_layout_ids;
 
   size_t total_data_to_stream = 0;
   size_t motr_unit_size = 0;
+  size_t max_part_size = 0;
+  int total_objects = 0;
+  bool is_multipart = false;
 
   int layout_id = -1;
   int old_layout_id = -1;
   unsigned motr_write_payload_size = 0;
   unsigned short tried_count = 0;
+  int index = 0;
 
   S3PutObjectActionState s3_put_action_state = S3PutObjectActionState::empty;
   bool write_in_progress = false;

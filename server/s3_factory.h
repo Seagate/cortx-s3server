@@ -77,6 +77,14 @@ class S3ObjectMetadataFactory {
       const std::string& str_object_name,
       const struct s3_motr_idx_layout& obj_idx_lo,
       const struct s3_motr_idx_layout& obj_ver_idx_lo);
+
+  // Added below to create instance of 'S3ObjectExtendedMetadata' class
+  virtual std::shared_ptr<S3ObjectExtendedMetadata>
+      create_object_ext_metadata_obj(
+          std::shared_ptr<S3RequestObject> req, const std::string& bucket_name,
+          const std::string& object_name, const std::string& versionid,
+          unsigned int parts, unsigned int fragments,
+          const struct s3_motr_idx_layout& obj_idx_lo);
 };
 
 class S3ObjectMultipartMetadataFactory {

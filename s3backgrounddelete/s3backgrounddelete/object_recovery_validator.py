@@ -126,23 +126,24 @@ class ObjectRecoveryValidator:
             self.logAPIResponse("GET INDEX", index_id, key, response_data)
             return ret, None
 
-    def get_object_versionEntry(self, version_list_indx, version_key):
-        versionInfo = None
+    #get_object_versionEntry
+    def get_object_Entry(self, indx_id, key_in_index):
+        objInfo = None
         status = False
-        ret, response_data = self.get_key_from_index(version_list_indx, version_key)
+        ret, response_data = self.get_key_from_index(indx_id, key_in_index)
         if (ret):
             status = ret
             if (response_data is not None):
                 # Found key in index
-                self._logger.info("Version " + str(version_key) + " exists in version index " + str(version_list_indx))
+                self._logger.info("Key: " + str(key_in_index) + " exists in index " + str(indx_id))
                 self._logger.info("Version details: " + str(response_data.get_value()))
-                versionInfo = json.loads(response_data.get_value())
+                objInfo = json.loads(response_data.get_value())
             else:
-                self._logger.info("Version " + str(version_key) + " does not exist in version index " + str(version_list_indx))
+                self._logger.info("Key: " + str(key_in_index) + " does not exist in index " + str(indx_id))
         else:
-            self._logger.info("Version " + str(version_key) + " does not exist in version index " + str(version_list_indx))
+            self._logger.info("Key: " + str(key_in_index) + " does not exist in index " + str(indx_id))
 
-        return status, versionInfo
+        return status, objInfo
 
     def get_object_metadata(self, index_id, key):
         obj_metadata = None
@@ -158,58 +159,183 @@ class ObjectRecoveryValidator:
                               str(response.get_error_message()))
 
     def process_probable_delete_record(self, delete_entry = False, delete_obj_from_store = False):
+        self._logger.info("process_probable_delete_record Entry")
         object_version_list_index_id = self.object_leak_info["objects_version_list_index_oid"]
+        object_extended_md_index_id = None
         status = False
         obj_ver_key = None
-        if ("true" != self.object_leak_info["is_multipart"]):
+        obj_ext_key = None
+        ver_motr_oid_key = "motr_oid"
+        ver_layout_id_key = "layout_id"
+        ver_api_prefix = "VERSION LIST DEL"
+        ext_motr_oid_key = "OID"
+        ext_layout_id_key = "layout-id"
+        ext_api_prefix = "EXTENDED MD LIST DEL"
+        pvid_key = "PVID"
+        part_no = 0
+        frag_no = 0
+        ext_ver_id = "0"
+        # parent oid available only for parts of multipart object (i.e extended object)
+        parent_oid = NULL_OBJ_OID
+        if "parent_oid" in self.object_leak_info:
+            parent_oid = self.object_leak_info["parent_oid"]
+
+        # We dont remove entries from part table, since the table will have
+        # the latest entry that we want to keep. the old oid that we want to 
+        # delete is present in the key of PDI and deleting it is sufficient
+        # TODO : there will come a time when we would want to delete the part
+        # index table, currently its being handled by s3server, but incase
+        # there is a failure in s3server then bgdel should be able to do it.
+        if "version_key_in_index" in self.object_leak_info:
             obj_ver_key = self.object_leak_info["version_key_in_index"]
 
-        if (delete_obj_from_store):
-            # Delete motr object associated with version. Also, delete version entry
-            if all(v is not None for v in [object_version_list_index_id, obj_ver_key]):
-                status = self.del_obj_from_version_list(object_version_list_index_id, obj_ver_key)
-                if (not status):
-                    self._logger.info("Failed to delete version/object " + obj_ver_key +
-                                      " from version list")
-            else:
-                return status
+        if "part" in self.object_leak_info:
+            part_no = self.object_leak_info["part"]
 
+        if "fno" in self.object_leak_info :
+            frag_no = self.object_leak_info["fno"]
+
+        self._logger.info("frag_no : " + str(frag_no))
+        self._logger.info("part_no : " + str(part_no))
+
+        if (parent_oid != NULL_OBJ_OID and part_no != 0):
+            # This is part of a multipart object
+            if len(self.object_leak_info["ext_version_id"]) != 0 :
+                ext_ver_id = str(self.object_leak_info["ext_version_id"])
+
+            try:
+                object_extended_md_index_id = self.object_leak_info["extended_md_idx_oid"]
+            except Exception as e:
+                self._logger.error("Exception : " + str(e))
+                object_extended_md_index_id = None
+
+            if object_extended_md_index_id is not None:
+                obj_ext_key = self.object_leak_info["object_key_in_index"] + "|" + \
+                            ext_ver_id + "|" + "P" + \
+                            str(part_no) + "|" + "F" + \
+                            str(frag_no)
+                self._logger.info("obj_ext_key : " + obj_ext_key)
+
+
+        if (delete_obj_from_store):
+            index_key_list = [(object_version_list_index_id, obj_ver_key, \
+                                ver_motr_oid_key, ver_layout_id_key, ver_api_prefix)]
+
+            if object_extended_md_index_id is not None and \
+                    object_extended_md_index_id != NULL_OBJ_OID:
+                self._logger.info("Extended Metadata Index is present.")
+                index_key_list.clear()
+                index_key_list.append((object_extended_md_index_id, obj_ext_key, \
+                                ext_motr_oid_key, ext_layout_id_key, ext_api_prefix))
+
+            for (index, key_in_index, oid_key, layout_id_key, api_prefix) in index_key_list:
+                if ((index is None) or (key_in_index is None) or (len(key_in_index) == 0)):
+                    self._logger.info("Either key: " + str(key_in_index) +
+                                      " or index: " + str(index) + " is Empty")
+                    continue
+
+                self._logger.info("key: " + key_in_index +
+                                      " index: " + index )
+                if api_prefix == ext_api_prefix:
+                    # Leak entry is probably the extended object of multipart
+                    status = self.del_obj_from_extended_index(index, key_in_index, \
+                                                oid_key, layout_id_key, pvid_key, api_prefix)
+                    if (not status):
+                        self._logger.info("Failed to delete object using " + key_in_index +
+                                        " from extended index " + index)
+                    # Break from here: Single version entry for all extended objects
+                    # will be removed separately using multipart parent leak entry
+                    break
+                else:
+                    #Leak entry is normal object
+                    status = self.del_obj_from_ver_index(index, key_in_index, \
+                                                oid_key, layout_id_key, pvid_key, api_prefix)
+                if (not status):
+                    self._logger.info("Failed to delete object using " + key_in_index +
+                                      " from version index " + index)
+        else:
+             status = True
+  
         leak_rec_key = self.probable_delete_records["Key"]
-        # If 'delete_entry =True', then delete record from probable delete index
-        if (delete_entry):
+        # If 'delete_entry = True', then delete record from probable delete index, iff
+        # previous status is True
+        if (status and delete_entry):
             probable_index_id = self.config.get_probable_delete_index_id()
+            self._logger.info("Deleting Entry from PDI with Key : " + leak_rec_key + \
+                                "from index : " + probable_index_id)
             if (delete_entry and leak_rec_key is not None):
                 status = self.delete_key_from_index(probable_index_id, leak_rec_key, "PROBABALE INDEX DEL")
 
         return status
 
-    def del_obj_from_version_list(self, versionListIndx, versionKey):
+    def del_obj_from_extended_index(self, index_id, key_in_index, \
+                            obj_oid_key_in_value, layout_id_key_in_value, \
+                            pvid_key_in_value, api_prefix):
         status = False
-        if all(v is not None for v in [versionListIndx, versionKey]):
-            # Fetch version from version list
-            status, versionInfo = self.get_object_versionEntry(versionListIndx, versionKey)
+        if all(v is not None for v in [index_id, key_in_index]):
+            # Fetch entry from extended index list
+            status, keyInfo = self.get_object_Entry(index_id, key_in_index)
             if (not status):
-                self._logger.info("Error! Failed to get object with version key " + versionKey +
-                    " from version list")
+                self._logger.info("Error! Failed to get object with key " + key_in_index +
+                    " from index" + index_id)
                 return status
 
-            if (versionInfo is not None):
-                obj_oid = versionInfo["motr_oid"]
-                layout_id = versionInfo["layout_id"]
-                #Delete version object from motr store
-                status = self.delete_object_from_storage(obj_oid, layout_id, self.pvid_str)
+            if (keyInfo is not None):
+                obj_oid = keyInfo[obj_oid_key_in_value]
+                layout_id = keyInfo[layout_id_key_in_value]
+                pvid = keyInfo[pvid_key_in_value]
+                # Delete extended object from motr store
+                status = self.delete_object_from_storage(obj_oid, layout_id, pvid)
                 if (status):
-                    self._logger.info("Deleted object version with oid " + obj_oid + " from motr store")
+                    self._logger.info("Deleted object with oid " + obj_oid + " from motr store")
                 else:
-                    self._logger.info("Failed to delete object version with oid [" + obj_oid + "] from motr store")
+                    self._logger.info("Failed to delete object with oid [" + obj_oid + "] from motr store")
             else:
-                self._logger.info("The version key: " + versionKey + " does not exist. Delete motr object")
+                self._logger.info("The key: " + key_in_index + " does not exist. Delete motr object")
                 status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id, self.pvid_str)
 
             if (status):
-                status = self.delete_key_from_index(versionListIndx, versionKey, "VERSION LIST DEL")
+                #EXTENDED LIST ENTRY DEL
+                status = self.delete_key_from_index(index_id, key_in_index, api_prefix)
                 if (status):
-                    self._logger.info("Deleted version key " + versionKey + " from version list index " + versionListIndx)
+                    self._logger.info("Deleted key " + key_in_index + " from index " + index_id)
+        return status
+
+    def del_obj_from_ver_index(self, index_id, key_in_index, \
+                            obj_oid_key_in_value, layout_id_key_in_value, \
+                            pvid_key_in_value, api_prefix):
+        status = False
+        if all(v is not None for v in [index_id, key_in_index]):
+            # Fetch version from version list
+            status, keyInfo = self.get_object_Entry(index_id, key_in_index)
+            if (not status):
+                self._logger.info("Error! Failed to get object with key " + key_in_index +
+                    " from index" + index_id)
+                return status
+
+            if (keyInfo is not None):
+                # obj_oid = versionInfo["motr_oid"]
+                # layout_id = versionInfo["layout_id"]
+                obj_oid = keyInfo[obj_oid_key_in_value]
+                layout_id = keyInfo[layout_id_key_in_value]
+                pvid = keyInfo[pvid_key_in_value]
+                # Delete version object from motr store
+                # self.pvid is wrong, it either need to be found like above layout id
+                # or needs to be passed to this function. 
+                status = self.delete_object_from_storage(obj_oid, layout_id, pvid)
+                if (status):
+                    self._logger.info("Deleted object with oid " + obj_oid + " from motr store")
+                else:
+                    self._logger.info("Failed to delete object with oid [" + obj_oid + "] from motr store")
+            else:
+                self._logger.info("The key: " + key_in_index + " does not exist. Delete motr object")
+                status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id, self.pvid_str)
+
+            if (status):
+                #"VERSION LIST DEL"
+                status = self.delete_key_from_index(index_id, key_in_index, api_prefix)
+                if (status):
+                    self._logger.info("Deleted key " + key_in_index + " from index " + index_id)
 
         return status
 
@@ -254,6 +380,8 @@ class ObjectRecoveryValidator:
             probable_delete_oid)
         try:
             self.object_leak_info = json.loads(probable_delete_value)
+            # Object size based prefix
+            self.oid_prefix = probable_delete_oid[:1]
             self.object_leak_id = probable_delete_oid[1:]
             self.object_leak_layout_id = self.object_leak_info["object_layout_id"]
             self.pvid_str = self.object_leak_info["pv_id"]
@@ -271,12 +399,12 @@ class ObjectRecoveryValidator:
             #   Each object oid has 1 '-', seperating high and low values
             # e.g., variable 'probable_delete_oid' contains: "Tgj8AgAAAAA=-kwAAAAAABCY=-Tgj8AgAAAAA=-lgAAAAAABCY="
             # where old obj id is "Tgj8AgAAAAA=-kwAAAAAABCY=" and new obj id is "Tgj8AgAAAAA=-lgAAAAAABCY="
-            oil_list = self.object_leak_id.split("-")
-            if (oil_list is None or (len(oil_list) not in [2, 4])):
+            old_list = self.object_leak_id.split("-")
+            if (old_list is None or (len(old_list) not in [2, 4])):
                 self._logger.error("The key for old object " + str(self.object_leak_id) +
                                    " is not in the required format 'oldoid-newoid'")
                 return
-            self.object_leak_id = oil_list[0] + "-" + oil_list[1]
+            self.object_leak_id = old_list[0] + "-" + old_list[1]
 
         # Determine object leak using information in metadata
         # Below is the implementaion of leak algorithm
@@ -338,7 +466,8 @@ class ObjectRecoveryValidator:
                         if (cb_status == True):
                             self._logger.info("Leak detected: Delete version object and version entry for key: " + obj_ver_key)
                             # Delete object from store and delete the version entry from the version list
-                            status = self.del_obj_from_version_list(object_version_list_index, obj_ver_key)
+                            status = self.del_obj_from_ver_index(object_version_list_index, obj_ver_key, \
+                                                            "motr_oid", "layout_id", "PVID", "VERSION LIST DEL")
                             if (status):
                                 self._logger.info("Deleted leaked object at key: " + obj_ver_key)
                                 # Delete entry from probbale delete list as well, if any
@@ -377,6 +506,29 @@ class ObjectRecoveryValidator:
         # Check if 'forceDelete' is set on leak entry. If yes, delete object and record from probable leak table
         force_delete = self.object_leak_info["force_delete"]
         if (force_delete == "true"):
+            # Handle Multipart parent object stale entry
+            part_no = 0
+            if "part" in self.object_leak_info:
+                part_no = self.object_leak_info["part"]
+
+            if (self.oid_prefix == "J" and part_no > 0):
+                # part_no > 0 indicates multipart object. Prefix 'J' indicates dummy object.
+                # The 'and' condition helps to clearly separate it from an empty object in Motr.
+                # Delete version associated with parent multipart oid entry from the version index
+                version_index = self.object_leak_info["objects_version_list_index_oid"]
+                version_key = self.object_leak_info["version_key_in_index"]
+                status = self.delete_key_from_index(version_index, version_key, "VERSION INDEX KEY DEL")
+                if (not status):
+                    self._logger.info("Multipart parent: Failed to delete version entry " + version_key +
+                                      " from version index")
+                else:
+                    self._logger.info("Deleted version entry associated with multipart object oid =" + self.object_leak_id)
+                    probable_index_id = self.config.get_probable_delete_index_id()
+                    probable_rec_key = self.probable_delete_records["Key"]
+                    self._logger.info("Deleting Entry from PDI with Key : " + probable_rec_key)
+                    status = self.delete_key_from_index(probable_index_id, probable_rec_key, "PROBABALE INDEX DEL")
+                return
+
             if ("true" != self.object_leak_info["is_multipart"]):
                 # This is not a multipart request
                 status = self.process_probable_delete_record(True, True)
@@ -402,15 +554,6 @@ class ObjectRecoveryValidator:
                 else:
                     self._logger.error("Failed to process leak oid, failed to delete object  " +
                         self.object_leak_id + " Skipping entry for next run")
-
-                # Delete part list index, if any
-                part_list_index_id = self.object_leak_info["part_list_idx_oid"]
-                if (part_list_index_id):
-                    status = self.delete_index(part_list_index_id)
-                    if (status):
-                        self._logger.info("Deleted part list index " + str(part_list_index_id) + " successfully")
-                    else:
-                        self._logger.info("Failed to delete part list index " + str(part_list_index_id))
             return
 
         obj_key = self.object_leak_info["object_key_in_index"]
@@ -435,7 +578,7 @@ class ObjectRecoveryValidator:
                         status = self.delete_object_from_storage(oid, layout, self.pvid_str)
                         if (status):
                             self._logger.info("Object for Leak entry " + self.object_leak_id + " deleted from store")
-                            status = self.process_probable_delete_record(True, False)
+                            status = self.process_probable_delete_record(True, True)
                             if (status):
                                 self._logger.info("Leak entry " + self.object_leak_id + " processed successfully and deleted")
                             else:
@@ -444,15 +587,6 @@ class ObjectRecoveryValidator:
                         else:
                             self._logger.error("Failed to process leak oid, failed to delete object " +
                                 self.object_leak_id + " Skipping entry for next run")
-
-                        # Delete part list index, if any exists
-                        part_list_index_id = self.object_leak_info["part_list_idx_oid"]
-                        if (part_list_index_id):
-                            status = self.delete_index(part_list_index_id)
-                            if (status):
-                                self._logger.info("Deleted part list index " +  str(part_list_index_id) + " successfully")
-                            else:
-                                self._logger.info("Failed to delete part list index " + str(part_list_index_id))
                     else:
                         self._logger.info("Skipping leak entry " + self.object_leak_id + " as it exists in multipart index")
                 else:
@@ -549,7 +683,7 @@ class ObjectRecoveryValidator:
                 ovli_oid = self.object_leak_info["objects_version_list_index_oid"]
                 ovli_key = self.object_leak_info["version_key_in_index"]
 
-                status, versioninfo = self.get_object_versionEntry(ovli_oid, ovli_key)
+                status, versioninfo = self.get_object_Entry(ovli_oid, ovli_key)
 
                 if (status and versioninfo is not None):
                     self._logger.info("New obj oid: " + self.object_leak_id + " with version key:" +
