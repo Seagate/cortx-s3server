@@ -70,7 +70,8 @@ class S3PartMetadata {
   std::string index_name;
   std::string salt;
   std::string str_part_num;
-
+  int old_layout_id = 0;
+  int layout_id = 0;
   std::string request_id;
   std::string stripped_request_id;
 
@@ -82,8 +83,10 @@ class S3PartMetadata {
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   bool put_metadata;
-
   struct s3_motr_idx_layout part_index_layout = {};
+  struct m0_uint128 oid = M0_ID_APP;
+  std::string motr_oid_str;
+  std::string pvid_str;
 
   // Used to report to caller.
   std::function<void()> handler_on_success;
@@ -140,7 +143,16 @@ class S3PartMetadata {
   virtual void reset_date_time_to_current();
   virtual std::string get_storage_class();
   virtual std::string get_upload_id();
-  std::string get_part_number();
+  virtual std::string get_part_number();
+  virtual const struct m0_uint128 get_oid() { return oid; }
+  virtual std::string get_oid_str() { return motr_oid_str; }
+  virtual void set_oid(struct m0_uint128 id);
+  void set_layout_id(int id) { layout_id = id; }
+  virtual int get_layout_id() { return layout_id; }
+  struct m0_fid get_pvid();
+  void set_pvid(const struct m0_fid* p_pvid);
+  const std::string& get_pvid_str() const { return pvid_str; }
+  void set_pvid_str(const std::string& val) { pvid_str = val; }
 
   // Load attributes.
   std::string get_system_attribute(std::string key);

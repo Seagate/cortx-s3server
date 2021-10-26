@@ -58,6 +58,7 @@ class S3RequestObject : public RequestObject {
 
   S3AuditInfo audit_log_obj;
   size_t object_size;
+  bool response_started_by_action = false;
 
   S3ApiType s3_api_type;
   S3OperationCode s3_operation_code;
@@ -76,6 +77,12 @@ class S3RequestObject : public RequestObject {
   void set_operation_code(S3OperationCode operation_code);
   virtual S3OperationCode get_operation_code();
   virtual void populate_and_log_audit_info();
+  virtual void set_response_started_by_action(bool response_started) {
+    response_started_by_action = response_started;
+  }
+  virtual bool get_response_started_by_action() {
+    return response_started_by_action;
+  }
 
  public:
   virtual void set_object_size(size_t obj_size);
