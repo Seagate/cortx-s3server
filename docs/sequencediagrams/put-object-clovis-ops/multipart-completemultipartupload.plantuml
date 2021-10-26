@@ -1,0 +1,55 @@
+@startuml
+
+header Multi-Part Upload\n 
+
+title CompleteMultipartUpload
+
+participant "S3 Client" as client
+participant "S3 Server" as server
+participant "Motr\nKVS API" as kvs
+participant "Motr\nObject API" as object
+
+autoactivate on
+
+client -> server: POST /bucket_name/object_name\n&uploadId=multipart_upload_id
+
+server -> kvs: get_keyval(global_bucket_index, key = "bucket_name")
+kvs --> server: value = account_id of bucket owner
+
+server -> kvs: get_keyval(global_bucket_md_index, key = "account_id/bucket_name")
+kvs --> server: value = bucket metadata JSON
+
+server -> kvs: get_keyval(BUCKET_nnn_obj_index, key = "object_name")
+kvs --> server: value = object multipart upload metadata JSON
+
+server -> kvs: get_next(object_nnn_part_index, key = "", count = 30)
+note left: Loads parts metadata to validate and compose\nextended metadata (for each parts) and final object metadata.
+kvs --> server: value = up to 30 pairs of part_number/part_metadata_json
+
+server -> kvs:put_keyval(BUCKET_nnn_ExtendedMetadata_index, extended_key_value_list)
+note left: Saves extended metadata of all parts,\nextended metadata index OID is obtained from bucket metadata
+kvs --> server: success (completed)
+
+
+server -> kvs: put_keyval(BUCKET_nnn_obj_index, key = "object_name", value = "object metadata JSON")
+note left: Saves metadata of the newly created object.
+kvs --> server: success (completed)
+server -> kvs: delete_keyval(BUCKET_nnn_multipart_index, key=object_name|multipart_upload_id)
+note left: Clean up now unneeded multipart metadata.
+kvs --> server: success (completed)
+
+server -> kvs:delete_index(object_nnn_part_index)
+note left: remove part index
+kvs --> server: success (completed)
+
+server->client: 200 Ok
+
+note over server
+   StartCleanup:
+     * Overwrite case: If state is successful then register/unregister
+    old_object_oid with 
+    probable_delete_index and delete 
+    old_object its version metadata and extended metadata
+end note
+
+@enduml

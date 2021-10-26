@@ -40,6 +40,9 @@
 
 class S3DeleteMultipleObjectsAction : public S3BucketAction {
   std::vector<std::shared_ptr<S3ObjectMetadata>> objects_metadata;
+  std::vector<std::shared_ptr<S3ObjectMetadata>> objects_metadata_with_extends;
+  std::shared_ptr<S3ObjectMetadata> object_metadata;
+  std::vector<std::string> extended_keys_list_to_be_deleted;
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -51,13 +54,18 @@ class S3DeleteMultipleObjectsAction : public S3BucketAction {
 
   // index within delete object list
   struct s3_motr_idx_layout object_list_index_layout = {};
+  struct s3_motr_idx_layout extended_list_index_layout = {};
   S3DeleteMultipleObjectsBody delete_request;
   int delete_index_in_req;
   std::vector<struct m0_uint128> oids_to_delete;
   std::vector<int> layout_id_for_objs_to_delete;
   std::vector<struct m0_fid> pv_ids_to_delete;
+  std::vector<struct m0_uint128> extended_oids_to_delete;
+  std::vector<int> extended_layout_id_for_objs_to_delete;
+  std::vector<struct m0_fid> extended_pv_ids_to_delete;
   std::vector<std::string> keys_to_delete;
   bool at_least_one_delete_successful;
+  unsigned int index = 0;
 
   S3DeleteMultipleObjectsResponseBody delete_objects_response;
 
@@ -89,13 +97,25 @@ class S3DeleteMultipleObjectsAction : public S3BucketAction {
   void fetch_objects_info();
   void fetch_objects_info_successful();
   void fetch_objects_info_failed();
+  void fetch_objects_extended_info();
+  void fetch_objects_extended_info_successful();
+  void fetch_objects_extended_info_failed();
 
   void delete_objects_metadata();
-  void delete_objects_metadata_successful();
   void delete_objects_metadata_failed();
+
+  void delete_extended_metadata();
+  void delete_extended_metadata_failed();
+  void delete_extended_metadata_successful();
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
+  void _add_oids_to_probable_dead_oid_list(
+      const std::shared_ptr<S3ObjectMetadata>& object_metadata,
+      std::map<std::string, std::string>& delete_list);
+  void _add_object_oid_to_probable_dead_oid_list(
+      const std::shared_ptr<S3ObjectMetadata>& object_metadata,
+      std::map<std::string, std::string>& delete_list);
 
   void cleanup();
   void cleanup_oid_from_probable_dead_oid_list();

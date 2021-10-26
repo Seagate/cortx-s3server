@@ -31,6 +31,8 @@ class S3CallBack {
   S3CallBack() { success_called = fail_called = false; }
 
   void on_success() { success_called = true; }
+  void on_success_with_arg(unsigned int) { success_called = true; }
+  void on_failed_with_arg(unsigned int) { fail_called = true; }
 
   void on_failed() { fail_called = true; }
   bool success_called;

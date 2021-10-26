@@ -61,12 +61,12 @@ using ::testing::_;
                                             upload_id);                  \
   } while (0)
 
-#define CREATE_METADATA_OBJ                                       \
-  do {                                                            \
-    action_under_test_ptr->object_metadata =                      \
-        action_under_test_ptr->object_metadata_factory            \
-            ->create_object_metadata_obj(request_mock,            \
-                                         {object_list_indx_oid}); \
+#define CREATE_METADATA_OBJ                                        \
+  do {                                                             \
+    action_under_test_ptr->object_metadata =                       \
+        action_under_test_ptr->object_metadata_factory             \
+            ->create_object_metadata_obj(request_mock,             \
+                                         object_list_indx_layout); \
   } while (0)
 
 #define CREATE_KVS_READER_OBJ                                         \
@@ -114,9 +114,10 @@ class S3PostCompleteActionTest : public testing::Test {
     upload_id = "upload_id";
     mp_indx_oid = {0xffff, 0xffff};
     oid = {0xfff, 0xfff};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
+    object_list_indx_layout = {{0x11ffff, 0x1ffff}};
     bucket_name = "seagatebucket";
     object_name = "objname";
+    pvid = {0xfff, 0xfff};
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     s3_motr_api_mock = std::make_shared<MockS3Motr>();
 
@@ -137,7 +138,7 @@ class S3PostCompleteActionTest : public testing::Test {
         request_mock, s3_motr_api_mock);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         request_mock, s3_motr_api_mock);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_layout(object_list_indx_layout);
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         request_mock, s3_motr_api_mock);
@@ -166,7 +167,7 @@ class S3PostCompleteActionTest : public testing::Test {
 
   std::string upload_id;
   struct m0_uint128 oid;
-  struct m0_uint128 object_list_indx_oid;
+  struct s3_motr_idx_layout object_list_indx_layout;
   struct m0_uint128 mp_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
   std::map<std::string, std::string, S3NumStrComparator> mock_parts;
@@ -174,12 +175,13 @@ class S3PostCompleteActionTest : public testing::Test {
   std::string mock_xml;
   int layout_id;
   std::string bucket_name, object_name;
+  struct m0_fid pvid;
 
  public:
   void func_callback_one() { call_count_one += 1; }
 
-  void dummy_put_keyval(const struct s3_motr_idx_layout&, const std::string&,
-                        const std::string&,
+  void dummy_put_keyval(const struct s3_motr_idx_layout&,
+                        const std::map<std::string, std::string>&,
                         std::function<void(void)> on_success,
                         std::function<void(void)> on_failed) {
     action_under_test_ptr->next();
@@ -335,6 +337,94 @@ TEST_F(S3PostCompleteActionTest, ValidateRequestBodyMissingTag) {
   EXPECT_FALSE(action_under_test_ptr->validate_request_body(mock_xml));
   EXPECT_STREQ("", action_under_test_ptr->total_parts.c_str());
 }
+
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedMissing) {
+  CREATE_BUCKET_METADATA_OBJ;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::missing));
+  action_under_test_ptr->fetch_bucket_info_failed();
+}
+
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedServiceUnavailable) {
+  CREATE_BUCKET_METADATA_OBJ;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
+  action_under_test_ptr->fetch_bucket_info_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError) {
+  CREATE_BUCKET_METADATA_OBJ;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  action_under_test_ptr->fetch_bucket_info_failed();
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedMissing) {
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
+  action_under_test_ptr->fetch_object_info_failed();
+}
+
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedServiceUnavailable) {
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
+  action_under_test_ptr->fetch_object_info_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedInternalError) {
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  action_under_test_ptr->fetch_object_info_failed();
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedMissing) {
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
+  action_under_test_ptr->fetch_ext_object_info_failed();
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest,
+       FetchExtendedObjectInfoFailedServiceUnavailable) {
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
+  action_under_test_ptr->fetch_ext_object_info_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedInternalError) {
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  action_under_test_ptr->fetch_ext_object_info_failed();
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
 TEST_F(S3PostCompleteActionTest, FetchMultipartInfo) {
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
@@ -450,7 +540,9 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessfulNext) {
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessful) {
   CREATE_KVS_READER_OBJ;
   CREATE_MP_METADATA_OBJ;
-
+  CREATE_BUCKET_METADATA_OBJ;
+  action_under_test_ptr->new_object_oid = oid;
+  action_under_test_ptr->layout_id = 9;
   result_keys_values.insert(std::make_pair("0", std::make_pair(10, "keyval1")));
   result_keys_values.insert(std::make_pair("1", std::make_pair(11, "keyval2")));
   result_keys_values.insert(std::make_pair("2", std::make_pair(12, "keyval3")));
@@ -465,6 +557,10 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessful) {
   action_under_test_ptr->parts["2"] = "keyval3";
 
   action_under_test_ptr->total_parts = action_under_test_ptr->parts.size();
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_pvid())
+      .WillRepeatedly(Return(pvid));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_content_length())
@@ -472,6 +568,25 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessful) {
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_md5())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(action_under_test_ptr->parts["0"]));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_layout_id())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(9));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_part_number())
+      .Times(AtLeast(1))
+      .WillOnce(Return("1"))
+      .WillOnce(Return("2"))
+      .WillOnce(Return("3"));
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
+
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
                          S3PostCompleteActionTest::func_callback_one, this);
@@ -512,6 +627,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
                action_under_test_ptr->get_s3_error_code().c_str());
   EXPECT_EQ(S3PostCompleteActionState::validationFailed,
             action_under_test_ptr->s3_post_complete_action_state);
+  EXPECT_EQ(false, action_under_test_ptr->is_abort_multipart());
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
@@ -545,6 +661,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
                action_under_test_ptr->get_s3_error_code().c_str());
   EXPECT_EQ(S3PostCompleteActionState::validationFailed,
             action_under_test_ptr->s3_post_complete_action_state);
+  EXPECT_EQ(false, action_under_test_ptr->is_abort_multipart());
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
@@ -636,11 +753,11 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
   struct m0_uint128 oid = {0x1ffff, 0x1ffff};
   std::string oid_str = S3M0Uint128Helper::to_string(oid);
 
-  action_under_test_ptr->new_probable_del_rec =
+  action_under_test_ptr->new_parts_probable_del_rec_list.push_back(std::move(
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
           oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
           object_list_indx_oid, objects_version_list_index_oid,
-          version_key_in_index, false /* force_delete */));
+          version_key_in_index, false /* force_delete */))));
 
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -651,6 +768,8 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
 TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
   action_under_test_ptr->obj_metadata_updated = true;
   action_under_test_ptr->old_object_oid = {0x0, 0x0};
+  action_under_test_ptr->old_oid_str = "abcd";
+  action_under_test_ptr->new_oid_str = "abcd";
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
@@ -664,6 +783,10 @@ TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
       .WillRepeatedly(Return(pv_id));
   action_under_test_ptr->new_object_oid = oid;
   action_under_test_ptr->layout_id = layout_id;
+  action_under_test_ptr->new_obj_oids.push_back(oid);
+  action_under_test_ptr->new_obj_pvids.push_back(pv_id);
+  action_under_test_ptr->new_obj_layout_ids.push_back(layout_id);
+
   action_under_test_ptr->set_abort_multipart(true);
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
@@ -673,10 +796,11 @@ TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
 }
 
 TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
-  CREATE_WRITER_OBJ;
-  CREATE_MP_METADATA_OBJ;
   CREATE_METADATA_OBJ;
-
+  CREATE_WRITER_OBJ;
+  // CREATE_MP_METADATA_OBJ;
+  object_mp_meta_factory->mock_object_mp_metadata->set_old_version_id(
+      "123456789");
   S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(false);
 
   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
@@ -684,11 +808,14 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
   struct m0_fid pv_id = {0x7810203002040bfe, 0x19be102030405060};
   action_under_test_ptr->old_object_oid = old_object_oid;
   action_under_test_ptr->old_layout_id = old_layout_id;
+  action_under_test_ptr->old_obj_oids.push_back(old_object_oid);
+  action_under_test_ptr->old_obj_pvids.push_back(pv_id);
+  action_under_test_ptr->old_obj_layout_ids.push_back(old_layout_id);
   action_under_test_ptr->set_abort_multipart(true);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_pvid())
       .WillRepeatedly(Return(pv_id));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_object(_, _, _, old_layout_id, _)).Times(AtLeast(1));
+              delete_object(_, _, _, _, _)).Times(AtLeast(1));
 
   action_under_test_ptr->delete_old_object();
 }
@@ -718,6 +845,41 @@ TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
   EXPECT_EQ(1, call_count_one);
 }
 
+TEST_F(S3PostCompleteActionTest, DeleteOldObjectSuccess) {
+  CREATE_WRITER_OBJ;
+  int old_layout_id = 2;
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, old_layout_id, _)).Times(0);
+
+  action_under_test_ptr->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
+  action_under_test_ptr->delete_old_object_success();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PostCompleteActionTest, RemoveOldExtMetadataSuccess) {
+  CREATE_WRITER_OBJ;
+
+  action_under_test_ptr->old_oid_str = {0x0};
+  action_under_test_ptr->new_oid_str = {0x0};
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test_ptr->remove_old_ext_metadata_successful();
+}
+
+TEST_F(S3PostCompleteActionTest, RemoveNewExtMetadataSuccess) {
+  CREATE_WRITER_OBJ;
+
+  action_under_test_ptr->old_oid_str = {0x0};
+  action_under_test_ptr->new_oid_str = {0x0};
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test_ptr->remove_new_ext_metadata_successful();
+}
+
 TEST_F(S3PostCompleteActionTest, StartCleanupEmptyState) {
   action_under_test_ptr->startcleanup();
   EXPECT_EQ(false, action_under_test_ptr->is_error_state());
@@ -744,7 +906,10 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
   CREATE_WRITER_OBJ;
   CREATE_KVS_WRITER_OBJ;
   action_under_test_ptr->new_oid_str = "oid_new";
+  std::string str = "test_str";
   action_under_test_ptr->new_object_oid = {0x1ffff, 0x1ffff};
+  action_under_test_ptr->old_oid_str = "abcd";
+  action_under_test_ptr->new_oid_str = "abcd";
   std::string object_name = "abcd";
   std::string version_key_in_index = "abcd/v1";
   int layout_id = 9;
@@ -755,17 +920,21 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
   std::string oid_str = S3M0Uint128Helper::to_string(oid);
   action_under_test_ptr->s3_post_complete_action_state =
       S3PostCompleteActionState::abortedSinceValidationFailed;
+  action_under_test_ptr->new_obj_oids.push_back(
+      action_under_test_ptr->new_object_oid);
+  action_under_test_ptr->new_obj_pvids.push_back(pv_id);
+  action_under_test_ptr->new_obj_layout_ids.push_back(layout_id);
 
-  action_under_test_ptr->new_probable_del_rec =
+  action_under_test_ptr->new_parts_probable_del_rec_list.push_back(std::move(
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
           oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
           object_list_indx_oid, objects_version_list_index_oid,
-          version_key_in_index, false /* force_delete */));
+          version_key_in_index, false /* force_delete */))));
   action_under_test_ptr->set_abort_multipart(true);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_pvid())
       .WillRepeatedly(Return(pv_id));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _))
+              put_keyval(_, _, _, _))
       .Times(1)
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));
@@ -779,5 +948,5 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
       object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test_ptr->startcleanup();
   EXPECT_EQ(false, action_under_test_ptr->is_error_state());
-  EXPECT_EQ(2, action_under_test_ptr->number_of_tasks());
+  EXPECT_EQ(3, action_under_test_ptr->number_of_tasks());
 }
