@@ -28,7 +28,7 @@ import socket
 import time
 from logging import handlers
 
-#Logger details
+#Python Logger details
 s3_single_entry_logger_name = \
     "s3-single_entry-logger-" + "[" + str(socket.gethostname()) + "]"
 s3_single_entry_log_file = \
