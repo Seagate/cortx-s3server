@@ -153,6 +153,7 @@ public class AuthServerConfig {
                       " Error occured in S3 cipher while generating key.");
          System.exit(1);
        }
+       finally { logger.debug("Finished generating the key."); }
 
        BufferedReader reader2 = null;
        // 2. Decrypt openldap password using cipher Key.

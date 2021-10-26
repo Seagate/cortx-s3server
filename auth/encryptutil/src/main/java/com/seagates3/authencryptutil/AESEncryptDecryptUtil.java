@@ -42,6 +42,10 @@ class AESEncryptDecryptUtil {
  private
   static final int SALT_LENGTH_IN_BYTES = 16;
  private
+  static final int ITERATION_COUNT = 65536;
+ private
+  static final int KEY_LENGTH = 256;
+ private
   static final Charset UTF_8 = StandardCharsets.UTF_8;
 
   /**
@@ -84,6 +88,7 @@ class AESEncryptDecryptUtil {
                      e.getCause() + ". Message: " + e.getMessage());
         LOGGER.debug("Stacktrace: " + e);
       }
+      finally { LOGGER.debug("Finished encrypting the text."); }
     }
 
     return encryptedText;
@@ -134,6 +139,7 @@ class AESEncryptDecryptUtil {
                      "Cause: " + e.getCause() + ". Message: " + e.getMessage());
         LOGGER.debug("Stacktrace: " + e);
       }
+      finally { LOGGER.debug("Finished decrypting the text."); }
     }
 
     return decryptedText;
@@ -145,9 +151,8 @@ class AESEncryptDecryptUtil {
       InvalidKeySpecException {
 
     SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRET_KEY_ALGO);
-    // iterationCount = 65536
-    // keyLength = 256
-    KeySpec spec = new PBEKeySpec(password, salt, 65536, 256);
+
+    KeySpec spec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
     SecretKey secret =
         new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
     return secret;

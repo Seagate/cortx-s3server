@@ -19,8 +19,10 @@
 
 import os
 import yaml
-from subprocess import call, check_output
+from subprocess import call
+from scripttest import TestFileEnvironment
 import fileinput
+import shutil
 
 class LdapSetup:
     def __init__(self):
@@ -32,8 +34,10 @@ class LdapSetup:
 
     def ldap_init(self):
         ldap_init_file = os.path.join(self.test_data_dir, 'create_test_data.ldif')
+        ldap_init_deploy_file = os.path.join(self.test_data_dir, 'create_test_data_deploy.ldif')
 
-        for line in fileinput.input(ldap_init_file, inplace=True):
+        shutil.copy(ldap_init_file, ldap_init_deploy_file)
+        for line in fileinput.input(ldap_init_deploy_file, inplace=True):
             if 'sk: ' in line:
                 secret_key = line[4:].rstrip()
                 encrypted_secret_key = LdapSetup.__encrypt_secret_key(secret_key)
@@ -43,8 +47,9 @@ class LdapSetup:
 
         cmd = "ldapadd -h %s -p %s -w %s -x -D %s -f %s" % (self.ldap_config['host'],
                 self.ldap_config['port'], self.ldap_config['password'],
-                self.ldap_config['login_dn'], ldap_init_file)
+                self.ldap_config['login_dn'], ldap_init_deploy_file)
         obj = call(cmd, shell=True)
+        os.remove(ldap_init_deploy_file)
 
     def ldap_delete_all(self):
         cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
@@ -59,9 +64,11 @@ class LdapSetup:
 
     @staticmethod
     def __encrypt_secret_key(secret_key):
-        encrypt_cmd = ['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes']
-        completed_process = check_output(encrypt_cmd)
-        return completed_process.decode().rstrip()
+        working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests-out')
+        env = TestFileEnvironment(base_path=working_dir, start_clear=True)
+        status = env.run(f'java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes')
+        shutil.rmtree(working_dir, ignore_errors=True)
+        return status.rstrip()
 
 
 class LdapInfo:
