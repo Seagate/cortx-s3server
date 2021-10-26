@@ -1,0 +1,60 @@
+@startuml
+
+header Multi-Part Upload\n 
+
+title Part(s) Upload
+
+participant "S3 Client" as client
+participant "S3 Server" as server
+participant "Motr\nKVS API" as kvs
+participant "Motr\nObject API" as object
+
+autoactivate on
+
+client -> server: PUT object with partNumber = NNN\n uploadId = multipart_upload_id
+note right: PUT /bucket_name/object_name?partNumber=NNN&uploadId=...guid
+
+server -> kvs: get_keyval(global_bucket_index, key = "bucket_name")
+kvs --> server: value = account_id of bucket owner
+
+server -> kvs: get_keyval(global_bucket_md_index, key = "account_id/bucket_name")
+kvs --> server: value = bucket metadata JSON
+
+server -> kvs: get_keyval(BUCKET_nnn_multipart_index, key = "object_name|upload_id")
+kvs --> server: value = object multipart upload metadata JSON
+
+server -> object: fetch_part_info(object_nnn_part_index, key="part_number_NNN")
+kvs --> server: success/missing value = part upload metadata JSON (if present)
+
+server -> object: create part object
+object --> server: success (completed), oid = part_number_NNN_oid
+
+server -> kvs: put_keyval(global_probable_dead_object_list_index_oid, key = old_part_oid-new_part_oid, value = "JSON")
+kvs --> server: value = bucket metadata JSON
+
+
+loop until all data is written
+  server -> object: Write data to part_number_NNN_oid (max up to 32(configurable) * motr_unit_size per op, buffer of 16k each)
+  object --> server: success (completed)
+end
+
+server -> kvs: put_keyval(object_nnn_part_index, key = "part_number_NNN", value = "JSON")
+note left of server
+  Saves metadata of the part #NNN of the upload, metadata 
+ will even contain part's OID part_number_NNN_oid.
+end note
+kvs --> server: success (completed)
+
+note over server
+send response to client
+end note
+server --> client: 200 OK
+
+note over server
+   startcleanup:
+     * depending on the action state mark/unmark 
+(put_keyval, remove_keyval) old/new part 
+oid from 
+global_probable_dead_object_list_index_oid
+end note
+@enduml
