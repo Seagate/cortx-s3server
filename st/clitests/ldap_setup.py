@@ -19,7 +19,8 @@
 
 import os
 import yaml
-from subprocess import call, check_output
+from subprocess import call
+from scripttest import TestFileEnvironment
 import fileinput
 import shutil
 
@@ -52,9 +53,11 @@ class LdapSetup:
 
     @staticmethod
     def __encrypt_secret_key(secret_key):
-        encrypt_cmd = ['java', '-jar', '/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar', '-s', secret_key, '-e', 'aes']
-        completed_process = check_output(encrypt_cmd)
-        return completed_process.decode().rstrip()
+        working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests-out')
+        env = TestFileEnvironment(base_path=working_dir, start_clear=True)
+        status = env.run(f'java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes')
+        shutil.rmtree(working_dir, ignore_errors=True)
+        return status.rstrip()
 
     def ldap_delete_all(self):
         cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
