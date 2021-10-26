@@ -20,57 +20,82 @@
 
 package com.seagates3.dao.ldap;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.seagates3.dao.PolicyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Policy;
+import com.seagates3.policy.PolicyUtil;
 
-public class PolicyImpl implements PolicyDAO {
+public
+class PolicyImpl implements PolicyDAO {
 
-    /**
-     * Find the policy.
-     *
-     * @param account
-     * @param policyName
-     * @return
-     * @throws DataAccessException
-     */
-    @Override
-    public Policy find(Account account, String policyName)
-            throws DataAccessException {
-      AuthStoreFactory factory = new AuthStoreFactory();
-      AuthStore storeInstance = factory.createAuthStore();
-      return storeInstance.find(account, policyName);
+  /**
+   * Find the policy.
+   *
+   * @param account
+   * @param policyName
+   * @return
+   * @throws DataAccessException
+   */
+  @Override public Policy find(String arn) throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore();
+    if (arn != null) {
+      String key = PolicyUtil.retrieveKeyFromArn(arn);
+      storeInstance.find(key);
+      return (Policy)storeInstance.find(key);
     }
+    return null;
+  }
 
-    /**
-     * Save the policy.
-     *
-     * @param policy
-     * @throws DataAccessException
-     */
-    @Override
-    public void save(Policy policy) throws DataAccessException {
-      AuthStoreFactory factory = new AuthStoreFactory();
-      AuthStore storeInstance = factory.createAuthStore();
-      storeInstance.save(policy);
+  /**
+   * Save the policy.
+   *
+   * @param policy
+   * @throws DataAccessException
+   */
+  @Override public void save(Policy policy) throws DataAccessException {
+
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore();
+    String key =
+        PolicyUtil.getKey(policy.getName(), policy.getAccount().getId());
+    Map policyDetailsMap = new HashMap<>();
+    policyDetailsMap.put(key, policy);
+    storeInstance.save(policyDetailsMap);
+  }
+
+  @Override public List<Policy> findAll(Account account)
+      throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore();
+    String key = PolicyUtil.getKey("", account.getId());
+    return storeInstance.findAll(key);
+  }
+
+  @Override public void delete (Policy policy) throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore();
+    String keyToBeRemoved =
+        PolicyUtil.getKey(policy.getName(), policy.getAccount().getId());
+    storeInstance.delete (keyToBeRemoved);
+  }
+
+  @Override public Policy find(Account account,
+                               String name) throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore();
+    String key = PolicyUtil.getKey("", account.getId());
+    List<Policy> policyList = storeInstance.findAll(key);
+    for (Policy policy : policyList) {
+      if (name.equals(policy.getName())) {
+        return policy;
+      }
     }
-    @Override public List<Policy> findAll(Account account)
-        throws DataAccessException {
-      AuthStoreFactory factory = new AuthStoreFactory();
-      AuthStore storeInstance = factory.createAuthStore();
-      return storeInstance.findAll(account);
-    }
-    @Override public void delete (Policy policy) throws DataAccessException {
-      AuthStoreFactory factory = new AuthStoreFactory();
-      AuthStore storeInstance = factory.createAuthStore();
-      storeInstance.delete (policy);
-    }
-    @Override public Policy find(String arn) throws DataAccessException {
-      AuthStoreFactory factory = new AuthStoreFactory();
-      AuthStore storeInstance = factory.createAuthStore();
-      return storeInstance.find(arn);
-    }
+    return null;
+  }
 }

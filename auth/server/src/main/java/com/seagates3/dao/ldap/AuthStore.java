@@ -1,26 +1,23 @@
 package com.seagates3.dao.ldap;
 
 import java.util.List;
+import java.util.Map;
 
 import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.Account;
 import com.seagates3.model.Policy;
 
 public
 interface AuthStore {
 
  public
-  void save(Policy policy) throws DataAccessException;
+  void save(Map<String, Object> dataMap) throws DataAccessException;
 
  public
-  Policy find(String policyarn) throws DataAccessException;
+  Object find(String keyToFind) throws DataAccessException;
 
  public
-  Policy find(Account account, String name) throws DataAccessException;
+  List<Policy> findAll(String keyToFind) throws DataAccessException;
 
  public
-  List<Policy> findAll(Account account) throws DataAccessException;
-
- public
-  void delete (Policy policy) throws DataAccessException;
+  void delete (String keyToRemove) throws DataAccessException;
 }
