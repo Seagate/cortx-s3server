@@ -25,7 +25,7 @@ cortx_s3:                                   # Section for S3 background delete c
    consumer_endpoint: "http://127.0.0.1:28049"             # Service specified for CORTX s3 consumer
    service: "cortxs3"                                      # Default region specified for CORTX s3 client
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
-   daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
+   daemon_mode: False                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
    messaging_platform: "message_bus"                       # messaging platform
    scheduler_schedule_interval: 1200                       # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced memory consumption.
