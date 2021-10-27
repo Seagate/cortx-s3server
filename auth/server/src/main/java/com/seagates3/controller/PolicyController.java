@@ -124,6 +124,7 @@ public class PolicyController extends AbstractController {
       }
       LOGGER.info("Deleting policy : " + policy.getName());
       try {
+        policy.setAccount(requestor.getAccount());
         policyDAO.delete (policy);
       }
       catch (DataAccessException ex) {

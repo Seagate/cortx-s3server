@@ -23,7 +23,6 @@ package com.seagates3.response.generator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Policy;
 import com.seagates3.response.ServerResponse;
@@ -90,6 +89,14 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("PolicyName", policy.getName());
         responseElements.put("Arn", policy.getARN());
         responseElements.put("CreateDate", policy.getCreateDate());
+        responseElements.put("DefaultVersionId", policy.getDefaultVersionid());
+        responseElements.put("AttachmentCount",
+                             ((Integer)policy.getAttachmentCount()).toString());
+        responseElements.put(
+            "PermissionsBoundaryUsageCount",
+            ((Integer)policy.getPermissionsBoundaryUsageCount()).toString());
+        responseElements.put("IsAttachable", policy.getIsPolicyAttachable());
+        responseElements.put("UpdateDate", policy.getUpdateDate());
         policyMembers.add(responseElements);
       }
       return new XMLResponseFormatter().formatListResponse(
@@ -108,9 +115,17 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
       responseElements.put("PolicyName", policy.getName());
       responseElements.put("Arn", policy.getARN());
       responseElements.put("CreateDate", policy.getCreateDate());
+      responseElements.put("DefaultVersionId", policy.getDefaultVersionid());
+      responseElements.put("AttachmentCount",
+                           ((Integer)policy.getAttachmentCount()).toString());
+      responseElements.put(
+          "PermissionsBoundaryUsageCount",
+          ((Integer)policy.getPermissionsBoundaryUsageCount()).toString());
+      responseElements.put("IsAttachable", policy.getIsPolicyAttachable());
+      responseElements.put("UpdateDate", policy.getUpdateDate());
+
       policyMembers.add(responseElements);
       return new XMLResponseFormatter().formatGetResponse(
-          "ListPolicies", "Policies", policyMembers,
-          AuthServerConfig.getReqId());
+          "GetPolicy", "Policy", policyMembers, AuthServerConfig.getReqId());
     }
 }

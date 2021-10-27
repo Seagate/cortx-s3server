@@ -33,6 +33,9 @@ import com.seagates3.policy.PolicyUtil;
 public
 class PolicyImpl implements PolicyDAO {
 
+ private
+  static final String POLICY_PREFIX = "Policy";
+
   /**
    * Find the policy.
    *
@@ -43,11 +46,10 @@ class PolicyImpl implements PolicyDAO {
    */
   @Override public Policy find(String arn) throws DataAccessException {
     AuthStoreFactory factory = new AuthStoreFactory();
-    AuthStore storeInstance = factory.createAuthStore();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     if (arn != null) {
       String key = PolicyUtil.retrieveKeyFromArn(arn);
-      storeInstance.find(key);
-      return (Policy)storeInstance.find(key);
+      return (Policy)storeInstance.find(key, arn, POLICY_PREFIX);
     }
     return null;
   }
@@ -61,36 +63,37 @@ class PolicyImpl implements PolicyDAO {
   @Override public void save(Policy policy) throws DataAccessException {
 
     AuthStoreFactory factory = new AuthStoreFactory();
-    AuthStore storeInstance = factory.createAuthStore();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     String key =
         PolicyUtil.getKey(policy.getName(), policy.getAccount().getId());
     Map policyDetailsMap = new HashMap<>();
     policyDetailsMap.put(key, policy);
-    storeInstance.save(policyDetailsMap);
+    storeInstance.save(policyDetailsMap, policy, POLICY_PREFIX);
   }
 
   @Override public List<Policy> findAll(Account account)
       throws DataAccessException {
     AuthStoreFactory factory = new AuthStoreFactory();
-    AuthStore storeInstance = factory.createAuthStore();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     String key = PolicyUtil.getKey("", account.getId());
-    return storeInstance.findAll(key);
+    return storeInstance.findAll(key, account, POLICY_PREFIX);
   }
 
   @Override public void delete (Policy policy) throws DataAccessException {
     AuthStoreFactory factory = new AuthStoreFactory();
-    AuthStore storeInstance = factory.createAuthStore();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     String keyToBeRemoved =
         PolicyUtil.getKey(policy.getName(), policy.getAccount().getId());
-    storeInstance.delete (keyToBeRemoved);
+    storeInstance.delete (keyToBeRemoved, policy, POLICY_PREFIX);
   }
 
   @Override public Policy find(Account account,
                                String name) throws DataAccessException {
     AuthStoreFactory factory = new AuthStoreFactory();
-    AuthStore storeInstance = factory.createAuthStore();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     String key = PolicyUtil.getKey("", account.getId());
-    List<Policy> policyList = storeInstance.findAll(key);
+    List<Policy> policyList =
+        storeInstance.findAll(key, account, POLICY_PREFIX);
     for (Policy policy : policyList) {
       if (name.equals(policy.getName())) {
         return policy;

@@ -25,9 +25,10 @@ class FileStore implements AuthStore {
   final Logger LOGGER = LoggerFactory.getLogger(FileStore.class.getName());
 
  public
-  FileStore() {
+  FileStore(String prefix) {
     try {
-      FileInputStream fis = new FileInputStream("/tmp/policydata.ser");
+      String fileName = "/tmp/" + prefix + ".ser";
+      FileInputStream fis = new FileInputStream(fileName);
       ObjectInputStream ois = new ObjectInputStream(fis);
       savedDataMap = (Map)ois.readObject();
       ois.close();
@@ -42,11 +43,12 @@ class FileStore implements AuthStore {
     }
   }
 
-  @Override public void save(Map<String, Object> dataMap)
-      throws DataAccessException {
+  @Override public void save(Map<String, Object> dataMap, Object obj,
+                             String prefix) throws DataAccessException {
     savedDataMap.putAll(dataMap);
     try {
-      FileOutputStream fos = new FileOutputStream("/tmp/policydata.ser");
+      String fileName = "/tmp/" + prefix + ".ser";
+      FileOutputStream fos = new FileOutputStream(fileName);
       ObjectOutputStream oos = new ObjectOutputStream(fos);
       oos.writeObject(savedDataMap);
       oos.close();
@@ -56,11 +58,13 @@ class FileStore implements AuthStore {
     }
   }
 
-  @Override public Object find(String key) throws DataAccessException {
+  @Override public Object find(String key, Object obj,
+                               String prefix) throws DataAccessException {
     return savedDataMap.get(key);
   }
 
-  @Override public List findAll(String key) throws DataAccessException {
+  @Override public List findAll(String key, Object obj,
+                                String prefix) throws DataAccessException {
     List list = new ArrayList();
     for (Entry<String, Object> entry : savedDataMap.entrySet()) {
       if (entry.getKey().contains(key)) {
@@ -70,11 +74,12 @@ class FileStore implements AuthStore {
     return list;
   }
 
-  @Override public void delete (String keyToBeRemoved)
-      throws DataAccessException {
+  @Override public void delete (String keyToBeRemoved, Object obj,
+                                String prefix) throws DataAccessException {
     savedDataMap.remove(keyToBeRemoved);
     try {
-      FileOutputStream fos = new FileOutputStream("/tmp/policydata.ser");
+      String fileName = "/tmp/" + prefix + ".ser";
+      FileOutputStream fos = new FileOutputStream(fileName);
       ObjectOutputStream oos = new ObjectOutputStream(fos);
       oos.writeObject(savedDataMap);
       oos.close();

@@ -1,6 +1,7 @@
 package com.seagates3.dao.ldap;
 
-import java.util.ArrayList;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -8,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.Policy;
 
 public
 class LdapStore implements AuthStore {
@@ -16,208 +16,99 @@ class LdapStore implements AuthStore {
  private
   final Logger LOGGER = LoggerFactory.getLogger(LdapStore.class.getName());
 
-  @Override public void save(Map<String, Object> dataMap)
-      throws DataAccessException {
-                /*
-		 * LDAPAttributeSet attributeSet = new LDAPAttributeSet();
-		 * 
-		 * attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
-		 * LDAPUtils.POLICY_OBJECT_CLASS)); attributeSet.add(new
-		 * LDAPAttribute(LDAPUtils.POLICY_NAME, policy.getName())); attributeSet.add(new
-		 * LDAPAttribute(LDAPUtils.POLICY_DOC, policy.getPolicyDoc()));
-		 * attributeSet.add(new LDAPAttribute(LDAPUtils.PATH, policy.getPath()));
-		 * attributeSet.add(new LDAPAttribute(LDAPUtils.DEFAULT_VERSION_ID,
-		 * policy.getDefaultVersionid())); attributeSet.add(new
-		 * LDAPAttribute(LDAPUtils.POLICY_ID, policy.getPolicyId()));
-		 * 
-		 * if (policy.getDescription() != null) { attributeSet.add(new
-		 * LDAPAttribute(LDAPUtils.DESCRIPTION, policy.getDescription())); }
-		 * 
-		 * String dn = String.format("%s=%s,%s=%s,%s=%s,%s=%s,%s",
-		 * LDAPUtils.POLICY_NAME, policy.getName(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-		 * LDAPUtils.POLICY_OU, LDAPUtils.ORGANIZATIONAL_NAME,
-		 * policy.getAccount().getName(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-		 * LDAPUtils.ACCOUNT_OU, LDAPUtils.BASE_DN);
-		 * 
-		 * LOGGER.debug("Saving Policy dn: " + dn);
-		 * 
-		 * try { LDAPUtils.add(new LDAPEntry(dn, attributeSet)); } catch (LDAPException
-		 * ex) { LOGGER.error("Failed to create policy: " + policy.getName()); throw new
-		 * DataAccessException("Failed to create policy.\n" + ex); }
-		 */}
+  @Override public void save(Map<String, Object> dataMap, Object obj,
+                             String prefix) throws DataAccessException {
 
-  @Override public Object find(String policyarn) throws DataAccessException {
-    Policy policy = new Policy();
-    /*
-     * policy.setARN(policyarn);
-     *
-     * String[] attrs = {LDAPUtils.POLICY_ID, LDAPUtils.PATH,
-     * LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.MODIFY_TIMESTAMP,
-     * LDAPUtils.DEFAULT_VERSION_ID, LDAPUtils.POLICY_DOC };
-     *
-     * String ldapBase = String.format("%s=%s,%s",
-     * LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.POLICY_OU,
-     *LDAPUtils.BASE_DN );
-     * String filter = String.format("(%s=%s)", "policyArn", policyarn);
-     *
-     * LDAPSearchResults ldapResults;
-     *
-     * LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
-     *
-     * try { ldapResults = LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB,
-     * filter, attrs); } catch (LDAPException ex) {
-     * LOGGER.error("Failed to find the policy: " + policy.getName() + " filter:
-     *" +
-     * filter); throw new DataAccessException("Failed to find the policy.\n" +
-     *ex);
-     * }
-     *
-     * if (ldapResults != null && ldapResults.hasMore()) { try { LDAPEntry entry
-     *=
-     * ldapResults.next();
-     * policy.setPolicyId(entry.getAttribute(LDAPUtils.POLICY_ID).
-     * getStringValue()); policy.setPath(entry.getAttribute(LDAPUtils.PATH).
-     * getStringValue()); policy.setDefaultVersionId(entry.getAttribute(
-     * LDAPUtils.DEFAULT_VERSION_ID).getStringValue());
-     * policy.setPolicyDoc(entry.getAttribute(
-     * LDAPUtils.POLICY_DOC).getStringValue());
-     *
-     * String createTimeStamp = entry.getAttribute(
-     * LDAPUtils.CREATE_TIMESTAMP).getStringValue(); String createTime =
-     * DateUtil.toServerResponseFormat( createTimeStamp);
-     * policy.setCreateDate(createTime);
-     *
-     * String modifyTimeStamp = entry.getAttribute(
-     * LDAPUtils.MODIFY_TIMESTAMP).getStringValue(); String modifiedTime =
-     * DateUtil.toServerResponseFormat( modifyTimeStamp);
-     * policy.setUpdateDate(modifiedTime); } catch (LDAPException ex) {
-     * LOGGER.error("Failed to find details of policy: " + policy.getName());
-     *throw
-     * new DataAccessException("Failed to find policy details. \n" + ex); } }
-     */
-
-    return policy;
+    String methodName = "save";
+    String className = "com.seagates3.dao.ldap." + prefix + "LdapStore";
+    LOGGER.debug("calling method - " + methodName + " of class - " + className);
+    try {
+      Class < ? > storeClass = Class.forName(className);
+      Object instance = storeClass.newInstance();
+      Method method = storeClass.getMethod(methodName, Object.class);
+      method.invoke(instance, obj);
+    }
+    catch (ClassNotFoundException e) {
+    }
+    catch (NoSuchMethodException | SecurityException e) {
+    }
+    catch (IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException | InstantiationException e) {
+    }
   }
 
-  @Override public List findAll(String key) throws DataAccessException {
+  @Override public Object find(String strToFind, Object obj,
+                               String prefix) throws DataAccessException {
 
-    /*
-     * String[] attrs = {LDAPUtils.POLICY_ID, LDAPUtils.PATH,
-     * LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.MODIFY_TIMESTAMP,
-     * LDAPUtils.DEFAULT_VERSION_ID, LDAPUtils.POLICY_DOC };
-     *
-     * String ldapBase = String.format("%s=%s,%s=%s,%s",
-     * LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
-     * LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
-     *LDAPUtils.BASE_DN
-     * ); String filter = String.format("(%s=%s)",
-     * LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.POLICY_OU);
-     *
-     * LDAPSearchResults ldapResults;
-     *
-     * LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
-     *
-     * try { ldapResults = LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB,
-     * filter, attrs); } catch (LDAPException ex) {
-     * LOGGER.error("Failed to find the policies: " ); throw new
-     * DataAccessException("Failed to find the policies.\n" + ex); }
-     */
-    List<Policy> resultList = new ArrayList<>();
-    /*
-     * if (ldapResults != null ) { while (ldapResults.hasMore()) { try { Policy
-     * policy = new Policy(); policy.setAccount(account); LDAPEntry entry =
-     * ldapResults.next();
-     * policy.setPolicyId(entry.getAttribute(LDAPUtils.POLICY_ID).
-     * getStringValue()); policy.setPath(entry.getAttribute(LDAPUtils.PATH).
-     * getStringValue()); policy.setDefaultVersionId(entry.getAttribute(
-     * LDAPUtils.DEFAULT_VERSION_ID).getStringValue());
-     * policy.setPolicyDoc(entry.getAttribute(
-     * LDAPUtils.POLICY_DOC).getStringValue());
-     *
-     * String createTimeStamp = entry.getAttribute(
-     * LDAPUtils.CREATE_TIMESTAMP).getStringValue(); String createTime =
-     * DateUtil.toServerResponseFormat( createTimeStamp);
-     * policy.setCreateDate(createTime);
-     *
-     * String modifyTimeStamp = entry.getAttribute(
-     * LDAPUtils.MODIFY_TIMESTAMP).getStringValue(); String modifiedTime =
-     * DateUtil.toServerResponseFormat( modifyTimeStamp);
-     * policy.setUpdateDate(modifiedTime); resultList.add(policy); } catch
-     * (LDAPException ex) { LOGGER.error("Failed to find policies"); throw new
-     * DataAccessException("Failed to find policies. \n" + ex); } } }
-     */
-
-    return resultList;
+    String methodName = "find";
+    String className = "com.seagates3.dao.ldap." + prefix + "LdapStore";
+    LOGGER.debug("calling method - " + methodName + " of class - " + className);
+    try {
+      Class < ? > storeClass = Class.forName(className);
+      Object instance = storeClass.newInstance();
+      Method method = storeClass.getMethod(methodName, Object.class);
+      Object returnObj = method.invoke(instance, obj);
+      return returnObj;
+    }
+    catch (ClassNotFoundException e) {
+      LOGGER.error("ClassNotFoundException" + e);
+    }
+    catch (NoSuchMethodException | SecurityException e) {
+      LOGGER.error("NoSuchMethodException" + e);
+    }
+    catch (IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException | InstantiationException e) {
+      LOGGER.error("IllegalArgumentException " + e);
+    }
+    return null;
   }
 
-  /*
-   * @Override public Policy find(Account account, String policyName) throws
-   * DataAccessException { Policy policy = new Policy();
-   * policy.setAccount(account); policy.setName(policyName);
-   *
-   * String[] attrs = {LDAPUtils.POLICY_ID, LDAPUtils.PATH,
-   * LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.MODIFY_TIMESTAMP,
-   * LDAPUtils.DEFAULT_VERSION_ID, LDAPUtils.POLICY_DOC };
-   *
-   * String ldapBase = String.format("%s=%s,%s=%s,%s=%s,%s",
-   * LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.POLICY_OU,
-   * LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
-   * LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU, LDAPUtils.BASE_DN
-   * ); String filter = String.format("(%s=%s)", LDAPUtils.POLICY_NAME,
-   * policyName);
-   *
-   * LDAPSearchResults ldapResults;
-   *
-   * LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
-   *
-   * try { ldapResults = LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB,
-   * filter, attrs); } catch (LDAPException ex) {
-   * LOGGER.error("Failed to find the policy: " + policy.getName() + " filter: "
-   *+
-   * filter); throw new DataAccessException("Failed to find the policy.\n" +
-   *ex);
-   * } if (ldapResults != null && ldapResults.hasMore()) { try { LDAPEntry entry
-   *=
-   * ldapResults.next();
-   * policy.setPolicyId(entry.getAttribute(LDAPUtils.POLICY_ID).
-   * getStringValue()); policy.setPath(entry.getAttribute(LDAPUtils.PATH).
-   * getStringValue()); policy.setDefaultVersionId(entry.getAttribute(
-   * LDAPUtils.DEFAULT_VERSION_ID).getStringValue());
-   * policy.setPolicyDoc(entry.getAttribute(
-   * LDAPUtils.POLICY_DOC).getStringValue());
-   *
-   * String createTimeStamp = entry.getAttribute(
-   * LDAPUtils.CREATE_TIMESTAMP).getStringValue(); String createTime =
-   * DateUtil.toServerResponseFormat( createTimeStamp);
-   * policy.setCreateDate(createTime);
-   *
-   * String modifyTimeStamp = entry.getAttribute(
-   * LDAPUtils.MODIFY_TIMESTAMP).getStringValue(); String modifiedTime =
-   * DateUtil.toServerResponseFormat( modifyTimeStamp);
-   * policy.setUpdateDate(modifiedTime); } catch (LDAPException ex) {
-   * LOGGER.error("Failed to find details of policy: " + policy.getName());
-   *throw
-   * new DataAccessException("Failed to find policy details. \n" + ex); } }
-   *
-   * return policy; }
-   */
+  @Override public List findAll(String strToFind, Object obj,
+                                String prefix) throws DataAccessException {
+    String methodName = "findAll";
+    String className = "com.seagates3.dao.ldap." + prefix + "LdapStore";
+    LOGGER.debug("calling method - " + methodName + " of class - " + className);
+    try {
+      Class < ? > storeClass = Class.forName(className);
+      Object instance = storeClass.newInstance();
+      Method method = storeClass.getMethod(methodName, Object.class);
+      return (List)method.invoke(instance, obj);
+    }
+    catch (ClassNotFoundException e) {
+      LOGGER.error("ClassNotFoundException" + e);
+    }
+    catch (NoSuchMethodException | SecurityException e) {
+      LOGGER.error("NoSuchMethodException" + e);
+    }
+    catch (IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException | InstantiationException e) {
+      LOGGER.error("IllegalArgumentException " + e);
+    }
+    return null;
+  }
 
-  @Override public void delete (String key) throws DataAccessException {
+  @Override public void delete (String key, Object obj,
+                                String prefix) throws DataAccessException {
 
-    /*
-     * String dn = String.format("%s=%s,%s=%s,%s=%s,%s=%s,%s",
-     *LDAPUtils.POLICY_ID,
-     * policy.getPolicyId(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-     * LDAPUtils.POLICY_OU, LDAPUtils.ORGANIZATIONAL_NAME,
-     * policy.getAccount().getName(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-     * LDAPUtils.ACCOUNT_OU, LDAPUtils.BASE_DN);
-     *
-     * LOGGER.debug("Deleting user dn: " + dn);
-     *
-     * try { LDAPUtils.delete(dn); } catch (LDAPException ex) {
-     * LOGGER.error("Failed to delete the user: " + policy.getName()); throw new
-     * DataAccessException("Failed to delete the user.\n" + ex); }
-     */
+    String methodName = "delete";
+    String className = "com.seagates3.dao.ldap." + prefix + "LdapStore";
+    LOGGER.debug("calling method - " + methodName + " of class - " + className);
+    try {
+      Class < ? > storeClass = Class.forName(className);
+      Object instance = storeClass.newInstance();
+      Method method = storeClass.getMethod(methodName, Object.class);
+      method.invoke(instance, obj);
+    }
+    catch (ClassNotFoundException e) {
+      LOGGER.error("ClassNotFoundException" + e);
+    }
+    catch (NoSuchMethodException | SecurityException e) {
+      LOGGER.error("NoSuchMethodException" + e);
+    }
+    catch (IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException | InstantiationException e) {
+      LOGGER.error("IllegalArgumentException " + e);
+    }
   }
 }
 

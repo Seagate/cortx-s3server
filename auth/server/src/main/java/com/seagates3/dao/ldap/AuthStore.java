@@ -10,14 +10,18 @@ public
 interface AuthStore {
 
  public
-  void save(Map<String, Object> dataMap) throws DataAccessException;
+  void save(Map<String, Object> dataMap, Object obj,
+            String prefix) throws DataAccessException;
 
  public
-  Object find(String keyToFind) throws DataAccessException;
+  Object find(String keyToFind, Object obj,
+              String prefix) throws DataAccessException;
 
  public
-  List<Policy> findAll(String keyToFind) throws DataAccessException;
+  List<Policy> findAll(String keyToFind, Object obj,
+                       String prefix) throws DataAccessException;
 
  public
-  void delete (String keyToRemove) throws DataAccessException;
+  void delete (String keyToRemove, Object obj,
+               String prefix) throws DataAccessException;
 }

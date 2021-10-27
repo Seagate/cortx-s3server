@@ -83,4 +83,4 @@ RsyslogMsgId=s3authserver-audit-logging
 # IAM policy store option
 # LDAP - IAM policy will be stored in LDAP
 # MOTR - IAM Policy will be stored in motr i/o or motr kvs
-authStore=FILE
+authStore=LDAP

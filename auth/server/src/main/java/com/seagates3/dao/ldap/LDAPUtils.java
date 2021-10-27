@@ -94,6 +94,17 @@ class LDAPUtils {
     public static final String USER_OU = "users";
     public
      static final String ARN = "arn";
+    public
+     static final String POLICY_CREATE_DATE = "createDate";
+    public
+     static final String POLICY_UPDATE_DATE = "updateDate";
+    public
+     static final String POLICY_PERMISSION_BOUNDARY =
+         "permissionsBoundaryUsageCount";
+    public
+     static final String POLICY_ATTACHMENT_COUNT = "attachmentCount";
+    public
+     static final String POLICY_ARN = "policyArn";
 
     public
      static String getBaseDN() { return BASE_DN; }
