@@ -20,6 +20,7 @@
 import os
 import yaml
 from subprocess import call
+from shlex import quote
 
 class LdapSetup:
     def __init__(self):
@@ -30,11 +31,19 @@ class LdapSetup:
             self.ldap_config = yaml.safe_load(f)
 
     def ldap_init(self):
+        LdapSetup.__encrypt_secret_key()
         ldap_init_file = os.path.join(self.test_data_dir, 'create_test_data.ldif')
         cmd = "ldapadd -h %s -p %s -w %s -x -D %s -f %s" % (self.ldap_config['host'],
                 self.ldap_config['port'], self.ldap_config['password'],
                 self.ldap_config['login_dn'], ldap_init_file)
         obj = call(cmd, shell=True)
+
+    @staticmethod
+    def __encrypt_secret_key():
+        encrypt_cmd = 'ls'
+        encrypt_cmd = quote(encrypt_cmd)
+        obj = call(encrypt_cmd, shell=False)
+        print(obj)
 
     def ldap_delete_all(self):
         cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
