@@ -158,7 +158,7 @@ class ObjectRecoveryScheduler(object):
         # Run producer periodically on hourly basis
         self.logger.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
-       
+
         def one_sec_run(scheduler):
             pass
 
