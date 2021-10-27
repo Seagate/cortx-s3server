@@ -26,8 +26,6 @@ import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from subprocess import check_output
 from shlex import split
-import os
-import shutil
 import logging
 
 LDAP_USER = "cn={},dc=seagate,dc=com"
