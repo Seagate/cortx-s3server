@@ -19,8 +19,8 @@
 
 import os
 import yaml
-from subprocess import call
-from shlex import quote
+from subprocess import call, check_output
+from shlex import split
 
 class LdapSetup:
     def __init__(self):
@@ -41,9 +41,9 @@ class LdapSetup:
     @staticmethod
     def __encrypt_secret_key():
         encrypt_cmd = 'ls'
-        encrypt_cmd = quote(encrypt_cmd)
-        obj = call(encrypt_cmd, shell=False)
-        print(obj)
+        args = split(encrypt_cmd)
+        completed_process = check_output(args)
+        print(completed_process.decode().rstrip())
 
     def ldap_delete_all(self):
         cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
