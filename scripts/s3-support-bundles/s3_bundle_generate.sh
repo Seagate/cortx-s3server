@@ -157,13 +157,15 @@ s3_motr_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONF
 # from s3_core_dir directory, if available
 collect_core_files(){
   echo "Collecting core files..."
-  core_filename_pattern="core-s3server.*.gz"
+  # core_filename_pattern="core-s3server.*.gz"
+  core_filename_pattern="core-s3server.*"
   mkdir -p $s3_core_files
   cwd=$(pwd)
   if [ ! -d "$s3_core_dir" ];
   then
       return;
   fi
+
   cd $s3_core_dir
   # get recent modified core files from directory
   (ls -t $core_filename_pattern 2>/dev/null | head -$s3_core_files_max_count) | xargs -I '{}' cp '{}' $s3_core_files
@@ -176,21 +178,26 @@ collect_core_files(){
       # iterate over the s3_core_files directory and extract call stack for each file
       for s3corefile in "$s3_core_files"/*
       do
-         zipped_core_name=$(basename "$s3corefile")
-         core_name=${zipped_core_name%".gz"}
+         #zipped_core_name=$(basename "$s3corefile")
+         #core_name=${zipped_core_name%".gz"}
+         core_name=$(basename "$s3corefile")
          callstack_file="$s3_core_files"/callstack."$core_name".txt
          # Check the uncompressed size of gz core file
-         core_size=$(gunzip -lq $s3corefile)
-         uncompressed_size=$(cut -d' ' -f2 <<< $core_size)
+         #core_size=$(gunzip -lq $s3corefile)
+         #uncompressed_size=$(cut -d' ' -f2 <<< $core_size)
+
+         uncompressed_size=$(du -k "$s3corefile" | cut -f1)
          if [ $uncompressed_size -gt $max_allowed_core_size ];
          then
              echo "Ignoring $core_name because of core size($uncompressed_size Bytes) is greater than 10GB(10737418240 Bytes)" >> ./ignored_core_files.txt
              rm -f "$s3corefile"
          else
-             # unzip the core file, to read it using gdb
-             gunzip $s3corefile 2>/dev/null
+             # gunzip $s3corefile 2>/dev/null
              printf "Core name: $core_name\n" >> "$callstack_file"
              printf "Callstack:\n\n" >> "$callstack_file"
+             # compress and collect core file
+             # gzip --fast $s3corefile
+             # unzip the core file, to read it using gdb
              # generate gdb bt and append into the callstack_file
              gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" $s3server_binary\
              "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
@@ -201,7 +208,6 @@ collect_core_files(){
              gdb --batch --quiet -ex "info registers" -ex "quit" $s3server_binary\
              "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
              printf "\n**************************************************************************\n" >> "$callstack_file"
-
              # generate gdb assembly code
              printf "Assembly code:\n\n" >> "$callstack_file"
              gdb --batch --quiet -ex "disassemble" -ex "quit" $s3server_binary\
@@ -215,7 +221,7 @@ collect_core_files(){
              printf "\n**************************************************************************\n" >> "$callstack_file"
 
              # delete the inflated core file
-             rm -f "$s3_core_files/$core_name"
+             # rm -f "$s3_core_files/$core_name"
              # delete the zipped core file
              rm -f "$s3corefile"
          fi
@@ -230,11 +236,12 @@ collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
 
-  tmpr_dir="$tmp_dir/m0traces_tmp"
+  dir="$base_log_file_path/motr"
+  tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
   # if $base_log_file_path/motr missing then return
 
-  if [ ! -d "$s3_motr_dir" ];
+  if [ ! -d "$dir" ];
   then
       return;
   fi
@@ -280,7 +287,6 @@ collect_m0trace_files(){
 collect_first_m0trace_file(){
   echo "Collecting oldest m0trace file dump..."
   dir="$base_log_file_path/motr"
-
   cwd=$(pwd)
   m0trace_filename_pattern="*/m0trace.*"
   if [ ! -d "$s3_motr_dir" ];
@@ -401,7 +407,6 @@ then
     args+=($s3cluster_config)
 fi
 
-# Collect s3startsystem script file if available
 if [ -f "$s3startsystem_script" ];
 then
     args+=($s3startsystem_script)
@@ -432,15 +437,9 @@ then
 fi
 
 # Collect haproxy k8s log along with rotated logs if available
-if [ -f "$haproxy_sysconfig_log_file" ];
+if [ -f "$haproxy_log_k8s" ];
 then
-    args+=($haproxy_sysconfig_log_file*)
-fi
-
-# Collect haproxy status log
-if [ -f "$haproxy_status_log" ];
-then
-    args=$args" "$haproxy_status_log*
+    args+=($haproxy_log_k8s*)
 fi
 
 # Create temporary directory for creating other files as below
