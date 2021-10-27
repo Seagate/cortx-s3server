@@ -138,7 +138,7 @@ class ObjectRecoveryMsgbus(object):
                         self._logger.info("Shutting down s3backgroundconsumer")
                         break
                     self._logger.debug("Receiving msg from S3MessageBus")
-                    ret,message = self.__msgbuslib.receive(self._daemon_mode)
+                    ret,message = self.__msgbuslib.receive(False)
                     if ret:
                         # Process message can fail, but we still acknowledge the message
                         # The last step in process message is to delete the entry from
