@@ -19,8 +19,8 @@
 
 import os
 import yaml
-from subprocess import call
-from scripttest import TestFileEnvironment
+from subprocess import call, check_output
+from shlex import split
 import fileinput
 import shutil
 
@@ -64,11 +64,10 @@ class LdapSetup:
 
     @staticmethod
     def __encrypt_secret_key(secret_key):
-        working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests-out')
-        env = TestFileEnvironment(base_path=working_dir, start_clear=True)
-        status = env.run(f'java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes')
-        shutil.rmtree(working_dir, ignore_errors=True)
-        return status.stdout.rstrip()
+        encrypt_cmd = f'java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes'
+        args = split(encrypt_cmd)
+        completed_process = check_output(args)
+        return completed_process.decode().rstrip()
 
 
 class LdapInfo:
