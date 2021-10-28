@@ -770,7 +770,7 @@ std::string S3ObjectMetadata::to_json() {
 
   for (auto sit : system_defined_attribute) {
     if (sit.first == "Content-Length" && sit.second != "") {
-      root["Size"] = sit.second.c_str();
+      root["Size"] = sit.second;
     }
     root["System-Defined"][sit.first] = sit.second;
   }
@@ -877,7 +877,7 @@ int S3ObjectMetadata::from_json(std::string content) {
     pvid_str = newroot["PVID"].asString();
     obj_fragments = newroot["FNo"].asUInt();
     obj_parts = newroot["PRTS"].asUInt();
-    primary_obj_size = newroot["Size"].asUInt64();
+    // primary_obj_size = newroot["Size"].asUInt();
   }
 
   if (obj_fragments != 0 && obj_parts != 0 && (obj_fragments == obj_parts)) {
