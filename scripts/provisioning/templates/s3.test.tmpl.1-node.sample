@@ -24,3 +24,8 @@ test:
     iam_username: "sgiamadmin"
     iam_password: "ldapadmin"
     endpoint_url: "s3.seagate.com"
+cortx:
+  common:
+    setup_type: "VM"
+    storage:
+      log: "/var/log/cortx/"

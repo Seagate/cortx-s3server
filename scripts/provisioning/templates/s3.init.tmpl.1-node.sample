@@ -19,31 +19,46 @@
 # This file should only contain the mandatory parameters from provisioner confstore.
 # All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_INIT.
 
-server_node:
-  1114a50a6bf6f9c93ebd3c49d07d3fd4:
-    cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
-    hostname: "ssc-vm-1823.colo.seagate.com"
-    network:
-      data:
-        public_fqdn: "srvnode-1.data.public"
-        private_fqdn: "srvnode-1.data.private"
 cortx:
-  software:
+  common:
+    product_release: "LC"
+    setup_type: "VM"
+    storage:
+      log: "/var/log/cortx/"
+      local: "/etc/cortx"
+  external:
     openldap:
-      root:
-        user: "admin"
-        secret: "gAAAAABgWFRxlYPfMDe3j03DlE1gDxsr8d7MJ5upQ2k8UC2fCU-kSWlf0tb5M3aBXOxNDnT8Rb_M2b0w9UOgw9CQH-fSKzn6sA=="
-      sgiam:
-        user: "sgiamadmin"
-        secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
-    s3:
-      io:
-#       max_units : "8"       #commenting this to validate the default values from s3_prov_config.yaml.
-      service:
-        instances : "1"
+      admin: "admin"
+      secret: "gAAAAABgWFRxlYPfMDe3j03DlE1gDxsr8d7MJ5upQ2k8UC2fCU-kSWlf0tb5M3aBXOxNDnT8Rb_M2b0w9UOgw9CQH-fSKzn6sA=="
+      endpoints:
+      - ldap://127.0.0.1:389
+      - ssl://127.0.0.1:636
+      servers:
+      - localhost
+      - localhost
+      - localhost
+  s3:
+    auth_secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
+    iam:
+      endpoints:
+      - https://iam.seagate.com:9443
+      - http://iam.seagate.com:9080
+    data:
+      endpoints:
+      - https://s3.seagate.com:443
+      - http://s3.seagate.com:80
+    internal:
+      endpoints:
+      - http://127.0.0.1:28049
 cluster:
-  3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6:
-    site:
-      storage_set_count: "1"
-    storage_set:
-    - server_nodes: "['1114a50a6bf6f9c93ebd3c49d07d3fd4']"
+  id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
+  storage_set_count: 1
+  storage_set:
+    - nodes:
+      - 1114a50a6bf6f9c93ebd3c49d07d3fd4
+node:
+  1114a50a6bf6f9c93ebd3c49d07d3fd4:
+    name: "POD-1"
+    hostname: "ssc-vm-0080.colo.seagate.com"
+    cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
+    type: storage_node

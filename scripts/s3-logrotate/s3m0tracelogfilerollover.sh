@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# script is used to delete the old m0trace logs in /var/log/seagate/motr/<s3server-instance> directory
+# script is used to delete the old m0trace logs in /var/log/cortx/motr/<s3server-instance> directory
 # script will retain first origional m0trace file along with recent modified files of given count and remove rest of m0trace files
 # argument1: <number of latest m0trace files to retain>
 # Default number of latest log files is 5
@@ -34,8 +34,8 @@ where:
 
 # max m0trace files count in each s3 instance log directory
 m0trace_files_max_count=5
-s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
-s3_daemon_working_dir=`cat $s3server_config | grep "S3_DAEMON_WORKING_DIR:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
+s3server_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_CONF_SYMLINK")
+s3_daemon_working_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 
 while getopts ":n:" option; do
     case "${option}" in
@@ -58,7 +58,7 @@ echo
 echo "Rotating m0trace files in each $s3_daemon_working_dir<s3server-instance> directory"
 if [[ -n "$s3_daemon_working_dir" && -d "$s3_daemon_working_dir" ]]
 then
-   # get s3server instance directories from /var/log/seagate/motr
+   # get s3server instance directories from /var/log/cortx/motr
    s3_dirs=`find $s3_daemon_working_dir -maxdepth 1 -type d -name "s3server-*"`
    for s3_instance_dir in $s3_dirs
    do

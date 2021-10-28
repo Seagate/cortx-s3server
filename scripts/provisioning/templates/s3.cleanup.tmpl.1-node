@@ -16,3 +16,10 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+
+cortx:
+  common:
+    setup_type: "VM"
+    storage:
+      log: "/var/log/cortx/"
+      local: "/etc/cortx"

@@ -26,20 +26,28 @@ class InitCmd(SetupCmd):
   """Init Setup Cmd."""
   name = "init"
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(InitCmd, self).__init__(config)
-      self.read_ldap_credentials()
+      super(InitCmd, self).__init__(config, services)
+      self.setup_type = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')
+      self.logger.info(f'log file path : {self.setup_type}')
+      self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
+      self.logger.info(f'Cluster	id : {self.cluster_id}')
+      self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
+      self.logger.info(f'config file path : {self.base_config_file_path}')
+      self.base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
+      self.logger.info(f'log file path : {self.base_log_file_path}')
+
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
-
+    

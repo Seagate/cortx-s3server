@@ -447,7 +447,7 @@ then
     done
 
     # s3server addb
-    dump_s="/var/log/seagate/motr/s3server-*/addb_*/o/100000000000000:2"
+    dump_s="/var/log/cortx/motr/s3server-*/addb_*/o/100000000000000:2"
     for d in $dump_s; do
         pid=$(echo $d | sed -E 's/.*addb_([0-9]+)[/].*/\1/')
         echo 's3server '${pid}
@@ -458,9 +458,9 @@ then
 fi
 
 # Clean up motr and S3 log and data dirs
-$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/log/seagate/motr/* \
-                 /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
-                 /var/log/seagate/auth/tools/* /var/crash/* /var/motr/*
+$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/log/cortx/motr/* \
+                 /var/log/cortx/s3/* /var/log/cortx/auth/server/* \
+                 /var/log/cortx/auth/tools/* /var/crash/* /var/motr/*
 
 if [ $remove_m0trace -eq 1 ]; then
     $USE_SUDO find . -type f -name "m0trace.*" -exec rm -- '{}' +
@@ -479,9 +479,9 @@ if [ $use_http_client -eq 1 ]
 then
   $USE_SUDO sed -i 's/S3_ENABLE_AUTH_SSL:.*$/S3_ENABLE_AUTH_SSL: false/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 28051/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/enableSSLToLdap=.*$/enableSSLToLdap=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
-  $USE_SUDO sed -i 's/enable_https=.*$/enable_https=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
-  $USE_SUDO sed -i 's/enableHttpsToS3=.*$/enableHttpsToS3=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
+  s3confstore "properties:///opt/seagate/cortx/auth/resources/authserver.properties" setkey --key enableSSLToLdap --value false
+  s3confstore "properties:///opt/seagate/cortx/auth/resources/authserver.properties" setkey --key enable_https --value false
+  s3confstore "properties:///opt/seagate/cortx/auth/resources/authserver.properties" setkey --key enableHttpsToS3 --value false
 fi
 
 # Configuration setting for ipv6 connection
@@ -489,7 +489,7 @@ if [ $use_ipv6 -eq 1 ]
 then
   $USE_SUDO sed -i 's/S3_SERVER_IPV4_BIND_ADDR:.*$/S3_SERVER_IPV4_BIND_ADDR: ~/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/S3_SERVER_IPV6_BIND_ADDR:.*$/S3_SERVER_IPV6_BIND_ADDR: ::\/128/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)ipv4:[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   # backup
   $USE_SUDO \cp /etc/haproxy/haproxy.cfg{,.bak}
   $USE_SUDO sed -i 's/0\.0\.0\.0/::/g' /etc/haproxy/haproxy.cfg
@@ -534,8 +534,13 @@ cd $S3_BUILD_DIR
           -p /opt/seagate/cortx/auth/resources/authserver.properties
 
 # Enable fault injection in AuthServer
-$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/cortx/auth/resources/authserver.properties
+s3confstore "properties:///opt/seagate/cortx/auth/resources/authserver.properties" setkey --key enableFaultInjection --value true
 
+# copy all the config/resource files of auth server to /etc/cortx directory
+echo "Copy all authserver resources file to /etc/cortx"
+rm -rf "/etc/cortx/auth/resources/"
+mkdir -p "/etc/cortx/auth/resources/"
+cp -r /opt/seagate/cortx/auth/resources/* "/etc/cortx/auth/resources/"
 $USE_SUDO systemctl restart s3authserver
 
 function s3server_start() {
@@ -591,7 +596,7 @@ function s3server_start() {
 
     if [ "$statuss3" != "0" ]; then
         echo "Cannot start S3 service"
-        tail -50 /var/log/seagate/s3/s3server.INFO
+        tail -50 /var/log/cortx/s3/s3server.INFO
         exit 1
     fi
 }
@@ -653,7 +658,7 @@ fi
 ./runalltest.sh $runalltest_options || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
 # Disable fault injection in AuthServer
-$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
+s3confstore "properties:///etc/cortx/auth/resources/authserver.properties" setkey --key enableFaultInjection --value false
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 
@@ -667,12 +672,12 @@ then
 fi
 
 # To debug if there are any errors
-tail -50 /var/log/seagate/s3/s3server.ERROR || echo "No Errors"
+tail -50 /var/log/cortx/s3/s3server.ERROR || echo "No Errors"
 
 # jenkins pipeline to give this argument.
 if [ ! -z "$generate_support_bundle" ]
 then
-  /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh "$gid-$job_id" "$generate_support_bundle"
+  /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh -b "$gid-$job_id" -t "$generate_support_bundle" -c "/opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node" -s service
 fi
 
 cd $MOTR_SRC

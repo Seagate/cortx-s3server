@@ -59,10 +59,10 @@ class CleanupCmd(SetupCmd):
                           ]
                  }
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(CleanupCmd, self).__init__(config)
+      super(CleanupCmd, self).__init__(config, services)
       self.get_iam_admin_credentials()
 
     except Exception as e:
@@ -71,7 +71,10 @@ class CleanupCmd(SetupCmd):
 
   def process(self, pre_factory = False):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
+    # disabling reset phase for K8s branch
+    if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+      return
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.validate_config_files(self.name)
@@ -135,7 +138,7 @@ class CleanupCmd(SetupCmd):
 
       # truncate slapd logs
       self.logger.info("truncate slapd log file started")
-      slapd_log="/var/log/slapd.log"
+      slapd_log="/var/log/cortx/slapd.log"
       if os.path.isfile(slapd_log):
         fslapd = open(slapd_log, "w")
         fslapd.truncate()
@@ -145,7 +148,7 @@ class CleanupCmd(SetupCmd):
       #delete deployment log
       if pre_factory == True:
         self.logger.info("Delete S3 Deployment log file started")
-        dirpath = "/var/log/seagate/s3/s3deployment"
+        dirpath = "/var/log/cortx/s3/s3deployment"
         self.DeleteDirContents(dirpath)
         self.logger.info("Delete S3 Deployment log file completed")
         # revert config files to their origional config state
@@ -161,11 +164,11 @@ class CleanupCmd(SetupCmd):
   def revert_config_files(self):
     """Revert config files to their original config state."""
 
-    configFiles = ["/opt/seagate/cortx/auth/resources/authserver.properties",
-                  "/opt/seagate/cortx/auth/resources/keystore.properties",
-                  "/opt/seagate/cortx/s3/conf/s3config.yaml",
-                  "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-                  "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"]
+    configFiles = [self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)]
     try:
       for configFile in configFiles:
         if os.path.isfile(configFile):
@@ -222,7 +225,7 @@ class CleanupCmd(SetupCmd):
     """Validate if reset phase has done or not, throw exception."""
     self.logger.info(f"Processing {self.name} detect_if_reset_done")
     # Validate log file cleanup.
-    log_files = ['/var/log/seagate/auth/server/app.log', '/var/log/seagate/s3/s3server-*/s3server.INFO']
+    log_files = ['/var/log/cortx/auth/server/app.log', '/var/log/cortx/s3/s3server-*/s3server.INFO']
     for fpath in log_files:
       if os.path.exists(fpath):
         raise S3PROVError("Stale log files found in system!!!! hence reset needs to be performed before cleanup can be processed")

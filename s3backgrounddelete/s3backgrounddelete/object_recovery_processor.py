@@ -103,7 +103,7 @@ class ObjectRecoveryProcessor(object):
 
     def create_logger_directory(self):
         """Create log directory if not exsists."""
-        self._logger_directory = os.path.join(self.config.get_logger_directory())
+        self._logger_directory = os.path.join(self.config.get_processor_logger_directory())
         if not os.path.isdir(self._logger_directory):
             try:
                 os.mkdir(self._logger_directory)

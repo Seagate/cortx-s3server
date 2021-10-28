@@ -20,30 +20,43 @@
 
 from setupcmd import SetupCmd, S3PROVError
 from merge import merge_configs
+import os
+import shutil
 
 class PostUpgradeCmd(SetupCmd):
   """Post Upgrade Setup Cmd."""
   name = "postupgrade"
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(PostUpgradeCmd, self).__init__(config)
+      super(PostUpgradeCmd, self).__init__(config, services)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
       self.logger.info("validations completed")
 
+      # after rpm install, sample and unsafe attribute files needs to copy to /etc/cortx for merge logic
+      self.logger.info("Copy .ample and unsafe attribute files started")
+      self.copy_config_files()
+      self.logger.info("Copy .ample and unsafe attribute files completed")
+
+      # remove config file if present as they are get installed by default on /opt/seage/cortx by rpms
+      self.logger.info("Delete config file started")
+      self.delete_config_files()
+      self.logger.info("Delete config file completed")
+
       # merge_configs() is imported from the merge.py
       # Upgrade config files
       self.logger.info("merge configs started")
-      merge_configs()
+      config_file_path = "/etc/cortx"
+      merge_configs(config_file_path)
       self.logger.info("merge configs completed")
 
       # Remove temporary .old files from S3 temporary location
@@ -59,3 +72,37 @@ class PostUpgradeCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'process: {self.name} failed with exception: {e}')
 
+  def copy_config_files(self):
+    """ Copy sample and unsafe attribute config files from /opt/seagate/cortx to /etc/cortx."""
+    config_files = [self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')]
+
+    # copy all the config files from the /opt/seagate/cortx to /etc/cortx
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      dest_config_file = config_file.replace("/opt/seagate/cortx", "/etc/cortx")
+      self.logger.info(f"Dest config file: {dest_config_file}")
+      os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
+      shutil.move(config_file, dest_config_file)
+      self.logger.info("Config file copied successfully to /etc/cortx")
+
+  def delete_config_files(self):
+    """ delete config file which are installed by rpm"""
+    config_files = [self.get_confkey('S3_CONFIG_FILE'),
+                self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
+                self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
+                self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
+                self.get_confkey('S3_CLUSTER_CONFIG_FILE')]
+    
+    # remove config file
+    for config_file in config_files:
+      self.DeleteFile(config_file)
+      self.logger.info(f"Config file {config_file} deleted successfully")

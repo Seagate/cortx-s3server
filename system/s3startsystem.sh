@@ -55,17 +55,30 @@ else
   source $ha_config
 fi
 
+# read s3_prov_conf.yaml
+# read s3config path (/opt/seagate/cortx/s3/conf/s3config.yaml)
+# replace /opt/seagate/cortx with base_config_path
+# read symbolic link path (/opt/seagate/cortx/s3/install/logrotate/s3config.yaml)
+# create symboloc link
+# copy /opt/seagate/cortx/s3/install/logrotate/s3m0tracelogfilerollover.sh to /etc/cron.hourly/
+# copy /opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollover.sh to /etc/cron.hourly/
+# copy /opt/seagate/cortx/s3/install/logrotate/s3logfilerollover.sh to /etc/cron.hourly/
+# copy /opt/seagate/cortx/s3/install/logrotate/s3auditlog to /etc/cron.daily/
+# start crond
+
 
 # Ensure default working dir is present
+# e.g. /var/log/cortx/motr/<machine-id>/s3server-<fid>
 s3_working_dir=`python -c '
 import yaml;
 print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
 ' | tr -d '\r\n'
-`"s3server-$fid"
+`"/s3server-$fid"
 
 mkdir -p $s3_working_dir
 
 # Log dir configured in s3config.yaml
+# e.g. /var/log/cortx/s3/<machine-id>/s3server-<fid>
 s3_log_dir=`python -c '
 import yaml;
 print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
@@ -112,4 +125,5 @@ s3server --s3pidfile "$pid_filename" \
          --motrlocal "$local_ep" --motrha "$ha_ep" \
          --motrprofilefid "$profile_fid" --motrprocessfid "$process_fid" \
          --s3port "$s3port" --log_dir "$s3_log_dir" \
+         --s3config "$s3_config_file" \
          "${extra_options[@]}"

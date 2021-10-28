@@ -261,12 +261,10 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %dir /opt/seagate/cortx/s3/nodejs
 %dir /opt/seagate/cortx/s3/resources
 %dir /opt/seagate/cortx/s3/install/haproxy
+%dir /opt/seagate/cortx/s3/install/logrotate
 %dir /var/log/seagate/
 %dir /var/log/seagate/auth
 %dir /var/log/seagate/s3
-/etc/cron.hourly/s3logfilerollover.sh
-/etc/cron.hourly/s3m0tracelogfilerollover.sh
-/etc/cron.hourly/s3addblogfilerollover.sh
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
 /lib/systemd/system/s3backgroundproducer.service
@@ -316,10 +314,16 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_pthreads.pc
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_core.pc
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_extra.pc
+/opt/seagate/cortx/s3/install/logrotate/s3auditlog
+/opt/seagate/cortx/s3/install/logrotate/s3logfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3m0tracelogfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3supportbundlefilerollover.sh
 /opt/seagate/cortx/s3/install/haproxy/503.http
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver7.cfg
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver8.cfg
 /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy
+/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxylogfilerollover.sh
 /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate
 /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf
 /opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt
@@ -410,6 +414,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/bin/merge.py
 /opt/seagate/cortx/s3/bin/s3_haproxy_config.py
 /opt/seagate/cortx/s3/bin/third-party-rpms.txt
+/opt/seagate/cortx/s3/bin/starthaproxy.sh
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_start
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
@@ -419,8 +424,6 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.main
-/etc/logrotate.d/s3auditlog
-/etc/logrotate.d/openldap
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
 %{_bindir}/s3cipher

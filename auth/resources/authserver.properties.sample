@@ -24,7 +24,7 @@ nettyEventExecutorThreads=32
 httpPort=28050
 httpsPort=28051
 defaultHost=0.0.0.0
-logFilePath=/var/log/seagate/auth/server
+logFilePath=/var/log/cortx/auth/server
 samlMetadataFileName=saml-metadata.xml
 # Max limit of entries for account, iamuser and ldapsearch
 # operations can be configured using below three paramters.
@@ -38,6 +38,8 @@ ldapSSLPort=636
 enableSSLToLdap=false
 ldapMaxCons=100
 ldapMaxSharedCons=100
+ldapRetryCount=10
+ldapRetryInterval=5000
 ldapLoginDN=cn=sgiamadmin,dc=seagate,dc=com
 # ldapLoginPW value needs to be encrypted and updated here
 # Use AuthPassEncryptCLI.jar CLI to encrypt the password
@@ -49,7 +51,7 @@ enable_https=false
 enable_http=true
 enableFaultInjection=false
 perfEnabled=false
-perfLogFile=/var/log/seagate/auth/perf.log
+perfLogFile=/var/log/cortx/auth/perf.log
 defaultEndpoint=127.0.0.1
 s3Endpoints=s3-us-west-2.seagate.com,s3-us.seagate.com,s3-europe.seagate.com,s3-asia.seagate.com,s3.seagate.com
 #Auth Server to S3 connection will be over http or https as specified below.
