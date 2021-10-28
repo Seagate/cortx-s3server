@@ -139,15 +139,14 @@ class ObjectRecoveryMsgbus(object):
                         break
                     self._logger.debug("Receiving msg from S3MessageBus")
                     ret,message = self.__msgbuslib.receive(False)
-                    if ret:
+                    if message is not None:
                         # Process message can fail, but we still acknowledge the message
                         # The last step in process message is to delete the entry from
                         # probable delete index. Even if we acknowledge a message that
                         # has failed being processed it would eventually come back as
                         # the entry has not been deleted from probable delete index.
                         self._logger.debug("Msg {}".format(str(message)))
-                        if message is not None:
-                            self.__process_msg(message.decode('utf-8'))
+                        self.__process_msg(message.decode('utf-8'))
                         self.__msgbuslib.ack()
                     else:
                         self._logger.debug("Failed to receive msg from message bus : " + str(message))
