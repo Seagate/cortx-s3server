@@ -102,8 +102,7 @@
 		    <artifactId>aws-java-sdk-s3</artifactId>
 		    <scope>test</scope>
 		</dependency>
-        
-        
+		
         <!-- https://mvnrepository.com/artifact/commons-validator/commons-validator -->
         <dependency>
             <groupId>commons-validator</groupId>
