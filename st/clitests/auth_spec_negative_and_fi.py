@@ -18,10 +18,7 @@
 #
 
 import os
-<<<<<<< HEAD
-=======
 import time
->>>>>>> d243d2976e1c7061ae194fa586e53778aa03eb34
 import shutil
 from framework import Config
 from ldap_setup import LdapInfo
