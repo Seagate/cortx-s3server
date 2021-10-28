@@ -124,6 +124,7 @@ first_s3_m0trace_file="$tmp_dir/first_s3_m0trace_file"
 m0trace_files_count=5
 s3_core_files_max_count=11
 max_allowed_core_size=10737418240 #e.g 10GB byte value
+compress_core_file=true
 
 # LDAP data
 ldap_dir="$tmp_dir/ldap"
@@ -192,37 +193,42 @@ collect_core_files(){
              echo "Ignoring $core_name because of core size($uncompressed_size Bytes) is greater than 10GB(10737418240 Bytes)" >> ./ignored_core_files.txt
              rm -f "$s3corefile"
          else
-             # gunzip $s3corefile 2>/dev/null
              printf "Core name: $core_name\n" >> "$callstack_file"
              printf "Callstack:\n\n" >> "$callstack_file"
              # compress and collect core file
-             # gzip --fast $s3corefile
-             # unzip the core file, to read it using gdb
-             # generate gdb bt and append into the callstack_file
-             gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" $s3server_binary\
-             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
-             printf "\n**************************************************************************\n" >> "$callstack_file"
+             if [ $compress_core_file == true ];
+             then
+                 echo "Compress and collect s3 core file: $core_name"
+                 gzip --fast $s3corefile 2>/dev/null
+             else
+                 gunzip $s3corefile 2>/dev/null
+                 # unzip the core file, to read it using gdb
+                 # generate gdb bt and append into the callstack_file
+                 gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" $s3server_binary\
+                 "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+                 printf "\n**************************************************************************\n" >> "$callstack_file"
 
-             # generate gdb registers dump
-             printf "Register state:\n\n" >> "$callstack_file"
-             gdb --batch --quiet -ex "info registers" -ex "quit" $s3server_binary\
-             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
-             printf "\n**************************************************************************\n" >> "$callstack_file"
-             # generate gdb assembly code
-             printf "Assembly code:\n\n" >> "$callstack_file"
-             gdb --batch --quiet -ex "disassemble" -ex "quit" $s3server_binary\
-             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
-             printf "\n**************************************************************************\n" >> "$callstack_file"
+                 # generate gdb registers dump
+                 printf "Register state:\n\n" >> "$callstack_file"
+                 gdb --batch --quiet -ex "info registers" -ex "quit" $s3server_binary\
+                 "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+                 printf "\n**************************************************************************\n" >> "$callstack_file"
+                 # generate gdb assembly code
+                 printf "Assembly code:\n\n" >> "$callstack_file"
+                 gdb --batch --quiet -ex "disassemble" -ex "quit" $s3server_binary\
+                 "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+                 printf "\n**************************************************************************\n" >> "$callstack_file"
 
-             # generate gdb memory map
-             printf "Memory map:\n\n" >> "$callstack_file"
-             gdb --batch --quiet -ex "info proc mapping" -ex "quit" $s3server_binary\
-             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
-             printf "\n**************************************************************************\n" >> "$callstack_file"
+                 # generate gdb memory map
+                 printf "Memory map:\n\n" >> "$callstack_file"
+                 gdb --batch --quiet -ex "info proc mapping" -ex "quit" $s3server_binary\
+                 "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+                 printf "\n**************************************************************************\n" >> "$callstack_file"
 
-             # delete the inflated core file
-             # rm -f "$s3_core_files/$core_name"
-             # delete the zipped core file
+                 # delete the inflated core file
+                 rm -f "$s3_core_files/$core_name"
+             fi
+             # delete the copied core file
              rm -f "$s3corefile"
          fi
       done
