@@ -47,7 +47,7 @@ class S3ObjectMetadataTest : public testing::Test {
     call_count_one = 0;
     bucket_name = "seagate_bucket";
     object_name = "objectname";
-
+    new_object_tags_map = {{"k1", "v1"}, {"k2", "v2"}};
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     ptr_mock_request->set_account_name("s3account");
@@ -99,6 +99,7 @@ class S3ObjectMetadataTest : public testing::Test {
   struct s3_motr_idx_layout objects_version_list_index_layout;
   int call_count_one;
   std::string bucket_name, object_name;
+  std::map<std::string, std::string> new_object_tags_map;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -519,7 +520,80 @@ TEST_F(S3ObjectMetadataTest, SaveMetadataSuccess) {
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
   EXPECT_EQ(S3ObjectMetadataState::saved, metadata_obj_under_test->state);
 }
+// Tags and Prefix are present
+TEST_F(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject1) {
+  const std::string bucket_replication_config =
+      "{\"Role\":\"role-string\",\"Rules\":[{\"DeleteMarkerReplication\":{"
+      "\"Status\":\"Disabled\"},\"Destination\":{\"Bucket\":\"dest-bucket\"},"
+      "\"Filter\":{\""
+      "And\":{\"Prefix\":\"obj\",\"Tag\":[{\"Key\":\"k1\",\"Value\":\"v1\"},{"
+      "\"Key\":\"k2\",\"Value\":\"v2\"}]}},\"ID\":\"Rule-1\",\"Priority\":1,"
+      "\"Status\":\"Enabled\"}]}";
 
+  EXPECT_TRUE(metadata_obj_under_test->check_bucket_replication_policy(
+      new_object_tags_map, bucket_replication_config));
+}
+// Only tags are present
+TEST_F(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject2) {
+  const std::string bucket_replication_config =
+      "{\"Role\":\"role-string\",\"Rules\":[{\"DeleteMarkerReplication\":{"
+      "\"Status\":\"Disabled\"},\"Destination\":{\"Bucket\":\"dest-bucket\"},"
+      "\"Filter\":{\""
+      "And\":{\"Tag\":[{\"Key\":\"k1\",\"Value\":\"v1\"},{"
+      "\"Key\":\"k2\",\"Value\":\"v2\"}]}},\"ID\":\"Rule-1\",\"Priority\":1,"
+      "\"Status\":\"Enabled\"}]}";
+
+  EXPECT_TRUE(metadata_obj_under_test->check_bucket_replication_policy(
+      new_object_tags_map, bucket_replication_config));
+}
+// Only Prefix is present
+TEST_F(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject3) {
+  const std::string bucket_replication_config =
+      "{\"Role\":\"role-string\",\"Rules\":[{\"DeleteMarkerReplication\":{"
+      "\"Status\":\"Disabled\"},\"Destination\":{\"Bucket\":\"dest-bucket\"},"
+      "\"Filter\":{\"Prefix\":\"obj\"},\"ID\":\"Rule-1\",\"Priority\":1,"
+      "\"Status\":\"Enabled\"}]}";
+
+  EXPECT_TRUE(metadata_obj_under_test->check_bucket_replication_policy(
+      new_object_tags_map, bucket_replication_config));
+}
+// Empty filter is present
+TEST_F(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject4) {
+  const std::string bucket_replication_config =
+      "{\"Role\":\"role-string\",\"Rules\":[{\"DeleteMarkerReplication\":{"
+      "\"Status\":\"Disabled\"},\"Destination\":{\"Bucket\":\"dest-bucket\"},"
+      "\"Filter\":null,\"ID\":\"Rule-1\",\"Priority\":1,"
+      "\"Status\":\"Enabled\"}]}";
+
+  EXPECT_TRUE(metadata_obj_under_test->check_bucket_replication_policy(
+      new_object_tags_map, bucket_replication_config));
+}
+// Empty prefix is present
+TEST_F(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject5) {
+  const std::string bucket_replication_config =
+      "{\"Role\":\"role-string\",\"Rules\":[{\"DeleteMarkerReplication\":{"
+      "\"Status\":\"Disabled\"},\"Destination\":{\"Bucket\":\"dest-bucket\"},"
+      "\"Filter\":{\"Prefix\":\"\" },\"ID\":\"Rule-1\",\"Priority\":1,"
+      "\"Status\":\"Enabled\"}]}";
+
+  EXPECT_TRUE(metadata_obj_under_test->check_bucket_replication_policy(
+      new_object_tags_map, bucket_replication_config));
+}
+TEST_F(S3ObjectMetadataTest, ValidateInvalidReplicationPolicyAgainstObject) {
+  const std::string bucket_replication_config =
+      "{\"Role\":\"role-string\",\"Rules\":[{\"DeleteMarkerReplication\":{"
+      "\"Status\":\"Disabled\"},\"Destination\":{\"Bucket\":\"dest-bucket\"},"
+      "\"Filter\":{\""
+      "And\":{\"Prefix\":\"obj\",\"Tag\":[{\"Key\":\"k1\",\"Value\":\"v1\"},{"
+      "\"Key\":\"k2\",\"Value\":\"v2\"}]}},\"ID\":\"Rule-1\",\"Priority\":1,"
+      "\"Status\":\"Enabled\"}]}";
+  std::map<std::string, std::string> new_object_tags_map = {{"k11", "v1"},
+                                                            {"k22", "v2"}};
+  ;
+
+  EXPECT_FALSE(metadata_obj_under_test->check_bucket_replication_policy(
+      new_object_tags_map, bucket_replication_config));
+}
 TEST_F(S3ObjectMetadataTest, SaveMetadataFailed) {
   metadata_obj_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;

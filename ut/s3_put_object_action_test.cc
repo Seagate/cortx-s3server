@@ -98,7 +98,7 @@ class S3PutObjectActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .Times(AtLeast(1))
-        .WillOnce(ReturnRef(object_name));
+        .WillRepeatedly(ReturnRef(object_name));
     EXPECT_CALL(*(ptr_mock_request), get_header_value(StrEq("x-amz-tagging")))
         .WillOnce(Return(""));
 
@@ -1058,6 +1058,18 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
               set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_tags(_))
       .Times(AtLeast(1));
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              check_bucket_replication_exists())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_replication_config_as_json_string()).Times(AtLeast(1));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              set_replication_status_and_dest_bucket(true, _, _));
+
   EXPECT_CALL(*ptr_mock_request, get_header_value("Content-Type"))
       .Times(1)
       .WillOnce(Return(""));
@@ -1081,7 +1093,6 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
 
   action_under_test->save_metadata();
 }
-
 TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
   CREATE_OBJECT_METADATA;
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(

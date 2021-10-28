@@ -376,6 +376,13 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   FRIEND_TEST(S3ObjectMetadataTest, FromJson);
   FRIEND_TEST(S3MultipartObjectMetadataTest, FromJson);
   FRIEND_TEST(S3ObjectMetadataTest, GetEncodedBucketAcl);
+  FRIEND_TEST(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject1);
+  FRIEND_TEST(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject2);
+  FRIEND_TEST(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject3);
+  FRIEND_TEST(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject4);
+  FRIEND_TEST(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject5);
+  FRIEND_TEST(S3ObjectMetadataTest,
+              ValidateInvalidReplicationPolicyAgainstObject);
 };
 
 #endif
