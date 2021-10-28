@@ -767,9 +767,11 @@ std::string S3ObjectMetadata::to_json() {
   root["PVID"] = this->pvid_str;
   root["FNo"] = this->obj_fragments;
   root["PRTS"] = this->obj_parts;
-  root["Size"] = (Json::Value::UInt64) this->primary_obj_size;
 
   for (auto sit : system_defined_attribute) {
+    if (sit.first == "Content-Length" && sit.second != "") {
+      root["Size"] = sit.second.c_str();
+    }
     root["System-Defined"][sit.first] = sit.second;
   }
   for (auto uit : user_defined_attribute) {
