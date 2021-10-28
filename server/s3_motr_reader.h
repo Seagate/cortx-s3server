@@ -266,8 +266,6 @@ class S3MotrReader {
     last_index = index;
     starting_index_for_read = index;
     s3_log(S3_LOG_INFO, stripped_request_id, "%s Index : %lu ", __func__,
-           index);
-    s3_log(S3_LOG_INFO, stripped_request_id, "%s Index : %lu ", __func__,
            starting_index_for_read);
   }
 

@@ -31,19 +31,40 @@
 #include "s3_motr_writer.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
+#include "s3_probable_delete_record.h"
 #include "s3_timer.h"
 
+enum class S3PutPartActionState {
+  empty = 0,         // Initial state
+  validationFailed,  // Any validations failed for request, including metadata
+  probableEntryRecordFailed,
+  newObjOidCreated,         // New object created
+  newObjOidCreationFailed,  // New object create failed
+  writeComplete,            // data write to object completed successfully
+  writeFailed,              // data write to object failed
+  md5ValidationFailed,      // md5 check failed
+  metadataSaved,            // metadata saved for new object
+  metadataSaveFailed,       // metadata saved for new object
+  completed,                // All stages done completely
+};
+
 class S3PutMultiObjectAction : public S3ObjectAction {
+  S3PutPartActionState s3_put_action_state;
+  struct m0_uint128 old_object_oid;
+  int old_layout_id;
+  struct m0_uint128 new_object_oid;
+  int layout_id;
+  S3Timer s3_timer;
   std::shared_ptr<S3PartMetadata> part_metadata = NULL;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata = NULL;
   std::shared_ptr<S3MotrWiter> motr_writer = NULL;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer = nullptr;
 
   size_t total_data_to_stream;
   S3Timer create_object_timer;
   S3Timer write_content_timer;
   int part_number;
   std::string upload_id;
-  int layout_id;
   unsigned motr_write_payload_size;
 
   int get_part_number() {
@@ -70,7 +91,16 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kv_writer_factory;
+  std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3AuthClientFactory> auth_factory;
+
+  // Probable delete record for old object OID in case of overwrite
+  std::string old_oid_str;  // Key for old probable delete rec
+  std::unique_ptr<S3ProbableDeleteRecord> old_probable_del_rec;
+  // Probable delete record for new object OID in case of current req failure
+  std::string new_oid_str;  // Key for new probable delete rec
+  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
 
   // Used only for UT
  protected:
@@ -79,10 +109,12 @@ class S3PutMultiObjectAction : public S3ObjectAction {
  public:
   S3PutMultiObjectAction(
       std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3MotrWriterFactory> motr_s3_factory = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
   void setup_steps();
@@ -92,11 +124,15 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   void fetch_object_info_failed();
   void fetch_multipart_metadata();
   void fetch_multipart_failed();
-  void fetch_firstpart_info();
-  void fetch_firstpart_info_failed();
-  void save_multipart_metadata();
-  void save_multipart_metadata_failed();
-  void compute_part_offset();
+  void fetch_part_info();
+  void fetch_part_info_success();
+  void fetch_part_info_failed();
+  void create_part_object();
+  void create_part_object_successful();
+  void create_part_object_failed();
+
+  void add_object_oid_to_probable_dead_oid_list();
+  void add_object_oid_to_probable_dead_oid_list_failed();
 
   void initiate_data_streaming();
   void consume_incoming_content();
@@ -106,9 +142,20 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   void write_object_failed();
 
   void save_metadata();
+  void save_object_metadata_success();
   void save_metadata_failed();
   void send_response_to_s3_client();
   void set_authorization_meta();
+
+  // Rollback tasks
+  void startcleanup() override;
+  void mark_new_oid_for_deletion();
+  void mark_old_oid_for_deletion();
+  void remove_old_oid_probable_record();
+  void remove_new_oid_probable_record();
+  void delete_old_object();
+  void remove_old_object_version_metadata();
+  void delete_new_object();
 
   // Google tests
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ConstructorTest);
@@ -147,14 +194,6 @@ class S3PutMultiObjectAction : public S3ObjectAction {
               SaveMultipartMetadataFailedInternalError);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               SaveMultipartMetadataFailedServiceUnavailable);
-  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
-              FetchFirstPartInfoServiceUnavailableFailed);
-  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
-              FetchFirstPartInfoInternalErrorFailed);
-  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1);
-  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
-              ComputePartOffsetNoChunk);
-  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset);
   FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
               InitiateDataStreamingForZeroSizeObject);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
@@ -206,6 +245,17 @@ class S3PutMultiObjectAction : public S3ObjectAction {
               ValidateUserMetadataLengthNegativeCase);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               ValidateMissingContentLength);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth, CreatePartObject);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              CreatePartObjectFailedTestWhileShutdown);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              CreateObjectFailedTest);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              CreateObjectFailedToLaunchTest);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              WriteObjectFailedShouldUndoMarkProgress);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              SaveObjectMetadataFailed);
 };
 
 #endif

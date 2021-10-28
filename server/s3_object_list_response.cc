@@ -32,6 +32,7 @@ S3ObjectListResponse::S3ObjectListResponse(const std::string& encoding_type)
       request_marker_uploadid(""),
       max_keys(""),
       response_is_truncated(false),
+      chop_uploadid(false),
       next_marker_key(""),
       max_uploads(""),
       next_marker_uploadid(""),
@@ -107,7 +108,7 @@ void S3ObjectListResponse::set_response_is_truncated(bool flag) {
   response_is_truncated = flag;
 }
 
-void S3ObjectListResponse::set_next_marker_key(const std::string& next,
+void S3ObjectListResponse::set_next_marker_key(const std::string next,
                                                bool url_encode) {
   if (url_encode) {
     next_marker_key = get_response_format_key_value(next);
@@ -116,7 +117,7 @@ void S3ObjectListResponse::set_next_marker_key(const std::string& next,
   }
 }
 
-void S3ObjectListResponse::set_next_marker_uploadid(const std::string& next) {
+void S3ObjectListResponse::set_next_marker_uploadid(const std::string next) {
   next_marker_uploadid = next;
 }
 
@@ -300,9 +301,19 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
   }
 
   for (auto&& object : object_list) {
+    std::string object_name = object->get_object_name();
+    if (chop_uploadid) {
+      // In case of multipart listing, chop uploadid from key
+      // The flag gets set only in case of multipart listing, wherein
+      // we append |uploadid to object name
+      std::size_t pos = object_name.rfind("|");
+      if (pos != std::string::npos) {
+        object_name = object_name.substr(0, pos);
+      }
+    }
     response_xml += "<Upload>";
     response_xml += S3CommonUtilities::format_xml_string(
-        "Key", get_response_format_key_value(object->get_object_name()));
+        "Key", get_response_format_key_value(object_name));
     response_xml += S3CommonUtilities::format_xml_string(
         "UploadId", object->get_upload_id());
     response_xml += "<Initiator>";

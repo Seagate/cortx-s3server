@@ -19,7 +19,6 @@
  */
 
 #include <memory>
-
 #include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
@@ -69,7 +68,10 @@ class S3DeleteBucketActionTest : public testing::Test {
 
     EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
                 get_objects_version_list_index_layout())
-        .WillRepeatedly(ReturnRef(zero_index_layout));
+        .WillRepeatedly(ReturnRef(index_layout));
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_extended_metadata_index_layout())
+        .WillRepeatedly(ReturnRef(index_layout));
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
@@ -158,7 +160,10 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
       bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
-
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_layout())
+      .Times(1)
+      .WillOnce(ReturnRef(index_layout));
   // set the OID
   action_under_test->bucket_metadata->set_object_list_index_layout(
       zero_index_layout);
@@ -318,7 +323,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccess) {
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("file2", action_under_test->last_key.c_str());
   EXPECT_EQ(2, action_under_test->part_idx_layouts.size());
-  EXPECT_EQ(2, action_under_test->multipart_object_oids.size());
+  EXPECT_EQ(0, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
 }
 
@@ -381,7 +386,7 @@ TEST_F(S3DeleteBucketActionTest,
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("file1", action_under_test->last_key.c_str());
   EXPECT_EQ(1, action_under_test->part_idx_layouts.size());
-  EXPECT_EQ(1, action_under_test->multipart_object_oids.size());
+  EXPECT_EQ(0, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
   S3Option::get_instance()->set_motr_idx_fetch_count(old_idx_fetch_count);
 }

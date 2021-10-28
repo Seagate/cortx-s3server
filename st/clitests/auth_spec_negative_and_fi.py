@@ -18,6 +18,10 @@
 #
 
 import os
+<<<<<<< HEAD
+=======
+import time
+>>>>>>> d243d2976e1c7061ae194fa586e53778aa03eb34
 import shutil
 from framework import Config
 from ldap_setup import LdapInfo
@@ -55,6 +59,7 @@ def before_all():
     config['cacheTimeout'] = "0"
     config.write()
     os.system('systemctl restart s3authserver')
+    time.sleep(30)
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
 
@@ -772,3 +777,4 @@ config = ConfigObj("/etc/cortx/auth/resources/authserver.properties")
 config['cacheTimeout'] = "30"
 config.write()
 os.system('systemctl restart s3authserver')
+time.sleep(30)

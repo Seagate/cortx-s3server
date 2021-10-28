@@ -53,6 +53,7 @@ class S3AbortMultipartAction : public S3BucketAction {
 
   struct s3_motr_idx_layout multipart_index_layout;
   struct s3_motr_idx_layout part_index_layout;
+  std::map<std::string, std::string> probable_oid_list;
 
   // Probable delete record for object OID to be deleted
   std::string oid_str;  // Key for probable delete rec
@@ -63,6 +64,10 @@ class S3AbortMultipartAction : public S3BucketAction {
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
+  std::vector<std::shared_ptr<S3PartMetadata>> multipart_parts;
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>> probable_del_rec_list;
+  std::string last_key;
+  unsigned int total_processed_count = 0;
 
   S3AbortMultipartActionState s3_abort_mp_action_state;
 
@@ -83,6 +88,9 @@ class S3AbortMultipartAction : public S3BucketAction {
   void fetch_bucket_info_failed();
   void get_multipart_metadata();
   void get_multipart_metadata_status();
+  void get_next_parts();
+  void get_next_parts_successful();
+  void get_next_parts_failed();
   void delete_multipart_metadata();
   void delete_multipart_metadata_successful();
   void delete_multipart_metadata_failed();
@@ -91,13 +99,16 @@ class S3AbortMultipartAction : public S3BucketAction {
   void delete_part_index_with_parts_failed();
   void send_response_to_s3_client();
 
-  void add_object_oid_to_probable_dead_oid_list();
-  void add_object_oid_to_probable_dead_oid_list_failed();
-
+  void add_parts_oids_to_probable_dead_oid_list();
+  void add_parts_oids_to_probable_dead_oid_list_failed();
+  void save_metadata_in_stages();
+  void save_partial_metadata_failed(unsigned int processed_count);
+  void save_partial_metadata_successful(unsigned int processed_count);
   void startcleanup() override;
-  void mark_oid_for_deletion();
-  void delete_object();
-  void remove_probable_record();
+  void mark_oids_for_deletion();
+  void delete_part();
+  void delete_parts_successful();
+  void remove_probable_records();
 
   // Google tests
   FRIEND_TEST(S3AbortMultipartActionTest, ConstructorTest);
