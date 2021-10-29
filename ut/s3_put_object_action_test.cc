@@ -1058,6 +1058,18 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
               set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_tags(_))
       .Times(AtLeast(1));
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              check_bucket_replication_exists())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_replication_config_as_json_string()).Times(AtLeast(1));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              set_replication_status_and_dest_bucket(true, _, _));
+
   EXPECT_CALL(*ptr_mock_request, get_header_value("Content-Type"))
       .Times(1)
       .WillOnce(Return(""));
