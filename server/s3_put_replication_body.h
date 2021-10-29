@@ -128,6 +128,9 @@ class S3PutReplicationBody {
   FRIEND_TEST(S3PutReplicationBodyTest, ValidateDuplicateRulePriority);
   FRIEND_TEST(S3PutReplicationBodyTest,
               ValidateRequestForDuplicateKeyInMultipleRules);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateStorageClassNotSupported);
+  FRIEND_TEST(S3PutReplicationBodyTest,
+              ValidateEncryptionConfigurationNotSupported);
 };
 
 #endif

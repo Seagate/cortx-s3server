@@ -616,3 +616,53 @@ TEST_F(S3PutReplicationBodyTest, ValidateDuplicateRulePriority) {
   result = put_bucket_replication_body->isOK();
   EXPECT_FALSE(result);
 }
+
+// Storage Class is not supported
+TEST_F(S3PutReplicationBodyTest, ValidateStorageClassNotSupported) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "<StorageClass>STANDARD</StorageClass>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// EncryptionConfiguration is not supported
+TEST_F(S3PutReplicationBodyTest, ValidateEncryptionConfigurationNotSupported) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "<EncryptionConfiguration>"
+      "<ReplicaKmsKeyID>ARN</ReplicaKmsKeyID>"
+      "</EncryptionConfiguration>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
