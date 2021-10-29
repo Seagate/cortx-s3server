@@ -131,6 +131,15 @@ class S3PutReplicationBody {
   FRIEND_TEST(S3PutReplicationBodyTest, ValidateStorageClassNotSupported);
   FRIEND_TEST(S3PutReplicationBodyTest,
               ValidateEncryptionConfigurationNotSupported);
+  FRIEND_TEST(S3PutReplicationBodyTest,
+              ValidateAccessControlTranslationNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateAccountNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateMetricsNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateReplicationTimeNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest,
+              ValidateExistingObjectReplicationNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest,
+              ValidateSourceSelectionCriteriaNotImplemented);
 };
 
 #endif
