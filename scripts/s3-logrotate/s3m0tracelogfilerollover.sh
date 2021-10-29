@@ -21,19 +21,19 @@
 # script is used to delete the old m0trace logs in /var/log/cortx/motr/<s3server-instance> directory
 # script will retain first origional m0trace file along with recent modified files of given count and remove rest of m0trace files
 # argument1: <number of latest m0trace files to retain>
-# Default number of latest log files is 5
-# ./s3m0tracelogfilerollover.sh -n 5
+# Default number of latest log files is 2
+# ./s3m0tracelogfilerollover.sh -n 2
 
 usage() { echo "Usage: bash $(basename "$0")[--help|-h]
                    [-n m0traceFileCount]
 Retain recent modified files of given count and first generated m0trace and remove rest of m0trace files.
 
 where:
--n            number of latest m0trace files to retain (Default count for m0trace files is 5)
+-n            number of latest m0trace files to retain (Default count for m0trace files is 2)
 --help|-h     display this help and exit" 1>&2; exit 1; }
 
 # max m0trace files count in each s3 instance log directory
-m0trace_files_max_count=5
+m0trace_files_max_count=2
 s3server_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_CONF_SYMLINK")
 s3_daemon_working_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 
@@ -71,7 +71,7 @@ then
      then
         # get files sort by date - oldest will come on top
         remove_file_count=`expr $m0trace_files_count - $m0trace_files_max_count`
-        # remove oldest files except first generated m0trace e.g.5 recent + 1 original file
+        # remove oldest files except first generated m0trace e.g.2 recent + 1 original file
         remove_file_count=`expr $remove_file_count - 1`
         if [ $remove_file_count -gt 0 ]
         then
