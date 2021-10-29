@@ -99,7 +99,6 @@ s3cluster_config="$base_config_file_path/s3/s3backgrounddelete/s3_cluster.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 
-s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
 
 # S3 deployment log
@@ -153,6 +152,7 @@ authserver_logdir=$(s3confstore "properties://$authserver_config" getkey --key="
 backgrounddelete_producer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>scheduler_logger_directory")
 backgrounddelete_consumer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>processor_logger_directory")
 s3_motr_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
+s3_core_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 
 # Collect call stack of latest <s3_core_files_max_count> s3server core files
 # from s3_core_dir directory, if available
