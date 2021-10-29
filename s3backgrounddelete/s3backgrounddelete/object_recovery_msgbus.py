@@ -107,12 +107,16 @@ class ObjectRecoveryMsgbus(object):
             self.__isconsumersetupcomplete = False
 
     def receive_data(self,
+        term_signal,
         consumer_id = None,
         consumer_group = None,
         msg_topic = None,
         offset = None):
         """Initializes consumer, connects and receives messages from message bus."""
         while True:
+            if term_signal.shutdown_signal:
+                self._logger.info("Shutting down s3backgroundconsumer")
+                break
             try:
                 if not self.__isconsumersetupcomplete:
                     self.__setup_consumer(consumer_id,
@@ -130,9 +134,12 @@ class ObjectRecoveryMsgbus(object):
                     # for a specified duration and then try to receive again.
                     # In case of non-daemon mode we will exit once we encounter failure
                     # in receiving messages.
+                    if term_signal.shutdown_signal:
+                        self._logger.info("Shutting down s3backgroundconsumer")
+                        break
                     self._logger.debug("Receiving msg from S3MessageBus")
-                    ret,message = self.__msgbuslib.receive(self._daemon_mode)
-                    if ret:
+                    ret,message = self.__msgbuslib.receive(False)
+                    if ret and message is not None:
                         # Process message can fail, but we still acknowledge the message
                         # The last step in process message is to delete the entry from
                         # probable delete index. Even if we acknowledge a message that
