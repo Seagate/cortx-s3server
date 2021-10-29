@@ -630,7 +630,10 @@ TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
       false,                                      // force_delete
       false,                                      // is_multipart
       {0ULL, 0ULL});
-  action_under_test->new_probable_del_rec.reset(prob_rec);
+  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+  new_probable_del_rec.reset(prob_rec);
+  action_under_test->new_probable_del_rec_list.push_back(
+      std::move(new_probable_del_rec));
 
   action_under_test->clear_tasks();
   action_under_test->save_object_metadata_failed();

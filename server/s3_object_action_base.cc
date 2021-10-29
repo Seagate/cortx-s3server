@@ -240,6 +240,7 @@ void S3ObjectAction::fetch_additional_object_info_failed() {
 }
 
 void S3ObjectAction::get_source_bucket_and_object(const std::string& header) {
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
   size_t separator_pos;
   if (header[0] != '/') {
     separator_pos = header.find("/");
