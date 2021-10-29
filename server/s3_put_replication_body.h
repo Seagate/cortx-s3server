@@ -87,7 +87,7 @@ class S3PutReplicationBody {
   DestinationChildNodes convert_str_to_Destination_enum(
       const unsigned char *str);
   virtual std::string get_replication_configuration_as_json();
-  std::vector<std::string> &get_destination_bucket_list();
+  virtual std::vector<std::string> &get_destination_bucket_list();
   bool validate_child_nodes_of_filter(
       xmlNodePtr filter_node, std::map<std::string, std::string> &rule_tags,
       bool &is_and_node_present, bool &is_rule_prefix_present,

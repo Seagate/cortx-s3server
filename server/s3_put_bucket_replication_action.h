@@ -90,6 +90,7 @@ class S3PutBucketReplicationAction : public S3BucketAction {
   FRIEND_TEST(S3PutBucketReplicationActionTest, SendResponseToClientSuccess);
   FRIEND_TEST(S3PutBucketReplicationActionTest,
               SendResponseToClientInternalError);
+  FRIEND_TEST(S3PutBucketReplicationActionTest, ValidateDestinationIsNotSource);
 };
 
 #endif
