@@ -206,7 +206,8 @@ void S3AbortMultipartAction::get_next_parts_successful() {
     s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
-  struct s3_motr_idx_layout part_index_layout = object_multipart_metadata->get_part_index_layout();
+  struct s3_motr_idx_layout part_index_layout =
+      object_multipart_metadata->get_part_index_layout();
   bool atleast_one_json_error = false;
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -591,10 +592,8 @@ void S3AbortMultipartAction::delete_part() {
   motr_writer->set_layout_id(part_metadata->get_layout_id());
   motr_writer->delete_object(
       std::bind(&S3AbortMultipartAction::delete_parts_successful, this),
-      std::bind(&S3AbortMultipartAction::next, this),
-      id,
-      part_metadata->get_layout_id(),
-      object_multipart_metadata->get_pvid());
+      std::bind(&S3AbortMultipartAction::next, this), id,
+      part_metadata->get_layout_id(), object_multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
