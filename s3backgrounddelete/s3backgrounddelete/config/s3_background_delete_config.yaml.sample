@@ -37,7 +37,7 @@ message_bus:
    producer_id: "S3MsgProducer"
    producer_delivery_mechanism: "sync"                      # sync, async
    consumer_sleep: 5
-   purge_sleep: 20
+   purge_sleep: 0
    admin_id: "admin_s3_background_delete"
 
 logconfig:                                  # Section for scheduler & processor loggers.
