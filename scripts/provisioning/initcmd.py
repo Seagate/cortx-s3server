@@ -19,6 +19,7 @@
 #
 
 import sys
+import os
 
 from setupcmd import SetupCmd
 
@@ -50,4 +51,11 @@ class InitCmd(SetupCmd):
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
-    
+    self.enable_s3_core_dump_generation()
+
+  def enable_s3_core_dump_generation(self):
+    """ Enable s3 core dump generation at kernel module"""
+    self.logger.info("Enabling s3 core dump generation at kernel level...")
+    os.system("sysctl kernel.printk=8")
+    os.system("sysctl kernel.core_pattern=/var/log/crash/core-%e.%p")
+    self.logger.info("Enabled s3 core dump generation...")
