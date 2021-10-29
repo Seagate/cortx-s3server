@@ -113,7 +113,7 @@ def main():
       # Enable core dump generation for s3server
       logger.info("Enabling s3 core dump generation at kernel level...")
       os.system("sysctl kernel.printk=8")
-      os.system("sysctl kernel.core_pattern={s3_daemon_dir}/core-%e.%p")
+      os.system(f"sysctl kernel.core_pattern={s3_daemon_dir}/core-%e.%p")
       logger.info("Enabled s3 core dump generation...")
 
       #Sys config path
