@@ -847,7 +847,14 @@ TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
 
 TEST_F(S3PostCompleteActionTest, DeleteOldObjectSuccess) {
   CREATE_WRITER_OBJ;
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
   int old_layout_id = 2;
+  struct m0_fid pv_id = {0x7810203002040bfe, 0x19be102030405060};
+
+  action_under_test_ptr->old_obj_oids.push_back(old_object_oid);
+  action_under_test_ptr->old_obj_pvids.push_back(pv_id);
+  action_under_test_ptr->old_obj_layout_ids.push_back(old_layout_id);
+
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, _, old_layout_id, _)).Times(0);
 
@@ -855,7 +862,7 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObjectSuccess) {
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
                          S3PostCompleteActionTest::func_callback_one, this);
   action_under_test_ptr->delete_old_object_success();
-  EXPECT_EQ(1, call_count_one);
+  EXPECT_EQ(0, call_count_one);
 }
 
 TEST_F(S3PostCompleteActionTest, RemoveOldExtMetadataSuccess) {
