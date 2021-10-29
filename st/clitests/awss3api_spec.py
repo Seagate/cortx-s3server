@@ -944,7 +944,7 @@ result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete
 #get-object after overwrite
 AwsTest('Aws can get object').get_object("sourcebucket", "20Mbfile-copy").execute_test().command_is_successful()
 
-#with simple object 
+#with simple object
 AwsTest('Aws can put object').put_object("sourcebucket", "20Mbfile-copy", 1024)\
     .execute_test().command_is_successful()
 
@@ -985,7 +985,9 @@ dest_obj_etag_after_abort = get_etag(obj_data_after_abort.status.stdout)
 print(dest_obj_etag_after_abort)
 
 if dest_obj_etag != dest_obj_etag_after_abort:
-    assert False, "Negative Overwrite Tests Failed***************"
+    assert False, "**********Negative Overwrite Tests Failed***************"
+else:
+    print("***************Negative Overwrite Tests successful ****************")
 
 #************negative test case done*****************
 
