@@ -327,7 +327,7 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
       pre_str = rule_object["Filter"]["Prefix"].asString();
       xml_str += "<Filter><Prefix>" + pre_str + "</Prefix></Filter>";
     } else {
-     
+
       xml_str += "<Filter></Filter>";
     }
     xml_str += "</Rule>";
@@ -449,7 +449,7 @@ bool S3BucketMetadata::check_bucket_tags_exists() const {
 }
 
 // Check if repliaction configuration exists for a bucket
-bool S3BucketMetadata::check_bucket_replication_exists() const {
+bool S3BucketMetadata::check_bucket_replication_exists() {
   return !bucket_replication_configuration.empty();
 }
 

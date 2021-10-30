@@ -107,7 +107,7 @@ class S3BucketMetadata {
 
   virtual std::string get_replication_config_as_xml();
   virtual std::string get_replication_config_as_json_string();
-  virtual bool check_bucket_replication_exists() const;
+  virtual bool check_bucket_replication_exists();
   virtual std::string replication_config_from_json_to_xml(std::string content);
   void get_replication_policy_tags_from_json_to_xml(
       const Json::Value& rule_object, std::string& xml_str);
