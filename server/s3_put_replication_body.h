@@ -37,6 +37,7 @@ enum ChildNodes {
   DeleteMarkerReplication,
   Destination,
   Filter,
+  Prefix,
   ExistingObjectReplication,
   SourceSelectionCriteria
 };
@@ -140,6 +141,7 @@ class S3PutReplicationBody {
               ValidateExistingObjectReplicationNotImplemented);
   FRIEND_TEST(S3PutReplicationBodyTest,
               ValidateSourceSelectionCriteriaNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateV1Request);
 };
 
 #endif

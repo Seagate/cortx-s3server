@@ -834,3 +834,23 @@ TEST_F(S3PutReplicationBodyTest,
   result = put_bucket_replication_body->isOK();
   EXPECT_FALSE(result);
 }
+
+// AWS still supports the old v1 API
+TEST_F(S3PutReplicationBodyTest, ValidateV1Request) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule>"
+      "<ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Prefix>abc</Prefix>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_TRUE(result);
+}
