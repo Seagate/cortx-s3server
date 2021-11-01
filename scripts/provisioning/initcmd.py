@@ -50,4 +50,3 @@ class InitCmd(SetupCmd):
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
-
