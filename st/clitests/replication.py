@@ -89,7 +89,9 @@ if __name__ == '__main__':
     #assert(config == {'ReplicationConfiguration': POLICY})
 
     AwsTest('Put object: wrong prefix').with_cli_self(f"aws s3api put-object --bucket {SOURCE_BUCKET} --key bad1 --body /etc/passwd").execute_test().command_is_successful()
-    assert(not is_replicated('bad1'))
+    if is_replicated('bad1'):
+        raise AssertionError("Unexpected replication status")
 
     AwsTest('Put object: matching prefix').with_cli_self(f"aws s3api put-object --bucket {SOURCE_BUCKET} --key test1 --body /etc/passwd").execute_test().command_is_successful()
-    assert(is_replicated('test1'))
+    if not is_replicated('test1'):
+        raise AssertionError("Unexpected replication status")
