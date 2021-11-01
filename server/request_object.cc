@@ -841,7 +841,9 @@ void RequestObject::send_response(int code, std::string body) {
                                         // add/update again
     set_out_header_value("Content-Length", "0");
   }
-  set_out_header_value("x-amz-request-id", request_id);
+  if (out_headers_copy.find("x-amz-request-id") == out_headers_copy.end()) {
+    set_out_header_value("x-amz-request-id", request_id);
+  }
   evhtp_obj->http_send_reply(ev_req, code);
   stop_processing_incoming_data();
   resume(false);  // attempt resume just in case some one forgot
