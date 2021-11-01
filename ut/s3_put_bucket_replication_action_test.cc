@@ -466,7 +466,8 @@ TEST_F(S3PutBucketReplicationActionTest, SendResponseToClientInternalError) {
 }
 
 // The source and destination buckets cannot be the same
-TEST_F(S3PutBucketReplicationActionTest, ValidateDestinationIsNotSource) {
+TEST_F(S3PutBucketReplicationActionTest,
+       ValidateIfDestinationAndSourceNameIsSame) {
 
   MockReplicationConfigStr =
       "<ReplicationConfiguration "
