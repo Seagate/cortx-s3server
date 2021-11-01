@@ -153,7 +153,7 @@ s3_core_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONF
 collect_core_files(){
   echo "Collecting core files..."
   # core_filename_pattern="core-s3server.*.gz"
-  core_filename_pattern="core-s3server.*"
+  core_filename_pattern="core.*"
   mkdir -p $s3_core_files
   cwd=$(pwd)
   if [ ! -d "$s3_core_dir" ];
@@ -163,7 +163,7 @@ collect_core_files(){
 
   cd $s3_core_dir
   # get recent modified core files from directory
-  (ls -t $core_filename_pattern 2>/dev/null | head -$s3_core_files_max_count) | xargs -I '{}' cp '{}' $s3_core_files
+  (find . -name $core_filename_pattern 2>/dev/null | head -$s3_core_files_max_count) | xargs -I '{}' cp '{}' $s3_core_files
 
   # check for empty directory for core files
   if [ -z "$(ls -A $s3_core_files)" ];
