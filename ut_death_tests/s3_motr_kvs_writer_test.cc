@@ -68,6 +68,7 @@ class S3MotrKVSWriterTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     ptr_mock_s3motr = std::make_shared<MockS3Motr>();
+    p_motrkvs = nullptr;
     EXPECT_CALL(*ptr_mock_s3motr, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 

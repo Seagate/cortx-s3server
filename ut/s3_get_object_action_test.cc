@@ -1112,6 +1112,18 @@ TEST_F(S3GetObjectActionTest, ReadObjectFailedJustEndResponse2) {
   action_under_test->read_object_data_failed();
 }
 
+TEST_F(S3GetObjectActionTest, SetTotalBlocksToReadFromNextObject) {
+  std::vector<struct S3ExtendedObjectInfo> extended_objects;
+  struct S3ExtendedObjectInfo extendinfo;
+  extendinfo.total_blocks_in_object = 10;
+  action_under_test->extended_objects.push_back(extendinfo);
+  action_under_test->next_fragment_object = 0;
+  action_under_test->set_total_blocks_to_read_from_next_object();
+  EXPECT_EQ(10, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(0, action_under_test->blocks_already_read);
+  EXPECT_EQ(0, action_under_test->data_sent_to_client_for_object);
+}
+
 TEST_F(S3GetObjectActionTest, SendResponseWhenShuttingDownAndResponseStarted) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   action_under_test->read_object_reply_started = true;

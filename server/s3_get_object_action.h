@@ -50,6 +50,14 @@ class S3GetObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   S3Timer s3_timer;
 
+  // TODO: Data structures for extended object type
+  size_t total_objects;
+  size_t total_objects_to_read;
+  unsigned int next_fragment_object;
+  std::vector<struct S3ExtendedObjectInfo> extended_objects;
+  size_t total_blocks_to_read_all_objects;
+  size_t data_sent_to_client_for_object;
+
   size_t get_requested_content_length() const {
     return last_byte_offset_to_read - first_byte_offset_to_read + 1;
   }
@@ -68,8 +76,12 @@ class S3GetObjectAction : public S3ObjectAction {
   void validate_object_info();
   void check_full_or_range_object_read();
   void set_total_blocks_to_read_from_object();
+  void set_total_blocks_to_read_from_fragmented_object();
+
   bool validate_range_header_and_set_read_options(
       const std::string& range_value);
+  void read_fragmented_object();
+  void set_total_blocks_to_read_from_next_object();
   void read_object();
 
   void read_object_data();
@@ -97,6 +109,7 @@ class S3GetObjectAction : public S3ObjectAction {
               ValidateObjectWhenObjInfoFetchFailedReportError);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse1);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse2);
+  FRIEND_TEST(S3GetObjectActionTest, SetTotalBlocksToReadFromNextObject);
   FRIEND_TEST(S3GetObjectActionTest, ValidateObjectOfSizeZero);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize);

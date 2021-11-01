@@ -1,0 +1,52 @@
+@startuml
+
+title CreateMultipartUpload (Multipart Upload)
+
+participant "S3 Client" as client
+participant "S3 Server" as server
+participant "Motr\nKVS API" as kvs
+participant "Motr\nObject API" as object
+
+autoactivate on
+
+
+client -> server: POST /bucket_name/object_name?uploads
+
+server -> kvs: get_keyval(global_bucket_index, key = "bucket_name")
+kvs --> server: value = account_id of bucket owner
+
+server -> kvs: get_keyval(global_bucket_md_index, key = "account_id/bucket_name")
+kvs --> server: value = bucket metadata JSON
+
+server -> kvs: get_keyval(BUCKET_nnn_obj_index, key = "object_name")
+note left
+   * Index OID for this index is stored
+      in bucket metadata JSON.
+   * This call checks if object is present.
+end note
+kvs --> server: not found
+note over server
+   * Validate tagging (if present in header)
+   * In case of invalid tag, return error to client
+   * Check object state (present/missing), set data structures accordingly 
+      if multipart table OID missing then send error to client
+   * Index OID of multipart table is stored in bucket metadata JSON.
+end note
+
+server -> kvs: create part index(object_nnn_part_index)
+note right of server
+  Index Name:
+  BUCKET/<bucket name>/<object name>/<upload id>
+  This index will hold metadata information about each
+  part of the multipart upload as individual key-value pair.
+end note
+kvs --> server: success (completed)
+
+server -> kvs: put_keyval(BUCKET_nnn_multipart_index, key=object_name|Upload_id, val = object_metadata)
+kvs --> server: success (completed)
+
+server --> client: 200 OK, multipart_upload_id
+note over server
+   *start cleanup/rollback if any
+end note
+@enduml

@@ -40,7 +40,7 @@ class S3ServiceListResponse {
  public:
   S3ServiceListResponse();
   void set_owner_name(std::string name);
-  void set_owner_id(std::string id);
+  void set_owner_id(const std::string& id);
   void add_bucket(std::shared_ptr<S3BucketMetadata> bucket);
   std::string& get_xml();
   int get_bucket_count() const { return bucket_list.size(); }

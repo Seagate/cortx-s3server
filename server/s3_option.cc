@@ -331,6 +331,9 @@ bool S3Option::load_section(std::string section_name,
       motr_reconnect_sleep_time =
           s3_option_node["S3_MOTR_SLEEP_DURING_RECONNECT"].as<unsigned int>();
       ;
+      motr_init_max_timeout =
+          s3_option_node["S3_MOTR_INIT_MAX_TIMEOUT"].as<unsigned int>();
+      ;
 
       std::string motr_read_pool_initial_buffer_count_str;
       std::string motr_read_pool_expandable_count_str;
@@ -1212,13 +1215,15 @@ unsigned S3Option::get_libevent_pool_reserve_percent() const {
 
 unsigned short S3Option::do_redirection() { return s3_daemon_redirect; }
 
-void S3Option::set_option_file(std::string filename) { option_file = filename; }
+void S3Option::set_option_file(const std::string& filename) {
+  option_file = filename;
+}
 
-void S3Option::set_layout_recommendation_file(std::string filename) {
+void S3Option::set_layout_recommendation_file(const std::string& filename) {
   layout_recommendation_file = filename;
 }
 
-void S3Option::set_daemon_dir(std::string path) { s3_daemon_dir = path; }
+void S3Option::set_daemon_dir(const std::string& path) { s3_daemon_dir = path; }
 
 void S3Option::set_redirection(unsigned short redirect) {
   s3_daemon_redirect = redirect;
@@ -1454,7 +1459,7 @@ uint32_t S3Option::get_perf_stats_inout_bytes_interval_msec() {
   return perf_stats_inout_bytes_interval_msec;
 }
 
-void S3Option::set_stats_allowlist_filename(std::string filename) {
+void S3Option::set_stats_allowlist_filename(const std::string& filename) {
   stats_allowlist_filename = filename;
 }
 
@@ -1512,4 +1517,8 @@ unsigned int S3Option::get_motr_reconnect_retry_count() {
 
 unsigned int S3Option::get_motr_reconnect_sleep_time() {
   return motr_reconnect_sleep_time;
+}
+
+unsigned int S3Option::get_motr_init_max_timeout() {
+  return motr_init_max_timeout;
 }
