@@ -24,6 +24,8 @@ import socket
 from ldap.ldapobject import SimpleLDAPObject
 import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
+from subprocess import check_output
+from shlex import split
 import logging
 
 LDAP_USER = "cn={},dc=seagate,dc=com"
@@ -89,8 +91,11 @@ class LdapAccountAction:
                                       input_params['const_cipher_secret_str'],
                                       input_params['const_cipher_access_str'])
 
+    encrypted_secret_key = LdapAccountAction.__encrypt_secret_key(secret_key)
+
     input_params['access_key'] = access_key
     input_params['secret_key'] = secret_key
+    input_params['encrypted_secret_key'] = encrypted_secret_key
 
   def __create_account_prepare_params(self, index_key:str, input_params:dict):
     """Builds params for creating 'account'."""
@@ -133,7 +138,7 @@ class LdapAccountAction:
 
     attrs['ak'] = [input_params['access_key'].encode('utf-8')]
     attrs['s3userid'] = [input_params['s3_user_id'].encode('utf-8')]
-    attrs['sk'] = [input_params['secret_key'].encode('utf-8')]
+    attrs['sk'] = [input_params['encrypted_secret_key'].encode('utf-8')]
 
     dn = dn.format(input_params['access_key'])
     return dn, attrs
@@ -343,6 +348,14 @@ class LdapAccountAction:
     cortx_access_key = CortxS3Cipher(None, True, 22, const_access_string).generate_key()
     cortx_secret_key = CortxS3Cipher(None, False, 40, const_secret_string).generate_key()
     return cortx_access_key, cortx_secret_key
+
+  @staticmethod
+  def __encrypt_secret_key(secret_key):
+    encrypt_cmd = f'java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes'
+    args = split(encrypt_cmd)
+    completed_process = check_output(args)
+    return completed_process.decode().rstrip()
+
 
   def __get_attr(self, index_key):
     """Fetches attr from map based on index."""
