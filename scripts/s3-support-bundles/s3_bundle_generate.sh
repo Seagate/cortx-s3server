@@ -1,4 +1,4 @@
-#!/#!/bin/bash
+#!/bin/bash
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
