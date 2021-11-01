@@ -27,6 +27,7 @@
 
 #include "lib/types.h"  // struct m0_uint128
 #include "s3_object_action_base.h"
+#include "s3_common_utilities.h"
 
 enum class S3PutObjectActionState {
   empty = 0,         // Initial state
@@ -69,6 +70,9 @@ class S3PutObjectActionBase : public S3ObjectAction {
   void fetch_object_info_success() final;
   void fetch_object_info_failed() final;
 
+  // On successful load of extends/parts of old object
+  void fetch_old_ext_object_info_success();
+
   // additional bucket (Incase of copy-object API)
   void fetch_additional_bucket_info_failed() final;
   void fetch_additional_object_info_failed() final;
@@ -90,9 +94,15 @@ class S3PutObjectActionBase : public S3ObjectAction {
   void set_authorization_meta();
 
   // Rollback tasks
-  void add_object_oid_to_probable_dead_oid_list();
+  // Pass 'only_old_object' as True, when we want only old/existing object (or
+  // its parts) entries to be added to probable delete index
+  void add_object_oid_to_probable_dead_oid_list(bool only_old_object = false);
   void add_object_oid_to_probable_dead_oid_list_failed();
-  void add_parts_fragment_oid_to_probable_dead_oid_list();
+  void add_part_object_to_probable_dead_oid_list(
+      const std::shared_ptr<S3ObjectMetadata> &,
+      std::vector<std::unique_ptr<S3ProbableDeleteRecord>> &);
+  void add_parts_fragment_oid_to_probable_dead_oid_list(
+      std::shared_ptr<S3ObjectMetadata> &, struct s3_part_frag_context);
   void add_parts_fragment_oid_to_probable_dead_oid_list_success();
 
   void startcleanup() final;
@@ -132,7 +142,8 @@ class S3PutObjectActionBase : public S3ObjectAction {
   std::unique_ptr<S3ProbableDeleteRecord> old_probable_del_rec;
   std::vector<std::unique_ptr<S3ProbableDeleteRecord>> probable_del_rec_list;
   // Probable delete record for new object OID in case of current req failure
-  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
+      new_probable_del_rec_list;
   std::vector<struct m0_uint128> old_obj_oids;
   std::vector<struct m0_fid> old_obj_pvids;
   std::vector<int> old_obj_layout_ids;
