@@ -365,7 +365,7 @@ class AwsTest(S3PyCliTest):
     def head_object(self, bucket_name, object_name):
         self.bucket_name = bucket_name
         self.object_name = object_name
-        self.with_cli("aws s3api " + "head-object " + "--bucket " + bucket_name + " --key " + object_name)
+        self.with_cli("aws s3api --output json " + "head-object " + "--bucket " + bucket_name + " --key " + object_name)
         return self
 
     def head_bucket(self, bucket_name):
@@ -389,5 +389,20 @@ class AwsTest(S3PyCliTest):
 
     def delete_bucket_policy(self, bucket_name):
         cmd = "aws s3api " + "delete-bucket-policy " + "--bucket " + bucket_name
+        self.with_cli(cmd)
+        return self
+
+    def get_bucket_replication(self, bucket_name):
+        cmd = "aws s3api --output json get-bucket-replication --bucket " + bucket_name
+        self.with_cli(cmd)
+        return self
+
+    def put_bucket_replication(self, bucket_name, config_path):
+        cmd = "aws s3api put-bucket-replication --bucket " + bucket_name + " --replication-configuration file://" + config_path
+        self.with_cli(cmd)
+        return self
+
+    def delete_bucket_replication(self, bucket_name):
+        cmd = "aws s3api delete-bucket-replication --bucket " + bucket_name
         self.with_cli(cmd)
         return self

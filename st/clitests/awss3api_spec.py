@@ -19,6 +19,8 @@
 
 import os
 import yaml
+import json
+import tempfile
 import hashlib
 import shutil
 from framework import Config
@@ -1531,6 +1533,60 @@ print(upload_id)
 parts="Parts=[{ETag=00000000000000000000000000000000,PartNumber=1}]"
 
 result=AwsTest('Aws cannot complete multipart upload with wrong ETag').complete_multipart_upload("seagatebuckettag", "10Mbfile", parts, upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidPart")
+
+#******** Bucket Replication ********
+
+REPLICATION_SOURCE = 'replication-source'
+REPLICATION_DEST = 'replication-dst'
+REPLICATION_POLICY = {
+    "Role": "role-string",
+    "Rules": [
+        {
+            "Status": "Enabled",
+            "Prefix": "test",
+            "Destination": {
+                "Bucket": REPLICATION_DEST
+            }
+        }
+    ]
+}
+
+def put_replication(bucket, policy):
+    with tempfile.NamedTemporaryFile(suffix='.json', mode='w') as f:
+        json.dump(policy, f)
+        f.flush()
+        os.fsync(f.fileno())
+        AwsTest('Put bucket replication').put_bucket_replication(bucket, f.name).execute_test().command_is_successful()
+
+AwsTest('Make replication source').create_bucket(REPLICATION_SOURCE).execute_test().command_is_successful()
+AwsTest('Make replication destination').create_bucket(REPLICATION_DEST).execute_test().command_is_successful()
+
+AwsTest('Get nonexistent replication').get_bucket_replication(REPLICATION_SOURCE).execute_test(negative_case=True).command_should_fail()
+AwsTest('Delete nonexistent replication').delete_bucket_replication(REPLICATION_SOURCE).execute_test().command_is_successful()
+
+put_replication(REPLICATION_SOURCE, REPLICATION_POLICY)
+AwsTest('Get replication').get_bucket_replication(REPLICATION_SOURCE).execute_test().command_is_successful()
+AwsTest('Delete replication').delete_bucket_replication(REPLICATION_SOURCE).execute_test().command_is_successful()
+
+put_replication(REPLICATION_SOURCE, REPLICATION_POLICY)
+rep_test = AwsTest('Get replication').get_bucket_replication(REPLICATION_SOURCE).execute_test().command_is_successful()
+rep_policy = json.loads(rep_test.status.stdout)
+# Known issue: the old v1 format gets translated to v2,
+# so it doesn't match the provided policy verbatim
+# (though it's functionally equivalent). Currently just
+# checking that we got valid JSON, should check that the
+# policy is the same as what we gave once v2 format is
+# available in the test environment.
+
+AwsTest('Put object: wrong prefix').put_object(REPLICATION_SOURCE, 'no_replication', filesize=1024, key_name='bad1').execute_test().command_is_successful()
+rep_test = AwsTest('Check replication status').head_object(REPLICATION_SOURCE, 'bad1').execute_test().command_is_successful()
+if 'ReplicationStatus' in json.loads(rep_test.status.stdout):
+    raise AssertionError("Unexpected replication status")
+
+AwsTest('Put object: matching prefix').put_object(REPLICATION_SOURCE, 'test_replication', filesize=1024, key_name='test1').execute_test().command_is_successful()
+rep_test = AwsTest('Check replication status').head_object(REPLICATION_SOURCE, 'test1').execute_test().command_is_successful()
+if not 'ReplicationStatus' in json.loads(rep_test.status.stdout):
+    raise AssertionError("Unexpected replication status")
 
 #******* Delete bucket **********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test().command_is_successful()
