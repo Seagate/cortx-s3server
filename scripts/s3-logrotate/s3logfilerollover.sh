@@ -112,14 +112,17 @@ then
 fi
 
 
+echo "-------------------------- Performing s3 core file cleanup -----------------------"
 # Rotate s3 core dump files
 # check if s3 daemon directory exists
 if [ -d "$s3_core_dir" ]
 then
  cd $s3_core_dir
  # get recent modified core files from daemon directory
- core_files=`find . -name $core_filename_pattern -type f 2>/dev/null`
+ core_files=$(find . -name "$core_filename_pattern" -type f 2>/dev/null)
+ echo "core_files: $core_files"
  core_file_count=`echo "$core_files" | grep -v "^$" | wc -l`
+ echo "core_file_count: $core_file_count"
  echo "## found $core_file_count core file(s) in s3 daemon directory($s3_core_dir) ##"
 
  if [ $core_file_count -gt $core_files_max_count ]
@@ -128,10 +131,13 @@ then
   core_remove_count=`expr $core_file_count - $core_files_max_count`
   echo "## ($core_remove_count) core file(s) can be removed from s3 daemon directory($s3_core_dir) ##"
   # get the files sorted by time modified (most recently modified comes last), that is older files comes first
-  core_to_remove=`echo $core_files | xargs -I{} ls -tr {} 2>/dev/null | head -n $core_remove_count 2>/dev/null`
+  core_to_remove=`echo "$core_files" | xargs -I{} ls -tr {} 2>/dev/null | head -n "$core_remove_count" 2>/dev/null`
   echo "## Deleting below s3 core file(s) ($core_to_remove)"
-  rm -f "$core_to_remove"
+  rm -f $s3_core_dir/$core_to_remove
  else
   echo "## No s3 core files to remove ##"
  fi
+ cd -
 fi
+
+echo "-------------------------- S3 core file cleanup completed -----------------------"
