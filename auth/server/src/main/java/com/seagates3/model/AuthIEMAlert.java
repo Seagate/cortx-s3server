@@ -3,8 +3,8 @@ package com.seagates3.model;
 import com.seagates3.s3service.IEMRestClient;
 import com.seagates3.s3service.S3HttpResponse;
 
-import com.amazonaws.util.json.JSONException;
-import com.amazonaws.util.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

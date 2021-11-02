@@ -20,8 +20,6 @@
 
 package com.seagates3.s3service;
 
-import com.amazonaws.util.json.JSONException;
-import com.amazonaws.util.json.JSONObject;
 import com.seagates3.authserver.AuthServerConfig;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
