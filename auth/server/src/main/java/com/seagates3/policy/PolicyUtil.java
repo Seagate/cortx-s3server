@@ -200,4 +200,30 @@ class PolicyUtil {
     }
     return null;
   }
+
+  /**
+   * Below method will return key for policy data map using policy arn
+   * @param arn
+   * @return
+   */
+ public
+  static String retrieveKeyFromArn(String arn) {
+    String key = null;
+    String token[] = arn.split(":");
+    String account_id = token[4];
+    String policyName = token[5].split("/")[1];
+    key = policyName + "#" + account_id;
+    return key;
+  }
+
+  /**
+   * Below will create a key for policy data map
+   * @param policyName
+   * @param accountid
+   * @return
+   */
+ public
+  static String getKey(String policyName, String accountid) {
+    return policyName + "#" + accountid;
+  }
 }
