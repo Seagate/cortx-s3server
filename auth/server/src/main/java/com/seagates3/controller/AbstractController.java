@@ -34,7 +34,8 @@ public abstract class AbstractController {
         this.requestor = requestor;
         this.requestBody = requestBody;
     }
-
+   public
+    Boolean isValidGetParams(Map<String, String> requestBody) { return true; }
     public ServerResponse create() throws DataAccessException {
         return null;
     }
@@ -53,4 +54,7 @@ public abstract class AbstractController {
 
     public
      ServerResponse changepassword() throws DataAccessException { return null; }
-}
+
+    public
+     ServerResponse get() throws DataAccessException { return null; }
+ }

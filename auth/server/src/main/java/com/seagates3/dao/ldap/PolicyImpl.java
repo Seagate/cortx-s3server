@@ -20,142 +20,85 @@
 
 package com.seagates3.dao.ldap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import com.novell.ldap.LDAPAttribute;
-import com.novell.ldap.LDAPAttributeSet;
-import com.novell.ldap.LDAPConnection;
-import com.novell.ldap.LDAPEntry;
-import com.novell.ldap.LDAPException;
-import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.dao.PolicyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Policy;
-import com.seagates3.util.DateUtil;
+import com.seagates3.policy.PolicyUtil;
 
-public class PolicyImpl implements PolicyDAO {
+public
+class PolicyImpl implements PolicyDAO {
 
-    private final Logger LOGGER =
-            LoggerFactory.getLogger(PolicyImpl.class.getName());
-    /**
-     * Find the policy.
-     *
-     * @param account
-     * @param policyName
-     * @return
-     * @throws DataAccessException
-     */
-    @Override
-    public Policy find(Account account, String policyName)
-            throws DataAccessException {
-        Policy policy = new Policy();
-        policy.setAccount(account);
-        policy.setName(policyName);
+ private
+  static final String POLICY_PREFIX = "Policy";
 
-        String[] attrs = {LDAPUtils.POLICY_ID, LDAPUtils.PATH,
-            LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.MODIFY_TIMESTAMP,
-            LDAPUtils.DEFAULT_VERSION_ID, LDAPUtils.POLICY_DOC
-        };
+  /**
+   * Find the policy.
+   *
+   * @param account
+   * @param policyName
+   * @return
+   * @throws DataAccessException
+   */
+  @Override public Policy find(String arn) throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
+    if (arn != null) {
+      String key = PolicyUtil.retrieveKeyFromArn(arn);
+      return (Policy)storeInstance.find(key, arn, POLICY_PREFIX);
+    }
+    return null;
+  }
 
-        String ldapBase = String.format("%s=%s,%s=%s,%s=%s,%s",
-                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.POLICY_OU,
-                LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
-                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
-                LDAPUtils.BASE_DN
-        );
-        String filter = String.format("(%s=%s)", LDAPUtils.POLICY_NAME,
-                policyName);
+  /**
+   * Save the policy.
+   *
+   * @param policy
+   * @throws DataAccessException
+   */
+  @Override public void save(Policy policy) throws DataAccessException {
 
-        LDAPSearchResults ldapResults;
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
+    String key =
+        PolicyUtil.getKey(policy.getName(), policy.getAccount().getId());
+    Map policyDetailsMap = new HashMap<>();
+    policyDetailsMap.put(key, policy);
+    storeInstance.save(policyDetailsMap, policy, POLICY_PREFIX);
+  }
 
-        LOGGER.debug("Searching policy dn: " + ldapBase + " filter: "
-                                                            + filter);
+  @Override public List<Policy> findAll(Account account)
+      throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
+    String key = PolicyUtil.getKey("", account.getId());
+    return storeInstance.findAll(key, account, POLICY_PREFIX);
+  }
 
-        try {
-            ldapResults = LDAPUtils.search(ldapBase,
-                    LDAPConnection.SCOPE_SUB, filter, attrs);
-        } catch (LDAPException ex) {
-            LOGGER.error("Failed to find the policy: " + policy.getName()
-                                                  + " filter: " + filter);
-            throw new DataAccessException("Failed to find the policy.\n" + ex);
-        }
+  @Override public void delete (Policy policy) throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
+    String keyToBeRemoved =
+        PolicyUtil.getKey(policy.getName(), policy.getAccount().getId());
+    storeInstance.delete (keyToBeRemoved, policy, POLICY_PREFIX);
+  }
 
-        if (ldapResults != null && ldapResults.hasMore()) {
-            try {
-                LDAPEntry entry = ldapResults.next();
-                policy.setPolicyId(entry.getAttribute(LDAPUtils.POLICY_ID).
-                        getStringValue());
-                policy.setPath(entry.getAttribute(LDAPUtils.PATH).
-                        getStringValue());
-                policy.setDefaultVersionId(entry.getAttribute(
-                        LDAPUtils.DEFAULT_VERSION_ID).getStringValue());
-                policy.setPolicyDoc(entry.getAttribute(
-                        LDAPUtils.POLICY_DOC).getStringValue());
-
-                String createTimeStamp = entry.getAttribute(
-                        LDAPUtils.CREATE_TIMESTAMP).getStringValue();
-                String createTime = DateUtil.toServerResponseFormat(
-                        createTimeStamp);
-                policy.setCreateDate(createTime);
-
-                String modifyTimeStamp = entry.getAttribute(
-                        LDAPUtils.MODIFY_TIMESTAMP).getStringValue();
-                String modifiedTime = DateUtil.toServerResponseFormat(
-                        modifyTimeStamp);
-                policy.setUpdateDate(modifiedTime);
-            } catch (LDAPException ex) {
-                LOGGER.error("Failed to find details of policy: "
-                                            + policy.getName());
-                throw new DataAccessException("Failed to find policy details. \n" + ex);
-            }
-        }
-
+  @Override public Policy find(Account account,
+                               String name) throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
+    String key = PolicyUtil.getKey("", account.getId());
+    List<Policy> policyList =
+        storeInstance.findAll(key, account, POLICY_PREFIX);
+    for (Policy policy : policyList) {
+      if (name.equals(policy.getName())) {
         return policy;
+      }
     }
-
-    /**
-     * Save the policy.
-     *
-     * @param policy
-     * @throws DataAccessException
-     */
-    @Override
-    public void save(Policy policy) throws DataAccessException {
-        LDAPAttributeSet attributeSet = new LDAPAttributeSet();
-
-        attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
-                LDAPUtils.POLICY_OBJECT_CLASS));
-        attributeSet.add(new LDAPAttribute(LDAPUtils.POLICY_NAME,
-                policy.getName()));
-        attributeSet.add(new LDAPAttribute(LDAPUtils.POLICY_DOC,
-                policy.getPolicyDoc()));
-        attributeSet.add(new LDAPAttribute(LDAPUtils.PATH, policy.getPath()));
-        attributeSet.add(new LDAPAttribute(LDAPUtils.DEFAULT_VERSION_ID,
-                policy.getDefaultVersionid()));
-        attributeSet.add(new LDAPAttribute(LDAPUtils.POLICY_ID,
-                policy.getPolicyId()));
-
-        if (policy.getDescription() != null) {
-            attributeSet.add(new LDAPAttribute(LDAPUtils.DESCRIPTION,
-                    policy.getDescription()));
-        }
-
-        String dn = String.format("%s=%s,%s=%s,%s=%s,%s=%s,%s",
-                LDAPUtils.POLICY_NAME, policy.getName(),
-                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.POLICY_OU,
-                LDAPUtils.ORGANIZATIONAL_NAME, policy.getAccount().getName(),
-                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
-                LDAPUtils.BASE_DN);
-
-        LOGGER.debug("Saving Policy dn: " + dn);
-
-        try {
-            LDAPUtils.add(new LDAPEntry(dn, attributeSet));
-        } catch (LDAPException ex) {
-            LOGGER.error("Failed to create policy: " + policy.getName());
-            throw new DataAccessException("Failed to create policy.\n" + ex);
-        }
-    }
+    return null;
+  }
 }

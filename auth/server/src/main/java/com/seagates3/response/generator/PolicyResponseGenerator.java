@@ -20,14 +20,15 @@
 
 package com.seagates3.response.generator;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Policy;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
-
-import java.util.LinkedHashMap;
 
 public class PolicyResponseGenerator extends AbstractResponseGenerator {
 
@@ -69,5 +70,62 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
           "the " + "policy document.";
       return formatResponse(HttpResponseStatus.BAD_REQUEST,
                             "InvalidPolicyDocument", errorMessage);
+    }
+
+   public
+    ServerResponse generateDeleteResponse() {
+      return new XMLResponseFormatter().formatDeleteResponse("DeletePolicy");
+    }
+
+   public
+    ServerResponse generateListResponse(List<Policy> policyList) {
+      ArrayList<LinkedHashMap<String, String>> policyMembers =
+          new ArrayList<>();
+      LinkedHashMap responseElements;
+      for (Policy policy : policyList) {
+        responseElements = new LinkedHashMap();
+        responseElements.put("PolicyId", policy.getPolicyId());
+        responseElements.put("Path", policy.getPath());
+        responseElements.put("PolicyName", policy.getName());
+        responseElements.put("Arn", policy.getARN());
+        responseElements.put("CreateDate", policy.getCreateDate());
+        responseElements.put("DefaultVersionId", policy.getDefaultVersionid());
+        responseElements.put("AttachmentCount",
+                             ((Integer)policy.getAttachmentCount()).toString());
+        responseElements.put(
+            "PermissionsBoundaryUsageCount",
+            ((Integer)policy.getPermissionsBoundaryUsageCount()).toString());
+        responseElements.put("IsAttachable", policy.getIsPolicyAttachable());
+        responseElements.put("UpdateDate", policy.getUpdateDate());
+        policyMembers.add(responseElements);
+      }
+      return new XMLResponseFormatter().formatListResponse(
+          "ListPolicies", "Policies", policyMembers, false,
+          AuthServerConfig.getReqId());
+    }
+
+   public
+    ServerResponse generateGetResponse(Policy policy) {
+      ArrayList<LinkedHashMap<String, String>> policyMembers =
+          new ArrayList<>();
+      LinkedHashMap responseElements;
+      responseElements = new LinkedHashMap();
+      responseElements.put("PolicyId", policy.getPolicyId());
+      responseElements.put("Path", policy.getPath());
+      responseElements.put("PolicyName", policy.getName());
+      responseElements.put("Arn", policy.getARN());
+      responseElements.put("CreateDate", policy.getCreateDate());
+      responseElements.put("DefaultVersionId", policy.getDefaultVersionid());
+      responseElements.put("AttachmentCount",
+                           ((Integer)policy.getAttachmentCount()).toString());
+      responseElements.put(
+          "PermissionsBoundaryUsageCount",
+          ((Integer)policy.getPermissionsBoundaryUsageCount()).toString());
+      responseElements.put("IsAttachable", policy.getIsPolicyAttachable());
+      responseElements.put("UpdateDate", policy.getUpdateDate());
+
+      policyMembers.add(responseElements);
+      return new XMLResponseFormatter().formatGetResponse(
+          "GetPolicy", "Policy", policyMembers, AuthServerConfig.getReqId());
     }
 }
