@@ -43,7 +43,7 @@ class S3BucketMetadataCache {
 
  protected:
   unsigned max_cache_size, expire_interval_sec, refresh_interval_sec;
-  bool disabled = false;
+  bool disabled = true;
 
  public:
   S3BucketMetadataCache(unsigned max_cache_size, unsigned expire_interval_sec,
