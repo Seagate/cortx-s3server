@@ -42,12 +42,6 @@ log_severity="INFO WARNING ERROR FATAL"
 # TODO: have to check alternatives to get log dorectory
 s3server_logdir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_LOG_DIR")
 
-# max no of s3 core files
-core_files_max_count=1
-# s3 core file pattern
-core_filename_pattern="core.*"
-# Rotate s3 core files
-s3_core_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 
 while getopts ":n:" option; do
     case "${option}" in
@@ -114,6 +108,13 @@ fi
 
 echo "-------------------------- Performing s3 core file cleanup -----------------------"
 # Rotate s3 core dump files
+# max no of s3 core files
+core_files_max_count=1
+# s3 core file pattern
+core_filename_pattern="core.*"
+# Rotate s3 core files
+s3_core_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
+
 # check if s3 daemon directory exists
 if [ -d "$s3_core_dir" ]
 then
