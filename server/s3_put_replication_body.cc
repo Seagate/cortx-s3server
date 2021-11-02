@@ -293,6 +293,8 @@ ChildNodes S3PutReplicationBody::convert_str_to_enum(const unsigned char *str) {
     return Destination;
   else if (_STR_MATCHED(str, "Filter"))
     return Filter;
+  else if (_STR_MATCHED(str, "Prefix"))
+    return Prefix;
   else if (_STR_MATCHED(str, "ExistingObjectReplication"))
     return ExistingObjectReplication;
   else if (_STR_MATCHED(str, "SourceSelectionCriteria"))
@@ -313,6 +315,7 @@ bool S3PutReplicationBody::read_rule_node(
   bool is_delete_marker_replication_present = false;
   bool is_rule_tag_present = false;
   bool is_filter_present = false;
+  bool is_v1_prefix_present = false;
   xmlNodePtr rule_child_node = rule_node->xmlChildrenNode;
   do {
 
@@ -441,6 +444,17 @@ bool S3PutReplicationBody::read_rule_node(
         }
       } break;
 
+      case Prefix: {
+        if ((!xmlStrcmp(rule_child_node->name, (const xmlChar *)"Prefix"))) {
+          is_v1_prefix_present = true;
+          s3_log(S3_LOG_WARN, request_id,
+                 "Using v1 API when parsing bucket replication.\n");
+          xmlChar *val = xmlNodeGetContent(rule_child_node);
+          rule_prefix = reinterpret_cast<char *>(val);
+          s3_log(S3_LOG_DEBUG, request_id, "rule_priority %d ", rule_priority);
+        }
+      } break;
+
       case Destination: {
         // Destination is  a mandatory field
         if ((!xmlStrcmp(rule_child_node->name,
@@ -483,6 +497,34 @@ bool S3PutReplicationBody::read_rule_node(
     s3_log(S3_LOG_WARN, request_id,
            "XML request body Invalid.Destination node not present\n");
     return false;
+  }
+
+  if (is_v1_prefix_present) {
+    // This is the old v1 API version of prefix, which AWS supports for
+    // backwards compatibility. It is mutually exclusive with Filter,
+    // and also restricts the other options available. We check that none
+    // of the newer options are used, and fudge the flags to make things
+    // look like v2, with prefix expressed via Filter and default values
+    // for DeleteMarkerReplication and Priority to mainain compatibility
+    // with the old API behavior.
+
+    if (is_filter_present || is_priority_present ||
+        is_delete_marker_replication_present) {
+      s3_log(S3_LOG_WARN, request_id,
+             "v1 API only supports ID, Prefix, Status, "
+             "SourceSelectionCriteria, and Destination.\n");
+      return false;
+    }
+
+    is_filter_present = true;
+    is_rule_prefix_present = true;
+    is_priority_present = true;
+    rule_priority = 0;
+    is_delete_marker_replication_present = true;
+    del_rep_status = "Enabled";
+    s3_log(S3_LOG_WARN, request_id,
+           "Falling back to defaults for v1 replication API: "
+           "DeleteMarkerReplication Enabled, Priority 0.\n");
   }
 
   if (!is_filter_present) {

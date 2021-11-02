@@ -68,6 +68,7 @@ class S3PutBucketReplicationActionTest : public testing::Test {
   std::string MockRequestId;
   int call_count_one{0};
   std::string bucket_name;
+  std::vector<std::string> mock_bucket_names;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -98,6 +99,7 @@ TEST_F(S3PutBucketReplicationActionTest, ValidateRequest) {
       "<Value>value2</Value></Tag></And></Filter></Rule></"
       "ReplicationConfiguration>";
   call_count_one = 0;
+  mock_bucket_names.push_back("dest-bucket");
 
   EXPECT_CALL(*request_mock, has_all_body_content())
       .Times(AtLeast(1))
@@ -110,6 +112,11 @@ TEST_F(S3PutBucketReplicationActionTest, ValidateRequest) {
       isOK())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(true));
+  EXPECT_CALL(
+      *(bucket_replication_body_factory_mock->mock_put_bucket_replication_body),
+      get_destination_bucket_list())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(mock_bucket_names));
   EXPECT_CALL(
       *(bucket_replication_body_factory_mock->mock_put_bucket_replication_body),
       get_replication_configuration_as_json())
@@ -151,6 +158,7 @@ TEST_F(S3PutBucketReplicationActionTest, ValidateInvalidRequest) {
       "<Key>key12</Key><Value>vv</Value></Tag><Tag><Key>key2</Key>"
       "<Value>value2</Value></Tag></And></Filter></Rule></"
       "ReplicationConfiguration>";
+  mock_bucket_names.push_back("dest-bucket");
 
   EXPECT_CALL(*request_mock, has_all_body_content())
       .Times(AtLeast(1))
@@ -455,4 +463,53 @@ TEST_F(S3PutBucketReplicationActionTest, SendResponseToClientInternalError) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
+}
+
+// The source and destination buckets cannot be the same
+TEST_F(S3PutBucketReplicationActionTest,
+       ValidateIfDestinationAndSourceNameIsSame) {
+
+  MockReplicationConfigStr =
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>role-string</Role><Rule><Status>Enabled</Status>"
+      "<Priority>1</Priority><ID>Rule-1</ID><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication><Destination>"
+      "<Bucket>seagatebucket</Bucket></Destination>"
+      "<Filter><And><Prefix></Prefix>"
+      "<Tag><Key>key12</Key><Value>vv</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter></Rule>"
+      "<Rule><Status>Enabled</Status><Priority>2</Priority>"
+      "<ID>Rule-2</ID><DeleteMarkerReplication><Status>Disabled</Status>"
+      "</DeleteMarkerReplication><Destination>"
+      "<Bucket>seagatebucket</Bucket></Destination>"
+      "<Filter><And><Prefix></Prefix>"
+      "<Tag><Key>key12</Key><Value>vv</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter></Rule></"
+      "ReplicationConfiguration>";
+  mock_bucket_names.push_back(bucket_name);
+
+  EXPECT_CALL(*request_mock, has_all_body_content())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*request_mock, get_full_body_content_as_string())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(MockReplicationConfigStr));
+  EXPECT_CALL(
+      *(bucket_replication_body_factory_mock->mock_put_bucket_replication_body),
+      isOK())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(
+      *(bucket_replication_body_factory_mock->mock_put_bucket_replication_body),
+      get_destination_bucket_list())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(mock_bucket_names));
+
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
+
+  action_under_test_ptr->validate_request();
+  EXPECT_STREQ("InvalidRequestDestinationBucket",
+               action_under_test_ptr->get_s3_error_code().c_str());
 }

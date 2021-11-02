@@ -37,6 +37,7 @@ enum ChildNodes {
   DeleteMarkerReplication,
   Destination,
   Filter,
+  Prefix,
   ExistingObjectReplication,
   SourceSelectionCriteria
 };
@@ -87,7 +88,7 @@ class S3PutReplicationBody {
   DestinationChildNodes convert_str_to_Destination_enum(
       const unsigned char *str);
   virtual std::string get_replication_configuration_as_json();
-  std::vector<std::string> &get_destination_bucket_list();
+  virtual std::vector<std::string> &get_destination_bucket_list();
   bool validate_child_nodes_of_filter(
       xmlNodePtr filter_node, std::map<std::string, std::string> &rule_tags,
       bool &is_and_node_present, bool &is_rule_prefix_present,
@@ -128,6 +129,19 @@ class S3PutReplicationBody {
   FRIEND_TEST(S3PutReplicationBodyTest, ValidateDuplicateRulePriority);
   FRIEND_TEST(S3PutReplicationBodyTest,
               ValidateRequestForDuplicateKeyInMultipleRules);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateStorageClassNotSupported);
+  FRIEND_TEST(S3PutReplicationBodyTest,
+              ValidateEncryptionConfigurationNotSupported);
+  FRIEND_TEST(S3PutReplicationBodyTest,
+              ValidateAccessControlTranslationNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateAccountNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateMetricsNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateReplicationTimeNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest,
+              ValidateExistingObjectReplicationNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest,
+              ValidateSourceSelectionCriteriaNotImplemented);
+  FRIEND_TEST(S3PutReplicationBodyTest, ValidateV1Request);
 };
 
 #endif

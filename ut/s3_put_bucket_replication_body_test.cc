@@ -616,3 +616,241 @@ TEST_F(S3PutReplicationBodyTest, ValidateDuplicateRulePriority) {
   result = put_bucket_replication_body->isOK();
   EXPECT_FALSE(result);
 }
+
+// Storage Class is not supported
+TEST_F(S3PutReplicationBodyTest, ValidateStorageClassNotSupported) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "<StorageClass>STANDARD</StorageClass>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// EncryptionConfiguration is not supported
+TEST_F(S3PutReplicationBodyTest, ValidateEncryptionConfigurationNotSupported) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "<EncryptionConfiguration>"
+      "<ReplicaKmsKeyID>ARN</ReplicaKmsKeyID>"
+      "</EncryptionConfiguration>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// AccessControlTranslation is not implemented
+TEST_F(S3PutReplicationBodyTest,
+       ValidateAccessControlTranslationNotImplemented) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "<AccessControlTranslation>"
+      "<Owner>Destination</Owner>"
+      "</AccessControlTranslation>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// Account is not implemented
+TEST_F(S3PutReplicationBodyTest, ValidateAccountNotImplemented) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "<Account>destination-bucket-owner-account-id</Account>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// Metrics is not implemented
+TEST_F(S3PutReplicationBodyTest, ValidateMetricsNotImplemented) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "<Metrics>"
+      "<EventThreshold>"
+      "<Minutes>10</Minutes>"
+      "</EventThreshold>"
+      "<Status>Enabled</Status>"
+      "</Metrics>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// ReplicationTime is not implemented
+TEST_F(S3PutReplicationBodyTest, ValidateReplicationTimeNotImplemented) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "<ReplicationTime>"
+      "<Status>Enabled</Status>"
+      "<Time>"
+      "<Minutes>10</Minutes>"
+      "</Time>"
+      "</ReplicationTime>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// ExistingObjectReplication is not implemented
+TEST_F(S3PutReplicationBodyTest,
+       ValidateExistingObjectReplicationNotImplemented) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<ExistingObjectReplication>"
+      "<Status>Enabled</Status>"
+      "</ExistingObjectReplication>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// SourceSelectionCriteria is not implemented
+TEST_F(S3PutReplicationBodyTest,
+       ValidateSourceSelectionCriteriaNotImplemented) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule><ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Priority>1</Priority><DeleteMarkerReplication>"
+      "<Status>Disabled</Status></DeleteMarkerReplication>"
+      "<Filter><And><Prefix>abc</Prefix><Tag><Key>key1</Key>"
+      "<Value>value1</Value></Tag><Tag><Key>key2</Key>"
+      "<Value>value2</Value></Tag></And></Filter>"
+      "<SourceSelectionCriteria>"
+      "<ReplicaModifications>"
+      "<Status>Enabled</Status>"
+      "</ReplicaModifications>"
+      "<SseKmsEncryptedObjects>"
+      "<Status>Enabled</Status>"
+      "</SseKmsEncryptedObjects>"
+      "</SourceSelectionCriteria>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_FALSE(result);
+}
+
+// AWS still supports the old v1 API
+TEST_F(S3PutReplicationBodyTest, ValidateV1Request) {
+  BucketRplicationContentStr.assign(
+      "<ReplicationConfiguration "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<Role>Replication_Role</Role><Rule>"
+      "<ID>Rule-1</ID>"
+      "<Status>Enabled</Status>"
+      "<Prefix>abc</Prefix>"
+      "<Destination><Bucket>dstination-bucket</Bucket>"
+      "</Destination></Rule></ReplicationConfiguration>");
+  RequestId.assign("RequestId");
+
+  put_bucket_replication_body =
+      put_bucket_replication_body_factory->create_put_replication_body(
+          BucketRplicationContentStr, RequestId);
+  result = put_bucket_replication_body->isOK();
+  EXPECT_TRUE(result);
+}
