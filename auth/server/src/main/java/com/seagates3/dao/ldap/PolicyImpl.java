@@ -44,12 +44,13 @@ class PolicyImpl implements PolicyDAO {
    * @return
    * @throws DataAccessException
    */
-  @Override public Policy find(String arn) throws DataAccessException {
+  @Override public Policy findByArn(String arn, Account account)
+      throws DataAccessException {
     AuthStoreFactory factory = new AuthStoreFactory();
     AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     if (arn != null) {
       String key = PolicyUtil.retrieveKeyFromArn(arn);
-      return (Policy)storeInstance.find(key, arn, POLICY_PREFIX);
+      return (Policy)storeInstance.find(key, arn, account, POLICY_PREFIX);
     }
     return null;
   }
@@ -68,7 +69,7 @@ class PolicyImpl implements PolicyDAO {
         PolicyUtil.getKey(policy.getName(), policy.getAccount().getId());
     Map policyDetailsMap = new HashMap<>();
     policyDetailsMap.put(key, policy);
-    storeInstance.save(policyDetailsMap, policy, POLICY_PREFIX);
+    storeInstance.save(policyDetailsMap, POLICY_PREFIX);
   }
 
   @Override public List<Policy> findAll(Account account)
@@ -95,7 +96,7 @@ class PolicyImpl implements PolicyDAO {
     List<Policy> policyList =
         storeInstance.findAll(key, account, POLICY_PREFIX);
     for (Policy policy : policyList) {
-      if (name.equals(policy.getName())) {
+      if (name.equalsIgnoreCase(policy.getName())) {
         return policy;
       }
     }
