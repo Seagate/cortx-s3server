@@ -1935,6 +1935,28 @@ AwsTest('Aws can not change the versioning status back to unversioned')\
 AwsTest('Aws can not enable versioning on non-existant bucket').put_bucket_versioning("seagate1", "Enabled")\
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
 
+#******** GetObject with Bucket versioning enabled ********
+AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("seagatebucket", "Enabled")\
+    .execute_test().command_is_successful()
+
+result = AwsTest('Aws can put object').put_object("seagatebucket", "1kfile", 1024)\
+    .execute_test().command_is_successful()
+
+versionId = result.status.stdout.split('\t')[1]
+
+result = AwsTest('Aws can get object with specific versionId').get_object("seagatebucket", "1kfile", version_id=versionId)\
+    .execute_test().command_is_successful().command_response_should_have(versionId)
+
+result = AwsTest('Aws can get object without specifing versionId').get_object("seagatebucket", "1kfile")\
+    .execute_test().command_is_successful().command_response_should_have(versionId)
+
+result = AwsTest('Aws can not get object with wrong versionId').get_object("seagatebucket", "1kfile", version_id="wrong-id")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument").command_error_should_have("Invalid version id specified")
+
+result = AwsTest('Aws can not get object with empty versionId').get_object("seagatebucket", "1kfile", version_id="empty")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument").command_error_should_have("Version id cannot be the empty string")
+
+
 #******** Delete Bucket ********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebucket")\
     .execute_test().command_is_successful()
