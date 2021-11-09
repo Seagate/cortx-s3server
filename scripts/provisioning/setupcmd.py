@@ -70,13 +70,11 @@ class SetupCmd(object):
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
 
-    # self.ldap_user = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
-
     self.services = services
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
-
+    self.logger.info(f'ldap_user before: {self.ldap_user}')
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
     # get all the param from the s3_prov_config file
@@ -98,6 +96,14 @@ class SetupCmd(object):
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
+
+    # if "test" in config:
+    self.ldap_user = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
+    if self.ldap_user is None:
+      self.logger.info("value is none hence assigning default value.....")
+      self.ldap_user = self.get_confvalue_with_defaults('DEFAULT_TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
+
+    self.logger.info(f'ldap_user : {self.ldap_user}')
 
   @property
   def url(self) -> str:
