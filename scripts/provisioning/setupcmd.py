@@ -70,7 +70,7 @@ class SetupCmd(object):
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
 
-    self.ldap_user = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
+    # self.ldap_user = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
 
     self.services = services
 
