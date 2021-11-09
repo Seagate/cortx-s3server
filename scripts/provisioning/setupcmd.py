@@ -70,7 +70,7 @@ class SetupCmd(object):
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
 
-    self.ldap_user = "sgiamadmin"
+    self.ldap_user = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
 
     self.services = services
 
@@ -243,8 +243,8 @@ class SetupCmd(object):
       raise FileNotFoundError(f'pre-requisite json file: {self._preqs_conf_file} not found')
     _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'{phase_name}')
 
-    if self.ldap_user != "sgiamadmin":
-      raise ValueError('Username should be "sgiamadmin"')
+    # if self.ldap_user != "sgiamadmin":
+    #   raise ValueError('Username should be "sgiamadmin"')
     try:
       prereqs_block = _prereqs_confstore.get_config(f'{phase_name}')
       if prereqs_block is not None:
