@@ -118,6 +118,9 @@ S3 server provides S3 REST API interface support for Motr object storage.
 # pre install/upgrade section
 ################################
 
+
+%pre
+
 # check all required pre-requsites rpms are present or not
 echo "Checking Pre-requisites rpms are present or not"
 for third_party_rpm in %{_third_party_rpms}
@@ -128,7 +131,6 @@ do
   fi
 done
 
-%pre
 if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section started"
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section completed"
