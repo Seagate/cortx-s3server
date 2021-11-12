@@ -629,7 +629,6 @@ AwsTest('Aws can delete sourceobj').delete_object("multipart-bucket", "10Mbfile2
 AwsTest('Aws can delete source bucket').delete_bucket("multipart-bucket")\
     .execute_test().command_is_successful()
 
-
 # **************** Multipart CopyObject API supported *********************************
 AwsTest('Aws can create bucket').create_bucket("source-bucket").execute_test().command_is_successful()
 
@@ -873,6 +872,168 @@ AwsTest('Aws can delete destinationobj').delete_object("destination-bucket", "10
 AwsTest('Aws can delete source bucket').delete_bucket("source-bucket").execute_test().command_is_successful()
 
 AwsTest('Aws can delete destination bucket').delete_bucket("destination-bucket").execute_test().command_is_successful()
+
+# ************** Copy and overwrite ********************
+
+#create source bucket
+AwsTest('Aws can create bucket').create_bucket("sourcebucket").execute_test().command_is_successful()
+
+#************** Create a multipart upload ********
+result=AwsTest('Aws can upload 20Mb file with tags').create_multipart_upload("sourcebucket", "20Mbfile", 20971520, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+#************** Upload Individual parts ********
+result=AwsTest('Aws can upload 10Mb first part').upload_part("sourcebucket", "firstpart", 10485760, "20Mbfile", "1" , upload_id).execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+print(e_tag_1)
+
+result=AwsTest('Aws can upload 10Mb second part').upload_part("sourcebucket", "secondpart", 10485760, "20Mbfile", "2" , upload_id).execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+print(e_tag_2)
+
+parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+#************** Get object acl should fail before complete multipart upload ******
+AwsTest('Aws can get object acl').get_object_acl("sourcebucket", "20Mbfile").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("NoSuchKey")
+
+#************** Complete multipart upload ********
+result=AwsTest('Aws can complete multipart upload 20Mb file with tags').complete_multipart_upload("sourcebucket", "20Mbfile", parts, upload_id).execute_test().command_is_successful().command_response_should_have("sourcebucket/20Mbfile")
+
+# Positive: copy multipart object to different destination bucket.
+AwsTest('Aws can create destination bucket for Multipart CopyObject API')\
+    .create_bucket("destinationbucket")\
+    .execute_test().command_is_successful()
+
+#copying to different bucket
+AwsTest('Aws can copy object to different bucket')\
+    .copy_object("sourcebucket/20Mbfile", "destinationbucket", "20Mbfile-copy")\
+    .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
+
+#copying to same bucket
+AwsTest('Aws can copy object to same bucket')\
+    .copy_object("sourcebucket/20Mbfile", "sourcebucket", "20Mbfile-copy")\
+    .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
+
+#overwrite copied objects with the simple and multipart objects
+#overwrite in same bucket(positive case)
+#with multipart object
+
+#************** Create a multipart upload ********
+result=AwsTest('Aws can upload 10Mb file with tags').create_multipart_upload("sourcebucket", "20Mbfile-copy", 10485760, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+#************** Upload Individual parts ********
+result=AwsTest('Aws can upload 5Mb first part').upload_part("sourcebucket", "firstpart", 5242880, "20Mbfile-copy", "1" , upload_id).execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+print(e_tag_1)
+
+result=AwsTest('Aws can upload 5Mb second part').upload_part("sourcebucket", "secondpart", 5242880, "20Mbfile-copy", "2" , upload_id).execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+print(e_tag_2)
+
+parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+#************** Complete multipart upload ********
+result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete_multipart_upload("sourcebucket", "20Mbfile-copy", parts, upload_id).execute_test().command_is_successful().command_response_should_have("sourcebucket/20Mbfile-copy")
+
+#get-object after overwrite
+AwsTest('Aws can get object').get_object("sourcebucket", "20Mbfile-copy").execute_test().command_is_successful()
+
+#with simple object
+AwsTest('Aws can put object').put_object("sourcebucket", "20Mbfile-copy", 1024)\
+    .execute_test().command_is_successful()
+
+#get-object after overwrite
+AwsTest('Aws can get object').get_object("sourcebucket", "20Mbfile-copy").execute_test().command_is_successful()
+
+#************negative test case*****************
+#overwrite in same bucket
+
+obj_data = AwsTest('Aws can get object').get_object("sourcebucket", "20Mbfile-copy").execute_test().command_is_successful()
+dest_obj_etag = get_etag(obj_data.status.stdout)
+print(dest_obj_etag)
+
+#************** Create a multipart upload ********
+result=AwsTest('Aws can upload 10Mb file with tags').create_multipart_upload("sourcebucket", "20Mbfile-copy", 10485760, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+#************** Upload Individual parts ********
+result=AwsTest('Aws can upload 5Mb first part').upload_part("sourcebucket", "firstpart", 5242880, "20Mbfile-copy", "1" , upload_id).execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+print(e_tag_1)
+
+result=AwsTest('Aws can upload 5Mb second part').upload_part("sourcebucket", "secondpart", 5242880, "20Mbfile-copy", "2" , upload_id).execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+print(e_tag_2)
+
+parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+AwsTest('Aws can abort previous multipart upload').abort_multipart_upload("sourcebucket", "20Mbfile-copy", upload_id).execute_test(negative_case=True).command_is_successful()
+
+#get etag after aborting multipart upload
+#both etags should be same, else test case is failed
+
+obj_data_after_abort = AwsTest('Aws can get object').get_object("sourcebucket", "20Mbfile-copy").execute_test().command_is_successful()
+dest_obj_etag_after_abort = get_etag(obj_data_after_abort.status.stdout)
+print(dest_obj_etag_after_abort)
+
+if dest_obj_etag != dest_obj_etag_after_abort:
+    assert False, "**********Negative Overwrite Tests Failed***************"
+else:
+    print("***************Negative Overwrite Tests successful ****************")
+
+#************negative test case done*****************
+
+#overwrite in different bucket
+#with multipart object
+
+#************** Create a multipart upload ********
+result=AwsTest('Aws can upload 10Mb file with tags').create_multipart_upload("destinationbucket", "20Mbfile-copy", 10485760, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+#************** Upload Individual parts ********
+result=AwsTest('Aws can upload 5Mb first part').upload_part("destinationbucket", "firstpart", 5242880, "20Mbfile-copy", "1" , upload_id).execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+print(e_tag_1)
+
+result=AwsTest('Aws can upload 5Mb second part').upload_part("destinationbucket", "secondpart", 5242880, "20Mbfile-copy", "2" , upload_id).execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+print(e_tag_2)
+
+parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+#************** Complete multipart upload ********
+result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete_multipart_upload("destinationbucket", "20Mbfile-copy", parts, upload_id).execute_test().command_is_successful().command_response_should_have("destinationbucket/20Mbfile-copy")
+
+#get-object after overwrite
+AwsTest('Aws can get object').get_object("destinationbucket", "20Mbfile-copy").execute_test().command_is_successful()
+
+#with simple object
+AwsTest('Aws can put object').put_object("destinationbucket", "20Mbfile-copy", 1024)\
+    .execute_test().command_is_successful()
+
+#get-object after overwrite
+AwsTest('Aws can get object').get_object("destinationbucket", "20Mbfile-copy").execute_test().command_is_successful()
+
+#delete objects and buckets
+AwsTest('Aws can delete sourceobj').delete_object("sourcebucket", "20Mbfile").execute_test().command_is_successful()
+
+AwsTest('Aws can delete sourceobj').delete_object("sourcebucket", "20Mbfile-copy").execute_test().command_is_successful()
+
+AwsTest('Aws can delete destinationobj').delete_object("destinationbucket", "20Mbfile-copy").execute_test().command_is_successful()
+
+AwsTest('Aws can delete source bucket').delete_bucket("sourcebucket").execute_test().command_is_successful()
+
+AwsTest('Aws can delete destination bucket').delete_bucket("destinationbucket").execute_test().command_is_successful()
 
 # ************ CopyObject API supported *****************************************************************
 

@@ -26,8 +26,8 @@
 #include "s3_motr_kvs_reader.h"
 #include "s3_motr_rw_common.h"
 #include "s3_option.h"
-#include "s3_uri_to_motr_oid.h"
 #include "s3_stats.h"
+#include "s3_uri_to_motr_oid.h"
 
 extern struct m0_realm motr_uber_realm;
 extern struct m0_container motr_container;
@@ -38,7 +38,6 @@ extern int shutdown_motr_teardown_called;
 S3MotrKVSReader::S3MotrKVSReader(std::shared_ptr<RequestObject> req,
                                  std::shared_ptr<MotrAPI> motr_api)
     : request(std::move(req)) {
-
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
@@ -259,12 +258,18 @@ void S3MotrKVSReader::get_keyval_successful() {
     assert(kvs_ctx->keys->ov_buf[i] != NULL);
     key = std::string((char *)kvs_ctx->keys->ov_buf[i],
                       kvs_ctx->keys->ov_vec.v_count[i]);
+    s3_log(S3_LOG_DEBUG, stripped_request_id, "key[%zd] = %s\n", i,
+           key.c_str());
+    s3_log(S3_LOG_DEBUG, stripped_request_id, "rc[%zd] = %d\n", i,
+           (int)kvs_ctx->rcs[i]);
     if (kvs_ctx->rcs[i] == 0) {
       rcs = 0;
       keys_retrieved = true;  // atleast one key successfully retrieved
       if (kvs_ctx->values->ov_buf[i] != NULL) {
         val = std::string((char *)kvs_ctx->values->ov_buf[i],
                           kvs_ctx->values->ov_vec.v_count[i]);
+        s3_log(S3_LOG_DEBUG, stripped_request_id, "value[%zd] = %s\n", i,
+               val.c_str());
       } else {
         val = "";
       }
