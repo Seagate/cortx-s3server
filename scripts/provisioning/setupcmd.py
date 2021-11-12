@@ -97,13 +97,13 @@ class SetupCmd(object):
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
 
-    # if "test" in config:
-    self.ldap_user = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
-    if self.ldap_user is None:
-      self.logger.info("value is none hence assigning default value.....")
-      self.ldap_user = self.get_confvalue_with_defaults('DEFAULT_TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
-
-    self.logger.info(f'ldap_user : {self.ldap_user}')
+    try:
+      self.ldap_user = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
+      if self.ldap_user is None:
+        self.ldap_user = self.get_confvalue_with_defaults('DEFAULT_TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
+    except Exception as e:
+      self.logger.error(f'read ldap credentials failed, error: {e}')
+      raise e
 
   @property
   def url(self) -> str:
@@ -249,8 +249,6 @@ class SetupCmd(object):
       raise FileNotFoundError(f'pre-requisite json file: {self._preqs_conf_file} not found')
     _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'{phase_name}')
 
-    # if self.ldap_user != "sgiamadmin":
-    #   raise ValueError('Username should be "sgiamadmin"')
     try:
       prereqs_block = _prereqs_confstore.get_config(f'{phase_name}')
       if prereqs_block is not None:
