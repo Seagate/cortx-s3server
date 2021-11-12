@@ -49,6 +49,7 @@ CONFIG:
   CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>s3>auth_secret" #M default - encrypted string (Usedby : s3_deployment, auth)
   
   CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>s3>io_max_units" #O default - VM :8 , h/w : 32 (Usedby : s3_deployment, s3)
+  CONFSTORE_S3_MOTR_MAX_START_TIMEOUT : "cortx>s3>max_start_timeout" #O default - (Usedby : s3_deployment, s3)
   CONFSTORE_S3INSTANCES_KEY: "cortx>s3>service_instances" #O default - 1 (change to 5 once we have stable deployment) (Usedby : s3_deployment, s3)
   
   CONFSTORE_S3_IAM_ENDPOINTS: "cortx>s3>iam>endpoints" #M (Usedby : s3_deployment)
@@ -103,6 +104,7 @@ DEFAULT_PREPARE:
 DEFAULT_CONFIG:
   CONFSTORE_LDAPADMIN_USER_KEY: "sgiamadmin"
   CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "8"
+  CONFSTORE_S3_MOTR_MAX_START_TIMEOUT : "240"
   CONFSTORE_S3INSTANCES_KEY: "1"
   CONFSTORE_STORAGE_SET_COUNT_KEY: "1"
   CONFSTORE_S3SERVER_PORT: 28071

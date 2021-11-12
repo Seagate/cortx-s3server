@@ -135,15 +135,6 @@ else
   unsupported_os
 fi
 
-if rpm -qa | grep libfabric 2>&1 > /dev/null ; then
-  rpm -e libfabric libfabric-devel --nodeps
-fi
-yum install -y libfabric
-yum install -y libfabric-devel
-
-# validate and configure lnet
-sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
-
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
   #install pre-requisites on dev vm
@@ -194,6 +185,18 @@ rpm -q gtest && rpm -e gtest
 
 # Erase old haproxy rpm and later install latest haproxy version 1.8.14
 rpm -q haproxy && rpm -e haproxy
+
+# Delete old libfabric rpms
+if rpm -qa | grep libfabric 2>&1 > /dev/null ; then
+  rpm -e libfabric libfabric-devel --nodeps
+fi
+
+# Install libfabric and libfabric-devel rpms
+yum install -y libfabric
+yum install -y libfabric-devel
+
+# validate and configure lnet after libfabric rpms
+sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
 
 cd $BASEDIR
 
