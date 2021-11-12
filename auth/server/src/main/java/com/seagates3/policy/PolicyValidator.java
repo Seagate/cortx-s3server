@@ -237,7 +237,8 @@ abstract class PolicyValidator {
                                 String inputBucket);
 
 protected
-ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyElements, Set<String> statementElements) throws JSONException{
+ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyElements,
+		Set<String> statementElements) throws JSONException{
 	 ServerResponse response = null;
 	 if(jsonObject.has(JsonDocumentFields.VERSION) && jsonObject.has(JsonDocumentFields.STATEMENT)) {
 		 String versionValue = jsonObject.get(JsonDocumentFields.VERSION).toString();
@@ -288,8 +289,8 @@ ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyE
 	 while (keys.hasNext()) {
 	     String key = keys.next();
 	     if (!policyElements.contains(key)) {  // some unknown field found
-	       response = responseGenerator.malformedPolicy("Unknown field " + key);
-	       LOGGER.error("Unknown field - " + key);
+	       response = responseGenerator.malformedPolicy("Syntax errors in policy");
+	       LOGGER.error("Unknown field in policy document - " + key);
 	       break;
 	     }
 	 }
@@ -300,7 +301,8 @@ protected
 ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> statementElements)
     throws JSONException {
 	 ServerResponse response = null;
-	 if(!jsonObject.has("Effect") ||  !jsonObject.has("Action") || !jsonObject.has("Resource") ) {
+	 if(!jsonObject.has(JsonDocumentFields.STATEMENT_EFFECT) ||  !jsonObject.has(JsonDocumentFields.ACTION) || 
+			 !jsonObject.has(JsonDocumentFields.RESOURCE) ) {
 	   response = responseGenerator.malformedPolicy("Syntax errors in policy.");
 	   LOGGER.error("Missing required field Effect or Action or Resource");
 	 }
@@ -308,10 +310,10 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
 	 while (objKeys.hasNext()) {
 		 String objKey = objKeys.next();
 		 if (!statementElements.contains(objKey)) {
-			 response = responseGenerator.malformedPolicy("Unknown field " + objKey);
-			 LOGGER.error("Unknown field - " + objKey);
+			 response = responseGenerator.malformedPolicy("Syntax errors in policy");
+			 LOGGER.error("Unknown field in statement - " + objKey);
 			 return response;
-		 } else if ("Effect".equals(objKey)) {  
+		 } else if (JsonDocumentFields.STATEMENT_EFFECT.equals(objKey)) {
 			 // Adding effect check here as json parser setting the default value when not present 
 			 String effectValue = jsonObject.get(objKey).toString();
 			 if (effectValue != null) {
@@ -325,20 +327,21 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
 					 LOGGER.error("Effect value is invalid in IAM policy - " +effectValue);
 				 }
 			 } 
-        } else if ("Principal".equals(objKey)) {
-            if (jsonObject.get(objKey) != null &&
+        } else if (JsonDocumentFields.PRINCIPAL.equals(objKey)){
+        	if(jsonObject.get(objKey) != null &&
             		jsonObject.get(objKey) instanceof String) {
-                  if (jsonObject.get(objKey).toString().isEmpty()) {
-                    response = responseGenerator.malformedPolicy(
-                        "Missing required field Principal cannot be empty!");
-                    LOGGER.error("Principal value is empty..");
-                  } else if (!jsonObject.get(objKey).toString().equals("*")) {
-                    response = responseGenerator.malformedPolicy(
-                        "Invalid policy syntax.");
-                    LOGGER.error("Principal value is not following syntax..");
-                  }
-                }
-              }
+        		if(jsonObject.get(objKey).toString().isEmpty()) {
+        			response = responseGenerator.malformedPolicy(
+        	                "Missing required field Principal cannot be empty!");
+        			LOGGER.error("Principal value is empty..");
+        		} else if(!jsonObject.get(objKey).toString().equals("*")) {
+        			response = responseGenerator.malformedPolicy(
+        	                "Invalid policy syntax.");
+        	            LOGGER.error("Principal value is not following syntax..");
+        		}
+        	}
+        	
+        }
       }
 	 return response;
 }
