@@ -119,21 +119,30 @@ S3 server provides S3 REST API interface support for Motr object storage.
 ################################
 %pre
 
-# check all required pre-requsites rpms are present or not
-echo "Checking Pre-requisites rpms are present or not"
-for third_party_rpm in %{_third_party_rpms}
-do
-  if ! rpm -qa | grep $third_party_rpm; then
-   echo "RPM [$third_party_rpm] is not present."
-   exit 1
-  fi
-done
-
 if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section started"
+    # check all required pre-requsites rpms are present or not
+    echo "Checking Pre-requisites rpms are present or not"
+    for third_party_rpm in %{_third_party_rpms}
+    do
+        if ! rpm -qa | grep $third_party_rpm; then
+            echo "RPM [$third_party_rpm] is not present."
+            exit 1
+        fi
+    done
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section completed"
 elif [ $1 == 2 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Upgrade section started"
+    # check all required pre-requsites rpms are present or not
+    echo "Checking Pre-requisites rpms are present or not"
+    for third_party_rpm in %{_third_party_rpms}
+    do
+        if ! rpm -qa | grep $third_party_rpm; then
+            echo "RPM [$third_party_rpm] is not present."
+            exit 1
+        fi
+    done
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section completed"
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Upgrade section completed"
 fi
 
