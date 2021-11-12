@@ -74,7 +74,6 @@ class SetupCmd(object):
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
-    self.logger.info(f'ldap_user before: {self.ldap_user}')
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
     # get all the param from the s3_prov_config file
