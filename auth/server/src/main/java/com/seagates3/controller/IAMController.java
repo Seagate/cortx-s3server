@@ -51,8 +51,8 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.service.RequestorService;
 import com.seagates3.model.AuthIAMAuditlog;
-import com.amazonaws.util.json.JSONObject;
-import com.amazonaws.util.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONException;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 

@@ -565,4 +565,5 @@ tar -cvJf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-change
 
 # Clean up temp files
 cleanup_tmp_files
+
 echo "S3 support bundle generated successfully at $s3_bundle_location/$bundle_name !!!"
