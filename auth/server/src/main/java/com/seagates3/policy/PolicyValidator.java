@@ -60,6 +60,7 @@ abstract class PolicyValidator {
   PolicyResponseGenerator responseGenerator = null;
 
   abstract ServerResponse validatePolicy(String inputBucket, String jsonPolicy);
+  abstract boolean isArnFormatValid(String arn);
 
   /**
    * Validate if the Effect value is one of - Allow/Deny
@@ -397,7 +398,7 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
    			 	}
         	}else if(jsonObject.get(JsonDocumentFields.RESOURCE) instanceof String){
         		String resourceArn = jsonObject.get(JsonDocumentFields.RESOURCE).toString();
-    			if(!new IAMArnParser().isArnFormatValid(resourceArn) && !resourceArn.equals("*")) {
+    			if(!this.isArnFormatValid(resourceArn) && !resourceArn.equals("*")) {
     				response = responseGenerator.malformedPolicy("Resource "+ resourceArn +" must be in ARN format or \"*\".");
 	   				LOGGER.error("Resource "+ resourceArn +" must be in ARN format or \"*\".");
 	   				return response;
@@ -411,4 +412,5 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
       }
 	 return response;
 }
+
 }

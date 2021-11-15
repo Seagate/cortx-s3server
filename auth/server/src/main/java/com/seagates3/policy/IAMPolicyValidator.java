@@ -43,10 +43,12 @@ class IAMPolicyValidator extends PolicyValidator {
       LoggerFactory.getLogger(IAMPolicyValidator.class.getName());
   static Set<String> policyElements = new HashSet<>();
   static Set<String> statementElements = new HashSet<>();
+  IAMArnParser iamArnparser;
 	  
  public
   IAMPolicyValidator() {
     responseGenerator = new PolicyResponseGenerator();
+    iamArnparser = new IAMArnParser();
     initializePolicyElements();
     initializeStatementElements();
   }
@@ -91,4 +93,12 @@ ServerResponse validateActionAndResource(List<Action> actionList, List<Resource>
 	// TODO Auto-generated method stub
 	return null;
 }
+
+@Override
+boolean isArnFormatValid(String arn) {
+	
+	return iamArnparser.isArnFormatValid(arn);
+}
+
+
 }
