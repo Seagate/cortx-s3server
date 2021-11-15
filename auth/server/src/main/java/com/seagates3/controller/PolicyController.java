@@ -75,10 +75,13 @@ public class PolicyController extends AbstractController {
         if (policy != null && policy.exists()) {
             return responseGenerator.entityAlreadyExists();
         }
+        LOGGER.info("Validating IAM Policy");
         ServerResponse response = iamPolicyValidator.validatePolicy(null,requestBody.get("PolicyDocument"));
         if(response != null) {
+        	LOGGER.error("IAM Policy validation failed");
         	return response;
         }
+        LOGGER.info("IAM Policy validated successfully");
         policy = new Policy();
         policy.setName(requestBody.get("PolicyName"));
         policy.setAccount(requestor.getAccount());
