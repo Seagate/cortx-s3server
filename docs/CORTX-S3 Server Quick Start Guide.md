@@ -16,7 +16,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 ### 1.0 Prerequisites
 
-1. Verify if kernel version is 3.10.0-1160 (for centos-7.9) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
+1. Verify if kernel version is 3.10.0-1160 (for centos-7.9) or 3.10.0-1127 (for centos-7.8), using: ` uname -r`
 2. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
 3. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
@@ -29,31 +29,31 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
      :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
 4. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
-   * To check your Git Version, use the command: `$ git --version`
+   * To check your Git Version, use the command: ` git --version`
 
      :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x. To update git to the latest version, use:
      ```sh
      yum remove git*
      yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm
-     yum install git
+     yum -y install git
      ```
 
 5. Ensure that you've installed the following packages on your VM instance:
 
     * Python Version 3.0
-      * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
-      * To install Python version 3.0, use: `$ yum install -y python3`
+      * To check whether Python is installed on your VM, use one of the following commands: ` python3 --version` 
+      * To install Python version 3.0, use: ` yum install -y python3`
       * `Pip3` will be automatically installed by running above command
 
     * Extra Packages for Enterprise Linux:
-        * To check if epel is installed, use: `$ yum repolist`
+        * To check if epel is installed, use: ` yum repolist`
             * If epel was installed, you'll see it in the output list. Example:
               ![image](https://user-images.githubusercontent.com/950172/136825917-d10fce29-b822-4dd0-8f31-cbc90f848c2a.png)
 
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
-        * `$ yum install -y epel-release`
-    * Ansible: Install ansible if not there already `$ yum install -y ansible`
-    * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress`
+        * ` yum install -y epel-release`
+    * Ansible: Install ansible if not there already ` yum install -y ansible`
+    * ipaddress: Install ipaddress if not there already ` pip3 install ipaddress`
     * Make sure that PATH variable has `/usr/local/sbin`,`/usr/sbin`,`/usr/bin`, `/usr/local/bin` directories. You can check your PATH variable by running `echo $PATH`
     
 6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`. Try `sudo' if the command fails
@@ -71,15 +71,15 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
     
 8. You'll need to disable selinux and firewall. Run the following commands:
 
-     `$ systemctl stop firewalld` 
+     ` systemctl stop firewalld` 
 
-     `$ systemctl disable firewalld` 
+     ` systemctl disable firewalld` 
 
-     `$ sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config`
+     ` sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config`
 
-     Run `$ reboot` - to reboot your system.
+     Run ` reboot` - to reboot your system.
         
-     Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
+     Once you power on your VM, you can verify if selinux and firewall are disabled by using: ` getenforce` - you'll get a 'disabled' status.
 
 
 9. If not already present, you need to install Java OpenJDK 8 by running
@@ -110,9 +110,9 @@ You'll need to clone the S3 Server Repository from the main branch. To clone the
 
 ```shell
 
-$ git clone --recursive https://github.com/Seagate/cortx-s3server.git -b main
-$ cd cortx-s3server
-$ git submodule update --init --recursive && git status
+ git clone --recursive https://github.com/Seagate/cortx-s3server.git -b main
+ cd cortx-s3server
+ git submodule update --init --recursive && git status
 ```
 
 ### 1.2 Installing Dependencies
@@ -123,16 +123,16 @@ $ git submodule update --init --recursive && git status
 
 ```shell
 
-$ mkdir -p /etc/cortx
-$ cp scripts/kafka/message_bus.conf /etc/cortx/
-$ sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
+ mkdir -p /etc/cortx
+ cp scripts/kafka/message_bus.conf /etc/cortx/
+ sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
 ```
 2. Run the command:
 
 ```shell
 
-   $ cd ./scripts/env/dev
-   $ ./init.sh -a
+   cd ./scripts/env/dev
+   ./init.sh -a
 ```
 
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
@@ -142,7 +142,7 @@ At some point during the execution of the `init.sh` script, it will prompt for t
 
 3. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
 
-Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
+Refer to the image below to view the output of a successful ` init.sh -a` run, where the `failed` field value should be zero.
 
 ![Successful run](../images/init_script_output.png)
 
@@ -156,11 +156,11 @@ Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-In
 
 **Before you begin**
 
-You'll have to set up the host system before you test your build. To do so, run the following command from the main source directory: `$ ./update-hosts.sh`
+You'll have to set up the host system before you test your build. To do so, run the following command from the main source directory: ` ./update-hosts.sh`
 
 **Procedure**
 
-- To perform Unit and System Tests, run the script `$ ./jenkins-build.sh`
+- To perform Unit and System Tests, run the script ` ./jenkins-build.sh`
 
 - To perform only Unit test run the script: `./runalltest.sh`. 
     - You'll need to run the help command for this script to view all the options for running the Unit Tests. 
@@ -172,7 +172,7 @@ You'll have to set up the host system before you test your build. To do so, run 
 :page_with_curl: **Notes:**
 
 * The above script automatically builds the code and runs the unit & system tests in your local system.
-* For more details, check help: `$ ./jenkins-build.sh --help`
+* For more details, check help: ` ./jenkins-build.sh --help`
 
 The image below illustrates the output log of a system test that is successful.
 
@@ -186,30 +186,30 @@ The image below illustrates the output log of a system test that is successful.
 Before your test your build, ensure that you have installed and configured the following:
 
 1. Make sure you have installed easy_install.
-    - To check if you have easy_install, run the command: `$ easy_install --version`
-    - To install easy_install, run the command: `$ yum install python-setuptools python-setuptools-devel`
+    - To check if you have easy_install, run the command: ` easy_install --version`
+    - To install easy_install, run the command: ` yum install python-setuptools python-setuptools-devel`
 2. Ensure you've installed pip.
-    - To check if you have pip installed, run the command: `$ pip --version`
-    - To install pip, run the command: `$ easy_install pip`
-3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python`
-    - If you don't have Python Version 3.3, then install python3 using: `$ yum install python3`
+    - To check if you have pip installed, run the command: ` pip --version`
+    - To install pip, run the command: ` easy_install pip`
+3. If you don't have Python Version 2.6.5+, install Python using: ` yum install python`
+    - If you don't have Python Version 3.3, then install python3 using: ` yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
-    1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
+    1. To start CORTX-S3 Server and its dependent services, run the command: ` ./jenkins-build.sh --skip_build --skip_tests`
        
        In case you get errors on haproxy service being inactive or not running, follow the steps below:
         - To check if HAProxy is working run `systemctl status haproxy`
         - If you see the status as inactive, use the command `systemctl start haproxy`
-    2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3`
-    3. To view the `PID` of the active Motr service, run the command: `$ pgrep m0`
+    2. To view the `PID` of the active S3 service, run the command: ` pgrep s3`
+    3. To view the `PID` of the active Motr service, run the command: ` pgrep m0`
 5. Follow these steps to install the AWS client and plugin:
-    1. To install the AWS client, use: `$ pip3 install awscli`
-    2. To install the AWS plugin, use: `$ pip3 install awscli-plugin-endpoint`
+    1. To install the AWS client, use: ` pip3 install awscli`
+    2. To install the AWS plugin, use: ` pip3 install awscli-plugin-endpoint`
     
     Note: If we install awscli on s3 development environment using pip3 then Jenkins system tests will break due to version dependancy conflict in s3iamcli. Fix for this is in progress.
     
     3. Generate the AWS Access Key ID and Secret Key:
-         1. To check for help messages, use: `$ s3iamcli -h`
-         2. To create a new User, run: `$ s3iamcli CreateAccount -n <Account Name> -e <Email Id>`
+         1. To check for help messages, use: ` s3iamcli -h`
+         2. To create a new User, run: ` s3iamcli CreateAccount -n <Account Name> -e <Email Id>`
               * Enter the following LDAP credentials:
                   User Id : `sgiamadmin`
                   Password : `ldapadmin`
@@ -218,23 +218,23 @@ Before your test your build, ensure that you have installed and configured the f
 
 6. To Configure AWS run the following commands:
    
-   1.  Run `$ aws configure` and enter the following details:
+   1.  Run ` aws configure` and enter the following details:
         * `AWS Access Key ID [None]: <Access Key generated in last step>`
         * `AWS Secret Access Key [None]: <Secret Key generated in last step>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
    2. Install the `awscli_plugin_endpoint` package if it's not installed:
-        `$ pip install awscli-plugin-endpoint`
+        ` pip install awscli-plugin-endpoint`
    3. Configure the AWS Plugin Endpoint using:
-      `$ aws configure set plugins.endpoint awscli_plugin_endpoint`
+      ` aws configure set plugins.endpoint awscli_plugin_endpoint`
         - To configure AWS in SSL mode run:
-            `$ aws configure set s3.endpoint_url https://s3.seagate.com`
-            `$ aws configure set s3api.endpoint_url https://s3.seagate.com`
+            ` aws configure set s3.endpoint_url https://s3.seagate.com`
+            ` aws configure set s3api.endpoint_url https://s3.seagate.com`
         - To configure AWS in non-SSL mode, please run:
-            `$ aws configure set s3.endpoint_url http://s3.seagate.com`
-            `$ aws configure set s3api.endpoint_url http://s3.seagate.com`
+            ` aws configure set s3.endpoint_url http://s3.seagate.com`
+            ` aws configure set s3api.endpoint_url http://s3.seagate.com`
    4. Run the following command to view the contents of your AWS config file: 
-      `$ cat ~/.aws/config`
+      ` cat ~/.aws/config`
       
       1. For AWS in SSL mode, you'll need to configure the `[default]` section with the `ca_bundle=<path to ca.crt file>` parameter.
       
@@ -266,7 +266,7 @@ Before your test your build, ensure that you have installed and configured the f
         endpoint = awscli_plugin_endpoint
       ```
 
-    4. Ensure that your AWS credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
+    4. Ensure that your AWS credential file contains your Access Key Id and Secret Key by using: ` cat ~/.aws/credentials`
 
 **Procedure**
 
@@ -274,7 +274,7 @@ Run the following test cases to check if your AWS S3 Server build is working cor
 
 1. To Make a Bucket:
 
-    `$ aws s3 mb s3://seagatebucket`
+    ` aws s3 mb s3://seagatebucket`
 
     You will get the following output:
 
@@ -282,31 +282,31 @@ Run the following test cases to check if your AWS S3 Server build is working cor
 
 2. To List your newly created Bucket:
 
-    `$ aws s3 ls`
+    ` aws s3 ls`
 
 3. To Copy your local file (test_data) to remote (PUT):
 
-    `$ aws s3 cp test_data s3://seagatebucket/` - creates a test_data object in your bucket. You can use any file to test this step.
+    ` aws s3 cp test_data s3://seagatebucket/` - creates a test_data object in your bucket. You can use any file to test this step.
 
    :page_with_curl: **Note:** 
    
-    If you want to create a test_data file, use: `$ touch filepath/test_data`
+    If you want to create a test_data file, use: ` touch filepath/test_data`
 
 4. To Move your local file to remote (PUT):
 
-    `$ aws s3 mv test_data s3://seagatebucket/` - moves your local file *test_data* to the bucket and creates a *test_data* object.
+    ` aws s3 mv test_data s3://seagatebucket/` - moves your local file *test_data* to the bucket and creates a *test_data* object.
 
 5. To List your moved object, use:
 
-    `$ aws s3 ls s3://seagatebucket`
+    ` aws s3 ls s3://seagatebucket`
 
 6. To Remove an object, use:
 
-    `$ aws s3 rm s3://seagatebucket/test_data` - repeat Step 5 to verify that your object is removed. The removed object will not appear in the list anymore.
+    ` aws s3 rm s3://seagatebucket/test_data` - repeat Step 5 to verify that your object is removed. The removed object will not appear in the list anymore.
 
 7. To Remove Bucket, use:
 
-    `$ aws s3 rb s3://seagatebucket`
+    ` aws s3 rb s3://seagatebucket`
 
 ### 1.5 Test a Specific MOTR Version using CORX-S3 Server
 
@@ -315,26 +315,26 @@ Let's say you want to test a specific version of the Motr repository using CORTX
 :page_with_curl: **Note:** You'll have to work out of the main directory of your S3 Server repository.
 
 1. Copy the commit-id of your Motr code. 
-2. Run the command: `$ cd third_party/motr`
+2. Run the command: ` cd third_party/motr`
 4. Paste the commit-id as shown below:
 
-   `$ git checkout Id41cd2b41cb77f1d106651c267072f29f8c81d0f`
+   ` git checkout Id41cd2b41cb77f1d106651c267072f29f8c81d0f`
 
 5. Update your submodules:
 
-    `$ git submodule update --init --recursive`
+    ` git submodule update --init --recursive`
 
 6. Build Motr:
 
-    `$ cd ..`
+    ` cd ..`
 
-    `$ ./build_motr.sh`
+    ` ./build_motr.sh`
 
 7. Run the Jenkins script to ensure that the build and test are passed:
 
-    `$ cd ..`
+    ` cd ..`
 
-    `$ ./jenkins-build.sh`
+    ` ./jenkins-build.sh`
 
 Your success log will look like the output in the image below:
 
@@ -346,18 +346,18 @@ Your success log will look like the output in the image below:
 
     ```shell
 
-    $ git rev-parse --short HEAD
+    git rev-parse --short HEAD
     44a07d2
     ```
 2. To build S3 RPM, use:
 
-    `$ ./rpms/s3/buildrpm.sh -a -G 44a07d2`
+    ` ./rpms/s3/buildrpm.sh -a -G 44a07d2`
 
     :page_with_curl:**Note:** `44a07d2` is generated in Step 1.
 
 3. To build s3iamcli RPM, use:
 
-    `$ ./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
+    ` ./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
 
 All the built RPMs will be available at `~/rpmbuild/RPMS/`. You can copy these RPMs to release VM for testing.
 
