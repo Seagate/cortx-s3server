@@ -296,7 +296,7 @@ ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyE
 	     if (!policyElements.contains(key)) {  // some unknown field found
 	       response = responseGenerator.malformedPolicy("Syntax errors in policy");
 	       LOGGER.error("Unknown field in policy document - " + key);
-	       break;
+	       return response;
 	     }
 	 }
 	 return response;
@@ -310,6 +310,7 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
 			 !jsonObject.has(JsonDocumentFields.RESOURCE) ) {
 	   response = responseGenerator.malformedPolicy("Syntax errors in policy.");
 	   LOGGER.error("Missing required field Effect or Action or Resource");
+	   return response;
 	 }
 	 Iterator<String> objKeys = jsonObject.keys();
 	 while (objKeys.hasNext()) {
@@ -325,11 +326,13 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
 				 if (effectValue.isEmpty()) {
 					 response = responseGenerator.malformedPolicy("Missing required field Effect cannot be empty!");
 					 LOGGER.error("Required field Effect is empty");
+					 return response;
 
 				 } else if (!effectValue.equals(Statement.Effect.Allow.toString()) &&
 						 !effectValue.equals(Statement.Effect.Deny.toString())) {
 					 response = responseGenerator.malformedPolicy("Invalid effect : " + effectValue);
 					 LOGGER.error("Effect value is invalid in IAM policy - " +effectValue);
+					 return response;
 				 }
 			 } 
         } else if (JsonDocumentFields.PRINCIPAL.equals(objKey)){
@@ -339,10 +342,12 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
         			response = responseGenerator.malformedPolicy(
         	                "Missing required field Principal cannot be empty!");
         			LOGGER.error("Principal value is empty..");
+        			return response;
         		} else if(!jsonObject.get(objKey).toString().equals("*")) {
         			response = responseGenerator.malformedPolicy(
         	                "Invalid policy syntax.");
         	            LOGGER.error("Principal value is not following syntax..");
+        	            return response;
         		}
         	}
         	
@@ -352,6 +357,7 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
         		if(arr.length()==0) {
 	   				 response = responseGenerator.malformedPolicy("Policy statement must contain actions.");
 	   				 LOGGER.error("Policy statement must contain actions, it can not be empty array.");
+	   				return response;
 	   			 }
         		for (int count = 0; count < arr.length(); count++) {
         			if(!(arr.get(count) instanceof String)) {
@@ -365,6 +371,7 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
         	}else {
         		response = responseGenerator.malformedPolicy("Syntax errors in policy.");
         		LOGGER.error("Action can not be other than string or array of strings");
+        		return response;
         	}
         	
         } else if (JsonDocumentFields.RESOURCE.equals(objKey)){
@@ -373,6 +380,7 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
         		if(arr.length()==0) {
 	   				 response = responseGenerator.malformedPolicy("Policy statement must contain resources.");
 	   				 LOGGER.error("Policy statement must contain resources, it can not be empty array");
+	   				return response;
 	   			 }
         		for (int count = 0; count < arr.length(); count++) {
         			if(!(arr.get(count) instanceof String)) {
@@ -381,20 +389,23 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
    					 return response;
    				 	}
         			String resourceArn = arr.get(count).toString();
-        			if(!new S3ArnParser().isArnFormatValid(resourceArn) && !resourceArn.equals("*")) {
+        			if(!new IAMArnParser().isArnFormatValid(resourceArn) && !resourceArn.equals("*")) {
         				response = responseGenerator.malformedPolicy("Resource "+ resourceArn +" must be in ARN format or \"*\".");
    	   				 	LOGGER.error("Resource "+ resourceArn +" must be in ARN format or \"*\".");
+   	   				 	return response;
         			}
    			 	}
         	}else if(jsonObject.get(JsonDocumentFields.RESOURCE) instanceof String){
         		String resourceArn = jsonObject.get(JsonDocumentFields.RESOURCE).toString();
-    			if(!new S3ArnParser().isArnFormatValid(resourceArn) && !resourceArn.equals("*")) {
+    			if(!new IAMArnParser().isArnFormatValid(resourceArn) && !resourceArn.equals("*")) {
     				response = responseGenerator.malformedPolicy("Resource "+ resourceArn +" must be in ARN format or \"*\".");
-	   				 	LOGGER.error("Resource "+ resourceArn +" must be in ARN format or \"*\".");
+	   				LOGGER.error("Resource "+ resourceArn +" must be in ARN format or \"*\".");
+	   				return response;
     			}
         	}else {
         		response = responseGenerator.malformedPolicy("Syntax errors in policy.");
         		LOGGER.error("Resource can not be other than string or array of strings");
+        		return response;
         	}
         }
       }
