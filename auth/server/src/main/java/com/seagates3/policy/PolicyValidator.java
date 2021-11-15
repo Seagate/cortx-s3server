@@ -262,6 +262,11 @@ ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyE
 				 return response;
 			 }
 			 for (int count = 0; count < arr.length(); count++) {
+				 if(!(arr.get(count) instanceof JSONObject)) {
+					 response = responseGenerator.malformedPolicy("Syntax errors in policy.");
+					 LOGGER.error("Statement array element must be a instance of JSONObject");
+					 return response;
+				 }
 				 JSONObject obj = (JSONObject)arr.get(count);
 				 response = validateStatementElements(obj, statementElements);
 			     if (response != null) {
@@ -341,6 +346,56 @@ ServerResponse validateStatementElements(JSONObject jsonObject, Set<String> stat
         		}
         	}
         	
+        } else if (JsonDocumentFields.ACTION.equals(objKey)){
+        	if(jsonObject.get(JsonDocumentFields.ACTION) instanceof JSONArray) {
+        		JSONArray arr = (JSONArray) jsonObject.get(JsonDocumentFields.ACTION);
+        		if(arr.length()==0) {
+	   				 response = responseGenerator.malformedPolicy("Policy statement must contain actions.");
+	   				 LOGGER.error("Policy statement must contain actions, it can not be empty array.");
+	   			 }
+        		for (int count = 0; count < arr.length(); count++) {
+        			if(!(arr.get(count) instanceof String)) {
+      					 response = responseGenerator.malformedPolicy("Syntax errors in policy.");
+      					 LOGGER.error("Action array element must be a instance of String");
+      					 return response;
+      				 }
+        		}
+        	}else if(jsonObject.get(JsonDocumentFields.ACTION) instanceof String){
+        		
+        	}else {
+        		response = responseGenerator.malformedPolicy("Syntax errors in policy.");
+        		LOGGER.error("Action can not be other than string or array of strings");
+        	}
+        	
+        } else if (JsonDocumentFields.RESOURCE.equals(objKey)){
+        	if(jsonObject.get(JsonDocumentFields.RESOURCE) instanceof JSONArray) {
+        		JSONArray arr = (JSONArray) jsonObject.get(JsonDocumentFields.RESOURCE);
+        		if(arr.length()==0) {
+	   				 response = responseGenerator.malformedPolicy("Policy statement must contain resources.");
+	   				 LOGGER.error("Policy statement must contain resources, it can not be empty array");
+	   			 }
+        		for (int count = 0; count < arr.length(); count++) {
+        			if(!(arr.get(count) instanceof String)) {
+   					 response = responseGenerator.malformedPolicy("Syntax errors in policy.");
+   					 LOGGER.error("Resource array element must be a instance of String");
+   					 return response;
+   				 	}
+        			String resourceArn = arr.get(count).toString();
+        			if(!new S3ArnParser().isArnFormatValid(resourceArn) && !resourceArn.equals("*")) {
+        				response = responseGenerator.malformedPolicy("Resource "+ resourceArn +" must be in ARN format or \"*\".");
+   	   				 	LOGGER.error("Resource "+ resourceArn +" must be in ARN format or \"*\".");
+        			}
+   			 	}
+        	}else if(jsonObject.get(JsonDocumentFields.RESOURCE) instanceof String){
+        		String resourceArn = jsonObject.get(JsonDocumentFields.RESOURCE).toString();
+    			if(!new S3ArnParser().isArnFormatValid(resourceArn) && !resourceArn.equals("*")) {
+    				response = responseGenerator.malformedPolicy("Resource "+ resourceArn +" must be in ARN format or \"*\".");
+	   				 	LOGGER.error("Resource "+ resourceArn +" must be in ARN format or \"*\".");
+    			}
+        	}else {
+        		response = responseGenerator.malformedPolicy("Syntax errors in policy.");
+        		LOGGER.error("Resource can not be other than string or array of strings");
+        	}
         }
       }
 	 return response;
