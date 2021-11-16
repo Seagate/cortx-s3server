@@ -157,6 +157,9 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   obj_ctx->n_initialized_contexts = 1;
   memcpy(&obj_ctx->objs->ob_attr.oa_pver, &pvid, sizeof(struct m0_fid));
   obj_ctx->objs[0].ob_entity.en_flags |= M0_ENF_META;
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    obj_ctx->objs[0].ob_entity.en_flags |= M0_ENF_DI;
+  }
   rc = s3_motr_api->motr_entity_open(&(obj_ctx->objs[0].ob_entity),
                                      &(ctx->ops[0]));
   if (rc != 0) {
@@ -166,6 +169,9 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return rc;
   }
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Motr API: motr_entity_open success with DI flag = [%d]\n",
+         obj_ctx->objs[0].ob_entity.en_flags);
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_motr_api->motr_op_setup(ctx->ops[0], &ctx->cbs[0], 0);

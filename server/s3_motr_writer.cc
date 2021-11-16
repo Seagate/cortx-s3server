@@ -215,6 +215,9 @@ int S3MotrWiter::open_objects() {
       obj_ctx->n_initialized_contexts += 1;
     }
     obj_ctx->objs[i].ob_entity.en_flags |= M0_ENF_META;
+    if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+      obj_ctx->objs[0].ob_entity.en_flags |= M0_ENF_DI;
+    }
     int rc = s3_motr_api->motr_entity_open(&(obj_ctx->objs[i].ob_entity),
                                            &(ctx->ops[i]));
     if (rc != 0) {
@@ -224,6 +227,9 @@ int S3MotrWiter::open_objects() {
       s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
       return rc;
     }
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Motr API: motr_entity_open called with DI flag = [%d]\n",
+           obj_ctx->objs[0].ob_entity.en_flags);
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_motr_api->motr_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
 
