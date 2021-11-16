@@ -281,9 +281,10 @@ class ConfigCmd(SetupCmd):
 
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
+      # update the haproxy log rotate config file in /etc/logrotate.d/haproxy
+      self.find_and_replace("/etc/logrotate.d/haproxy", "/var/log/cortx", self.base_log_file_path)
+
       if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
-        # update the haproxy log rotate config file in /etc/logrotate.d/haproxy
-        self.find_and_replace("/etc/logrotate.d/haproxy", "/var/log/cortx", self.base_log_file_path)
         self.find_and_replace("/etc/rsyslog.d/haproxy.conf", "/var/log/cortx", self.base_log_file_path)
 
         # reload haproxy service

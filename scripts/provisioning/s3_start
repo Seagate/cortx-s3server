@@ -184,7 +184,8 @@ def main():
       create_symbolic_link(haproxy_log_path,s3_confkeys_store.get_config("S3_HAPROXY_LOG_SYMLINK"))
 
       # configure haproxy logrotate
-      configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
+      # This will be done usin logrotate.d script using /etc/logrotate.d/haproxy file
+      # configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
 
       # start crond
       os.system("/usr/sbin/crond start")
