@@ -1898,7 +1898,7 @@ AwsTest('Aws can not change the versioning status back to unversioned')\
 
 #************Negative case to enable versioning on non-existant bucket*******
 AwsTest('Aws can not enable versioning on non-existant bucket').put_bucket_versioning("seagate1", "Enabled")\
-.execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
 
 #******** Delete Bucket ********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebucket")\
