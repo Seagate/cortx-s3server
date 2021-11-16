@@ -53,7 +53,7 @@ public class PolicyController extends AbstractController {
     }
 
     /**
-     * Create new role.
+     * Create new policy
      *
      * @return ServerReponse
      */
@@ -64,6 +64,8 @@ public class PolicyController extends AbstractController {
             policy = policyDAO.find(requestor.getAccount(),
                     requestBody.get("PolicyName"));
         } catch (DataAccessException ex) {
+          LOGGER.error("Failed to create policy- " +
+                       requestBody.get("PolicyName"));
             return responseGenerator.internalServerError();
         }
 
@@ -100,6 +102,8 @@ public class PolicyController extends AbstractController {
         try {
             policyDAO.save(policy);
         } catch (DataAccessException ex) {
+          LOGGER.error("Exception while saving the policy- " +
+                       requestBody.get("PolicyName"));
             return responseGenerator.internalServerError();
         }
 
@@ -113,13 +117,16 @@ public class PolicyController extends AbstractController {
     @Override public ServerResponse delete () {
       Policy policy = null;
       try {
-        policy = policyDAO.find(requestBody.get("PolicyARN"));
+        policy = policyDAO.findByArn(requestBody.get("PolicyARN"),
+                                     requestor.getAccount());
       }
       catch (DataAccessException ex) {
+        LOGGER.error("Failed to find the requested policy in ldap- " +
+                     requestBody.get("PolicyARN"));
         return responseGenerator.internalServerError();
       }
       if (policy == null || !policy.exists()) {
-        LOGGER.error("Policy does not exists");
+        LOGGER.error(requestBody.get("PolicyARN") + "Policy does not exists");
         return responseGenerator.noSuchEntity();
       }
       LOGGER.info("Deleting policy : " + policy.getName());
@@ -128,6 +135,9 @@ public class PolicyController extends AbstractController {
         policyDAO.delete (policy);
       }
       catch (DataAccessException ex) {
+        LOGGER.error("Failed to delete requested policy- " +
+                     requestBody.get("PolicyARN"));
+        return responseGenerator.internalServerError();
       }
       return responseGenerator.generateDeleteResponse();
     }
@@ -143,6 +153,8 @@ public class PolicyController extends AbstractController {
         policyList = policyDAO.findAll(requestor.getAccount());
       }
       catch (DataAccessException ex) {
+        LOGGER.error("Failed to list policies for account - " +
+                     requestor.getAccount().getName());
         return responseGenerator.internalServerError();
       }
       LOGGER.info("Listing policies of account : " +
@@ -158,13 +170,16 @@ public class PolicyController extends AbstractController {
     @Override public ServerResponse get() {
       Policy policy = null;
       try {
-        policy = policyDAO.find(requestBody.get("PolicyARN"));
+        policy = policyDAO.findByArn(requestBody.get("PolicyARN"),
+                                     requestor.getAccount());
       }
       catch (DataAccessException ex) {
+        LOGGER.error("Failed to get requested policy- " +
+                     requestBody.get("PolicyARN"));
         return responseGenerator.internalServerError();
       }
       if (policy == null || !policy.exists()) {
-        LOGGER.error("Policy does not exists");
+        LOGGER.error("Policy does not exists- " + requestBody.get("PolicyARN"));
         return responseGenerator.noSuchEntity();
       }
       LOGGER.info("Getting policy with ARN -  : " + policy.getARN());

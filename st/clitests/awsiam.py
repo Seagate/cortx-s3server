@@ -91,3 +91,23 @@ class AwsIamTest(PyCliTest):
         self.user_name = user_name
         self.with_cli("aws iam " + "get-login-profile " + "--user-name " + user_name)
         return self
+
+    def create_policy(self, policy_name, policy):
+        cmd = "aws iam create-policy --policy-name " + policy_name + " --policy-document " + policy
+        self.with_cli(cmd)
+        return self
+
+    def get_policy(self, arn):
+        cmd = "aws iam get-policy --policy-arn " + arn
+        self.with_cli(cmd)
+        return self
+
+    def delete_policy(self, arn):
+        cmd = "aws iam delete-policy --policy-arn " + arn
+        self.with_cli(cmd)
+        return self
+
+    def list_policies(self):
+        cmd = "aws iam list-policies"
+        self.with_cli(cmd)
+        return self

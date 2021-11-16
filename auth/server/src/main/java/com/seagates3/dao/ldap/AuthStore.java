@@ -10,11 +10,11 @@ public
 interface AuthStore {
 
  public
-  void save(Map<String, Object> dataMap, Object obj,
+  void save(Map<String, Object> dataMap,
             String prefix) throws DataAccessException;
 
  public
-  Object find(String keyToFind, Object obj,
+  Object find(String keyToFind, Object obj, Object obj2,
               String prefix) throws DataAccessException;
 
  public
