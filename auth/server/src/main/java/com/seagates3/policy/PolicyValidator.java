@@ -242,6 +242,7 @@ ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyE
 		Set<String> statementElements) throws JSONException{
 	 ServerResponse response = null;
 	 if(jsonObject.has(JsonDocumentFields.VERSION) && jsonObject.has(JsonDocumentFields.STATEMENT)) {
+		 LOGGER.debug("Validating version field in a policy");
 		 String versionValue = jsonObject.get(JsonDocumentFields.VERSION).toString();
 		 if (versionValue != null) {
             if (versionValue.isEmpty()) {
@@ -262,6 +263,7 @@ ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyE
 				 LOGGER.error("Statement array can not be empty");
 				 return response;
 			 }
+			 LOGGER.debug("Validating each statement in a policy.");
 			 for (int count = 0; count < arr.length(); count++) {
 				 if(!(arr.get(count) instanceof JSONObject)) {
 					 response = responseGenerator.malformedPolicy("Syntax errors in policy.");
@@ -275,6 +277,7 @@ ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyE
 			      }
 			 }
 		 }else if(jsonObject.get(JsonDocumentFields.STATEMENT) instanceof JSONObject){
+			 LOGGER.debug("Validating statement in a policy.");
 			 JSONObject obj = (JSONObject)jsonObject.get(JsonDocumentFields.STATEMENT);
 			 response = validateStatementElements(obj, statementElements);
 		     if (response != null) {
@@ -291,6 +294,7 @@ ServerResponse validatePolicyElements(JSONObject jsonObject, Set<String> policyE
 		 LOGGER.error("Missing required field Version or Statement");
 		 return response;
 	 }
+	 LOGGER.debug("Checking for unknown fields in policy doc");
 	 Iterator<String> keys = jsonObject.keys();
 	 while (keys.hasNext()) {
 	     String key = keys.next();

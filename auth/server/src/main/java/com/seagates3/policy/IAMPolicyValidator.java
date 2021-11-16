@@ -44,6 +44,7 @@ class IAMPolicyValidator extends PolicyValidator {
   static Set<String> policyElements = new HashSet<>();
   static Set<String> statementElements = new HashSet<>();
   IAMArnParser iamArnparser;
+  private static final int MAX_IAM_POLICY_SIZE = 6144;
 	  
  public
   IAMPolicyValidator() {
@@ -74,6 +75,12 @@ public
  	try {
  		
  	      JSONObject obj = new JSONObject(jsonPolicy);
+ 	      if(obj.toString().length()>MAX_IAM_POLICY_SIZE) {
+ 	    	  LOGGER.error("Cannot exceed quota for PolicySize: "+MAX_IAM_POLICY_SIZE);
+ 	    	  return responseGenerator.limitExceeded("Cannot exceed quota for PolicySize: "+
+ 	    	  MAX_IAM_POLICY_SIZE);
+ 	      }
+ 	      
  	      response = validatePolicyElements(obj, policyElements, statementElements );
  	    }
  	    catch (JSONException e) {
