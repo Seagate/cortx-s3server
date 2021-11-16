@@ -182,11 +182,13 @@ int S3BucketMetadata::from_json(std::string content) {
   bucket_name = newroot["Bucket-Name"].asString();
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
+  system_defined_attribute.clear();
   for (auto it : members) {
     system_defined_attribute[it.c_str()] =
         newroot["System-Defined"][it].asString();
   }
   members = newroot["User-Defined"].getMemberNames();
+  user_defined_attribute.clear();
   for (auto it : members) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString();
   }
@@ -212,6 +214,7 @@ int S3BucketMetadata::from_json(std::string content) {
   bucket_policy = base64_decode(newroot["Policy"].asString());
 
   members = newroot["User-Defined-Tags"].getMemberNames();
+  bucket_tags.clear();
   for (const auto& tag : members) {
     bucket_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
   }
