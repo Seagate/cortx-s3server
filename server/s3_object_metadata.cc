@@ -1060,11 +1060,25 @@ int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
   // Check type of item: whether part or fragment
   // e.g., key:= ~ObjectOne|versionID|F1
   std::istringstream in(key);
+
+  // As object name can contain a delimiter (|) character, skip object name
+  // from below parsing logic.
+  assert(object_name.size() != 0);
+  int pos_after_skipping_object_name = object_name.size();
+  // (pos_after_skipping_object_name + 1) is done below to skip first '|'
+  // after the object name.
+  std::istringstream in(key.substr(pos_after_skipping_object_name + 1));
+  // First token is always the object name
+  tokens.push_back(object_name);
+
   std::string token;
   std::string sep = EXTENDED_METADATA_OBJECT_SEP;
   while (getline(in, token, sep[0])) {
     tokens.push_back(token);
   }
+  // Check the type of item: whether just part or fragment on part
+  // e.g., if key:= ObjectOne|versionID|F1, it has only fragment
+  // if key:= ObjectOne|versionID|P1|F1, it has one fragment on first part.
   if ((tokens.size() == 4) ||
       ((tokens.size() == 3) && (tokens[2].find("P", 0) != std::string::npos))) {
     // multipart (could be fragmented)
