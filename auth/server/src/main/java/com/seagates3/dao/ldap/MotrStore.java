@@ -9,12 +9,12 @@ import com.seagates3.model.Policy;
 public
 class MotrStore implements AuthStore {
 
-  @Override public void save(Map<String, Object> dataMap, Object obj,
+  @Override public void save(Map<String, Object> dataMap,
                              String prefix) throws DataAccessException {
     // TODO Auto-generated method stub
   }
 
-  @Override public Object find(String keyToFind, Object obj,
+  @Override public Object find(String keyToFind, Object obj, Object obj2,
                                String prefix) throws DataAccessException {
     // TODO Auto-generated method stub
     return null;

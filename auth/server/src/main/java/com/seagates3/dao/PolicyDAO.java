@@ -45,7 +45,7 @@ public interface PolicyDAO {
      */
     public void save(Policy policy) throws DataAccessException;
     public
-     Policy find(String arn) throws DataAccessException;
+     Policy findByArn(String arn, Account account) throws DataAccessException;
     public
      List<Policy> findAll(Account account) throws DataAccessException;
     public

@@ -27,8 +27,28 @@ from s3client_config import S3ClientConfig
 from s3cmd import S3cmdTest
 from s3fi import S3fiTest
 import shutil
+from auth import AuthTest
+from ldap_setup import LdapInfo
 
+def get_arn_from_policy_object(raw_aws_cli_output):
+    raw_lines = raw_aws_cli_output.split('\n')
+    for _, item in enumerate(raw_lines):
+        if (item.startswith("POLICY")):
+            line = item.split('\t')
+            arn = line[1]
+        else:
+            continue
+    return arn
 
+def get_policy_list_count(raw_aws_cli_output):
+    raw_lines = raw_aws_cli_output.split('\n')
+    count = 0
+    for _, item in enumerate(raw_lines):
+        if (item.startswith("POLICIES")):
+            count = count + 1
+        else:
+            continue
+    return count
 
 def user_tests():
     date_pattern = "[0-9|]+Z"
@@ -62,6 +82,68 @@ def user_tests():
 
     AwsIamTest('Delete User').delete_user("testUser").execute_test().command_is_successful()
 
+def policy_tests():
+    #create-policy
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy",samplepolicy_testing).execute_test()
+    result.command_response_should_have("iampolicy")
+    arn = (get_arn_from_policy_object(result.status.stdout))
+
+    #create-policy
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy2",samplepolicy_testing).execute_test()
+    result.command_response_should_have("iampolicy2")
+    arn2 = (get_arn_from_policy_object(result.status.stdout))
+
+
+    #create-policy fails if policy with same name already exists
+    AwsIamTest('Create Policy').create_policy("iampolicy",samplepolicy_testing).execute_test(negative_case=True)\
+        .command_should_fail().command_error_should_have("EntityAlreadyExists")
+
+    #get-policy
+    AwsIamTest('Get Policy').get_policy(arn).execute_test().command_response_should_have("iampolicy")
+
+    #list-policies
+    result = AwsIamTest('List Policies').list_policies().execute_test()
+    total_policies = get_policy_list_count(result.status.stdout)
+    if(total_policies != 2):
+        print('List Policies Test failed')
+        quit()
+
+    #delete-policy
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+
+    #get-policy on non-existing policy
+    AwsIamTest('Get Policy').get_policy(arn).execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
+
+    #delete-policy on non-existing policy
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
+
+    test_msg = "Create account testAcc2"
+    account_args = {'AccountName': 'testAcc2', 'Email': 'testAcc2@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': LdapInfo.get_ldap_admin_pwd()}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = AuthTest.get_response_elements(result.status.stdout)
+    testAcc2_access_key = account_response_elements['AccessKeyId']
+    testAcc2_secret_key = account_response_elements['SecretKey']
+
+    os.environ["AWS_ACCESS_KEY_ID"] = testAcc2_access_key
+    os.environ["AWS_SECRET_ACCESS_KEY"] = testAcc2_secret_key
+
+    #delete-policy cross account
+    AwsIamTest('Delete Policy Cross Account Not Allowed').delete_policy(arn2).execute_test(negative_case=True).command_should_fail()
+
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+    #delete-policy
+    AwsIamTest('Delete Policy').delete_policy(arn2).execute_test().command_is_successful()
+
+
 if __name__ == '__main__':
 
     user_tests()
+    policy_tests()

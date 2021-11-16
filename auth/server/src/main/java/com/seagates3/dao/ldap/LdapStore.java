@@ -15,99 +15,124 @@ class LdapStore implements AuthStore {
 
  private
   final Logger LOGGER = LoggerFactory.getLogger(LdapStore.class.getName());
+ private
+  final String METHOD_SAVE = "save";
+ private
+  final String METHOD_FIND = "find";
+ private
+  final String METHOD_FINDALL = "findAll";
+ private
+  final String METHOD_DELETE = "delete";
+ private
+  final String CLASS_PACKAGE = "com.seagates3.dao.ldap.";
+ private
+  final String CLASS_SUFFIX = "LdapStore";
 
-  @Override public void save(Map<String, Object> dataMap, Object obj,
+  @Override public void save(Map<String, Object> dataMap,
                              String prefix) throws DataAccessException {
 
-    String methodName = "save";
-    String className = "com.seagates3.dao.ldap." + prefix + "LdapStore";
-    LOGGER.debug("calling method - " + methodName + " of class - " + className);
+    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
+    LOGGER.debug("calling method - " + METHOD_SAVE + " of class - " +
+                 className);
+    Map.Entry<String, Object> entry = dataMap.entrySet().iterator().next();
     try {
       Class < ? > storeClass = Class.forName(className);
       Object instance = storeClass.newInstance();
-      Method method = storeClass.getMethod(methodName, Object.class);
-      method.invoke(instance, obj);
+      Method method = storeClass.getMethod(METHOD_SAVE, Object.class);
+      method.invoke(instance, entry.getValue());
     }
     catch (ClassNotFoundException e) {
+      LOGGER.error("Failed to save - " + prefix);
+      throw new DataAccessException("failed to save.\n" + e);
     }
     catch (NoSuchMethodException | SecurityException e) {
+      LOGGER.error("Exception while calling save method");
+      throw new DataAccessException("failed to call save method\n" + e);
     }
     catch (IllegalAccessException | IllegalArgumentException |
            InvocationTargetException | InstantiationException e) {
+      LOGGER.error("Failed to save - " + prefix);
+      throw new DataAccessException("failed to save- " + prefix + e);
     }
   }
 
-  @Override public Object find(String strToFind, Object obj,
+  @Override public Object find(String strToFind, Object obj, Object obj2,
                                String prefix) throws DataAccessException {
-
-    String methodName = "find";
-    String className = "com.seagates3.dao.ldap." + prefix + "LdapStore";
-    LOGGER.debug("calling method - " + methodName + " of class - " + className);
+    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
+    LOGGER.debug("calling method - " + METHOD_FIND + " of class - " +
+                 className);
     try {
       Class < ? > storeClass = Class.forName(className);
       Object instance = storeClass.newInstance();
-      Method method = storeClass.getMethod(methodName, Object.class);
-      Object returnObj = method.invoke(instance, obj);
+      Method method =
+          storeClass.getMethod(METHOD_FIND, Object.class, Object.class);
+      Object returnObj = method.invoke(instance, obj, obj2);
       return returnObj;
     }
     catch (ClassNotFoundException e) {
-      LOGGER.error("ClassNotFoundException" + e);
+      LOGGER.error("Exception occurred in find " + e);
+      throw new DataAccessException("failed to find - " + prefix + e);
     }
     catch (NoSuchMethodException | SecurityException e) {
-      LOGGER.error("NoSuchMethodException" + e);
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed to find " + prefix + e);
     }
     catch (IllegalAccessException | IllegalArgumentException |
            InvocationTargetException | InstantiationException e) {
-      LOGGER.error("IllegalArgumentException " + e);
+      LOGGER.error("Exception found " + e);
+      throw new DataAccessException("failed to find " + prefix + e);
     }
-    return null;
   }
 
   @Override public List findAll(String strToFind, Object obj,
                                 String prefix) throws DataAccessException {
-    String methodName = "findAll";
-    String className = "com.seagates3.dao.ldap." + prefix + "LdapStore";
-    LOGGER.debug("calling method - " + methodName + " of class - " + className);
+    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
+    LOGGER.debug("calling method - " + METHOD_FINDALL + " of class - " +
+                 className);
     try {
       Class < ? > storeClass = Class.forName(className);
       Object instance = storeClass.newInstance();
-      Method method = storeClass.getMethod(methodName, Object.class);
+      Method method = storeClass.getMethod(METHOD_FINDALL, Object.class);
       return (List)method.invoke(instance, obj);
     }
     catch (ClassNotFoundException e) {
-      LOGGER.error("ClassNotFoundException" + e);
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in findAll " + prefix + e);
     }
     catch (NoSuchMethodException | SecurityException e) {
-      LOGGER.error("NoSuchMethodException" + e);
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in findAll " + prefix + e);
     }
     catch (IllegalAccessException | IllegalArgumentException |
            InvocationTargetException | InstantiationException e) {
-      LOGGER.error("IllegalArgumentException " + e);
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in findAll " + prefix + e);
     }
-    return null;
   }
 
   @Override public void delete (String key, Object obj,
                                 String prefix) throws DataAccessException {
-
-    String methodName = "delete";
-    String className = "com.seagates3.dao.ldap." + prefix + "LdapStore";
-    LOGGER.debug("calling method - " + methodName + " of class - " + className);
+    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
+    LOGGER.debug("calling method - " + METHOD_DELETE + " of class - " +
+                 className);
     try {
       Class < ? > storeClass = Class.forName(className);
       Object instance = storeClass.newInstance();
-      Method method = storeClass.getMethod(methodName, Object.class);
+      Method method = storeClass.getMethod(METHOD_DELETE, Object.class);
       method.invoke(instance, obj);
     }
     catch (ClassNotFoundException e) {
-      LOGGER.error("ClassNotFoundException" + e);
+      LOGGER.error("Exception occurred while deleting " + prefix + e);
+      throw new DataAccessException("failed while deleting " + prefix + e);
     }
     catch (NoSuchMethodException | SecurityException e) {
-      LOGGER.error("NoSuchMethodException" + e);
+      LOGGER.error("Exception occurred while deleting " + prefix + e);
+      throw new DataAccessException("failed while deleting " + prefix + e);
     }
     catch (IllegalAccessException | IllegalArgumentException |
            InvocationTargetException | InstantiationException e) {
-      LOGGER.error("IllegalArgumentException " + e);
+      LOGGER.error("Exception occurred while deleting " + prefix + e);
+      throw new DataAccessException("failed while deleting " + prefix + e);
     }
   }
 }
