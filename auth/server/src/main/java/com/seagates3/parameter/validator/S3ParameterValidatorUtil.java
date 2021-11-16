@@ -40,7 +40,6 @@ public class S3ParameterValidatorUtil {
     final static int MAX_DESCRIPTION_LENGTH = 1000;
     final static int MAX_GROUP_NAME_LENGTH = 128;
     final static int MAX_ITEMS = 1000;
-    final static int MAX_POLICY_DOC_LENGTH = 5120;
     final static int MAX_POLICY_NAME_LENGTH = 128;
     final static int MAX_MARKER_LENGTH = 320;
     final static int MAX_NAME_LENGTH = 64;
@@ -386,8 +385,8 @@ public class S3ParameterValidatorUtil {
     }
 
     /**
-     * Validate policy document. Length of the document should be between 1 and
-     * 5120 characters. It should match the patten
+     * Validate policy document. Length of the document should be greater
+     * than 1 characters. It should match the patten
      * "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+".
      *
      * @param policyDoc access key id to be validated.
@@ -402,8 +401,7 @@ public class S3ParameterValidatorUtil {
             return false;
         }
 
-        return !(policyDoc.length() < 1
-                || policyDoc.length() > MAX_POLICY_DOC_LENGTH);
+        return !(policyDoc.length() < 1);
     }
 
     /**
