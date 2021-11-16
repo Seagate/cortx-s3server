@@ -26,8 +26,8 @@ class PolicyLdapStore {
       LoggerFactory.getLogger(PolicyLdapStore.class.getName());
 
  public
-  void save(Object obj) throws DataAccessException {
-    Policy policy = (Policy)obj;
+  void save(Object policyObj) throws DataAccessException {
+    Policy policy = (Policy)policyObj;
     LDAPAttributeSet attributeSet = new LDAPAttributeSet();
     attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
                                        LDAPUtils.POLICY_OBJECT_CLASS));
@@ -74,8 +74,10 @@ class PolicyLdapStore {
   }
 
  public
-  Policy find(Object obj) throws DataAccessException {
-    String policyarn = obj.toString();
+  Policy find(Object policyArnStr,
+              Object accountObj) throws DataAccessException {
+    String policyarn = policyArnStr.toString();
+    Account requestingAccount = (Account)accountObj;
     Policy policy = new Policy();
     policy.setARN(policyarn);
 
@@ -86,16 +88,18 @@ class PolicyLdapStore {
         LDAPUtils.POLICY_DOC,                LDAPUtils.IS_POLICY_ATTACHABLE,
         LDAPUtils.POLICY_ARN,                LDAPUtils.POLICY_ATTACHMENT_COUNT,
         LDAPUtils.POLICY_PERMISSION_BOUNDARY};
-    String filter =
-        String.format("(&(%s=%s)(%s=%s))", "policyArn", policyarn,
-                      LDAPUtils.OBJECT_CLASS, LDAPUtils.POLICY_OBJECT_CLASS);
+    String baseDN = String.format(
+        "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+        LDAPUtils.POLICY_OU, LDAPUtils.ORGANIZATIONAL_NAME,
+        requestingAccount.getName(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+        LDAPUtils.ACCOUNT_OU, LDAPUtils.BASE_DN);
+    String filter = String.format("(%s=%s)", LDAPUtils.POLICY_ARN, policyarn);
     LDAPSearchResults ldapResults;
-    LOGGER.debug("Searching policy dn: " + LDAPUtils.BASE_DN + " filter: " +
-                 filter);
+    LOGGER.debug("Searching policy dn: " + baseDN + " filter: " + filter);
 
     try {
-      ldapResults = LDAPUtils.search(LDAPUtils.BASE_DN,
-                                     LDAPConnection.SCOPE_SUB, filter, attrs);
+      ldapResults =
+          LDAPUtils.search(baseDN, LDAPConnection.SCOPE_SUB, filter, attrs);
     }
     catch (LDAPException ex) {
       LOGGER.error("Failed to find the policy: " + policy.getName() +
@@ -144,8 +148,8 @@ class PolicyLdapStore {
   }
 
  public
-  List<Policy> findAll(Object obj) throws DataAccessException {
-    Account account = (Account)obj;
+  List<Policy> findAll(Object accountObj) throws DataAccessException {
+    Account account = (Account)accountObj;
     String[] attrs = {
         LDAPUtils.POLICY_ID,                 LDAPUtils.PATH,
         LDAPUtils.POLICY_CREATE_DATE,        LDAPUtils.POLICY_UPDATE_DATE,
@@ -222,8 +226,8 @@ class PolicyLdapStore {
   }
 
  public
-  void delete (Object obj) throws DataAccessException {
-    Policy policy = (Policy)obj;
+  void delete (Object policyObj) throws DataAccessException {
+    Policy policy = (Policy)policyObj;
     String dn = String.format(
         "%s=%s,%s=%s,%s=%s,%s=%s,%s", LDAPUtils.POLICY_NAME, policy.getName(),
         LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.POLICY_OU,
