@@ -461,5 +461,9 @@ public class AuthServerConfig {
     static String getAuthStore() {
       return authServerConfig.getProperty("authStore");
     }
+   public
+   static String getPolicyVersion() {
+     return authServerConfig.getProperty("policyVersion");
+   }
 }
 
