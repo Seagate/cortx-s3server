@@ -38,7 +38,8 @@ cortx:
       - openldap-svc
       - openldap-svc
   s3:
-    auth_secret: "TMPL_SGIAM_SECRET_KEY"
+    auth_admin: "TMPL_LDAP_USER"
+    auth_secret: "TMPL_LDAP_USER_SECRET_KEY"
     iam:
       endpoints:
       - https://iam.seagate.com:9443

@@ -219,6 +219,8 @@ class ConfigCmd(SetupCmd):
         cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
                 '--hostname',
                 f'{node_machine_id}',
+                '--ldapuser',
+                f'{self.ldap_user}',
                 '--ldapadminpasswd',
                 f'{self.ldap_passwd}',
                 '--rootdnpasswd',
