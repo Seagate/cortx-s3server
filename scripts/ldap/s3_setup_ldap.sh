@@ -24,12 +24,13 @@
 ##################################
 
 
-USAGE="USAGE: bash $(basename "$0") [--hostname] [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>]
+USAGE="USAGE: bash $(basename "$0") [--hostname] [--ldapuser <user>] [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>]
       [--help | -h]
 Install and configure OpenLDAP.
 
 where:
 --hostname          host to configure
+--ldapuser          optional ldap username
 --ldapadminpasswd   optional ldapadmin password
 --rootdnpasswd      optional rootdn password
 --help              display this help and exit
@@ -37,6 +38,7 @@ where:
 
 set -e
 
+LDAPUSER=
 LDAPADMINPASS=
 ROOTDNPASSWORD=
 host=
@@ -53,6 +55,9 @@ do
   case "$1" in
     --hostname ) shift;
         host=$1
+        ;;
+    --ldapuser ) shift;
+        LDAPUSER=$1
         ;;
     --ldapadminpasswd ) shift;
         LDAPADMINPASS=$1
@@ -71,6 +76,12 @@ done
 if [ -z "$host" ]
 then
     echo "Hostname can not be null."
+    exit 1
+fi
+
+if [ -z "$LDAPUSER" ]
+then
+    echo "Ldapuser can not be null."
     exit 1
 fi
 
@@ -102,6 +113,12 @@ EXPR='s/userPassword: *.*/userPassword: '$ESC_SHA'/g'
 ADMIN_USERS_FILE=$(mktemp XXXX.ldif)
 cp -f "$INSTALLDIR"/iam-admin.ldif "$ADMIN_USERS_FILE"
 sed -i "$EXPR" "$ADMIN_USERS_FILE"
+sed -i 's/cn\=.*,dc=seagate,dc=com/cn\='$LDAPUSER',dc=seagate,dc=com/g' "$ADMIN_USERS_FILE"
+sed -i 's/cn:\ .*/cn:\ '$LDAPUSER'/g' "$ADMIN_USERS_FILE"
+
+ADMIN_USER_ACCESS_FILE=$(mktemp XXXX.ldif)
+cp -f "$INSTALLDIR"/s3-iam-admin-access.ldif "$ADMIN_USER_ACCESS_FILE"
+sed -i 's/cn\=.*,dc=seagate,dc=com/cn\='$LDAPUSER',dc=seagate,dc=com/g' "$ADMIN_USER_ACCESS_FILE"
 
 # Commenting this since chkconfig uses systemd utility which is not available in kubernetes env.
 #chkconfig slapd on
@@ -117,7 +134,8 @@ ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$ADMIN_USERS_FILE" -h "$host" || /bin/true
 rm -f $ADMIN_USERS_FILE
 
-ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3-iam-admin-access.ldif -h "$host"
+ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$ADMIN_USER_ACCESS_FILE" -h "$host"
+rm -rf $ADMIN_USER_ACCESS_FILE
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
