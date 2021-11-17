@@ -183,9 +183,8 @@ def main():
       # create symbolic link for this config file to be used by log rotation
       create_symbolic_link(haproxy_log_path,s3_confkeys_store.get_config("S3_HAPROXY_LOG_SYMLINK"))
 
-      # configure haproxy logrotate
-      # This will be done usin logrotate.d script using /etc/logrotate.d/haproxy file
-      # configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
+      # configure haproxy logrotate using logrotate.d script
+      update_haproxy_log_rotate_file("/etc/logrotate.d/haproxy", "/var/log/cortx", base_logdir_path)
 
       # start crond
       os.system("/usr/sbin/crond start")
@@ -299,6 +298,30 @@ def create_symbolic_link(src_path: str, dst_path: str):
     logger.info("symbolic link is unlinked")
   os.symlink(src_path, dst_path)
   logger.info(f"symbolic link created successfully")
+
+def update_haproxy_log_rotate_file(self, filename: str,
+                      content_to_search: str,
+                      content_to_replace: str):
+  """find and replace the haproxy log path and delete unwanted lines from logrotate file."""
+  logger.info(f"log file path to search: {content_to_search}")
+  logger.info(f"correct log file path prefix to replace: {content_to_replace}")
+  # removing unwanted entries from logrotate file
+  with open(filename) as f:
+    newText=f.read().replace(content_to_search, content_to_replace)
+  with open(filename, "w") as f:
+    lines = newText.split("\n")
+    for line in lines:
+      entry=line.strip()
+      if (entry.startswith("postrotate") != -1)  \
+        or  (entry.startswith("bin/kill -HUP") != -1) \
+        or (entry.startswith("endscript") != -1) \
+        or (entry.startswith("{content_to_replace}/haproxy-status.log") != -1):
+        # ignoring unwanted entries
+        pass
+      else:
+        f.write(line+'\n')
+
+  logger.info(f"find and replace completed successfully for the file {filename}.")
 
 if __name__ == '__main__':
   sys.exit(main())

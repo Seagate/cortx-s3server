@@ -1,4 +1,5 @@
 /var/log/cortx/haproxy.log
+/var/log/cortx/haproxy-status.log
 {
     daily
     rotate 5
@@ -9,8 +10,8 @@
     dateext
     dateformat -%Y-%m-%d-%s
     sharedscripts
-    # postrotate
-    #    /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
-    #    /bin/kill -HUP `cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true
-    # endscript
+    postrotate
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+        /bin/kill -HUP `cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
 }
