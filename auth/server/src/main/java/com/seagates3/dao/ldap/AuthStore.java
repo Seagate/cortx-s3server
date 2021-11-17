@@ -14,14 +14,14 @@ interface AuthStore {
             String prefix) throws DataAccessException;
 
  public
-  Object find(String keyToFind, Object obj, Object obj2,
+  Object find(String keyToFind, Object key, Object rootKey,
               String prefix) throws DataAccessException;
 
  public
-  List<Policy> findAll(String keyToFind, Object obj,
+  List<Policy> findAll(String keyToFind, Object key,
                        String prefix) throws DataAccessException;
 
  public
-  void delete (String keyToRemove, Object obj,
+  void delete (String keyToRemove, Object key,
                String prefix) throws DataAccessException;
 }
