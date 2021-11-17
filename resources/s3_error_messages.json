@@ -194,9 +194,5 @@
   "MissingContentLength": {
     "Description": "You must provide the Content-Length HTTP header.",
     "httpcode": 411
-  },
-  "IllegalVersioningConfigurationException": {
-    "Description": "Indicates that the versioning configuration specified in the request is invalid.",
-    "httpcode": 400
   }
 }

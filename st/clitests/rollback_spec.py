@@ -308,7 +308,6 @@ S3cmdTest('s3cmd can delete bucket after setting policy/acl').delete_bucket("sea
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 # ************ Put bucket versioning  TEST ************
 S3fiTest('s3cmd enable FI PUT KV').enable_fi("enable", "always", "motr_kv_put_fail").execute_test().command_is_successful()
-#S3cmdTest('s3cmd can not change versioning status on bucket').put_bucket_versioning("seagatebucket","Enabled").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_put_fail").execute_test().command_is_successful()
 
 # ************ Delete bucket TEST ************

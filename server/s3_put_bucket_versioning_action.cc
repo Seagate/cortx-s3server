@@ -113,7 +113,7 @@ void S3PutBucketVersioningAction::validate_request_xml_versioning_status() {
           bucket_version_status)) {
     next();
   } else {
-    set_s3_error("IllegalVersioningConfigurationException");
+    set_s3_error("MalformedXML");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

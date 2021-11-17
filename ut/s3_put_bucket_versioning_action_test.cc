@@ -226,7 +226,7 @@ TEST_F(S3PutBucketVersioningActionTest, ValidateInvalidRequestXmlTags) {
 
   action_under_test_ptr->clear_tasks();
   action_under_test_ptr->validate_request_xml_versioning_status();
-  EXPECT_STREQ("IllegalVersioningConfigurationException",
+  EXPECT_STREQ("MalformedXML",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
