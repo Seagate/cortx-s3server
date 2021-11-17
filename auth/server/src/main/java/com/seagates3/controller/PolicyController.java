@@ -43,7 +43,7 @@ public class PolicyController extends AbstractController {
 
     PolicyDAO policyDAO;
     PolicyResponseGenerator responseGenerator;
-    PolicyValidator iamPolicyValidator;
+    PolicyValidator iamPolicyValidator = null;
     private final Logger LOGGER =
             LoggerFactory.getLogger(PolicyController.class.getName());
 
