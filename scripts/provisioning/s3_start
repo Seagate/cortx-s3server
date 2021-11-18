@@ -299,7 +299,7 @@ def create_symbolic_link(src_path: str, dst_path: str):
   os.symlink(src_path, dst_path)
   logger.info(f"symbolic link created successfully")
 
-def update_haproxy_log_rotate_file(self, filename: str,
+def update_haproxy_log_rotate_file(filename: str,
                       content_to_search: str,
                       content_to_replace: str):
   """find and replace the haproxy log path and delete unwanted lines from logrotate file."""
