@@ -66,25 +66,23 @@ public class PolicyController extends AbstractController {
         Policy policy;
         String policyName = requestBody.get("PolicyName");
         try {
-            policy = policyDAO.find(requestor.getAccount(),
-            		policyName);
+          policy = policyDAO.find(requestor.getAccount(), policyName);
         } catch (DataAccessException ex) {
-          LOGGER.error("Failed to create policy- " +
-        		  policyName);
+          LOGGER.error("Failed to create policy- " + policyName);
             return responseGenerator.internalServerError();
         }
 
         if (policy != null && policy.exists()) {
             return responseGenerator.entityAlreadyExists();
         }
-        LOGGER.debug("Validating IAM policy: "+policyName);
+        LOGGER.debug("Validating IAM policy: " + policyName);
         ServerResponse response = iamPolicyValidator.validatePolicy(
             null, requestBody.get("PolicyDocument"));
         if (response != null) {
-          LOGGER.error("Validation failed for IAM policy: "+policyName);
+          LOGGER.error("Validation failed for IAM policy: " + policyName);
           return response;
         }
-        LOGGER.debug("Validation successful for IAM policy: "+policyName);
+        LOGGER.debug("Validation successful for IAM policy: " + policyName);
         policy = new Policy();
         policy.setName(policyName);
         policy.setAccount(requestor.getAccount());
@@ -198,4 +196,4 @@ public class PolicyController extends AbstractController {
       LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
       return responseGenerator.generateGetResponse(policy);
     }
-}
+ }

@@ -338,7 +338,7 @@ class BucketPolicyValidator extends PolicyValidator {
   }
 
   @Override boolean isArnFormatValid(String arn) {
-	    // TODO Auto-generated method stub
-	    return false;
-	  }
+    // TODO Auto-generated method stub
+    return false;
+  }
 }

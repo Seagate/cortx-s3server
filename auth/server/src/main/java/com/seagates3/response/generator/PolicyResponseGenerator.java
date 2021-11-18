@@ -57,10 +57,10 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
     }
 
    public
-   ServerResponse limitExceeded(String errorMessage) {
-     return formatResponse(HttpResponseStatus.BAD_REQUEST, "LimitExceeded",
-                           errorMessage);
-   }
+    ServerResponse limitExceeded(String errorMessage) {
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "LimitExceeded",
+                            errorMessage);
+    }
 
    public
     ServerResponse noSuchPolicy() {
