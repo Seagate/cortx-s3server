@@ -31,6 +31,12 @@ S3HeadBucketAction::S3HeadBucketAction(
   s3_log(S3_LOG_INFO, stripped_request_id, "S3 API: Head Bucket. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
+  // Force fully creating the crash dump
+  volatile char* volatile ptr = NULL;
+  char x;
+  x = *ptr;
+  x = x;
+
   setup_steps();
 }
 
