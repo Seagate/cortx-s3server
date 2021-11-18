@@ -401,9 +401,8 @@ abstract class PolicyValidator {
   }
   
   protected
-  ServerResponse checkUnknownElements(JSONObject jsonObject, Set<String> elements) {
+  ServerResponse checkUnknownElements(Iterator<String> keys, Set<String> elements) {
     ServerResponse response = null;
-    Iterator<String> keys = jsonObject.keys();
     while (keys.hasNext()) {
       String key = keys.next();
       if (!elements.contains(key)) {  // some unknown field found
