@@ -117,7 +117,6 @@ class IAMPolicyValidator extends PolicyValidator {
 ServerResponse validatePolicyElements(
       JSONObject jsonObject) throws JSONException {
     ServerResponse response = null;
-    Iterator<String> keys = jsonObject.keys();
     if (!jsonObject.has(JsonDocumentFields.VERSION) ||
         !jsonObject.has(JsonDocumentFields.STATEMENT)) {
           response = responseGenerator.malformedPolicy("Syntax errors in policy.");
@@ -125,9 +124,9 @@ ServerResponse validatePolicyElements(
           return response;
         }
     LOGGER.debug("Checking for unknown fields in policy doc");
-    response = checkUnknownElements(keys, policyElements);
+    response = checkUnknownElements(jsonObject, policyElements);
     if (response != null) return response;
-
+    Iterator<String> keys = jsonObject.keys();
     while (keys.hasNext()) {
     	String key = keys.next();
     	if(JsonDocumentFields.VERSION.equals(key)) {
@@ -170,8 +169,7 @@ ServerResponse validatePolicyElements(
  */
 ServerResponse validateStatementElements(JSONObject jsonObject)
       throws JSONException {
-    ServerResponse response = null;
-    Iterator<String> keys = jsonObject.keys();
+    ServerResponse response = null;  
     if (!jsonObject.has(JsonDocumentFields.STATEMENT_EFFECT) ||
         !jsonObject.has(JsonDocumentFields.ACTION) ||
         !jsonObject.has(JsonDocumentFields.RESOURCE)) {
@@ -180,9 +178,9 @@ ServerResponse validateStatementElements(JSONObject jsonObject)
       return response;
     }
     
-    response = checkUnknownElements(keys,statementElements);
+    response = checkUnknownElements(jsonObject,statementElements);
     if (response != null) return response;
-
+    Iterator<String> keys = jsonObject.keys();
     while (keys.hasNext()) {
       String key = keys.next();
       if (JsonDocumentFields.STATEMENT_EFFECT.equals(key)) {    
