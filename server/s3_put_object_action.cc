@@ -595,6 +595,8 @@ void S3PutObjectAction::write_object_failed() {
 void S3PutObjectAction::save_counters() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
+  counter->add_inc_object_count(1);
+  counter->add_inc_size(new_object_metadata->get_primary_obj_size());
   counter->save(
       std::bind(&S3PutObjectAction::save_bucket_counters_success, this),
       std::bind(&S3PutObjectAction::save_bucket_counters_failed, this));
