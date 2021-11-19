@@ -22,7 +22,8 @@ package com.seagates3.util;
 
 public class ARNUtil {
 
-    private static final String PARTITION = "seagate";
+  private
+   static final String PARTITION = "aws";
     private static final String SERVICE = "iam";
 
     public static String createARN(String accountId, String resource) {

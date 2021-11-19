@@ -30,7 +30,7 @@ public class ARNUtilTest {
     public void createARNTest() {
         String accountId = "testID";
         String resource = "testResource";
-        String expected = "arn:seagate:iam::testID:testResource";
+        String expected = "arn:aws:iam::testID:testResource";
 
         String result = ARNUtil.createARN(accountId, resource);
 
@@ -43,7 +43,7 @@ public class ARNUtilTest {
         String accountId = "testID";
         String resource = "testResource";
         String resourceType = "testType";
-        String expected = "arn:seagate:iam::testID:testType/testResource";
+        String expected = "arn:aws:iam::testID:testType/testResource";
 
         String result = ARNUtil.createARN(accountId, resourceType, resource);
 

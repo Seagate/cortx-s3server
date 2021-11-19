@@ -28,11 +28,11 @@ import java.util.Map;
 import java.util.Arrays;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-
+import com.seagates3.policy.IAMPolicyAuthorizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
-
+import com.seagates3.exception.InvalidUserException;
 import com.seagates3.acl.ACLAuthorizer;
 import com.seagates3.acl.ACLCreator;
 import com.seagates3.acl.ACLRequestValidator;
@@ -79,7 +79,47 @@ class Authorizer {
     ServerResponse serverResponse = null;
     AuthorizationResponseGenerator responseGenerator =
         new AuthorizationResponseGenerator();
-    String mainOperation = requestBody.get("S3Action");
+    String s3Operation = requestBody.get("S3Action");
+    if (AuthServerConfig.isEnableIamPolicyFeature()) {
+      // Authorize IAM Policy
+      serverResponse =
+          new IAMPolicyAuthorizer().authorizePolicy(requestor, requestBody);
+    }
+    /* If s3Operation is NULL means call is for IAM operation. eg-
+     * ListAccessKeys so return
+     *     whatever is iam policy authorization response. Dont go for Bucket
+     * policy authorization.
+     * If s3Operation is not null means its s3 operation authorization call.
+     * so check first iam policy-
+     *     if iam policy response is not null and not ok then return
+     * AccessDenied.Dont check bucket policy auth.
+     *     if iam policy authorization response is either null or ok then check
+     * bucket policy auth
+     */
+    if (s3Operation == null && serverResponse == null) {
+      try {
+        if (RootPermissionAuthorizer.getInstance().containsAction(
+                requestBody.get("Action"))) {
+          new IAMApiAuthorizer().authorizeRootUser(requestor, requestBody);
+        } else {
+          new IAMApiAuthorizer().authorize(requestor, requestBody);
+        }
+        LOGGER.info("Request is authorized for user: " + requestor.getName() +
+                    " account: " + requestor.getAccount());
+      }
+      catch (InvalidUserException e) {
+        LOGGER.error(e.getServerResponse().getResponseBody());
+        return e.getServerResponse();
+      }
+      return responseGenerator.generateAuthorizationResponse(requestor, null);
+    }
+
+    if (s3Operation == null ||
+        (serverResponse != null &&
+         serverResponse.getResponseStatus() != HttpResponseStatus.OK)) {
+      return serverResponse;
+    }
+
     // Deny access if any action is restricted for public access
     if (requestor == null &&
         PublicAccessAuthorizer.getInstance().isActionRestricted(requestBody)) {
@@ -94,7 +134,7 @@ class Authorizer {
         allActions.addAll(
             Arrays.asList(requestBody.get("S3ActionList").split(",")));
       }
-      allActions.add(mainOperation);
+      allActions.add(s3Operation);
       for (String action : allActions) {
         requestBody.put("S3Action", action);
       // Below will check put/get/delete policy for first time
@@ -131,7 +171,7 @@ class Authorizer {
         serverResponse = checkAclAuthorization(requestor, requestBody, false);
       }
       if (serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
-        requestBody.put("S3Action", mainOperation);
+        requestBody.put("S3Action", s3Operation);
         return serverResponse;
       }
       }  // end of for
@@ -143,7 +183,7 @@ class Authorizer {
       LOGGER.debug("Authorization response is - " +
                    serverResponse.getResponseStatus());
     }
-    requestBody.put("S3Action", mainOperation);
+    requestBody.put("S3Action", s3Operation);
     return serverResponse;
   }
 
@@ -238,6 +278,12 @@ class Authorizer {
     try {
       if (requestBody.get("Auth-ACL") == null) {
         LOGGER.debug("ACL not present. Skipping ACL authorization.");
+      } else if (AuthServerConfig.isEnableIamPolicyFeature() &&
+                 requestor != null && !isRootUser(requestor.getUser())) {
+        LOGGER.info(
+            "IAM Policy feature is enabled so by default IAM user is not " +
+            "allowed for this operation");
+        return responseGenerator.AccessDenied();
       } else if (!new ACLAuthorizer().isAuthorized(requestor, requestBody)) {
         LOGGER.info("Resource ACL denies access to the requestor for this " +
                     "operation.");
@@ -277,7 +323,7 @@ class Authorizer {
  public
   static boolean isRootUser(User user) {
     boolean isRoot = false;
-    if ("root".equals(user.getName())) {
+    if (user != null && "root".equals(user.getName())) {
       isRoot = true;
     }
     return isRoot;

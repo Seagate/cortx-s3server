@@ -21,6 +21,7 @@ class UserPolicyParameterValidator extends AbstractParameterValidator {
       return false;
     }
 
-    return S3ParameterValidatorUtil.isValidARN(requestBody.get("PolicyArn"));
+    return S3ParameterValidatorUtil.isValidPolicyARN(
+        requestBody.get("PolicyArn"));
   }
 }

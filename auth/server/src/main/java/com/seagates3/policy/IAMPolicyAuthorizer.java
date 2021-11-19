@@ -20,17 +20,156 @@
 
 package com.seagates3.policy;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import com.seagates3.model.User;
+import com.amazonaws.auth.policy.Action;
+import com.amazonaws.auth.policy.Statement;
+import com.amazonaws.auth.policy.Statement.Effect;
+import com.seagates3.dao.ldap.PolicyImpl;
+import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Policy;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.response.generator.AuthorizationResponseGenerator;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 public
 class IAMPolicyAuthorizer extends PolicyAuthorizer {
 
   @Override public ServerResponse authorizePolicy(
       Requestor requestor, Map<String, String> requestBody) {
-    // TODO Auto-generated method stub
-    return null;
+
+    ServerResponse serverResponse = null;
+
+    // authorizePolicy will return NULL if no relevant entry found in policy
+    // authorized if match is found
+    // AccessDenied if Deny found
+    String requestedOperation = null;
+    try {
+      if (requestBody.get("Action") != null &&
+          !requestBody.get("Action").contains("Authorize")) {
+        requestedOperation = "iam:" + requestBody.get("Action");
+      } else {
+        requestedOperation =
+            identifyOperationToAuthorize(requestBody.get("S3Action"));
+      }
+      LOGGER.debug("operation to authorize - " + requestedOperation);
+      if (requestedOperation != null && requestor != null &&
+          requestor.getPolicyDocuments() != null) {
+        for (String policyToAuthorize : requestor.getPolicyDocuments()) {
+          // authorize policy
+          serverResponse =
+              authorizeOperation(requestBody, requestedOperation.toLowerCase(),
+                                 policyToAuthorize, requestor.getUser());
+          if (serverResponse != null &&
+              serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
+            break;
+          }
+        }
+      }
+    }
+    catch (Exception e) {
+      LOGGER.error("Exception while authorizing", e);
+    }
+    LOGGER.debug("IAM policy authorization response - " + serverResponse);
+    return serverResponse;
+  }
+
+  /**
+   * Below will authorize requested operation based on Resource, and Action
+   * present inside existing iam policy
+   */
+ private
+  ServerResponse authorizeOperation(Map<String, String> requestBody,
+                                    String requestedOperation,
+                                    String policyJson,
+                                    User user) throws DataAccessException,
+      JSONException {
+
+    ServerResponse response = null;
+    AuthorizationResponseGenerator responseGenerator =
+        new AuthorizationResponseGenerator();
+    JSONObject obj = new JSONObject(policyJson);
+    String policyString = obj.toString();
+    com.amazonaws.auth.policy.Policy existingPolicy =
+        com.amazonaws.auth.policy.Policy.fromJson(policyString);
+    String requestedResource =
+        PolicyUtil.getResourceFromUri(requestBody.get("ClientAbsoluteUri"));
+    List<Statement> statementList =
+        new ArrayList<Statement>(existingPolicy.getStatements());
+    for (Statement stmt : statementList) {
+      List<String> resourceList = PolicyUtil.convertCommaSeparatedStringToList(
+          stmt.getResources().get(0).getId());
+      if (isResourceMatching(resourceList, requestedResource) ||
+          isIamResourceMatching(resourceList, requestBody.get("PolicyARN"),
+                                requestBody.get("UserName"), user)) {
+        List<Action> actionsList = stmt.getActions();
+        if (isIamActionMatching(actionsList, requestedOperation)) {
+          if (stmt.getEffect().equals(Effect.Allow)) {
+            response = responseGenerator.ok();
+          } else {
+            response = responseGenerator.AccessDenied();
+            break;
+          }
+        }
+      }
+    }
+    return response;
+  }
+
+ protected
+  boolean isIamActionMatching(List<Action> actionsList,
+                              String requestedOperation) {
+    boolean isMatching = false;
+    for (Action action : actionsList) {
+      if (PolicyUtil.isPatternMatching(requestedOperation.toLowerCase(),
+                                       action.getActionName().toLowerCase())) {
+        isMatching = true;
+        break;
+      }
+    }
+    LOGGER.debug("isIamActionMatching:: result - " +
+                 String.valueOf(isMatching));
+    return isMatching;
+  }
+
+  /**
+           * Below will match policyARN and userARN with resource in policy
+           * will return true if either of two matches
+           * @param resourceList
+           * @param policyArn
+           * @param userArn
+           * @return
+           */
+ protected
+  boolean isIamResourceMatching(List<String> resourceList, String policyArn,
+                                String userName, User user) {
+    boolean isMatching = false;
+    for (String resourceArn : resourceList) {
+      if (userName == null) {
+        LOGGER.info("username null - " + user.getArn() + " " + resourceArn);
+        isMatching = PolicyUtil.isPatternMatching(user.getArn(), resourceArn);
+      } else {
+        LOGGER.info("username not null - " + userName + " " + resourceArn);
+        isMatching = PolicyUtil.isPatternMatching(
+            "user/" + userName,
+            PolicyUtil.getResourceFromResourceArn(resourceArn));
+      }
+
+      if (!isMatching) {
+        LOGGER.info("policy arn check - " + policyArn + " " + resourceArn);
+        isMatching = PolicyUtil.isPatternMatching(policyArn, resourceArn);
+      }
+    }
+    LOGGER.debug("isIamResourceMatching:: result - " +
+                 String.valueOf(isMatching));
+    return isMatching;
   }
 }
+

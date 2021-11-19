@@ -88,3 +88,5 @@ RsyslogMsgId=s3authserver-audit-logging
 authStore=LDAP
 # Policy Document Version
 policyVersion=2012-10-17
+#IAM Policy Feature Enable(true)/Disable(false) Switch
+enableIamPolicyFeature=true

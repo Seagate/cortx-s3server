@@ -24,9 +24,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
+import java.util.ArrayList;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,12 +38,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
+import java.util.HashMap;
 import com.seagates3.acl.ACLValidation;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.ldap.AccountImpl;
 import com.seagates3.dao.ldap.LDAPUtils;
-import com.seagates3.dao.ldap.UserImpl;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
@@ -49,12 +50,16 @@ import com.seagates3.policy.BucketPolicyAuthorizer;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import com.seagates3.util.BinaryUtil;
+import com.seagates3.dao.ldap.PolicyImpl;
+import com.seagates3.policy.IAMPolicyAuthorizer;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 @RunWith(PowerMockRunner.class)
-    @PrepareForTest({LDAPUtils.class, ACLValidation.class,
-                     BucketPolicyAuthorizer.class})
+    @PrepareForTest({LDAPUtils.class,       ACLValidation.class,
+                     PolicyImpl.class,      IAMPolicyAuthorizer.class,
+                     Authorizer.class,      BucketPolicyAuthorizer.class,
+                     AuthServerConfig.class})
     @PowerMockIgnore({"javax.management.*"}) public class AuthorizerTest {
 
  private
@@ -66,18 +71,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  private
   AccountImpl mockAccountImpl;
  private
-  UserImpl mockUserImpl;
- private
   Authorizer authorizer;
   AuthorizationResponseGenerator responseGenerator =
       new AuthorizationResponseGenerator();
  private
   Account mockAccount;
- private
-  User user, iamUser1, iamUser2;
   static Account account = new Account();
   static Account secondaryAccount = new Account();
-
+  User iamUser2;
+ private
+  static User user2;
  private
   String serverResponseStringWithoutAcl =
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -96,6 +99,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     account.setCanonicalId("qWwZGnGYTga8gbpcuY79SA");
     account.setId("12345");
     account.setName("testAccount");
+    user2 = new User();
+    user2.setId("456");
+    user2.setName("root");
+    user2.setPolicyIds(Collections.EMPTY_LIST);
+    user2.setAccountName("testAccount");
 
     secondaryAccount.setCanonicalId("ACDDDFfeffTga8gbpcuY79SA");
     secondaryAccount.setId("123456");
@@ -105,27 +113,31 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor.setId("456");
     requestor.setName("tester");
     requestor.setAccount(account);
+    requestor.setUser(user2);
     AuthServerConfig.authResourceDir = "../resources";
   }
 
-  @Before public void setup() {
+  @Before public void setup() throws Exception {
     authorizer = new Authorizer();
     PowerMockito.mockStatic(LDAPUtils.class);
     PowerMockito.mockStatic(ACLValidation.class);
     mockAccountImpl = Mockito.mock(AccountImpl.class);
     mockAccount = Mockito.mock(Account.class);
-    mockUserImpl = Mockito.mock(UserImpl.class);
-    user = new User();
-    user.setName("root");
-
-    iamUser1 = new User();
     iamUser2 = new User();
-    iamUser1.setName("user1");
-    iamUser1.setAccountName("testAccount");
-    iamUser1.setId("userid1");
     iamUser2.setName("user2");
     iamUser2.setAccountName("testAccount");
     iamUser2.setId("userid2");
+    iamUser2.setPolicyIds(Collections.EMPTY_LIST);
+    PolicyImpl mockPolicyImpl = Mockito.mock(PolicyImpl.class);
+    PowerMockito.whenNew(PolicyImpl.class).withNoArguments().thenReturn(
+        mockPolicyImpl);
+    Mockito.when(mockPolicyImpl.findAll((Account)Mockito.any(),
+                                        (HashMap)Mockito.any()))
+        .thenReturn(Collections.EMPTY_LIST);
+    PowerMockito.mockStatic(AuthServerConfig.class);
+    PowerMockito.doReturn(true)
+        .when(AuthServerConfig.class, "isEnableIamPolicyFeature");
+    PowerMockito.doReturn("0000").when(AuthServerConfig.class, "getReqId");
   }
 
   @Test public void validateServerResponseWithRequestHeaderAsTrue() {
@@ -133,6 +145,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse actualServerResponse = null;
     requestBody = new TreeMap<>();
     requestBody.put(requestHeaderName, "true");
+    requestBody.put("S3Action", "dummyAction");
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
                  actualServerResponse.getResponseStatus());
@@ -145,6 +158,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse actualServerResponse = null;
     requestBody = new TreeMap<>();
     requestBody.put(requestHeaderName, "false");
+    requestBody.put("S3Action", "dummyAction");
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
                  actualServerResponse.getResponseStatus());
@@ -159,6 +173,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse actualServerResponse = null;
     requestBody = new TreeMap<>();
     requestBody.put(requestHeaderName, "true");
+    requestBody.put("S3Action", "dummyAction");
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
                  actualServerResponse.getResponseStatus());
@@ -355,6 +370,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   @Test public void authorize_acl_requestacl_check() throws Exception {
     ServerResponse actualServerResponse = null;
     requestBody = new TreeMap<>();
+    requestBody.put("S3Action", "CreateBucket");
     requestBody.put("Request-ACL", "true");
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
@@ -379,6 +395,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
+    requestBody.put("S3Action", "PutBucketPolicy");
     requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
     ServerResponse actualServerResponse = null;
     requestBody.put("ClientQueryParams", "policy");
@@ -429,9 +446,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("S3Action", "PutBucketPolicy");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
@@ -481,9 +495,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1");
     requestBody.put("S3Action", "PutBucketPolicy");
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
@@ -530,9 +541,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", "/try1");
     requestBody.put("S3Action", "DeleteBucketPolicy");
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
@@ -579,9 +587,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1");
     requestBody.put("S3Action", "PutBucketPolicy");
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
@@ -635,9 +640,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1");
     requestBody.put("S3Action", "PutBucketPolicy");
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(iamUser2);
+    requestor.setUser(iamUser2);
     requestor.getAccount().setId("userid2");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
@@ -649,6 +652,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                  actualServerResponse.getResponseStatus());
 
     requestor.getAccount().setId("12345");
+    requestor.setUser(user2);
   }
 
   /**
@@ -661,6 +665,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor2.setId("456");
     requestor2.setName("tester2");
     requestor2.setAccount(secondaryAccount);
+    User user3 = new User();
+    user3.setId("456");
+    user3.setName("root");
+    user3.setPolicyIds(Collections.EMPTY_LIST);
+    user3.setAccountName("testAccount2");
+    requestor2.setUser(user3);
     String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
                     "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
                     "  \"Statement\": [\r\n" + "        {\r\n" +
@@ -696,9 +706,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("S3Action", "GetObjectAcl");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
@@ -717,6 +724,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor2.setId("456");
     requestor2.setName("tester2");
     requestor2.setAccount(secondaryAccount);
+    User user3 = new User();
+    user3.setId("456");
+    user3.setName("root");
+    user3.setPolicyIds(Collections.EMPTY_LIST);
+    user3.setAccountName("testAccount2");
+    requestor2.setUser(user3);
     String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
                     "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
                     "  \"Statement\": [\r\n" + "        {\r\n" +
@@ -752,9 +765,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("S3Action", "PutObject");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
@@ -776,6 +786,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor2.setId("456");
     requestor2.setName("tester2");
     requestor2.setAccount(secondaryAccount);
+    User user3 = new User();
+    user3.setId("456");
+    user3.setName("root");
+    user3.setPolicyIds(Collections.EMPTY_LIST);
+    user3.setAccountName("testAccount2");
+    requestor2.setUser(user3);
     String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
                     "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
                     "  \"Statement\": [\r\n" + "        {\r\n" +
@@ -811,9 +827,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("S3Action", "getObjectacl");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
@@ -834,6 +847,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor2.setId("456");
     requestor2.setName("tester2");
     requestor2.setAccount(secondaryAccount);
+    User user3 = new User();
+    user3.setId("456");
+    user3.setName("root");
+    user3.setPolicyIds(Collections.EMPTY_LIST);
+    user3.setAccountName("testAccount2");
+    requestor2.setUser(user3);
     String policy =
         "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
         "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
@@ -874,9 +893,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("S3Action", "PutObjectAcl");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
@@ -898,6 +914,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor2.setId("456");
     requestor2.setName("tester2");
     requestor2.setAccount(secondaryAccount);
+    User user3 = new User();
+    user3.setId("456");
+    user3.setName("root");
+    user3.setPolicyIds(Collections.EMPTY_LIST);
+    user3.setAccountName("testAccount2");
+    requestor2.setUser(user3);
     String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
                     "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
                     "  \"Statement\": [\r\n" + "        {\r\n" +
@@ -933,9 +955,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("S3Action", "GetObjectAcl");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
@@ -956,6 +975,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor2.setId("456");
     requestor2.setName("tester2");
     requestor2.setAccount(secondaryAccount);
+    User user3 = new User();
+    user3.setId("456");
+    user3.setName("root");
+    user3.setPolicyIds(Collections.EMPTY_LIST);
+    user3.setAccountName("testAccount2");
+    requestor2.setUser(user3);
     String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
                     "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
                     "  \"Statement\": [\r\n" + "        {\r\n" +
@@ -990,13 +1015,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1/a.txt");
     requestBody.put("S3Action", "PutObject");
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
-    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
@@ -1017,6 +1037,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor2.setId("456");
     requestor2.setName("tester2");
     requestor2.setAccount(secondaryAccount);
+    User user3 = new User();
+    user3.setId("456");
+    user3.setName("root");
+    user3.setPolicyIds(Collections.EMPTY_LIST);
+    user3.setAccountName("testAccount2");
+    requestor2.setUser(user3);
     String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
                     "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
                     "  \"Statement\": [\r\n" + "        {\r\n" +
@@ -1053,12 +1079,324 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("S3Action", "PutObject");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
-    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
-        mockUserImpl);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
     actualServerResponse = authorizer.authorize(requestor2, requestBody);
+    assertEquals(HttpResponseStatus.FORBIDDEN,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+     * Below will test iam policy authorization for PutObject on bucket
+     */
+  @Test public void testIamPolicyAuthorizationSuccess() {
+    String iamPolicy = "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+                       "  \"Statement\": [\r\n" + "    {\r\n" +
+                       "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+                       "      \"Action\": [\r\n" +
+                       "        \"s3:PutObject\"\r\n" + "      ],\r\n" +
+                       "      \"Effect\": \"Allow\",\r\n" +
+                       "      \"Resource\": \"arn:aws:s3:::testbucket/*\"\r\n" +
+                       "    }\r\n" + "  ]\r\n" + "}";
+
+    requestBody = new TreeMap<>();
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "");
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", "/testbucket/a.txt");
+    requestBody.put("S3Action", "PutObject");
+    List<String> policys = new ArrayList<>();
+    policys.add(iamPolicy);
+    requestor.setPolicyDocuments(policys);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * Below will test successful authorization
+   * if no match in IAM policy
+   * But requesting user and input action's user is same
+   */
+  @Test public void testIamPolicyNotMatchingButAllowed() {
+    String iamPolicy = "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+                       "  \"Statement\": [\r\n" + "    {\r\n" +
+                       "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+                       "      \"Action\": [\r\n" +
+                       "        \"s3:PutObject\"\r\n" + "      ],\r\n" +
+                       "      \"Effect\": \"Allow\",\r\n" +
+                       "      \"Resource\": \"arn:aws:s3:::testbucket/*\"\r\n" +
+                       "    }\r\n" + "  ]\r\n" + "}";
+
+    requestBody = new TreeMap<>();
+    ServerResponse actualServerResponse = null;
+    requestBody.put("Method", "POST");
+    requestBody.put("Action", "ListAccessKeys");
+    requestBody.put("UserName", "tester");
+    List<String> policys = new ArrayList<>();
+    policys.add(iamPolicy);
+    requestor.setPolicyDocuments(policys);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void testIamPolicyForAccessDenied() {
+    String iamPolicy = "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+                       "  \"Statement\": [\r\n" + "    {\r\n" +
+                       "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+                       "      \"Action\": [\r\n" +
+                       "        \"iam:GetPolicy\"\r\n" + "      ],\r\n" +
+                       "      \"Effect\": \"Deny\",\r\n" +
+                       "      \"Resource\": " +
+                       "\"arn:aws:iam::690398721731:policy/policy32\"\r\n" +
+                       "    }\r\n" + "  ]\r\n" + "}";
+
+    requestBody = new TreeMap<>();
+    ServerResponse actualServerResponse = null;
+    requestBody.put("Method", "GET");
+    requestBody.put("Action", "GetPolicy");
+    requestBody.put("PolicyARN", "arn:aws:iam::690398721731:policy/policy32");
+    List<String> policys = new ArrayList<>();
+    policys.add(iamPolicy);
+    requestor.setPolicyDocuments(policys);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.FORBIDDEN,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void testIamPolicyAllowBucketPolicyDeny() {
+    String iamPolicy = "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+                       "  \"Statement\": [\r\n" + "    {\r\n" +
+                       "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+                       "      \"Action\": [\r\n" +
+                       "        \"s3:PutObject\"\r\n" + "      ],\r\n" +
+                       "      \"Effect\": \"Allow\",\r\n" +
+                       "      \"Resource\": \"arn:aws:s3:::testbucket/*\"\r\n" +
+                       "    }\r\n" + "  ]\r\n" + "}";
+    String bucketPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:PutObject\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Deny\",\r\n" +
+        "	  \"Resource\": \"arn:aws:s3:::testbucket/*\",\r\n" +
+        "	  \"Principal\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    requestBody = new TreeMap<>();
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "");
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", "/testbucket/a.txt");
+    requestBody.put("S3Action", "PutObject");
+    requestBody.put("Policy", bucketPolicy);
+    List<String> policys = new ArrayList<>();
+    policys.add(iamPolicy);
+    requestor.setPolicyDocuments(policys);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.FORBIDDEN,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void testIamPolicyAllowBucketPolicyAllow() {
+
+    String iamPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:DeleteBucket\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+        "	  \"Resource\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    String bucketPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:DeleteBucket\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+        "	  \"Resource\": \"arn:aws:s3:::testbucket\",\r\n" +
+        "	  \"Principal\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    requestBody = new TreeMap<>();
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "");
+    requestBody.put("Method", "DELETE");
+    requestBody.put("ClientAbsoluteUri", "/testbucket");
+    requestBody.put("S3Action", "DeleteBucket");
+    requestBody.put("Policy", bucketPolicy);
+    List<String> policys = new ArrayList<>();
+    policys.add(iamPolicy);
+    requestor.setPolicyDocuments(policys);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void testIamPolicyDenyBucketPolicyAllow() {
+    String iamPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:GetBucketAcl\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Deny\",\r\n" +
+        "	  \"Resource\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    String bucketPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:GetBucketAcl\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+        "	  \"Resource\": \"arn:aws:s3:::testbucket\",\r\n" +
+        "	  \"Principal\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    requestBody = new TreeMap<>();
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "");
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", "/testbucket");
+    requestBody.put("S3Action", "GetBucketAcl");
+    requestBody.put("Policy", bucketPolicy);
+    List<String> policys = new ArrayList<>();
+    policys.add(iamPolicy);
+    requestor.setPolicyDocuments(policys);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.FORBIDDEN,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void testIamPolicyNoDecisionBucketPolicyNoDecisionAclAllow() {
+    String iamPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:PutBucketAcl\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Deny\",\r\n" +
+        "	  \"Resource\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    String bucketPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:PutBucketAcl\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+        "	  \"Resource\": \"arn:aws:s3:::testbucket\",\r\n" +
+        "	  \"Principal\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    requestBody = new TreeMap<>();
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "");
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", "/testbucket");
+    requestBody.put("S3Action", "GetBucketAcl");
+    requestBody.put("Policy", bucketPolicy);
+    List<String> policys = new ArrayList<>();
+    policys.add(iamPolicy);
+    requestor.setPolicyDocuments(policys);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void testIamPolicyNoDecisionBucketPolicyNoDecisionAclDeny() {
+    String iamPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:PutBucketAcl\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Deny\",\r\n" +
+        "	  \"Resource\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    String bucketPolicy =
+        "{\r\n" + "  \"Version\": \"2012-10-17\",\r\n" +
+        "  \"Statement\": [\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1638781464110\",\r\n" +
+        "      \"Action\": [\r\n" + "        \"s3:PutBucketAcl\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+        "	  \"Resource\": \"arn:aws:s3:::testbucket\",\r\n" +
+        "	  \"Principal\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    requestBody = new TreeMap<>();
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>WRITE</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "");
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", "/testbucket");
+    requestBody.put("S3Action", "GetBucketAcl");
+    requestBody.put("Policy", bucketPolicy);
+    List<String> policys = new ArrayList<>();
+    policys.add(iamPolicy);
+    requestor.setPolicyDocuments(policys);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.FORBIDDEN,
                  actualServerResponse.getResponseStatus());
   }
