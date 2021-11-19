@@ -184,7 +184,7 @@ def main():
       create_symbolic_link(haproxy_log_path,s3_confkeys_store.get_config("S3_HAPROXY_LOG_SYMLINK"))
 
       # configure haproxy logrotate using logrotate.d script
-      update_haproxy_log_rotate_file("/etc/logrotate.d/haproxy", "/var/log/cortx", f"{base_logdir_path}")
+      update_haproxy_log_rotate_file("/etc/logrotate.d/haproxy", "/var/log/haproxy.log", f"{haproxy_log_path}")
 
       # start crond
       os.system("/usr/sbin/crond start")
@@ -308,20 +308,28 @@ def update_haproxy_log_rotate_file(filename: str,
   # removing unwanted entries from logrotate file
   with open(filename) as f:
     newText=f.read().replace(content_to_search, content_to_replace)
+  logger.debug(f"Updating haproxy log rotate file : {filename}")
   with open(filename, "w") as f:
     lines = newText.split("\n")
     for line in lines:
-      entry=line.strip()
-      if (entry.startswith("postrotate") != -1)  \
-        or  (entry.startswith("bin/kill -HUP") != -1) \
-        or (entry.startswith("endscript") != -1) \
-        or (entry.startswith("{content_to_replace}/haproxy-status.log") != -1):
-        # ignoring unwanted entries
-        pass
-      else:
-        f.write(line+'\n')
+        entry=line.strip()
+        if (entry.startswith("postrotate"))  \
+          or  (entry.startswith("/bin/kill -HUP")) \
+          or (entry.startswith("endscript")) \
+          or (entry.startswith("rotate")) \
+          or (entry.endswith("/haproxy-status.log")):
+          # ignoring unwanted entries
+          logger.debug(f"ignoring the entry : {entry}")
+          pass
+        elif (entry.startswith("}")):
+          f.write("    rotate 5" +'\n')
+          f.write("    size 2K" +'\n')
+          f.write(line)
+        else:
+          f.write(line+'\n')
+    logger.debug(f"Updated haproxy log rotate file successfully..")
 
-  logger.info(f"find and replace completed successfully for the file {filename}.")
+  logger.info(f"haproxy log rotate file updation completed successfully :  {filename}.")
 
 if __name__ == '__main__':
   sys.exit(main())
