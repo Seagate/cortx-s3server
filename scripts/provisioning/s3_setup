@@ -69,9 +69,11 @@ def main():
   cleanupCmd.add_argument("--services", help='services', type=str, required=False)
 
   preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
+  preupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
   preupgradeCmd.add_argument("--services", help='services', type=str, required=False)
 
   postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
+  postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
   postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
 
   args = parser.parse_args()
@@ -128,12 +130,12 @@ def main():
     elif args.command == 'preupgrade':
       from preupgradecmd import PreUpgradeCmd
       logger.info('pre-upgrade started.')
-      PreUpgradeCmd(None, args.services).process()
+      PreUpgradeCmd(args.config, args.services).process()
       logger.info('pre-upgrade successful.')
     elif args.command == 'postupgrade':
       from postupgradecmd import PostUpgradeCmd
       logger.info('post-upgrade started.')
-      PostUpgradeCmd(None, args.services).process()
+      PostUpgradeCmd(args.config, args.services).process()
       logger.info('post-upgrade successful.')
 
   except Exception as e:
