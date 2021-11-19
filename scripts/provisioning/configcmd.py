@@ -219,6 +219,8 @@ class ConfigCmd(SetupCmd):
         cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
                 '--hostname',
                 f'{node_machine_id}',
+                '--ldapuser',
+                f'{self.ldap_user}',
                 '--ldapadminpasswd',
                 f'{self.ldap_passwd}',
                 '--rootdnpasswd',
@@ -456,6 +458,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logFilePath", self.update_auth_log_dir_path)
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_CONFIG_PATH", "logConfigFile", self.update_auth_log4j_config_file_path)
     self.update_auth_log4j_log_dir_path()
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_LDAPADMIN_USER_KEY", "ldapLoginDN", self.update_auth_ldap_login_dn)
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY", "ldapLoginPW")
     self.logger.info("Update s3 authserver config file completed")
 
@@ -533,6 +536,12 @@ class ConfigCmd(SetupCmd):
     # Write the modified xml file.
     log4j2_xmlTree.write(log4j2_configfile)
     self.logger.info(f'Updated s3 auth log directory path in log4j2 config file')
+  
+  def update_auth_ldap_login_dn(self, value_to_update, additional_param):
+    """Update s3 auth ldap login DN in config file."""
+    s3_auth_ldap_login_dn = "cn=" + str(value_to_update) + ",dc=seagate,dc=com"
+    self.logger.info(f's3_auth_ldap_login_dn: {s3_auth_ldap_login_dn}')
+    return s3_auth_ldap_login_dn
 
   def update_s3_bgdelete_configs(self):
     """ Update s3 bgdelete configs."""
