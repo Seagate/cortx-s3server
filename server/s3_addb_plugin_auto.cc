@@ -73,6 +73,7 @@
 #include "s3_put_bucket_action.h"
 #include "s3_put_bucket_policy_action.h"
 #include "s3_put_bucket_tagging_action.h"
+#include "s3_put_bucket_versioning_action.h"
 #include "s3_put_chunk_upload_object_action.h"
 #include "s3_put_fi_action.h"
 #include "s3_put_multiobject_action.h"
@@ -162,6 +163,8 @@ int s3_addb_init() {
       S3_ADDB_S3_PUT_BUCKET_POLICY_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PutBucketTaggingAction))] =
       S3_ADDB_S3_PUT_BUCKET_TAGGING_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(S3PutBucketVersioningAction))] =
+      S3_ADDB_S3_PUT_BUCKET_VERSIONING_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PutChunkUploadObjectAction))] =
       S3_ADDB_S3_PUT_CHUNK_UPLOAD_OBJECT_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PutFiAction))] =
@@ -402,6 +405,12 @@ int s3_addb_init() {
          ": class S3PutBucketTaggingAction\n",
          (uint64_t)S3_ADDB_S3_PUT_BUCKET_TAGGING_ACTION_ID,
          (int64_t)S3_ADDB_S3_PUT_BUCKET_TAGGING_ACTION_ID);
+
+  s3_log(S3_LOG_DEBUG, "",
+         "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
+         ": class S3PutBucketVersioningAction\n",
+         (uint64_t)S3_ADDB_S3_PUT_BUCKET_VERSIONING_ACTION_ID,
+         (int64_t)S3_ADDB_S3_PUT_BUCKET_VERSIONING_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
