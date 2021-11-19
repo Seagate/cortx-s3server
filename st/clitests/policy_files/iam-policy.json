@@ -1,5 +1,4 @@
 {
-  "Id": "Policy1632740111416",
   "Version": "2012-10-17",
   "Statement": [
     {
@@ -8,7 +7,7 @@
         "s3:PutBucketAcl"
       ],
       "Effect": "Allow",
-      "Resource": "arn:aws:s3:::samplebucket"
+      "Resource": "arn:aws:iam::samplebucket"
     }
   ]
 }
