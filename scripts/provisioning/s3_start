@@ -323,7 +323,7 @@ def update_haproxy_log_rotate_file(filename: str,
           pass
         elif (entry.startswith("}")):
           f.write("    rotate 5" +'\n')
-          f.write("    size 2K" +'\n')
+          f.write("    size 5M" +'\n')
           f.write(line)
         else:
           f.write(line+'\n')
