@@ -76,9 +76,29 @@ void S3DeleteObjectAction::setup_steps() {
   // someone else's object. Whereas deleting metadata first will worst case
   // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
-  ACTION_TASK_ADD(S3DeleteObjectAction::populate_probable_dead_oid_list, this);
-  ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
-  ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
+  std::string bucket_versioning = bucket_metadata->get_bucket_versioning();
+
+  // TODO: divide request if versionID is available
+  switch (bucket_versioning) {
+    case "Unversionined":
+      ACTION_TASK_ADD(S3DeleteObjectAction::populate_probable_dead_oid_list, this);
+      ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
+      ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
+      break;
+    case "Enabled":
+      ACTION_TASK_ADD(S3DeleteObjectAction::create_delete_marker, this);
+      ACTION_TASK_ADD(S3DeleteObjectAction::save_delete_marker, this);
+      ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
+      break;
+    case "Suspended":
+      ACTION_TASK_ADD(S3DeleteObjectAction::populate_probable_dead_oid_list, this);
+      ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
+      ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
+      break;
+    default:
+      // should never be here.
+      return;
+  };
   // ...
 }
 
@@ -122,6 +142,48 @@ void S3DeleteObjectAction::fetch_object_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3DeleteObjectAction::create_delete_marker() {
+  s3_log(S3_LOG_DEBUG, request_id, "Add delete marker\n");
+
+  // create metadata
+  delete_marker_metadata = object_metadata_factory->create_object_metadata_obj(
+      request, bucket_metadata->get_object_list_index_layout(),
+      bucket_metadata->get_objects_version_list_index_layout());
+
+  //new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
+
+  // Generate a version id for the new object.
+  delete_marker_metadata->regenerate_version_id();
+  delete_marker_metadata->set_oid(motr_writer->get_oid());
+  delete_marker_metadata->set_layout_id(layout_id);
+  delete_marker_metadata->set_pvid(motr_writer->get_ppvid());
+
+  // update null version
+  delete_marker_metadata->set_null_ref(object_metadata->get_null_ref());
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void save_delete_marker() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  oid_str = S3M0Uint128Helper::to_string(delete_marker_metadata->get_oid());
+
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+
+  // save metadata to object index
+  delete_marker_metadata->save(
+      std::bind(&S3PutObjectAction::save_delete_marker_success, this),
+      std::bind(&S3PutObjectAction::save_delete_marker_failed, this));
+
+  // save metadata to version index
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

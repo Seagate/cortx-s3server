@@ -40,6 +40,7 @@ enum class S3DeleteObjectActionState {
   probableEntryRecordFailed,
   metadataDeleted,
   metadataDeleteFailed,
+  addDeleteMarkerFailed,
 };
 
 class S3DeleteObjectAction : public S3ObjectAction {
@@ -49,6 +50,10 @@ class S3DeleteObjectAction : public S3ObjectAction {
 
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
+
+  // delete marker metadata
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3ObjectMetadata> delete_marker_metadata;
 
   // Probable delete record for object OID to be deleted
   std::string oid_str;  // Key for probable delete rec
@@ -77,6 +82,8 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void delete_metadata_successful();
   void set_authorization_meta();
 
+  void create_delete_marker();
+  void save_delete_marker();
   void populate_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();

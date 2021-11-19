@@ -153,6 +153,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string motr_part_layout_str;
 
   bool is_multipart = false;
+  bool is_delete_marker = false;
 
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -277,6 +278,10 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   std::string get_old_obj_version_id() { return motr_old_object_version_id; }
   void set_old_version_id(std::string old_obj_ver_id);
+
+  // delete marker handler
+  void set_delete_marker();
+  bool get_delete_marker();
 
   std::string get_owner_name();
   std::string get_owner_id();

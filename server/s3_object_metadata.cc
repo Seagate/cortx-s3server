@@ -371,6 +371,15 @@ void S3ObjectMetadata::set_version_id(std::string ver_id) {
       S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 }
 
+void S3ObjectMetadata::set_delete_marker() {
+  system_defined_attribute["x-amz-delete-marker"] = "true";
+  is_delete_marker = true;
+}
+
+bool S3ObjectMetadata::get_delete_marker() {
+  return is_delete_marker;
+}
+
 void S3ObjectMetadata::set_old_oid(struct m0_uint128 id) {
   old_oid = id;
   motr_old_oid_str = S3M0Uint128Helper::to_string(old_oid);
@@ -774,6 +783,11 @@ std::string S3ObjectMetadata::to_json() {
     }
     root["System-Defined"][sit.first] = sit.second;
   }
+
+  if(is_delete_marker) {
+    root["System-Defined"]["x-amz-delete-marker"] = "true";
+  }
+
   for (auto uit : user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
@@ -922,6 +936,10 @@ int S3ObjectMetadata::from_json(std::string content) {
   object_version_id = system_defined_attribute["x-amz-version-id"];
   rev_epoch_version_id_key =
       S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
+
+  if (system_defined_attribute.isMember("x-amz-delete-marker")) {
+    is_delete_marker = true;
+  }
 
   members = newroot["User-Defined"].getMemberNames();
   for (auto it : members) {
