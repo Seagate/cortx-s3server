@@ -317,6 +317,7 @@ def update_haproxy_log_rotate_file(filename: str,
           or  (entry.startswith("/bin/kill -HUP")) \
           or (entry.startswith("endscript")) \
           or (entry.startswith("rotate")) \
+          or (entry.startswith("sharedscripts")) \
           or (entry.endswith("/haproxy-status.log")):
           # ignoring unwanted entries
           logger.debug(f"ignoring the entry : {entry}")
@@ -324,6 +325,9 @@ def update_haproxy_log_rotate_file(filename: str,
         elif (entry.startswith("}")):
           f.write("    rotate 5" +'\n')
           f.write("    size 5M" +'\n')
+          f.write("    copytruncate" +'\n')
+          f.write("    dateext" +'\n')
+          f.write("    dateformat -%Y-%m-%d-%s" +'\n')
           f.write(line)
         else:
           f.write(line+'\n')
