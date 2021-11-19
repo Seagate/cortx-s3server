@@ -24,7 +24,7 @@ import shutil
 import sys
 import logging
 
-s3_tmp_dir = __import__('setupcmd').SetupCmd.s3_tmp_dir
+#s3_tmp_dir = __import__('setupcmd').SetupCmd.s3_tmp_dir
 
 def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
     """
@@ -88,7 +88,7 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     cs_conf_file.save_config()
     logger.info(f'config file {str(configFile)} upgrade completed')
 
-def merge_configs(config_file_path: str = "/opt/seagate/cortx"):
+def merge_configs(config_file_path: str, s3_tmp_dir):
     """
     - This function will merge all S3 config files during upgrade
     - This function should be used outside this file to call configs upgrade
