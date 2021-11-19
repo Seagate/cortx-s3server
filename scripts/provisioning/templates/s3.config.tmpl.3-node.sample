@@ -38,6 +38,7 @@ cortx:
       - openldap-svc
       - openldap-svc
   s3:
+    auth_admin: "sgiamadmin"
     auth_secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
     iam:
       endpoints:
