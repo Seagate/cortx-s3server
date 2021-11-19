@@ -64,7 +64,6 @@ void S3BucketObjectCounter::save(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
-  on_success();
 }
 
 void S3BucketObjectCounter::save_counters_successful() {
