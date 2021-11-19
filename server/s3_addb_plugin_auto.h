@@ -141,6 +141,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_PUT_BUCKET_POLICY_ACTION_ID,
   /* S3PutBucketTaggingAction: */
   S3_ADDB_S3_PUT_BUCKET_TAGGING_ACTION_ID,
+  /* S3PutBucketVersioningAction: */
+  S3_ADDB_S3_PUT_BUCKET_VERSIONING_ACTION_ID,
   /* S3PutChunkUploadObjectAction: */
   S3_ADDB_S3_PUT_CHUNK_UPLOAD_OBJECT_ACTION_ID,
   /* S3PutFiAction: */
