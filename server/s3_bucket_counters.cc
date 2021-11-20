@@ -176,11 +176,16 @@ int S3BucketObjectCounter::from_json(std::string content) {
   saved_total_size = newroot[TOTAL_SIZE].asUInt64();
   saved_degraded_count = newroot[DEGRADED_COUNT].asUInt64();
 
+  s3_log(S3_LOG_INFO, request_id,
+         "%s Load complete. saved_object_count = %lu, saved_total_size = %lu, "
+         "saved_degraded_count = %lu\n",
+         __func__, saved_object_count, saved_total_size, saved_degraded_count);
+
   s3_log(S3_LOG_DEBUG, request_id, "[%s] Exit\n", __func__);
   return 0;
 }
 
-void S3BucketObjectCounter::add_inc_object_count(uint64_t obj_count) {
+void S3BucketObjectCounter::add_inc_object_count(int64_t obj_count) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   inc_object_count = obj_count;
   s3_log(S3_LOG_INFO, request_id, "%s inc_object_count = %lu\n", __func__,
@@ -188,7 +193,7 @@ void S3BucketObjectCounter::add_inc_object_count(uint64_t obj_count) {
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
-void S3BucketObjectCounter::add_inc_size(uint64_t size) {
+void S3BucketObjectCounter::add_inc_size(int64_t size) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   inc_total_size = size;
   s3_log(S3_LOG_INFO, request_id, "%s inc_total_size = %lu\n", __func__,
@@ -196,7 +201,7 @@ void S3BucketObjectCounter::add_inc_size(uint64_t size) {
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
-void S3BucketObjectCounter::add_inc_degraded_count(uint64_t degraded_count) {
+void S3BucketObjectCounter::add_inc_degraded_count(int64_t degraded_count) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   inc_degraded_count = degraded_count;
   s3_log(S3_LOG_INFO, request_id, "%s inc_degraded_count = %lu\n", __func__,

@@ -53,9 +53,9 @@ class S3BucketObjectCounter {
   uint64_t saved_object_count;
   uint64_t saved_total_size;
   uint64_t saved_degraded_count;
-  uint64_t inc_object_count;
-  uint64_t inc_total_size;
-  uint64_t inc_degraded_count;
+  int64_t inc_object_count;
+  int64_t inc_total_size;
+  int64_t inc_degraded_count;
   bool is_cache_created;
 
  public:
@@ -66,9 +66,9 @@ class S3BucketObjectCounter {
       std::shared_ptr<MotrAPI> motr_api = nullptr);
   void save(std::function<void(void)> on_success,
             std::function<void(void)> on_failed);
-  void add_inc_object_count(uint64_t obj_count);
-  void add_inc_size(uint64_t size);
-  void add_inc_degraded_count(uint64_t degraded_count);
+  void add_inc_object_count(int64_t obj_count);
+  void add_inc_size(int64_t size);
+  void add_inc_degraded_count(int64_t degraded_count);
   void save_counters_successful();
   void save_metadata_failed();
   void load_successful();

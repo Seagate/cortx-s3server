@@ -594,9 +594,22 @@ void S3PutObjectAction::write_object_failed() {
 
 void S3PutObjectAction::save_counters() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
 
-  counter->add_inc_object_count(1);
-  counter->add_inc_size(new_object_metadata->get_primary_obj_size());
+  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    // Overwrite Case.
+    inc_object_count = 0;
+    inc_obj_size = new_object_metadata->get_primary_obj_size() -
+                   object_metadata->get_primary_obj_size();
+  } else {
+    // Normal put request
+    inc_object_count = 1;
+    inc_obj_size = new_object_metadata->get_primary_obj_size();
+  }
+
+  counter->add_inc_object_count(inc_object_count);
+  counter->add_inc_size(inc_obj_size);
   counter->save(
       std::bind(&S3PutObjectAction::save_bucket_counters_success, this),
       std::bind(&S3PutObjectAction::save_bucket_counters_failed, this));
