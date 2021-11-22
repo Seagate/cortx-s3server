@@ -401,7 +401,7 @@ public class S3ParameterValidatorUtil {
             return false;
         }
 
-        return !(policyDoc.length() < 1);
+        return (policyDoc.length() > 1);
     }
 
     /**

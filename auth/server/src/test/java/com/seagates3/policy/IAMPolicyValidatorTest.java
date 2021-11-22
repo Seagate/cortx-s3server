@@ -30,7 +30,7 @@ import com.seagates3.response.ServerResponse;
     PowerMockito.doReturn("0000").when(AuthServerConfig.class, "getReqId");
   }
 
-  @Test public void testValidatePolicy_Positive() {
+  @Test public void testValidatePolicyPositive() {
     String positiveJsonInput =
         "{\r\n" + "\"Version\": \"2012-10-17\",\r\n" +
         "  \"Statement\": [\r\n" + "    {\r\n" +
