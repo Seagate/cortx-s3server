@@ -176,6 +176,32 @@ TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthPositiveCase) {
                action_under_test->get_s3_error_code().c_str());
 }
 
+TEST_F(S3PutObjectActionTest, ValidatePUTContentLengthAs5GB) {
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+      .WillOnce(ReturnRef(object_name));
+  EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
+      .WillOnce(Return(true));
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(5368709120));
+  action_under_test->validate_put_request();
+
+  EXPECT_STRNE("EntityTooLarge",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutObjectActionTest, ValidatePUTContentLengthGreaterThan5GB) {
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+      .WillOnce(ReturnRef(object_name));
+  EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
+      .WillOnce(Return(true));
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(5368709125));
+  action_under_test->validate_put_request();
+
+  EXPECT_STREQ("EntityTooLarge",
+               action_under_test->get_s3_error_code().c_str());
+}
+
 TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase) {
   std::string too_long_obj_name(
       "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexv"
