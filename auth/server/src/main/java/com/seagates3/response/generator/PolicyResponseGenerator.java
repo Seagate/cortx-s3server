@@ -57,6 +57,12 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
     }
 
    public
+    ServerResponse limitExceeded(String errorMessage) {
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "LimitExceeded",
+                            errorMessage);
+    }
+
+   public
     ServerResponse noSuchPolicy() {
       String errorMessage = "The specified policy does not exist.";
       return formatResponse(HttpResponseStatus.NOT_FOUND, "NoSuchPolicy",

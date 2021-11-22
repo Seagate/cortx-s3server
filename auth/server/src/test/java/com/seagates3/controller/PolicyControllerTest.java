@@ -16,6 +16,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.PolicyDAO;
@@ -28,7 +29,8 @@ import com.seagates3.response.ServerResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 @RunWith(PowerMockRunner.class)
-    @PrepareForTest({DAODispatcher.class, PolicyController.class})
+    @PrepareForTest({DAODispatcher.class, PolicyController.class,
+                     AuthServerConfig.class})
     @PowerMockIgnore({"javax.management.*"}) public class PolicyControllerTest {
 
  private
@@ -70,21 +72,25 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     account.setName("account1");
     mockPolicyDao = Mockito.mock(PolicyDAO.class);
     PowerMockito.mockStatic(DAODispatcher.class);
+    PowerMockito.mockStatic(AuthServerConfig.class);
+    PowerMockito.doReturn("2012-10-17")
+        .when(AuthServerConfig.class, "getPolicyVersion");
+    PowerMockito.doReturn("0000").when(AuthServerConfig.class, "getReqId");
 
     Requestor requestor = new Requestor();
     requestor.setAccount(account);
     requestBody.put("PolicyName", "policy1");
     requestBody.put("PolicyARN", "arn:aws:iam::A1234:policy/policy1");
-    requestBody.put(
-        "PolicyDocument",
-        "{\r\n" + "  \"Id\": \"Policy1632740111416\",\r\n" +
-            "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
-            "    {\r\n" + "      \"Sid\": \"Stmt1632740110513\",\r\n" +
-            "      \"Action\": [\r\n" +
-            "        \"s3:PutBucketAcljhghsghsd\"\r\n" + "      ],\r\n" +
-            "      \"Effect\": \"Allow\",\r\n" +
-            "      \"Resource\": \"arn:aws:s3:::buck1\"\r\n" +
-            "	  \r\n" + "    }\r\n" + "\r\n" + "  ]\r\n" + "}");
+    requestBody.put("PolicyDocument",
+                    "{\r\n" + "\"Version\": \"2012-10-17\",\r\n" +
+                        "  \"Statement\": [\r\n" + "    {\r\n" +
+                        "      \"Sid\": \"Stmt1632740110513\",\r\n" +
+                        "      \"Action\": [\r\n" +
+                        "        \"s3:PutBucketAcljhghsghsd\"\r\n" +
+                        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+                        "      \"Resource\": \"arn:aws:iam::buck1\"\r\n" +
+                        "	  \r\n" + "    }\r\n" + "\r\n" + "  ]\r\n" +
+                        "}");
 
     PowerMockito.doReturn(mockPolicyDao)
         .when(DAODispatcher.class, "getResourceDAO", DAOResource.POLICY);
