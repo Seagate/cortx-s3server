@@ -52,6 +52,18 @@ class PostUpgradeCmd(SetupCmd):
       self.delete_config_files()
       self.logger.info("Delete config file completed")
 
+      # in K8 env, check necessary files before calling merge
+      if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+        sample_old_file = os.path.join(self.base_config_file_path, "s3", "tmp", "s3config.yaml.sample.old")
+        if not os.path.exists(sample_old_file):
+          self.logger.info(f"{sample_old_file} backup file not found")
+          raise S3PROVError(f'process: {self.name} failed with exception: {e}')
+        # overwrite /opt/seagate/cortx/s3/conf/s3config.yaml.sample
+        # to /etc/cortx/s3/conf/s3config.yaml
+        s3config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
+        s3config_file = self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+        shutil.copy(s3config_sample_file, s3config_file)
+
       # merge_configs() is imported from the merge.py
       # Upgrade config files
       self.logger.info("merge configs started")
