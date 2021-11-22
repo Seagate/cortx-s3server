@@ -97,6 +97,10 @@ S3BucketMetadata::get_objects_version_list_index_layout() const {
   return objects_version_list_index_layout;
 }
 
+const std::string& S3BucketMetadata::get_bucket_versioning_status() const {
+  return bucket_versioning_status;
+}
+
 void S3BucketMetadata::set_multipart_index_layout(
     const struct s3_motr_idx_layout& idx_lo) {
   multipart_index_layout = idx_lo;
@@ -297,7 +301,7 @@ std::string S3BucketMetadata::get_bucket_versioning_status_as_xml() {
   if (bucket_versioning_status != "Unversioned") {
     versioning_status +=
         "<VersioningConfiguration "
-        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
+        "xmlns=\"http://s3.seagate.com/doc/2006-03-01/\">" +
         S3CommonUtilities::format_xml_string("Status",
                                              bucket_versioning_status.c_str()) +
         "</VersioningConfiguration>";
@@ -305,7 +309,7 @@ std::string S3BucketMetadata::get_bucket_versioning_status_as_xml() {
   } else {
     versioning_status +=
         "<VersioningConfiguration "
-        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"/>";
+        "xmlns=\"http://s3.seagate.com/doc/2006-03-01/\"/>";
   }
   versioning_status_as_xml_str =
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + versioning_status;
