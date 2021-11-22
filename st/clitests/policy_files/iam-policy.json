@@ -7,7 +7,7 @@
         "s3:PutBucketAcl"
       ],
       "Effect": "Allow",
-      "Resource": "arn:aws:iam::samplebucket"
+      "Resource": "arn:aws:s3:::samplebucket"
     }
   ]
 }

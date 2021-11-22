@@ -5,6 +5,6 @@ class IAMArnParser extends ArnParser {
  public
   IAMArnParser() {
 
-    this.regEx = "arn:aws:iam::[a-zA-Z0-9~@#$^*\\\\\\\\/_.:-]+";
+    this.regEx = "arn:aws:(iam|s3)::[a-zA-Z0-9~@#$^*\\\\/_.:-]+";
   }
 }

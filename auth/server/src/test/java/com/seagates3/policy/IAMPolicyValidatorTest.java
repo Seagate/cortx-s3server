@@ -1,7 +1,5 @@
 package com.seagates3.policy;
 
-import static org.junit.Assert.fail;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,8 +11,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.response.ServerResponse;
-
-import io.netty.handler.codec.http.HttpResponseStatus;
 
 @RunWith(PowerMockRunner.class)
     @PrepareForTest({BucketPolicyValidator.class, AuthServerConfig.class})
