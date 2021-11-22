@@ -66,8 +66,7 @@ S3PutObjectAction::S3PutObjectAction(
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
 
-  counter = std::make_shared<S3BucketObjectCounter>(request,
-                                                    request->get_bucket_name());
+  counter = std::make_shared<S3BucketObjectCounter>(request);
 
   S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
                  &new_object_oid);
@@ -107,7 +106,7 @@ void S3PutObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3PutObjectAction::create_object, this);
   ACTION_TASK_ADD(S3PutObjectAction::initiate_data_streaming, this);
   ACTION_TASK_ADD(S3PutObjectAction::save_metadata, this);
-  ACTION_TASK_ADD(S3PutObjectAction::save_counters, this);
+  ACTION_TASK_ADD(S3PutObjectAction::save_bucket_counters, this);
   ACTION_TASK_ADD(S3PutObjectAction::send_response_to_s3_client, this);
   // ...
 }
@@ -592,7 +591,7 @@ void S3PutObjectAction::write_object_failed() {
   send_response_to_s3_client();
 }
 
-void S3PutObjectAction::save_counters() {
+void S3PutObjectAction::save_bucket_counters() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -600,12 +599,12 @@ void S3PutObjectAction::save_counters() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     // Overwrite Case.
     inc_object_count = 0;
-    inc_obj_size = new_object_metadata->get_primary_obj_size() -
-                   object_metadata->get_primary_obj_size();
+    inc_obj_size = new_object_metadata->get_content_length() -
+                   object_metadata->get_content_length();
   } else {
     // Normal put request
     inc_object_count = 1;
-    inc_obj_size = new_object_metadata->get_primary_obj_size();
+    inc_obj_size = new_object_metadata->get_content_length();
   }
 
   counter->add_inc_object_count(inc_object_count);
@@ -625,7 +624,7 @@ void S3PutObjectAction::save_bucket_counters_success() {
 }
 
 void S3PutObjectAction::save_bucket_counters_failed() {
-  s3_log(S3_LOG_FATAL, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_action_state = S3PutObjectActionState::metadataSaveFailed;
   s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
   set_s3_error("InternalError");

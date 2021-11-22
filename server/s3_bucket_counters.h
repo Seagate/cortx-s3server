@@ -60,7 +60,7 @@ class S3BucketObjectCounter {
 
  public:
   S3BucketObjectCounter(
-      std::shared_ptr<S3RequestObject> request, std::string bkt_name,
+      std::shared_ptr<S3RequestObject> request,
       std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr,
       std::shared_ptr<MotrAPI> motr_api = nullptr);

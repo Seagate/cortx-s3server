@@ -32,6 +32,7 @@
 #include "s3_probable_delete_record.h"
 #include "s3_aws_etag.h"
 #include "s3_uuid.h"
+#include "s3_bucket_counters.h"
 
 enum class S3PostCompleteActionState {
   empty,                         // Initial state
@@ -59,6 +60,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
+  std::shared_ptr<S3BucketObjectCounter> counter;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
   std::string upload_id;
   std::string bucket_name;
@@ -147,6 +149,9 @@ class S3PostCompleteAction : public S3ObjectAction {
   void save_metadata();
   void save_object_metadata_succesful();
   void save_object_metadata_failed();
+  void save_bucket_counters();
+  void save_bucket_counters_success();
+  void save_bucket_counters_failed();
   void delete_multipart_metadata();
   void delete_multipart_metadata_success();
   void delete_multipart_metadata_failed();

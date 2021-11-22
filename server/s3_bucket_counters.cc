@@ -12,14 +12,14 @@ std::string generate_unique_id() {
 }
 
 S3BucketObjectCounter::S3BucketObjectCounter(
-    std::shared_ptr<S3RequestObject> request, std::string bkt_name,
+    std::shared_ptr<S3RequestObject> request,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   req = std::move(request);
   request_id = req->get_request_id();
-  bucket_name = bkt_name;
+  bucket_name = req->get_bucket_name();
   key = bucket_name + "/" + generate_unique_id();
   inc_object_count = 0;
   inc_total_size = 0;

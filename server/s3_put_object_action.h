@@ -121,7 +121,7 @@ class S3PutObjectAction : public S3ObjectAction {
 
   void write_object_successful();
   void write_object_failed();
-  void save_counters();
+  void save_bucket_counters();
   void save_bucket_counters_success();
   void save_bucket_counters_failed();
   void save_metadata();
