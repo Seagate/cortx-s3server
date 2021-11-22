@@ -4,6 +4,36 @@
 
 extern struct s3_motr_idx_layout bucket_object_count_index_layout;
 
+std::unique_ptr<S3BucketCapacityCache> S3BucketCapacityCache::singleton;
+
+void S3BucketCapacityCache::update_bucket_capacity(
+    const S3BucketMetadata& src, int count_objects_increment,
+    intmax_t count_bytes_increment, std::function<void()> on_success,
+    std::function<void()> on_failure) {
+
+  get_instance()->update_impl(src, count_objects_increment,
+                              count_bytes_increment, on_success, on_failure);
+}
+
+void S3BucketCapacityCache::update_impl(const S3BucketMetadata& src,
+                                        int count_objects_increment,
+                                        intmax_t count_bytes_increment,
+                                        std::function<void()> on_success,
+                                        std::function<void()> on_failure) {
+
+  s3_log(S3_LOG_DEBUG, src.get_stripped_request_id(), "%s Entry", __func__);
+
+  s3_log(S3_LOG_DEBUG, src.get_stripped_request_id(),
+         "Updating count+=%d, capacity+=%" PRIdMAX, count_objects_increment,
+         count_bytes_increment);
+
+  // TBD: do the update
+
+  on_success();
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 std::string generate_unique_id() {
   s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
 
