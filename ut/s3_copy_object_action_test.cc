@@ -92,8 +92,9 @@ S3CopyObjectActionTest::S3CopyObjectActionTest() {
   EXPECT_CALL(*ptr_mock_request, get_bucket_name())
       .WillRepeatedly(ReturnRef(destination_bucket_name));
 
-  EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(AtLeast(1)).WillOnce(
-      ReturnRef(destination_object_name));
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(destination_object_name));
 
   ptr_mock_bucket_meta_factory =
       std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
@@ -405,6 +406,14 @@ TEST_F(S3CopyObjectActionTest, FetchDestinationObjectInfoSuccess) {
   EXPECT_EQ(1, call_count_one);
 }
 
+TEST_F(S3CopyObjectActionTest, CreateOneOrMoreObjects) {
+
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
+              create_object(_, _, _, _)).Times(AtLeast(1));
+
+  action_under_test->create_object();
+}
+
 TEST_F(S3CopyObjectActionTest, CreateObjectFirstAttempt) {
   action_under_test->total_data_to_stream = 1024;
 
@@ -515,6 +524,16 @@ TEST_F(S3CopyObjectActionTest, CreateNewOidTest) {
   EXPECT_OID_NE(old_oid, action_under_test->new_object_oid);
 }
 
+TEST_F(S3CopyObjectActionTest, CopyFragments) {
+  action_under_test->total_parts_fragment_to_be_copied = 3;
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_reply_start(_)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, _)).Times(0);
+
+  action_under_test->copy_fragments();
+}
+
 TEST_F(S3CopyObjectActionTest, ZeroSizeObject) {
   action_under_test->total_data_to_stream = 0;
   action_under_test->clear_tasks();
@@ -546,12 +565,6 @@ TEST_F(S3CopyObjectActionTest, SaveMetadata) {
               reset_date_time_to_current()).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               set_content_length(Eq("1024"))).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              get_content_md5())
-      .Times(AtLeast(1))
-      .WillOnce(Return("abcd1234abcd"));
-  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
-              set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
 
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, setacl(_))
       .Times(1);
@@ -617,7 +630,10 @@ TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
       false,                                      // force_delete
       false,                                      // is_multipart
       {0ULL, 0ULL});
-  action_under_test->new_probable_del_rec.reset(prob_rec);
+  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+  new_probable_del_rec.reset(prob_rec);
+  action_under_test->new_probable_del_rec_list.push_back(
+      std::move(new_probable_del_rec));
 
   action_under_test->clear_tasks();
   action_under_test->save_object_metadata_failed();

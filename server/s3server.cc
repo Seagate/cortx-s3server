@@ -60,7 +60,6 @@
 #define MIN_RESERVE_SIZE 32768
 
 #define WEBSTORE "/home/seagate/webstore"
-#define MOTR_INIT_MAX_ALLOWED_TIME 15
 
 /* Program options */
 #include <unistd.h>
@@ -113,7 +112,7 @@ std::set<struct s3_motr_obj_context *> global_motr_obj;
 void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
   // s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
   //     S3_IEM_MOTR_CONN_FAIL_JSON);
-  s3_log(S3_LOG_FATAL, "", "Motr connection timet out (hang)\n");
+  s3_log(S3_LOG_FATAL, "", "Motr connection timed out (hang?)\n");
   event_base_loopbreak(global_evbase_handle);
   return;
 }
@@ -676,7 +675,7 @@ evhtp_t *create_evhtp_handle(evbase_t *evbase_handle, Router *router,
 #else
   if (g_option_instance->is_s3_reuseport_enabled()) {
     s3_log(
-        S3_LOG_ERROR,
+        S3_LOG_ERROR, "",
         "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
     return NULL;
   }
@@ -705,7 +704,7 @@ evhtp_t *create_evhtp_handle_for_motr(evbase_t *evbase_handle,
 #else
   if (g_option_instance->is_motr_http_reuseport_enabled()) {
     s3_log(
-        S3_LOG_ERROR,
+        S3_LOG_ERROR, "",
         "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
     return NULL;
   }
@@ -972,7 +971,7 @@ int main(int argc, char **argv) {
 
     struct timeval tv;
     tv.tv_usec = 0;
-    tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
+    tv.tv_sec = g_option_instance->get_motr_init_max_timeout();
 
     struct event *timer_event =
         event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);

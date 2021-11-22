@@ -67,9 +67,12 @@ bool fn_false_cb() { return false; }
 
 bool fn_true_cb() { return true; }
 
-S3ObjectDataCopierTest::S3ObjectDataCopierTest() {
+S3ObjectDataCopierTest::S3ObjectDataCopierTest()
+    : ptr_mock_s3_motr_api(std::make_shared<MockS3Motr>()),
+      f_success(false),
+      f_failed(false) {
 
-  ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
+  // ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
 
   EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
       .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
@@ -200,6 +203,13 @@ TEST_F(S3ObjectDataCopierTest, ReadDataBlockFailed) {
   EXPECT_TRUE(entity_under_test->copy_failed);
   EXPECT_FALSE(entity_under_test->get_s3_error().empty());
   EXPECT_TRUE(f_failed);
+}
+
+TEST_F(S3ObjectDataCopierTest, SetS3CopyFailed) {
+  entity_under_test->copy_failed = true;
+  entity_under_test->set_s3_copy_failed();
+
+  EXPECT_TRUE(entity_under_test->copy_failed);
 }
 
 TEST_F(S3ObjectDataCopierTest, WriteObjectStarted) {

@@ -40,7 +40,9 @@
 #include "mock_s3_request_object.h"
 #include "mock_s3_put_tag_body.h"
 #include "mock_s3_global_bucket_index_metadata.h"
+#include "mock_s3_object_extended_metadata.h"
 #include "s3_factory.h"
+#include "mock_s3_put_versioning_body.h"
 
 class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
  public:
@@ -64,9 +66,16 @@ class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
       std::shared_ptr<MockS3Motr> s3_motr_mock_ptr = {}) {
     mock_object_metadata =
         std::make_shared<MockS3ObjectMetadata>(req, s3_motr_mock_ptr);
+    mock_object_extnd_metadata =
+        std::make_shared<MockS3ObjectExtendedMetadata>(req, s3_motr_mock_ptr);
   }
   void set_object_list_index_oid(const struct m0_uint128& id) {
     mock_object_metadata->set_object_list_index_layout({id});
+    mock_object_extnd_metadata->set_extended_list_index_layout({id});
+  }
+  void set_object_list_index_layout(struct s3_motr_idx_layout& id) {
+    mock_object_metadata->set_object_list_index_layout(id);
+    mock_object_extnd_metadata->set_extended_list_index_layout(id);
   }
   std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
@@ -85,7 +94,19 @@ class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
     mock_object_metadata->set_object_list_index_layout(obj_idx_lo);
     return mock_object_metadata;
   }
+
+  std::shared_ptr<S3ObjectExtendedMetadata> create_object_ext_metadata_obj(
+      std::shared_ptr<S3RequestObject> req, const std::string& bucket_name,
+      const std::string& object_name, const std::string& versionid,
+      unsigned int parts = 0, unsigned int fragments = 0,
+      const struct s3_motr_idx_layout& obj_idx_lo = {}) {
+    mock_object_extnd_metadata->set_extended_list_index_layout(obj_idx_lo);
+    mock_object_extnd_metadata->set_version_id(versionid);
+    return mock_object_extnd_metadata;
+  }
+
   std::shared_ptr<MockS3ObjectMetadata> mock_object_metadata;
+  std::shared_ptr<MockS3ObjectExtendedMetadata> mock_object_extnd_metadata;
 };
 
 class MockS3PartMetadataFactory : public S3PartMetadataFactory {
@@ -273,6 +294,23 @@ class MockS3PutTagBodyFactory : public S3PutTagsBodyFactory {
 
   // Use this to setup your expectations.
   std::shared_ptr<MockS3PutTagBody> mock_put_bucket_tag_body;
+};
+
+class MockS3PutVersioningBodyFactory : public S3PutBucketVersioningBodyFactory {
+ public:
+  MockS3PutVersioningBodyFactory(std::string& xml, std::string& request_id)
+      : S3PutBucketVersioningBodyFactory() {
+    mock_put_bucket_versioning_body =
+        std::make_shared<MockS3PutVersioningBody>(xml, request_id);
+  }
+
+  std::shared_ptr<S3PutVersioningBody> create_put_bucket_versioning_body(
+      const std::string& xml, const std::string& request_id) override {
+    return mock_put_bucket_versioning_body;
+  }
+
+  // Use this to setup your expectations.
+  std::shared_ptr<MockS3PutVersioningBody> mock_put_bucket_versioning_body;
 };
 
 class MockS3AuthClientFactory : public S3AuthClientFactory {

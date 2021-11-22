@@ -24,12 +24,20 @@
 #include "s3_option.h"
 #include "s3_perf_logger.h"
 #include "s3_perf_metrics.h"
+#include "s3_stats.h"
+#include "s3_m0_uint128_helper.h"
+#include "s3_common_utilities.h"
+#include "s3_uri_to_motr_oid.h"
+#include "s3_common_utilities.h"
+
+extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 S3PutMultiObjectAction::S3PutMultiObjectAction(
-    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3MotrWriterFactory> motr_s3_writer_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory)
     : S3ObjectAction(std::move(req), nullptr, nullptr, true,
                      std::move(auth_factory)),
@@ -50,7 +58,12 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
          request->get_bucket_name().c_str(), request->get_object_name().c_str(),
          part_number, upload_id.c_str());
 
-  layout_id = -1;  // Loaded from multipart metadata
+  action_uses_cleanup = true;
+  s3_put_action_state = S3PutPartActionState::empty;
+  old_object_oid = {0ULL, 0ULL};
+  old_layout_id = -1;
+  layout_id = -1;  // Will be set during create object
+  new_object_oid = {0ULL, 0ULL};
 
   if (S3Option::get_instance()->is_auth_disabled()) {
     auth_completed = true;
@@ -74,7 +87,22 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
   } else {
     motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
-  is_first_write_part_request = true;
+
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+
+  if (kv_writer_factory) {
+    motr_kv_writer_factory = std::move(kv_writer_factory);
+  } else {
+    motr_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
+
+  S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
+                 &new_object_oid);
+
   setup_steps();
 }
 
@@ -84,28 +112,11 @@ void S3PutMultiObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3PutMultiObjectAction::validate_multipart_request, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::check_part_details, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::fetch_multipart_metadata, this);
-  if (part_number == 1) {
-    // Save first part size to multipart metadata in case of non
-    // chunked mode.
-    // In case of chunked multipart upload we wont have Content-Length
-    // http header within part reqquest, so we cannot save it -- Size
-    // is specified within streamed payload chunks(body)
-    if (!request->is_chunked()) {
-      ACTION_TASK_ADD(S3PutMultiObjectAction::save_multipart_metadata, this);
-    }
-  } else {
-    // For chunked multipart upload only we need to access first part
-    // info for part one size, in case of non chunked multipart upload
-    // we get the same from multipart metadata.
-    if (request->is_chunked()) {
-      ACTION_TASK_ADD(S3PutMultiObjectAction::fetch_firstpart_info, this);
-    }
-  }
-  ACTION_TASK_ADD(S3PutMultiObjectAction::compute_part_offset, this);
+  ACTION_TASK_ADD(S3PutMultiObjectAction::fetch_part_info, this);
+  ACTION_TASK_ADD(S3PutMultiObjectAction::create_part_object, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::initiate_data_streaming, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::send_response_to_s3_client, this);
-  // ...
 }
 
 void S3PutMultiObjectAction::validate_multipart_request() {
@@ -113,6 +124,7 @@ void S3PutMultiObjectAction::validate_multipart_request() {
   if (!request->is_chunked() && !request->is_header_present("Content-Length")) {
     // For non-chunked upload, the Header 'Content-Length' is missing
     s3_log(S3_LOG_INFO, stripped_request_id, "Missing Content-Length header");
+    s3_put_action_state = S3PutPartActionState::validationFailed;
     set_s3_error("MissingContentLength");
     send_response_to_s3_client();
   } else {
@@ -125,13 +137,16 @@ void S3PutMultiObjectAction::check_part_details() {
   // "Part numbers can be any number from 1 to 10,000, inclusive."
   // https://docs.aws.amazon.com/en_us/AmazonS3/latest/API/API_UploadPart.html
   if (part_number < MINIMUM_PART_NUMBER || part_number > MAXIMUM_PART_NUMBER) {
+    s3_put_action_state = S3PutPartActionState::validationFailed;
     set_s3_error("InvalidPart");
     send_response_to_s3_client();
   } else if (request->get_header_size() > MAX_HEADER_SIZE ||
              request->get_user_metadata_size() > MAX_USER_METADATA_SIZE) {
+    s3_put_action_state = S3PutPartActionState::validationFailed;
     set_s3_error("MetadataTooLarge");
     send_response_to_s3_client();
   } else if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
+    s3_put_action_state = S3PutPartActionState::validationFailed;
     set_s3_error("KeyTooLongError");
     send_response_to_s3_client();
   } else if (request->get_content_length() > MAXIMUM_ALLOWED_PART_SIZE) {
@@ -209,6 +224,7 @@ void S3PutMultiObjectAction::fetch_object_info_failed() {
 
 void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Bucket does not exists\n");
+  s3_put_action_state = S3PutPartActionState::validationFailed;
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -224,9 +240,14 @@ void S3PutMultiObjectAction::fetch_bucket_info_failed() {
 
 void S3PutMultiObjectAction::fetch_multipart_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  std::string multipart_key_name =
+      request->get_object_name() + EXTENDED_METADATA_OBJECT_SEP + upload_id;
   object_multipart_metadata =
       object_mp_metadata_factory->create_object_mp_metadata_obj(
           request, bucket_metadata->get_multipart_index_layout(), upload_id);
+
+  // In multipart table key is object_name + |uploadid
+  object_multipart_metadata->rename_object_name(multipart_key_name);
 
   object_multipart_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
@@ -236,6 +257,7 @@ void S3PutMultiObjectAction::fetch_multipart_metadata() {
 
 void S3PutMultiObjectAction::fetch_multipart_failed() {
   // Log error
+  s3_put_action_state = S3PutPartActionState::validationFailed;
   s3_log(S3_LOG_ERROR, request_id,
          "Failed to retrieve multipart upload metadata\n");
   if (object_multipart_metadata->get_state() ==
@@ -247,85 +269,57 @@ void S3PutMultiObjectAction::fetch_multipart_failed() {
   send_response_to_s3_client();
 }
 
-void S3PutMultiObjectAction::save_multipart_metadata() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  // This function to be called for part 1 upload
-  // so that other parts can see the size of part 1
-  // to proceed.Also this is only in case of
-  // non-chunked part upload.
-  assert(part_number == 1);
-  size_t part_one_size_in_multipart_metadata =
-      object_multipart_metadata->get_part_one_size();
-  size_t current_part_one_size = request->get_data_length();
-
-  if (part_one_size_in_multipart_metadata != 0) {
-    s3_log(S3_LOG_WARN, request_id,
-           "Part one size in multipart metadata "
-           "(%zu) differs from current part one "
-           "size (%zu)",
-           part_one_size_in_multipart_metadata, current_part_one_size);
-    if (current_part_one_size != part_one_size_in_multipart_metadata) {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Part one size in multipart metadata "
-             "(%zu) differs from current part one "
-             "size (%zu)",
-             part_one_size_in_multipart_metadata, current_part_one_size);
-      set_s3_error("InvalidObjectState");
-      send_response_to_s3_client();
-      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-      return;
-    }
-  }
-  // to rest Date and Last-Modfied time object metadata
-  object_multipart_metadata->reset_date_time_to_current();
-  object_multipart_metadata->set_part_one_size(current_part_one_size);
-  object_multipart_metadata->save(
-      std::bind(&S3PutMultiObjectAction::next, this),
-      std::bind(&S3PutMultiObjectAction::save_multipart_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PutMultiObjectAction::save_multipart_metadata_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_ERROR, request_id,
-         "Failed to update multipart metadata with part one size\n");
-  if (object_multipart_metadata->get_state() ==
-      S3ObjectMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_WARN, request_id,
-           "Multipart metadata save operation failed\n");
-    set_s3_error("ServiceUnavailable");
-  } else {
-    set_s3_error("InternalError");
-  }
-  send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PutMultiObjectAction::fetch_firstpart_info() {
+void S3PutMultiObjectAction::fetch_part_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_layout(), upload_id,
-      1);
+      part_number);
+
   part_metadata->load(
-      std::bind(&S3PutMultiObjectAction::next, this),
-      std::bind(&S3PutMultiObjectAction::fetch_firstpart_info_failed, this), 1);
+      std::bind(&S3PutMultiObjectAction::fetch_part_info_success, this),
+      std::bind(&S3PutMultiObjectAction::fetch_part_info_failed, this),
+      part_number);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3PutMultiObjectAction::fetch_firstpart_info_failed() {
-  s3_log(S3_LOG_WARN, request_id,
-         "Part 1 metadata doesn't exist, cannot determine \"consistent\" part "
-         "size\n");
-  if (part_metadata->get_state() == S3PartMetadataState::missing ||
-      part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
-    // May happen if part 2/3... comes before part 1, in that case those part
-    // upload need to be retried(by that time part 1 meta data will get in)
-    // or its a pre launch failure
+void S3PutMultiObjectAction::fetch_part_info_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (part_metadata->get_state() == S3PartMetadataState::present) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "S3PartMetadataState::present for part %d\n", part_number);
+    old_object_oid = part_metadata->get_oid();
+    old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+    old_layout_id = part_metadata->get_layout_id();
+    next();
+  } else if (part_metadata->get_state() == S3PartMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "S3PartMetadataState::missing\n");
+    next();
+  } else if (part_metadata->get_state() ==
+             S3PartMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Part metadata load operation failed due to pre launch failure\n");
+    s3_put_action_state = S3PutPartActionState::validationFailed;
     set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
+    s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
+    s3_put_action_state = S3PutPartActionState::validationFailed;
     set_s3_error("InternalError");
+    send_response_to_s3_client();
   }
-  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::fetch_part_info_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (part_metadata->get_state() == S3PartMetadataState::missing) {
+    next();
+  } else {
+    s3_put_action_state = S3PutPartActionState::validationFailed;
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::_set_layout_id(int layout_id) {
@@ -336,70 +330,64 @@ void S3PutMultiObjectAction::_set_layout_id(int layout_id) {
       S3Option::get_instance()->get_motr_write_payload_size(layout_id);
 }
 
-void S3PutMultiObjectAction::compute_part_offset() {
+void S3PutMultiObjectAction::create_part_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  size_t offset = 0;
-  if (part_number != 1) {
-    size_t part_one_size = 0;
-    if (request->is_chunked()) {
-      part_one_size = part_metadata->get_content_length();
-    } else {
-      // In case of no chunked multipart upload we put in
-      // part one size to the multipart metadata, if its not there
-      // it means part one request didn't come till now
-      part_one_size = object_multipart_metadata->get_part_one_size();
-      if (part_one_size == 0) {
-        // May happen if part 2/3... comes before part 1, in that case those
-        // part pload need to be retried(by that time part 1 metadata will
-        // get in)
-        s3_log(S3_LOG_WARN, request_id,
-               "Part 1 size is not there in multipart "
-               "metadata, hence rejecting this "
-               "request of part %d for time being, "
-               "Try later...\n",
-               part_number);
-        set_s3_error("ServiceUnavailable");
-        send_response_to_s3_client();
-        return;
-      }
-    }
-    s3_log(S3_LOG_DEBUG, request_id, "Part size = %zu for part_number = %d\n",
-           request->get_content_length(), part_number);
-    // Calculate offset
-    offset = (part_number - 1) * part_one_size;
-    s3_log(S3_LOG_DEBUG, request_id, "Offset for motr write = %zu\n", offset);
-  }
-  // Create writer to write from given offset as per the partnumber
+  s3_timer.start();
   motr_writer = motr_writer_factory->create_motr_writer(
-      request, object_multipart_metadata->get_oid(),
-      object_multipart_metadata->get_pvid(), offset);
-
-  _set_layout_id(object_multipart_metadata->get_layout_id());
+      request, new_object_oid, object_multipart_metadata->get_pvid(), 0);
+  _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+      request->get_content_length()));
   motr_writer->set_layout_id(layout_id);
 
-  // FIXME multipart uploads are corrupted when partsize is not aligned with
-  // motr unit size for given layout_id. We block such uploads temporarily
-  // and it will be fixed as a bug.
-  if (part_number == 1) {
-    // Reject during first part itself
-    size_t unit_size =
-        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-    size_t part_size = request->get_data_length();
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Check part size (%zu) and unit_size (%zu) compatibility\n",
-           part_size, unit_size);
-    if ((part_size % unit_size) != 0) {
-      s3_log(S3_LOG_DEBUG, request_id,
-             "Rejecting request as part size is not aligned w.r.t unit_size\n");
-      // part size is not multiple of unit size, block request
-      set_s3_error("InvalidPartSize");
-      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-      send_response_to_s3_client();
-      return;
-    }
-  }
-  next();
+  motr_writer->create_object(
+      std::bind(&S3PutMultiObjectAction::create_part_object_successful, this),
+      std::bind(&S3PutMultiObjectAction::create_part_object_failed, this),
+      new_object_oid, layout_id);
 
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_multiobject_action_create_object_shutdown_fail");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::create_part_object_successful() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_put_action_state = S3PutPartActionState::newObjOidCreated;
+
+  part_metadata = part_metadata_factory->create_part_metadata_obj(
+      request, object_multipart_metadata->get_part_index_layout(), upload_id,
+      part_number);
+  part_metadata->set_oid(motr_writer->get_oid());
+  part_metadata->set_layout_id(layout_id);
+  part_metadata->set_pvid(motr_writer->get_ppvid());
+  new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
+
+  add_object_oid_to_probable_dead_oid_list();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::create_part_object_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
+  }
+  s3_timer.stop();
+  const auto mss = s3_timer.elapsed_time_in_millisec();
+  LOG_PERF("create_object_failed_ms", request_id.c_str(), mss);
+  s3_stats_timing("create_object_failed", mss);
+
+  s3_put_action_state = S3PutPartActionState::newObjOidCreationFailed;
+
+  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
+    // Any other error report failure.
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -541,6 +529,7 @@ void S3PutMultiObjectAction::write_object_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Write successful\n");
   if (request->is_chunked()) {
     if (auth_failed) {
+      s3_put_action_state = S3PutPartActionState::writeFailed;
       set_s3_error("SignatureDoesNotMatch");
       send_response_to_s3_client();
       return;
@@ -557,6 +546,7 @@ void S3PutMultiObjectAction::write_object_successful() {
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
     motr_write_completed = true;
+    s3_put_action_state = S3PutPartActionState::writeComplete;
     if (request->is_chunked()) {
       if (auth_completed) {
         next();
@@ -578,6 +568,7 @@ void S3PutMultiObjectAction::write_object_failed() {
 
   motr_write_in_progress = false;
   motr_write_completed = true;
+  s3_put_action_state = S3PutPartActionState::writeFailed;
 
   if (is_first_write_part_request) {
     // Used for motr unit checksum computation, for part's first write
@@ -613,15 +604,12 @@ void S3PutMultiObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string s_md5_got = request->get_header_value("content-md5");
   if (!s_md5_got.empty() && !motr_writer->content_md5_matches(s_md5_got)) {
+    s3_put_action_state = S3PutPartActionState::metadataSaveFailed;
     s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
     set_s3_error("BadDigest");
     send_response_to_s3_client();
     return;
   }
-  part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, object_multipart_metadata->get_part_index_layout(), upload_id,
-      part_number);
-
   // to rest Date and Last-Modfied time object metadata
   part_metadata->reset_date_time_to_current();
   part_metadata->set_content_length(request->get_data_length_str());
@@ -639,13 +627,20 @@ void S3PutMultiObjectAction::save_metadata() {
   }
 
   part_metadata->save(
-      std::bind(&S3PutMultiObjectAction::next, this),
+      std::bind(&S3PutMultiObjectAction::save_object_metadata_success, this),
       std::bind(&S3PutMultiObjectAction::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3PutMultiObjectAction::save_object_metadata_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_put_action_state = S3PutPartActionState::metadataSaved;
+  next();
+}
+
 void S3PutMultiObjectAction::save_metadata_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_put_action_state = S3PutPartActionState::metadataSaveFailed;
   if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save of Part metadata failed due to pre launch failure\n");
@@ -654,6 +649,84 @@ void S3PutMultiObjectAction::save_metadata_failed() {
     s3_log(S3_LOG_ERROR, request_id, "Save of Part metadata failed\n");
     set_s3_error("InternalError");
   }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  std::map<std::string, std::string> probable_oid_list;
+  assert(!new_oid_str.empty());
+
+  // store old object oid
+  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    assert(!old_oid_str.empty());
+
+    // prepending a char depending on the size of the object (size based
+    // bucketing of object)
+    S3CommonUtilities::size_based_bucketing_of_objects(
+        old_oid_str, part_metadata->get_content_length());
+
+    // key = oldoid + "-" + newoid
+    std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Adding old_probable_del_rec with key [%s]\n",
+           old_oid_rec_key.c_str());
+    old_probable_del_rec.reset(new S3ProbableDeleteRecord(
+        old_oid_rec_key, {0ULL, 0ULL},
+        object_multipart_metadata->get_object_name(), old_object_oid,
+        old_layout_id, object_multipart_metadata->get_pvid_str(),
+        bucket_metadata->get_multipart_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid, "",
+        false /* force_delete */, true,
+        part_metadata->get_part_index_layout().oid, 0,
+        strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
+        bucket_metadata->get_extended_metadata_index_layout().oid));
+
+    probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
+  }
+  // prepending a char depending on the size of the object (size based bucketing
+  // of object)
+  S3CommonUtilities::size_based_bucketing_of_objects(
+      new_oid_str, request->get_content_length());
+
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
+  new_probable_del_rec.reset(new S3ProbableDeleteRecord(
+      new_oid_str, old_object_oid, object_multipart_metadata->get_object_name(),
+      new_object_oid, layout_id, object_multipart_metadata->get_pvid_str(),
+      bucket_metadata->get_multipart_index_layout().oid,
+      bucket_metadata->get_objects_version_list_index_layout().oid, "",
+      false /* force_delete */, true,
+      part_metadata->get_part_index_layout().oid, 1,
+      strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
+      bucket_metadata->get_extended_metadata_index_layout().oid));
+  // store new oid, key = newoid
+  probable_oid_list[new_oid_str] = new_probable_del_rec->to_json();
+
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+
+  motr_kv_writer->put_keyval(
+      global_probable_dead_object_list_index_layout, probable_oid_list,
+      std::bind(&S3PutMultiObjectAction::next, this),
+      std::bind(&S3PutMultiObjectAction::
+                     add_object_oid_to_probable_dead_oid_list_failed,
+                this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_put_action_state = S3PutPartActionState::probableEntryRecordFailed;
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  // Clean up will be done after response.
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -717,14 +790,185 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
 
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   request->resume(false);
-
-  done();
+  startcleanup();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
 void S3PutMultiObjectAction::set_authorization_meta() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
   next();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::startcleanup() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // TODO: Perf - all/some of below tasks can be done in parallel
+  // Any of the following steps fail, backgrounddelete will be able to perform
+  // cleanups.
+  // Clear task list and setup cleanup task list
+  clear_tasks();
+  cleanup_started = true;
+  // Success conditions
+  if (s3_put_action_state == S3PutPartActionState::completed ||
+      s3_put_action_state == S3PutPartActionState::metadataSaved) {
+    s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
+    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+      // mark old OID for deletion in overwrite case, this optimizes
+      // backgrounddelete decisions.
+      ACTION_TASK_ADD(S3PutMultiObjectAction::mark_old_oid_for_deletion, this);
+    }
+    // remove new oid from probable delete list.
+    ACTION_TASK_ADD(S3PutMultiObjectAction::remove_new_oid_probable_record,
+                    this);
+    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+      // Object overwrite case, old object exists, delete it.
+      ACTION_TASK_ADD(S3PutMultiObjectAction::delete_old_object, this);
+      // If delete object is successful, attempt to delete old probable record
+    }
+  } else if (s3_put_action_state == S3PutPartActionState::newObjOidCreated ||
+             s3_put_action_state == S3PutPartActionState::writeFailed ||
+             s3_put_action_state == S3PutPartActionState::md5ValidationFailed ||
+             s3_put_action_state == S3PutPartActionState::metadataSaveFailed) {
+    // PUT is assumed to be failed with a need to rollback
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Cleanup new Object: s3_put_action_state[%d]\n",
+           s3_put_action_state);
+    // Mark new OID for deletion, this optimizes backgrounddelete decisionss.
+    ACTION_TASK_ADD(S3PutMultiObjectAction::mark_new_oid_for_deletion, this);
+    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+      // remove old oid from probable delete list.
+      ACTION_TASK_ADD(S3PutMultiObjectAction::remove_old_oid_probable_record,
+                      this);
+    }
+    ACTION_TASK_ADD(S3PutMultiObjectAction::delete_new_object, this);
+    // If delete object is successful, attempt to delete new probable record
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "No Cleanup required: s3_put_action_state[%d]\n",
+           s3_put_action_state);
+    assert(s3_put_action_state == S3PutPartActionState::empty ||
+           s3_put_action_state == S3PutPartActionState::validationFailed ||
+           s3_put_action_state ==
+               S3PutPartActionState::probableEntryRecordFailed ||
+           s3_put_action_state ==
+               S3PutPartActionState::newObjOidCreationFailed);
+    // Nothing to undo
+  }
+  // Start running the cleanup task list
+  start();
+}
+void S3PutMultiObjectAction::mark_new_oid_for_deletion() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  assert(!new_oid_str.empty());
+
+  // update new oid, key = newoid, force_del = true
+  new_probable_del_rec->set_force_delete(true);
+
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
+                             new_oid_str, new_probable_del_rec->to_json(),
+                             std::bind(&S3PutMultiObjectAction::next, this),
+                             std::bind(&S3PutMultiObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::mark_old_oid_for_deletion() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  assert(!old_oid_str.empty());
+  assert(!new_oid_str.empty());
+
+  std::string prepended_new_oid_str = new_oid_str;
+  // key = oldoid + "-" + newoid
+
+  std::string old_oid_rec_key =
+      old_oid_str + '-' + prepended_new_oid_str.erase(0, 1);
+
+  // update old oid, force_del = true
+  old_probable_del_rec->set_force_delete(true);
+
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
+                             old_oid_rec_key, old_probable_del_rec->to_json(),
+                             std::bind(&S3PutMultiObjectAction::next, this),
+                             std::bind(&S3PutMultiObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::remove_old_oid_probable_record() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  assert(!old_oid_str.empty());
+  assert(!new_oid_str.empty());
+
+  // key = oldoid + "-" + newoid
+  std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
+                                old_oid_rec_key,
+                                std::bind(&S3PutMultiObjectAction::next, this),
+                                std::bind(&S3PutMultiObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::remove_new_oid_probable_record() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  assert(!new_oid_str.empty());
+
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
+                                new_oid_str,
+                                std::bind(&S3PutMultiObjectAction::next, this),
+                                std::bind(&S3PutMultiObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::delete_old_object() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // If PUT is success, we delete old object if present
+  assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
+
+  // If old part exists and deletion of old is disabled, then return
+  if ((old_object_oid.u_hi || old_object_oid.u_lo) &&
+      S3Option::get_instance()->is_s3server_obj_delayed_del_enabled()) {
+    s3_log(S3_LOG_INFO, request_id,
+           "Skipping deletion of old object. The old object will be deleted by "
+           "BD.\n");
+    // Call next task in the pipeline
+    next();
+    return;
+  }
+  motr_writer->set_oid(old_object_oid);
+  motr_writer->delete_object(
+      std::bind(&S3PutMultiObjectAction::remove_old_oid_probable_record, this),
+      std::bind(&S3PutMultiObjectAction::next, this), old_object_oid,
+      old_layout_id, object_multipart_metadata->get_pvid());
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutMultiObjectAction::delete_new_object() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // If PUT failed, then clean new object.
+  assert(s3_put_action_state != S3PutPartActionState::completed);
+  assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
+
+  motr_writer->set_oid(new_object_oid);
+  motr_writer->delete_object(
+      std::bind(&S3PutMultiObjectAction::remove_new_oid_probable_record, this),
+      std::bind(&S3PutMultiObjectAction::next, this), new_object_oid, layout_id,
+      object_multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

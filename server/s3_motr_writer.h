@@ -128,7 +128,7 @@ class S3MotrWiter {
 
   // buffer currently used to write, will be freed on completion
   S3BufferSequence buffer_sequence;
-  size_t size_of_each_buf;
+  size_t size_of_each_buf = 0;
 
   // fill entire object with zeroes after checksum calculation, but before
   // writing to Motr

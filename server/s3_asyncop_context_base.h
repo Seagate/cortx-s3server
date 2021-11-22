@@ -101,7 +101,7 @@ class S3AsyncOpContextBase {
   bool is_at_least_one_op_successful() { return at_least_one_success; }
   // virtual void consume(char* chars, size_t length) = 0;
 
-  void start_timer_for(std::string op_key);
+  void start_timer_for(const std::string& op_key);
   void stop_timer(bool success = true);  // arg indicates success/failed metric
   // Call the logging always on main thread, so we dont need synchronisation of
   // log file.

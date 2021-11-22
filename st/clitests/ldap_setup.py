@@ -19,7 +19,10 @@
 
 import os
 import yaml
-from subprocess import call
+from subprocess import call, check_output
+from shlex import split
+import fileinput
+import shutil
 
 class LdapSetup:
     def __init__(self):
@@ -31,10 +34,22 @@ class LdapSetup:
 
     def ldap_init(self):
         ldap_init_file = os.path.join(self.test_data_dir, 'create_test_data.ldif')
+        ldap_init_deploy_file = os.path.join(self.test_data_dir, 'create_test_data_deploy.ldif')
+
+        shutil.copy(ldap_init_file, ldap_init_deploy_file)
+        for line in fileinput.input(ldap_init_deploy_file, inplace=True):
+            if 'sk: ' in line:
+                secret_key = line[4:].rstrip()
+                encrypted_secret_key = LdapSetup.__encrypt_secret_key(secret_key)
+                line = f"sk: {encrypted_secret_key}\n"
+
+            print(line, end='')
+
         cmd = "ldapadd -h %s -p %s -w %s -x -D %s -f %s" % (self.ldap_config['host'],
                 self.ldap_config['port'], self.ldap_config['password'],
-                self.ldap_config['login_dn'], ldap_init_file)
+                self.ldap_config['login_dn'], ldap_init_deploy_file)
         obj = call(cmd, shell=True)
+        os.remove(ldap_init_deploy_file)
 
     def ldap_delete_all(self):
         cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
@@ -46,6 +61,13 @@ class LdapSetup:
                         self.ldap_config['port'], self.ldap_config['password'],
                         self.ldap_config['login_dn'], entry)
                 obj = call(cmd, shell=True)
+
+    @staticmethod
+    def __encrypt_secret_key(secret_key):
+        encrypt_cmd = f'java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar -s {secret_key} -e aes'
+        args = split(encrypt_cmd)
+        completed_process = check_output(args)
+        return completed_process.decode().rstrip()
 
 
 class LdapInfo:

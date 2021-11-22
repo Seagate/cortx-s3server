@@ -125,11 +125,17 @@ void S3BucketMetadata::set_tags(
   bucket_tags = tags_as_map;
 }
 
+void S3BucketMetadata::set_bucket_versioning(
+    const std::string& bucket_version_status) {
+  bucket_versioning_status = bucket_version_status;
+}
+
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
+  root["Versioning-Status"] = bucket_versioning_status;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -180,13 +186,16 @@ int S3BucketMetadata::from_json(std::string content) {
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
+  bucket_versioning_status = newroot["Versioning-Status"].asString();
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
+  system_defined_attribute.clear();
   for (auto it : members) {
     system_defined_attribute[it.c_str()] =
         newroot["System-Defined"][it].asString();
   }
   members = newroot["User-Defined"].getMemberNames();
+  user_defined_attribute.clear();
   for (auto it : members) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString();
   }
@@ -212,6 +221,7 @@ int S3BucketMetadata::from_json(std::string content) {
   bucket_policy = base64_decode(newroot["Policy"].asString());
 
   members = newroot["User-Defined-Tags"].getMemberNames();
+  bucket_tags.clear();
   for (const auto& tag : members) {
     bucket_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
   }

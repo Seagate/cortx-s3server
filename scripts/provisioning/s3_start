@@ -25,6 +25,7 @@ import errno
 import logging
 import os
 import socket
+import time
 from logging import handlers
 
 #Logger details
@@ -64,7 +65,12 @@ def main():
         raise Exception("provide instance id")
       fid_path = "/etc/cortx/s3/s3server-" + args.index
       Fid = get_fid(fid_path)
-      os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3config_path} -d")
+      i = 0
+      while i < 10:
+        # Start S3 Server
+        os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3config_path} -d")
+        i += 1
+        time.sleep(60)
       pass
     elif args.service == 's3authserver':
       os.system("sh /opt/seagate/cortx/auth/startauth.sh /opt/seagate/cortx")

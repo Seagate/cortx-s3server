@@ -210,7 +210,6 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
   bool atleast_one_json_error = false;
 
   const auto& mp_idx_lo = bucket_metadata->get_multipart_index_layout();
-
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, request_id, "Parsing Multipart object metadata = %s\n",
            kv.first.c_str());
@@ -230,12 +229,16 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
       part_idx_layouts.push_back(part_idx_layout);
       part_oids_str += " " + std::to_string(part_idx_layout.oid.u_hi) + " " +
                        std::to_string(part_idx_layout.oid.u_lo);
-
+#if 0
+      // Unlike in R1, multipart table contains OID without
+      // any actual object allocation from motr, hence
+      // not needed to delete
       if (multipart_obj_oid.u_hi != 0ULL || multipart_obj_oid.u_lo != 0ULL) {
         multipart_object_oids.push_back(multipart_obj_oid);
         multipart_object_layoutids.push_back(object->get_layout_id());
         multipart_object_pv_ids.push_back(object->get_pvid());
       }
+#endif
     }
     return_list_size++;
     if (--length == 0 || return_list_size == count_we_requested) {
@@ -362,7 +365,7 @@ void S3DeleteBucketAction::remove_part_indexes_successful() {
   int op_ret_code;
   bool partial_failure = false;
   for (multipart_kv = multipart_objects.begin(), i = 0;
-       multipart_kv != multipart_objects.end(); multipart_kv++, i++) {
+       multipart_kv != multipart_objects.end(); ++multipart_kv, ++i) {
     op_ret_code = motr_kv_writer->get_op_ret_code_for(i);
     if (op_ret_code != 0 && op_ret_code != -ENOENT) {
       partial_failure = true;

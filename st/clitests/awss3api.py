@@ -93,6 +93,12 @@ class AwsTest(S3PyCliTest):
                       + " --tagging " + quote(tagset) )
         return self
 
+    def put_bucket_versioning(self, bucket_name, versioning_status):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + " put-bucket-versioning " + "--bucket " + bucket_name
+                      + " --versioning-configuration " + " Status=" + versioning_status )
+        return self
+
     def get_bucket_versioning(self, bucket_name):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api " + " get-bucket-versioning " + "--bucket " + bucket_name)
@@ -353,12 +359,15 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def get_object(self, bucket_name, object_name, outfile=None, debug_flag=None):
+    def get_object(self, bucket_name, object_name, outfile=None, debug_flag=None, start_range=None, end_range=None):
         self.bucket_name = bucket_name
         self.object_name = object_name
         if outfile is None:
             outfile = object_name
-        cmd = "aws s3api get-object --bucket " + bucket_name + " --key " + object_name + " " + outfile
+        if start_range is not None and end_range is not None:
+            cmd = "aws s3api get-object --bucket " + bucket_name + " --key " + object_name + " " + "--range bytes=" + start_range + "-" + end_range + " " + outfile
+        else:
+            cmd = "aws s3api get-object --bucket " + bucket_name + " --key " + object_name + " " + outfile
         self.with_cli(cmd)
         if debug_flag is not None:
            self.command += " --debug"

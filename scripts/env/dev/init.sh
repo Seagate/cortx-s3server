@@ -135,9 +135,6 @@ else
   unsupported_os
 fi
 
-# validate and configure lnet
-sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
-
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
   #install pre-requisites on dev vm
@@ -188,6 +185,18 @@ rpm -q gtest && rpm -e gtest
 
 # Erase old haproxy rpm and later install latest haproxy version 1.8.14
 rpm -q haproxy && rpm -e haproxy
+
+# Delete old libfabric rpms
+if rpm -qa | grep libfabric 2>&1 > /dev/null ; then
+  rpm -e libfabric libfabric-devel --nodeps
+fi
+
+# Install libfabric and libfabric-devel rpms
+yum install -y libfabric
+yum install -y libfabric-devel
+
+# validate and configure lnet after libfabric rpms
+sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
 
 cd $BASEDIR
 
@@ -248,6 +257,18 @@ fi
 if [ "$os_major_version" = "7" ];
 then
   ./s3motr-build-depencies.sh
+fi
+
+#Fetch eth interface value form /etc/libfab.conf, add it to lnet and restart lnet
+libfab='/etc/libfab.conf'
+if [ -f $libfab ] ; then
+  iface=$(cat /etc/libfab.conf | cut -d "(" -f2 | cut -d ")" -f1)
+  echo "options lnet networks=tcp($iface) config_on_load=1" > '/etc/modprobe.d/lnet.conf'
+  service lnet restart
+  if ! lctl list_nids ; then
+    echo "lctl list_nids returned empty"
+    exit 1
+  fi
 fi
 
 # install all rpms which requires gcc as dependency

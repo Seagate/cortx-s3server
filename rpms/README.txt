@@ -41,3 +41,7 @@ To create bazel package, perform below steps:
 s3cmd:
 Currently we are using 1.6.1 version of s3cmd with our custom patch
 To build s3cmd package, please make sure you have pytho2.7 version available on your development environment.
+
+s3certs:
+s3certs are not in use currently and are place holders for generating SSL certs for s3, openldap and authserver.
+Please refer "<cortx-s3server>/docs/old/multidomain_ssl_certificate.md" for manual certificate generation process.

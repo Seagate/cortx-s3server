@@ -29,13 +29,13 @@ from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 CONFIG = CORTXS3Config()
 index_api = CORTXS3IndexApi(CONFIG, CONNECTION_TYPE_PRODUCER)
-response, data = index_api.list(sys.argv[1])
+response, data = index_api.list(sys.argv[1], max_keys=500)
 if(response):
         list_index_response = data.get_index_content()
         print(str(list_index_response))
         is_truncated = list_index_response["IsTruncated"]
         while(is_truncated == "true"):
-             response, data = index_api.list(sys.argv[1], list_index_response["NextMarker"])
+             response, data = index_api.list(sys.argv[1], max_keys=500, next_marker=list_index_response["NextMarker"])
              list_index_response = data.get_index_content()
              is_truncated = list_index_response["IsTruncated"]
              print(str(list_index_response))

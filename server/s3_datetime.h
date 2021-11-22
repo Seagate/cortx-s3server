@@ -42,8 +42,8 @@ class S3DateTime {
  public:
   S3DateTime();
   void init_current_time();
-  void init_with_gmt(std::string time_str);
-  void init_with_iso(std::string time_str);
+  void init_with_gmt(const std::string& time_str);
+  void init_with_iso(const std::string& time_str);
 
   // Returns if the Object state is valid.
   bool is_OK();

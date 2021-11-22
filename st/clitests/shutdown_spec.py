@@ -243,16 +243,15 @@ for i, type in enumerate(config_types):
         command_response_should_not_have('ServiceUnavailable')
 
     # ************ MULTI-PART TEST ***************
-    S3fiTest('s3cmd enable FI post_multipartobject_action_create_object_shutdown_fail').\
-        enable_fi("enable", "always", "post_multipartobject_action_create_object_shutdown_fail").\
+    S3fiTest('s3cmd enable FI put_multiobject_action_create_object_shutdown_fail').\
+        enable_fi("enable", "always", "put_multiobject_action_create_object_shutdown_fail").\
         execute_test().command_is_successful().\
         command_response_should_not_have('ServiceUnavailable')
     S3cmdTest('s3cmd can not upload 18MB file').\
         upload_test("seagatebucket", "18MBfile1", 18000000).\
-        execute_test(negative_case=True).command_should_fail().\
-        command_error_should_have("ServiceUnavailable")
+        execute_test(negative_case=True).command_should_fail()
     S3fiTest('s3cmd can disable Fault injection').\
-        disable_fi("post_multipartobject_action_create_object_shutdown_fail").\
+        disable_fi("put_multiobject_action_create_object_shutdown_fail").\
         execute_test().command_is_successful().\
         command_response_should_not_have('ServiceUnavailable')
 

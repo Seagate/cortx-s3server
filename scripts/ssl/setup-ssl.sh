@@ -97,7 +97,7 @@ openssl genrsa -out "$cert_name.key" 2048 2>/dev/null
 openssl req -new -key  "$cert_name.key" -out "$cert_name.csr" -config $SSL_CNF_FILE\
     -subj "/C=$COUNTRY/L=$LOCALITY/O=$ORG/CN=$CN"
 
-openssl x509 -req -days 365 -in "$cert_name.csr" -CA ca.crt -CAkey ca.key -set_serial 01\
+openssl x509 -req -days 3650 -in "$cert_name.csr" -CA ca.crt -CAkey ca.key -set_serial 01\
     -out "$cert_name.crt" -extfile $SSL_CNF_FILE -extensions v3_ca 2>/dev/null
 
 echo "ssl_certificate: $CURRENT_DIR/ssl_sandbox/$cert_name.crt"
