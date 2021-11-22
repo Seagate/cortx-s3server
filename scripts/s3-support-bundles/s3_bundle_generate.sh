@@ -116,7 +116,8 @@ first_s3_m0trace_file="$tmp_dir/first_s3_m0trace_file"
 m0trace_files_count=5
 s3_core_files_max_count=11
 max_allowed_core_size=10737418240 #e.g 10GB byte value
-compress_core_file=true
+compress_core_file=false
+debug_rpm_local_dir="/opt/seagate/cortx/debug-packages"
 
 # LDAP data
 ldap_dir="$tmp_dir/ldap"
@@ -327,12 +328,23 @@ then
     args+=($s3deployment_log*)
 fi
 
+# install debug rpms
+if [[ "$compress_core_file" == false  && -d "$debug_rpm_local_dir" ]];
+then
+    cd "$debug_rpm_local_dir"
+    yum install -y cortx*debuginfo*.rpm > /dev/null
+    cd -
+fi
+
 # Collect s3 core files if available
 collect_core_files
 if [ -d "$s3_core_files" ];
 then
     args+=($s3_core_files)
 fi
+
+# remove debug rpms
+rpm -qa | grep "cortx" | grep "debuginfo" | xargs yum remove -y > /dev/null
 
 collect_first_m0trace_file
 if [ -d "$first_s3_m0trace_file" ];
