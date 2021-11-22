@@ -57,7 +57,7 @@ class PostUpgradeCmd(SetupCmd):
         sample_old_file = os.path.join(self.base_config_file_path, "s3", "tmp", "s3config.yaml.sample.old")
         if not os.path.exists(sample_old_file):
           self.logger.info(f"{sample_old_file} backup file not found")
-          raise S3PROVError(f'process: {self.name} failed with exception: {e}')
+          raise S3PROVError(f'process: {self.name} failed')
         # overwrite /opt/seagate/cortx/s3/conf/s3config.yaml.sample
         # to /etc/cortx/s3/conf/s3config.yaml
         s3config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
