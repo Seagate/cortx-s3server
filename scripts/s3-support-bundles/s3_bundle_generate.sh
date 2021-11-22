@@ -330,7 +330,7 @@ then
 fi
 
 # install debug rpms
-if [[ "$compress_core_file" == true  && -d "$debug_rpm_local_dir" ]];
+if [[ "$compress_core_file" == false  && -d "$debug_rpm_local_dir" ]];
 then
     cd "$debug_rpm_local_dir"
     yum install -y cortx*debuginfo*.rpm > /dev/null
