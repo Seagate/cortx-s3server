@@ -1,0 +1,11 @@
+{
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "iam:ListAccessKeys",
+            "Resource": [
+                "arn:aws:iam::352620587691:user/test"
+            ]
+        }
+    ]
+}
