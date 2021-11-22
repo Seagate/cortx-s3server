@@ -142,6 +142,11 @@ def policy_tests():
     #delete-policy
     AwsIamTest('Delete Policy').delete_policy(arn2).execute_test().command_is_successful()
 
+    #create-policy
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy-version-missing.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicyversion",samplepolicy_testing)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
 
 if __name__ == '__main__':
 
