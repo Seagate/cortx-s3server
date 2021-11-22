@@ -25,6 +25,7 @@
 
 #include <string>
 #include <functional>
+#include <cstdint>
 #include "s3_motr_kvs_reader.h"
 #include "s3_motr_kvs_writer.h"
 #include "s3_factory.h"
@@ -32,6 +33,37 @@
 #define OBJECT_COUNT "Object_count"
 #define TOTAL_SIZE "Total_size"
 #define DEGRADED_COUNT "Degraded_count"
+
+class S3BucketCapacityCache {
+ public:
+  static void update_bucket_capacity(const S3BucketMetadata& src,
+                                     int count_objects_increment,
+                                     intmax_t count_bytes_increment,
+                                     std::function<void()> on_success,
+                                     std::function<void()> on_failure);
+
+  S3BucketCapacityCache(const S3BucketCapacityCache&) = delete;
+  S3BucketCapacityCache& operator=(const S3BucketCapacityCache&) = delete;
+
+  virtual ~S3BucketCapacityCache() {}
+
+ private:
+  static std::unique_ptr<S3BucketCapacityCache> singleton;
+
+  S3BucketCapacityCache() {}
+
+  static S3BucketCapacityCache* get_instance() {
+    if (!singleton) {
+      singleton.reset(new S3BucketCapacityCache());
+    }
+    return singleton.get();
+  }
+
+  void update_impl(const S3BucketMetadata& src, int count_objects_increment,
+                   intmax_t count_bytes_increment,
+                   std::function<void()> on_success,
+                   std::function<void()> on_failure);
+};
 
 class S3BucketObjectCounter {
 
