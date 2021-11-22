@@ -112,6 +112,10 @@ class S3PutObjectAction : public S3ObjectAction {
   void add_part_object_to_probable_dead_oid_list(
       const std::shared_ptr<S3ObjectMetadata> &,
       std::vector<std::unique_ptr<S3ProbableDeleteRecord>> &);
+  // Finally, when object md is saved, we would need S3 BD to
+  // process leak due to parallel PUT requests.
+  // Below function adds entry to probable index.
+  void add_oid_for_parallel_leak_check();
 
   void initiate_data_streaming();
   void consume_incoming_content();
