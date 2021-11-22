@@ -41,6 +41,7 @@ enum class S3DeleteObjectActionState {
   metadataDeleted,
   metadataDeleteFailed,
   addDeleteMarkerFailed,
+  deleteMarkerAdded,
 };
 
 class S3DeleteObjectAction : public S3ObjectAction {
@@ -82,8 +83,12 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void delete_metadata_successful();
   void set_authorization_meta();
 
+  void delete_handler();
+  void metadata_handler();
   void create_delete_marker();
   void save_delete_marker();
+  void save_delete_marker_success();
+  void save_delete_marker_failed();
   void populate_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();

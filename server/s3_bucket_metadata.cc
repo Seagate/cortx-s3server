@@ -127,6 +127,7 @@ void S3BucketMetadata::set_tags(
 
 void S3BucketMetadata::set_bucket_versioning(
     const std::string& bucket_version_status) {
+  s3_log(S3_LOG_DEBUG, bucket_version_status, "## Version\n");
   bucket_versioning_status = bucket_version_status;
 }
 

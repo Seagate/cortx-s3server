@@ -76,30 +76,23 @@ void S3DeleteObjectAction::setup_steps() {
   // someone else's object. Whereas deleting metadata first will worst case
   // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
-  std::string bucket_versioning = bucket_metadata->get_bucket_versioning();
 
-  // TODO: divide request if versionID is available
-  switch (bucket_versioning) {
-    case "Unversionined":
-      ACTION_TASK_ADD(S3DeleteObjectAction::populate_probable_dead_oid_list, this);
-      ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
-      ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
-      break;
-    case "Enabled":
-      ACTION_TASK_ADD(S3DeleteObjectAction::create_delete_marker, this);
-      ACTION_TASK_ADD(S3DeleteObjectAction::save_delete_marker, this);
-      ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
-      break;
-    case "Suspended":
-      ACTION_TASK_ADD(S3DeleteObjectAction::populate_probable_dead_oid_list, this);
-      ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
-      ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
-      break;
-    default:
-      // should never be here.
-      return;
-  };
-  // ...
+  // delete handler will divide request as per requirements
+
+  /*
+  delete handler
+    probable delete
+    create delete marker
+    probable delete specific version
+  object_metadata_handler
+    save delete_marker
+    delete_metadata
+    delete specific version
+  send_responce_to_client
+  */
+  ACTION_TASK_ADD(S3DeleteObjectAction::delete_handler, this);
+  ACTION_TASK_ADD(S3DeleteObjectAction::metadata_handler, this);
+  ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
 }
 
 void S3DeleteObjectAction::fetch_bucket_info_failed() {
@@ -145,6 +138,35 @@ void S3DeleteObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3DeleteObjectAction::delete_handler() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  std::string bucket_versioning = bucket_metadata->get_bucket_versioning();
+  if (bucket_versioning == "Enabled" &&
+      !request->has_query_param_key("versionId")) {
+    create_delete_marker();
+  } else {
+    populate_probable_dead_oid_list();
+  }
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3DeleteObjectAction::metadata_handler() {
+  // TODO: divide request if versionID is available
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  std::string bucket_versioning = bucket_metadata->get_bucket_versioning();
+  if (bucket_versioning == "Enabled" &&
+      !request->has_query_param_key("versionId")) {
+    save_delete_marker();
+  } else {
+    delete_metadata();
+  }
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3DeleteObjectAction::create_delete_marker() {
   s3_log(S3_LOG_DEBUG, request_id, "Add delete marker\n");
 
@@ -153,37 +175,45 @@ void S3DeleteObjectAction::create_delete_marker() {
       request, bucket_metadata->get_object_list_index_layout(),
       bucket_metadata->get_objects_version_list_index_layout());
 
-  //new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
+  // new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
+  if (!motr_writer) {
+    motr_writer = motr_writer_factory->create_motr_writer(request);
+  }
 
   // Generate a version id for the new object.
   delete_marker_metadata->regenerate_version_id();
-  delete_marker_metadata->set_oid(motr_writer->get_oid());
-  delete_marker_metadata->set_layout_id(layout_id);
-  delete_marker_metadata->set_pvid(motr_writer->get_ppvid());
 
   // update null version
-  delete_marker_metadata->set_null_ref(object_metadata->get_null_ref());
+  // delete_marker_metadata->set_null_ref(object_metadata->get_null_ref());
+
+  s3_log(S3_LOG_DEBUG, request_id, "%s \n",
+         delete_marker_metadata->to_json().c_str());
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3DeleteObjectAction::save_delete_marker() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  // save metadata to object index and version index
+  delete_marker_metadata->save(
+      std::bind(&S3DeleteObjectAction::save_delete_marker_success, this),
+      std::bind(&S3DeleteObjectAction::save_delete_marker_failed, this));
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void save_delete_marker() {
+void S3DeleteObjectAction::save_delete_marker_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_del_obj_action_state = S3DeleteObjectActionState::deleteMarkerAdded;
+  next();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
 
-  oid_str = S3M0Uint128Helper::to_string(delete_marker_metadata->get_oid());
-
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-
-  // save metadata to object index
-  delete_marker_metadata->save(
-      std::bind(&S3PutObjectAction::save_delete_marker_success, this),
-      std::bind(&S3PutObjectAction::save_delete_marker_failed, this));
-
-  // save metadata to version index
-
+void S3DeleteObjectAction::save_delete_marker_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_del_obj_action_state = S3DeleteObjectActionState::addDeleteMarkerFailed;
+  set_s3_error("InternalError");
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -370,6 +400,36 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
+  } else if (delete_marker_metadata) {
+    // delete marker metadata responce
+    std::string delete_marker_responce =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+    delete_marker_responce +=
+        "<DeleteResult "
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Deleted><Key>" +
+        delete_marker_metadata->get_bucket_name() +
+        "</Key><DeleteMarker>true</DeleteMarker><VersionId>" +
+        "<DeleteMarkerVersionId>" +
+        delete_marker_metadata->get_obj_version_id() +
+        "</DeleteMarkerVersionId>" + delete_marker_metadata->get_object_name() +
+        "</VersionId></Deleted></DeleteResult>";
+    s3_log(S3_LOG_DEBUG, stripped_request_id, "Responce xml: %s\n",
+           delete_marker_responce.c_str());
+    request->set_bytes_sent(delete_marker_responce.length());
+    request->send_response(S3HttpSuccess200, delete_marker_responce);
+    /*
+    Responce
+    <?xml version="1.0" encoding="UTF-8"?>
+    <DeleteResult
+      xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+      <Deleted>
+        <Key>new5</Key>
+        <DeleteMarker>true</DeleteMarker>
+        <DeleteMarkerVersionId>ft0aPtoQ_oiUtNi7eFAIUoRYcq_WzlVn</DeleteMarkerVersionId>
+      </Deleted>
+    </DeleteResult>
+    */
+
   } else {
     assert(zero(obj_list_idx_lo.oid) ||
            object_metadata->get_state() == S3ObjectMetadataState::missing ||

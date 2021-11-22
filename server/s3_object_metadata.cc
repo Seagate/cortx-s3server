@@ -937,7 +937,7 @@ int S3ObjectMetadata::from_json(std::string content) {
   rev_epoch_version_id_key =
       S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 
-  if (system_defined_attribute.isMember("x-amz-delete-marker")) {
+  if (system_defined_attribute.count("x-amz-delete-marker") > 0) {
     is_delete_marker = true;
   }
 
