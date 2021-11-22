@@ -56,7 +56,7 @@ class PostUpgradeCmd(SetupCmd):
       # Upgrade config files
       self.logger.info("merge configs started")
       config_file_path = "/etc/cortx"
-      merge_configs(config_file_path)
+      merge_configs(config_file_path, self.s3_tmp_dir)
       self.logger.info("merge configs completed")
 
       # Remove temporary .old files from S3 temporary location

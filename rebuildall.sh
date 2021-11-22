@@ -34,8 +34,8 @@ usage() {
   echo '                                       Default is (false) i.e. use motr libs from pre-installed'
   echo '                                       motr rpm location (/usr/lib64)'
   echo '          --use-build-cache          : Use build cache for third_party and motr, Default (false)'
-  echo '                                      If cache is missing, third_party and motr will be rebuilt'
-  echo '                                      Ensuring consistency of cache is responsibility of caller'
+  echo '                                       If cache is missing, third_party and motr will be rebuilt'
+  echo '                                       Ensuring consistency of cache is responsibility of caller'
   echo '          --no-check-code            : Do not check code for formatting style, Default (false)'
   echo '          --no-clean-build           : Do not clean before build, Default (false)'
   echo '                                       Use this option for incremental build.'
@@ -143,7 +143,7 @@ get_motr_pkg_config_rpm() {
 
 # read the options
 OPTS=`getopt -o h --long no-motr-rpm,use-build-cache,no-check-code,no-clean-build,\
-no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
+no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,no-base64-encoder-decoder-build,\
 no-motrkvscli-build,no-s3background-build,no-s3msgbus-build,no-s3cipher-build,no-s3confstoretool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
 no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,\
