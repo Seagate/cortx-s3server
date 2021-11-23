@@ -150,9 +150,9 @@ def main():
       # os.system("sed -i -e \"s,scheduler_schedule_interval:.*,scheduler_schedule_interval:\ 120,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # os.system("sed -i -e \"s,leak_processing_delay_in_mins:.*,leak_processing_delay_in_mins:\ 2,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # Start S3 Background Producer
-      logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
+      logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh {base_config_path}")
       logger.info(f"Starting S3 Background delete Producer...")
-      os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
+      os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh {base_config_path}")
 
       # Read the log directory path from s3 bgdelete config file
       s3_bgdelete_producer_log_file_path = read_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "logconfig>scheduler_log_file")
@@ -162,9 +162,9 @@ def main():
       os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
     elif args.service == 's3bgconsumer':
       # Start the Background Consumer
-      logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh")
+      logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.shi {base_config_path}")
       logger.info(f"Starting S3 Background delete Consumer...")
-      os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh")
+      os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path}")
 
       # Read the log directory path from s3 bgdelete config file
       s3_bgdelete_consumer_log_file_path = read_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "logconfig>processor_log_file")
