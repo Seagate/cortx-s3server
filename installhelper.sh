@@ -137,6 +137,7 @@ cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
 cp -f scripts/swupdate/merge.py $S3_INSTALL_LOCATION/bin
+cp -f scripts/env/common/third-party-rpms.txt $S3_INSTALL_LOCATION/bin
 
 # Copy the mini-provisioner config files
 cp scripts/provisioning/s3setup_prereqs.json $S3_MINI_PROV_CFG_LOCATION/
