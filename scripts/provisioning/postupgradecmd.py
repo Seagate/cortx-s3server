@@ -27,16 +27,16 @@ class PostUpgradeCmd(SetupCmd):
   """Post Upgrade Setup Cmd."""
   name = "postupgrade"
 
-  def __init__(self, config: str, services: str = None):
+  def __init__(self, config: str, services: str, commit: str = None):
     """Constructor."""
     try:
-      super(PostUpgradeCmd, self).__init__(config, services)
+      super(PostUpgradeCmd, self).__init__(config, services, commit)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}, commit = {self.commit}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)

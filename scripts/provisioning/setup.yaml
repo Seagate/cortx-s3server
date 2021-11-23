@@ -116,8 +116,8 @@ s3:
   upgrade:
     pre:
       cmd: /opt/seagate/cortx/s3/bin/s3_setup preupgrade
-      when: {{ level == 'node' and flow == 'upgrade-offline' }}
+      args: --config $URL
     post:
       cmd: /opt/seagate/cortx/s3/bin/s3_setup postupgrade
-      when: {{ level == 'node' and flow == 'upgrade-offline' }}
+      args: --config $URL
 
