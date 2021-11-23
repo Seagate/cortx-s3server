@@ -29,17 +29,17 @@ class PreUpgradeCmd(SetupCmd):
   name = "preupgrade"
 
 
-  def __init__(self, config: str, services: str, commit: str = None):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(PreUpgradeCmd, self).__init__(config, services, commit)
+      super(PreUpgradeCmd, self).__init__(config, services)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
 
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}, commit = {self.commit}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)

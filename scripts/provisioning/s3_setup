@@ -70,7 +70,6 @@ def main():
   #preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
   #preupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
   #preupgradeCmd.add_argument("--services", help='services', type=str, required=False)
-  #preupgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
 
   #postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
   #postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
