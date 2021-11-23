@@ -25,7 +25,6 @@
 
 USAGE="USAGE: bash $(basename "$0") -b <bundleid> -t <path> -c <confstore_url> -s <services>
 Generate support bundle for s3server.
-
 where:
 -b        Unique bundle-id used to identify support bundles.
 -t        Location at which support bundle needs to be copied.
@@ -566,4 +565,6 @@ tar -cvJf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-change
 
 # Clean up temp files
 cleanup_tmp_files
+
 echo "S3 support bundle generated successfully at $s3_bundle_location/$bundle_name !!!"
+

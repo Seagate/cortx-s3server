@@ -24,8 +24,6 @@ import shutil
 import sys
 import logging
 
-#s3_tmp_dir = __import__('setupcmd').SetupCmd.s3_tmp_dir
-
 def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
     """
     Core logic for updating config files during upgrade using conf store.
