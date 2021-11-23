@@ -67,12 +67,17 @@ def main():
   cleanupCmd.add_argument("--pre_factory", help='Revert to factory state', action='store_true')
   cleanupCmd.add_argument("--services", help='services', type=str, required=False)
 
-  preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
-  preupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
-  preupgradeCmd.add_argument("--services", help='services', type=str, required=False)
-  preupgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
+  #preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
+  #preupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+  #preupgradeCmd.add_argument("--services", help='services', type=str, required=False)
+  #preupgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
 
-  postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
+  #postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
+  #postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+  #postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
+  #postupgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
+
+  postupgradeCmd = subparsers.add_parser('upgrade', help='setup post upgrade')
   postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
   postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
   postupgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
