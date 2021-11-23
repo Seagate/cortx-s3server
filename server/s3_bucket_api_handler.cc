@@ -333,6 +333,16 @@ void S3BucketAPIHandler::create_action() {
           return;
       };
       break;
+    case S3OperationCode::versions:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          request->set_action_str("ListObjectVersions");
+          action = std::make_shared<S3GetBucketTaggingAction>(request);
+          s3_stats_inc("list_object_versions_count");
+          break;
+        default:
+          return;
+      }
     default:
       // should never be here.
       return;
