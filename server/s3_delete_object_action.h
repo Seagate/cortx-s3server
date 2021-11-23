@@ -32,6 +32,7 @@
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_probable_delete_record.h"
+#include "s3_bucket_counters.h"
 
 enum class S3DeleteObjectActionState {
   empty,             // Initial state
@@ -46,6 +47,7 @@ class S3DeleteObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
+  std::shared_ptr<S3BucketObjectCounter> counter;
 
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
@@ -75,6 +77,9 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void delete_metadata();
   void delete_metadata_failed();
   void delete_metadata_successful();
+  void save_bucket_counters();
+  void save_bucket_counters_success();
+  void save_bucket_counters_failed();
   void set_authorization_meta();
 
   void populate_probable_dead_oid_list();
