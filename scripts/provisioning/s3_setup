@@ -128,7 +128,7 @@ def main():
     elif args.command == 'preupgrade':
       from preupgradecmd import PreUpgradeCmd
       logger.info('pre-upgrade started.')
-      PreUpgradeCmd(args.config, args.services, args.commit).process()
+      PreUpgradeCmd(args.config, args.services).process()
       logger.info('pre-upgrade successful.')
     elif args.command == 'postupgrade':
       from postupgradecmd import PostUpgradeCmd
