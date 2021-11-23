@@ -9,5 +9,15 @@ if (len(sys.argv)>1):
 else:
   producer_name = "prod1"
 
-scheduler = ObjectRecoveryScheduler(producer_name)
+if (len(sys.argv)>2):
+  base_config_path = str(sys.argv[2])
+else:
+  base_config_path = "/etc/cortx"
+
+if (len(sys.argv)>1):
+  config_type = str(sys.argv[3])
+else:
+  config_type = "yaml://"
+
+scheduler = ObjectRecoveryScheduler(producer_name,base_config_path,config_type)
 scheduler.schedule_periodically()
