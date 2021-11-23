@@ -108,14 +108,6 @@ def main():
       # start crond
       os.system("/usr/sbin/crond start")
 
-      # Get s3 deamon path for s3 core file.
-      s3_daemon_dir = read_config_value("S3_CONFIG_FILE", "yaml", "S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
-      # Enable core dump generation for s3server
-      logger.info("Enabling s3 core dump generation at kernel level...")
-      os.system("sysctl kernel.printk=8")
-      os.system(f"sysctl kernel.core_pattern={s3_daemon_dir}/core-%e.%p")
-      logger.info("Enabled s3 core dump generation...")
-
       #Sys config path
       sysconfig_path = os.path.join(base_config_path, "s3", machine_id, "sysconfig")
 
