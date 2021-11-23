@@ -24,6 +24,7 @@
 #define __S3_SERVER_S3_BUCKET_COUNTERS_H__
 
 #include <string>
+#include <map>
 #include <functional>
 #include <cstdint>
 #include "s3_motr_kvs_reader.h"
@@ -34,11 +35,14 @@
 #define TOTAL_SIZE "Total_size"
 #define DEGRADED_COUNT "Degraded_count"
 
+class S3BucketObjectCounter;
+
 class S3BucketCapacityCache {
  public:
-  static void update_bucket_capacity(const S3BucketMetadata& src,
-                                     int count_objects_increment,
-                                     intmax_t count_bytes_increment,
+  static void update_bucket_capacity(std::shared_ptr<RequestObject> req,
+                                     std::shared_ptr<S3BucketMetadata> src,
+                                     int64_t increment_object_count,
+                                     int64_t bytes_incremented,
                                      std::function<void()> on_success,
                                      std::function<void()> on_failure);
 
@@ -48,21 +52,16 @@ class S3BucketCapacityCache {
   virtual ~S3BucketCapacityCache() {}
 
  private:
-  static std::unique_ptr<S3BucketCapacityCache> singleton;
+  // static std::unique_ptr<S3BucketCapacityCache> singleton;
+
+  static std::map<std::string, std::shared_ptr<S3BucketObjectCounter> >
+      bucket_wise_cache;
 
   S3BucketCapacityCache() {}
 
-  static S3BucketCapacityCache* get_instance() {
-    if (!singleton) {
-      singleton.reset(new S3BucketCapacityCache());
-    }
-    return singleton.get();
-  }
-
-  void update_impl(const S3BucketMetadata& src, int count_objects_increment,
-                   intmax_t count_bytes_increment,
-                   std::function<void()> on_success,
-                   std::function<void()> on_failure);
+  static std::shared_ptr<S3BucketObjectCounter> get_instance(
+      std::shared_ptr<RequestObject> req,
+      std::shared_ptr<S3BucketMetadata> bkt_md);
 };
 
 class S3BucketObjectCounter {
@@ -74,7 +73,8 @@ class S3BucketObjectCounter {
   std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
   std::shared_ptr<MotrAPI> s3_motr_api;
-  std::shared_ptr<S3RequestObject> req;
+  std::shared_ptr<RequestObject> request;
+  std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
 
@@ -92,7 +92,8 @@ class S3BucketObjectCounter {
 
  public:
   S3BucketObjectCounter(
-      std::shared_ptr<S3RequestObject> request,
+      std::shared_ptr<RequestObject> req,
+      std::shared_ptr<S3BucketMetadata> bkt_md,
       std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr,
       std::shared_ptr<MotrAPI> motr_api = nullptr);

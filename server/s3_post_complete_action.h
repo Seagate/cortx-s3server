@@ -60,7 +60,6 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
-  std::shared_ptr<S3BucketObjectCounter> counter;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
   std::string upload_id;
   std::string bucket_name;

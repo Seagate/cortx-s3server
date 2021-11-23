@@ -96,8 +96,6 @@ S3PostCompleteAction::S3PostCompleteAction(
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
-  counter = std::make_shared<S3BucketObjectCounter>(request);
-
   object_size = 0;
   current_parts_size = 0;
   prev_fetched_parts_size = 0;
@@ -961,9 +959,8 @@ void S3PostCompleteAction::save_bucket_counters() {
            __func__, new_object_metadata->get_content_length());
   }
 
-  counter->add_inc_object_count(inc_object_count);
-  counter->add_inc_size(inc_obj_size);
-  counter->save(
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3PostCompleteAction::save_bucket_counters_success, this),
       std::bind(&S3PostCompleteAction::save_bucket_counters_failed, this));
 

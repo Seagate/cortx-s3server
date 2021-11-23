@@ -47,7 +47,6 @@ class S3DeleteObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
-  std::shared_ptr<S3BucketObjectCounter> counter;
 
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;

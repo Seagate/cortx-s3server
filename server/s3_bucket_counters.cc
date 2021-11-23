@@ -4,52 +4,77 @@
 
 extern struct s3_motr_idx_layout bucket_object_count_index_layout;
 
-std::unique_ptr<S3BucketCapacityCache> S3BucketCapacityCache::singleton;
+std::map<std::string, std::shared_ptr<S3BucketObjectCounter> >
+    S3BucketCapacityCache::bucket_wise_cache;
 
-void S3BucketCapacityCache::update_bucket_capacity(
-    const S3BucketMetadata& src, int count_objects_increment,
-    intmax_t count_bytes_increment, std::function<void()> on_success,
-    std::function<void()> on_failure) {
-
-  get_instance()->update_impl(src, count_objects_increment,
-                              count_bytes_increment, on_success, on_failure);
-}
-
-void S3BucketCapacityCache::update_impl(const S3BucketMetadata& src,
-                                        int count_objects_increment,
-                                        intmax_t count_bytes_increment,
-                                        std::function<void()> on_success,
-                                        std::function<void()> on_failure) {
-
-  s3_log(S3_LOG_DEBUG, src.get_stripped_request_id(), "%s Entry", __func__);
-
-  s3_log(S3_LOG_DEBUG, src.get_stripped_request_id(),
-         "Updating count+=%d, capacity+=%" PRIdMAX, count_objects_increment,
-         count_bytes_increment);
-
-  // TBD: do the update
-
-  on_success();
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+std::string get_cache_key(std::shared_ptr<S3BucketMetadata> bkt_md) {
+  s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
+  return bkt_md->get_bucket_name();
 }
 
 std::string generate_unique_id() {
   s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
-
   s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
   return "1";
 }
 
+std::shared_ptr<S3BucketObjectCounter> S3BucketCapacityCache::get_instance(
+    std::shared_ptr<RequestObject> req,
+    std::shared_ptr<S3BucketMetadata> bkt_md) {
+  s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Entry", __func__);
+
+  std::string key_in_cache = get_cache_key(bkt_md);
+  std::map<std::string, std::shared_ptr<S3BucketObjectCounter> >::iterator
+      cache_iterator = bucket_wise_cache.find(key_in_cache);
+  if (cache_iterator != bucket_wise_cache.end()) {
+    s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(),
+           "Found entry in Cache for %s", key_in_cache.c_str());
+    s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
+    return cache_iterator->second;
+  } else {
+    s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(),
+           "Entry not found in Cache for %s", key_in_cache.c_str());
+    std::shared_ptr<S3BucketObjectCounter> bucket_counter(
+        new S3BucketObjectCounter(req, bkt_md));
+    std::pair<std::map<std::string,
+                       std::shared_ptr<S3BucketObjectCounter> >::iterator,
+              bool> return_value =
+        bucket_wise_cache.insert(
+            std::pair<std::string, std::shared_ptr<S3BucketObjectCounter> >(
+                key_in_cache, std::move(bucket_counter)));
+
+    s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
+    return return_value.first->second;
+  }
+}
+
+void S3BucketCapacityCache::update_bucket_capacity(
+    std::shared_ptr<RequestObject> req, std::shared_ptr<S3BucketMetadata> src,
+    int64_t increment_object_count, int64_t bytes_incremented,
+    std::function<void()> on_success, std::function<void()> on_failure) {
+  s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Entry", __func__);
+
+  std::shared_ptr<S3BucketObjectCounter> counter(
+      S3BucketCapacityCache::get_instance(req, src));
+  counter->add_inc_object_count(increment_object_count);
+  counter->add_inc_size(bytes_incremented);
+  counter->save(on_success, on_failure);
+
+  s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Exit", __func__);
+}
+
 S3BucketObjectCounter::S3BucketObjectCounter(
-    std::shared_ptr<S3RequestObject> request,
+    std::shared_ptr<RequestObject> req,
+    std::shared_ptr<S3BucketMetadata> bkt_md,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
-  req = std::move(request);
-  request_id = req->get_request_id();
-  bucket_name = req->get_bucket_name();
+  request = std::move(req);
+  bucket_metadata = std::move(bkt_md);
+  request_id = bucket_metadata->get_request_id();
+  bucket_name = bucket_metadata->get_bucket_name();
   key = bucket_name + "/" + generate_unique_id();
   inc_object_count = 0;
   inc_total_size = 0;
@@ -88,7 +113,7 @@ void S3BucketObjectCounter::save(std::function<void(void)> on_success,
   if (!is_cache_created) {
     if (!motr_kv_reader) {
       motr_kv_reader =
-          motr_kv_reader_factory->create_motr_kvs_reader(req, s3_motr_api);
+          motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
     }
 
     motr_kv_reader->get_keyval(
@@ -140,7 +165,7 @@ void S3BucketObjectCounter::save_bucket_counters() {
 
   if (!motr_kv_writer) {
     motr_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(req, s3_motr_api);
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
 
   motr_kv_writer->put_keyval(

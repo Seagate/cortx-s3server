@@ -66,8 +66,6 @@ S3PutObjectAction::S3PutObjectAction(
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
 
-  counter = std::make_shared<S3BucketObjectCounter>(request);
-
   S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
                  &new_object_oid);
   // Note valid value is set during create object
@@ -607,9 +605,8 @@ void S3PutObjectAction::save_bucket_counters() {
     inc_obj_size = new_object_metadata->get_content_length();
   }
 
-  counter->add_inc_object_count(inc_object_count);
-  counter->add_inc_size(inc_obj_size);
-  counter->save(
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3PutObjectAction::save_bucket_counters_success, this),
       std::bind(&S3PutObjectAction::save_bucket_counters_failed, this));
 

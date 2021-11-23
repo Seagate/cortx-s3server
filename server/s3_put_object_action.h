@@ -51,7 +51,6 @@ class S3PutObjectAction : public S3ObjectAction {
   std::string salt;
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
-  std::shared_ptr<S3BucketObjectCounter> counter;
 
   size_t total_data_to_stream;
   S3Timer s3_timer;

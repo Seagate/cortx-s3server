@@ -63,8 +63,6 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
-  counter = std::make_shared<S3BucketObjectCounter>(request);
-
   setup_steps();
 }
 
@@ -304,9 +302,8 @@ void S3DeleteObjectAction::save_bucket_counters() {
   inc_object_count = -1;
   inc_obj_size = -(object_metadata->get_content_length());
 
-  counter->add_inc_object_count(inc_object_count);
-  counter->add_inc_size(inc_obj_size);
-  counter->save(
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3DeleteObjectAction::save_bucket_counters_success, this),
       std::bind(&S3DeleteObjectAction::save_bucket_counters_failed, this));
 
