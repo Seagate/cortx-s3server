@@ -41,7 +41,7 @@ class CORTXS3Config(object):
     _conf_file = None
     s3confstore = None
 
-    def __init__(self,base_cfg_path:str = "/etc/cortx",cfg_type:str = 'yaml://'):
+    def __init__(self,base_cfg_path:str = "/etc/cortx",cfg_type:str = "yaml://"):
         """Initialise logger and configuration."""
         self.logger = logging.getLogger(__name__ + "CORTXS3Config")
         self.s3bdg_access_key = None

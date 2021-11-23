@@ -47,7 +47,7 @@ from s3backgrounddelete.cortx_s3_signal import SigTermHandler
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to message_bus queue."""
 
-    def __init__(self, producer_name:str,base_config_path:str = "/etc/cortx",config_type:str = 'yaml://'):
+    def __init__(self, producer_name:str,base_config_path:str = "/etc/cortx",config_type:str = "yaml://"):
         """Initialise logger and configuration."""
         self.data = None
         self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type)
