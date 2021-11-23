@@ -301,7 +301,7 @@ std::string S3BucketMetadata::get_bucket_versioning_status_as_xml() {
   if (bucket_versioning_status != "Unversioned") {
     versioning_status +=
         "<VersioningConfiguration "
-        "xmlns=\"http://s3.seagate.com/doc/2006-03-01/\">" +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
         S3CommonUtilities::format_xml_string("Status",
                                              bucket_versioning_status.c_str()) +
         "</VersioningConfiguration>";
@@ -309,7 +309,7 @@ std::string S3BucketMetadata::get_bucket_versioning_status_as_xml() {
   } else {
     versioning_status +=
         "<VersioningConfiguration "
-        "xmlns=\"http://s3.seagate.com/doc/2006-03-01/\"/>";
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"/>";
   }
   versioning_status_as_xml_str =
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + versioning_status;
