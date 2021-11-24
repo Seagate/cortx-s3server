@@ -51,9 +51,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -63,9 +63,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -79,10 +79,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "abc\",\"arn:aws:iam::352620587691:policy/testpolicy\"]}]}";
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
-    Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Policy document must have version 2012-10-17 or greater.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+    Assert.assertEquals(
+        new PolicyResponseGenerator()
+            .malformedPolicy(
+                 "Policy document must have version 2012-10-17 or greater.")
+            .getResponseBody(),
+        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -97,9 +99,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -113,9 +115,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -129,10 +131,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "testpolicy\"]}]}";
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
-    Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Policy statement must contain actions.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+    Assert.assertEquals(
+        new PolicyResponseGenerator()
+            .malformedPolicy("Policy statement must contain actions.")
+            .getResponseBody(),
+        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -147,9 +150,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -164,9 +167,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -180,9 +183,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -196,9 +199,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -211,10 +214,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "ListAccessKeys\"],\"Resource\":[]}]}";
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
-    Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Policy statement must contain resources.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+    Assert.assertEquals(
+        new PolicyResponseGenerator()
+            .malformedPolicy("Policy statement must contain resources.")
+            .getResponseBody(),
+        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -228,9 +232,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -244,10 +248,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "abc\",\"arn:aws:ia::352620587691:policy/testpolicy\"]}]}";
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
-    Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Resource arn:awss:iam::352620587691:user"
-    				+ "/abc must be in ARN format or \"*\".")
-    		.getResponseBody(),response.getResponseBody());
+    Assert.assertEquals(
+        new PolicyResponseGenerator()
+            .malformedPolicy("Resource arn:awss:iam::352620587691:user" +
+                             "/abc must be in ARN format or \"*\".")
+            .getResponseBody(),
+        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -262,9 +268,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -279,9 +285,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
     Assert.assertNotNull(response);
     Assert.assertEquals(new PolicyResponseGenerator()
-    		.malformedPolicy("Syntax errors in policy.")
-    		.getResponseBody(),
-    		response.getResponseBody());
+                            .malformedPolicy("Syntax errors in policy.")
+                            .getResponseBody(),
+                        response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
