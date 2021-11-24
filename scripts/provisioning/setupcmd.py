@@ -136,6 +136,10 @@ class SetupCmd(object):
       return value
     return None
 
+  def search_confvalue(self, parent_key:str, key_to_search:str, value_to_search: str):
+    assert self.provisioner_confstore != None
+    return self.provisioner_confstore.search(parent_key, key_to_search, value_to_search)
+
   def read_endpoint_value(self):
     if self.endpoint is None:
       self.endpoint = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_ENDPOINT_KEY')

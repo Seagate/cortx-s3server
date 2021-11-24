@@ -323,33 +323,14 @@ class ConfigCmd(SetupCmd):
       raise e
 
   def get_msgbus_partition_count(self):
-    """get total server nodes which will act as partition count."""
-    # Get storage set count to loop over to get all nodes
-    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT')
-    self.logger.info(f"storage_set_count : {storage_set_count}")
-    srv_io_node_count = 0
-    index = 0
-    while index < int(storage_set_count):
-      # Get all server nodes
-      server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("storage_set_count", str(index))
-      self.logger.info(f"server_nodes_list_key : {server_nodes_list_key}")
-      server_nodes_list = self.get_confvalue(server_nodes_list_key)
-      for server_node_id in server_nodes_list:
-        self.logger.info(f"server_node_id : {server_node_id}")
-        server_node_type_key = self.get_confkey('CONFIG>CONFSTORE_NODE_TYPE').replace('node-id', server_node_id)
-        self.logger.info(f"server_node_type_key : {server_node_type_key}")
-        # Get the type of each server node
-        server_node_type = self.get_confvalue(server_node_type_key)
-        self.logger.info(f"server_node_type : {server_node_type}")
-        if server_node_type == "storage_node":
-          self.logger.info(f"Node type is storage_node")
-          srv_io_node_count += 1
-      index += 1
+    """get total consumers (* 2) which will act as partition count."""
+    consumer_count = 0
+    search_values = self.search_confvalue("node", "services", "bg_consumer")
+    consumer_count = len(search_values)
+    self.logger.info(f"consumer_count : {consumer_count}")
 
-    self.logger.info(f"Server io node count : {srv_io_node_count}")
-
-    # Partition count should be ( number of hosts * 2 )
-    partition_count = srv_io_node_count * 2
+    # Partition count should be ( number of consumer * 2 )
+    partition_count = consumer_count * 2
     self.logger.info(f"Partition count : {partition_count}")
     return partition_count
 
