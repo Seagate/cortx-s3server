@@ -169,12 +169,11 @@ class ConfigCmd(SetupCmd):
       self.create_bgdelete_account(ldap_endpoint_fqdn)
       self.logger.info("create background delete account completed")
       self.logger.info("copying config files for upgrade started")
-      if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
-        # Copy /opt/seagate/cortx/s3/conf/s3config.yaml.sample to
-        #      /etc/cortx/s3/tmp/s3config.yaml.sample.old
-        s3config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
-        sample_old_file = os.path.join(self.base_config_file_path, "s3", "tmp", "s3config.yaml.sample.old")
-        shutil.copy(s3config_sample_file, sample_old_file)
+      # Copy /opt/seagate/cortx/s3/conf/s3config.yaml.sample to
+      #      /etc/cortx/s3/tmp/s3config.yaml.sample.old
+      s3config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
+      sample_old_file = os.path.join(self.base_config_file_path, "s3", "tmp", "s3config.yaml.sample.old")
+      shutil.copy(s3config_sample_file, sample_old_file)
       self.logger.info("copying config files for upgrade complete")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
