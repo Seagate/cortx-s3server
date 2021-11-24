@@ -137,7 +137,7 @@ class IAMPolicyValidator extends PolicyValidator {
         if (response != null) return response;
       } else if (JsonDocumentFields.STATEMENT.equals(key)) {
         LOGGER.debug("Validating IAM policy statement field syntax");
-        response = validateStatementSyntax(jsonObject,sids);
+        response = validateStatementSyntax(jsonObject, sids);
         if (response != null) return response;
 
         if (jsonObject.get(JsonDocumentFields.STATEMENT) instanceof JSONArray) {
