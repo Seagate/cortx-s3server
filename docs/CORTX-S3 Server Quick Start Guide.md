@@ -190,7 +190,7 @@ Before your test your build, ensure that you have installed and configured the f
     - To install easy_install, run the command: ` yum install python-setuptools python-setuptools-devel`
 2. Ensure you've installed pip.
     - To check if you have pip installed, run the command: ` pip --version`
-    - To install pip, run the command: ` easy_install pip`
+    - To install pip, run the command: ` yum install python-pip`
 3. If you don't have Python Version 2.6.5+, install Python using: ` yum install python`
     - If you don't have Python Version 3.3, then install python3 using: ` yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
