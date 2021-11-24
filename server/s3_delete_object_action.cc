@@ -149,6 +149,7 @@ void S3DeleteObjectAction::delete_handler() {
     populate_probable_dead_oid_list();
   }
 
+  next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -164,6 +165,7 @@ void S3DeleteObjectAction::metadata_handler() {
     delete_metadata();
   }
 
+  next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -179,12 +181,30 @@ void S3DeleteObjectAction::create_delete_marker() {
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
   }
-
+  s3_log(S3_LOG_DEBUG, request_id, "Add delete marker2\n");
   // Generate a version id for the new object.
   delete_marker_metadata->regenerate_version_id();
+  delete_marker_metadata->set_delete_marker();
+
+  s3_log(S3_LOG_DEBUG, request_id, "Add delete marker3\n");
 
   // update null version
   // delete_marker_metadata->set_null_ref(object_metadata->get_null_ref());
+
+  delete_marker_metadata->reset_date_time_to_current();
+  delete_marker_metadata->set_content_length(request->get_data_length_str());
+  delete_marker_metadata->set_content_type(request->get_content_type());
+  delete_marker_metadata->set_md5(motr_writer->get_content_md5());
+
+  s3_log(S3_LOG_DEBUG, request_id, "Add delete marker4\n");
+  for (auto it : request->get_in_headers_copy()) {
+    if (it.first.find("x-amz-meta-") != std::string::npos) {
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Writing user metadata on object: [%s] -> [%s]\n",
+             it.first.c_str(), it.second.c_str());
+      delete_marker_metadata->add_user_defined_attribute(it.first, it.second);
+    }
+  }
 
   s3_log(S3_LOG_DEBUG, request_id, "%s \n",
          delete_marker_metadata->to_json().c_str());
@@ -469,6 +489,10 @@ void S3DeleteObjectAction::startcleanup() {
       ACTION_TASK_ADD(S3DeleteObjectAction::remove_probable_record, this);
       // Start running the cleanup task list
       start();
+    } else if (s3_del_obj_action_state ==
+               S3DeleteObjectActionState::deleteMarkerAdded) {
+      // Nothing to clean up
+      done();
     } else {
       s3_log(S3_LOG_INFO, stripped_request_id, "Possible bug\n");
       assert(false);

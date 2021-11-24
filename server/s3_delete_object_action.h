@@ -53,7 +53,6 @@ class S3DeleteObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
 
   // delete marker metadata
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ObjectMetadata> delete_marker_metadata;
 
   // Probable delete record for object OID to be deleted
