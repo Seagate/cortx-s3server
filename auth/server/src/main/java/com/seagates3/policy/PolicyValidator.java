@@ -397,7 +397,7 @@ abstract class PolicyValidator {
     while (keys.hasNext()) {
       String key = keys.next();
       if (!elements.contains(key)) {  // some unknown field found
-        response = responseGenerator.malformedPolicy("Syntax errors in policy");
+        response = responseGenerator.malformedPolicy("Syntax errors in policy.");
         LOGGER.error("Unknown field in a policy document - " + key);
         return response;
       }
