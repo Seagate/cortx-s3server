@@ -38,6 +38,7 @@
 #include "s3_stats.h"
 #include "s3_delete_bucket_tagging_action.h"
 #include "s3_put_bucket_versioning_action.h"
+#include "s3_get_bucket_versioning_action.h"
 
 void S3BucketAPIHandler::create_action() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
@@ -243,6 +244,8 @@ void S3BucketAPIHandler::create_action() {
     case S3OperationCode::versioning:
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
+          request->set_action_str("GetBucketVersioning");
+          action = std::make_shared<S3GetBucketVersioningAction>(request);
           s3_stats_inc("get_bucket_versioning_count");
           break;
         case S3HttpVerb::PUT:

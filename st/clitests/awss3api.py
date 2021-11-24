@@ -99,6 +99,11 @@ class AwsTest(S3PyCliTest):
                       + " --versioning-configuration " + " Status=" + versioning_status )
         return self
 
+    def get_bucket_versioning(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + " get-bucket-versioning " + "--bucket " + bucket_name)
+        return self
+
     def put_bucket_canned_acl(self, bucket_name, canned_acl):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api" + " create-bucket " + "--bucket " + bucket_name
