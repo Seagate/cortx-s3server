@@ -262,7 +262,7 @@ abstract class PolicyValidator {
     return response;
   }
  protected
-  ServerResponse validateStatementSyntax(JSONObject jsonObject) {
+  ServerResponse validateStatementSyntax(JSONObject jsonObject,Set<String> sids) {
     ServerResponse response = null;
     if (jsonObject.get(JsonDocumentFields.STATEMENT) instanceof JSONArray) {
       JSONArray arr = (JSONArray)jsonObject.get(JsonDocumentFields.STATEMENT);
@@ -279,6 +279,17 @@ abstract class PolicyValidator {
           LOGGER.error(
               "Statement array element must be a instance of JSONObject");
           return response;
+        }
+        JSONObject obj = (JSONObject)arr.get(count);
+        if(obj.has(JsonDocumentFields.STATEMENT_ID)) {
+        	String sid = obj.get(JsonDocumentFields.STATEMENT_ID).toString();
+        	if(sids.contains(sid)) {
+        		response =responseGenerator.malformedPolicy("Statement IDs (SID) in a single policy must be unique.");
+        		LOGGER.error("Statement IDs (SID) in a single policy must be unique.");
+        		return response;
+        	}else {
+        		sids.add(sid);
+        	}
         }
       }
     } else if (!(jsonObject.get(

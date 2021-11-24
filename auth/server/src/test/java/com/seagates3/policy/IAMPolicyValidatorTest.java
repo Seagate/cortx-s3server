@@ -264,4 +264,25 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
+  
+  @Test public void testValidatePolicyDuplicateSids() {
+	    String negativeJsonInput =
+	    		"{\"Version\":\"2012-10-17\",\"Statement\":"
+	    		+ "[{\"Sid\":\"VisualEditor0\",\"Effect\":\"Allow\","
+	    		+ "\"Action\":[\"iam:CreatePolicy\",\"iam:ListAccessKeys\"],"
+	    		+ "\"Resource\":[\"arn:aws:iam::352620587691:user/abc\","
+	    		+ "\"arn:aws:iam::352620587691:policy/testpolicy\"]},"
+	    		+ "{\"Sid\":\"VisualEditor0\",\"Effect\":\"Allow\","
+	    		+ "\"Action\":[\"iam:CreatePolicy\",\"iam:ListAccessKeys\"],"
+	    		+ "\"Resource\":[\"arn:aws:iam::352620587691:user/abc\","
+	    		+ "\"arn:aws:iam::352620587691:policy/testpolicy\"]}]}";
+	    ServerResponse response = validator.validatePolicy(null, negativeJsonInput);
+	    Assert.assertNotNull(response);
+	    Assert.assertEquals(new PolicyResponseGenerator()
+	            .malformedPolicy("Statement IDs (SID) in a single policy must be unique.")
+	            .getResponseBody(),response.getResponseBody());
+	    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+	                        response.getResponseStatus());
+	  }
+  
 }
