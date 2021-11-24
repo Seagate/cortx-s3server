@@ -109,6 +109,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_GET_BUCKET_POLICY_ACTION_ID,
   /* S3GetBucketTaggingAction: */
   S3_ADDB_S3_GET_BUCKET_TAGGING_ACTION_ID,
+  /* S3GetBucketVersioningAction: */
+  S3_ADDB_S3_GET_BUCKET_VERSIONING_ACTION_ID,
   /* S3GetBucketlocationAction: */
   S3_ADDB_S3_GET_BUCKETLOCATION_ACTION_ID,
   /* S3GetMultipartBucketAction: */
