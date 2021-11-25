@@ -79,7 +79,6 @@ class SetupCmd(object):
 
     # get all the param from the s3_prov_config file
     self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
-    self.s3_tmp_dir = self.get_confkey('TMP_DIR')
     self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
 
     # Get machine-id of current node from constore
@@ -96,6 +95,10 @@ class SetupCmd(object):
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
+    self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
+    self.logger.info(f'config file path : {self.base_config_file_path}')
+    self.s3_tmp_dir = os.path.join(self.base_config_file_path, "s3/tmp")
+    self.logger.info(f'tmp dir : {self.s3_tmp_dir}')
 
   @property
   def url(self) -> str:

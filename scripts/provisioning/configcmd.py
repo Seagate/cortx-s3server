@@ -52,8 +52,6 @@ class ConfigCmd(SetupCmd):
       self.logger.info(f'Setup type : {self.setup_type}')
       self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
       self.logger.info(f'Cluster  id : {self.cluster_id}')
-      self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
-      self.logger.info(f'config file path : {self.base_config_file_path}')
       self.base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
       self.logger.info(f'log file path : {self.base_log_file_path}')
 
@@ -172,7 +170,7 @@ class ConfigCmd(SetupCmd):
       # Copy /opt/seagate/cortx/s3/conf/s3config.yaml.sample to
       #      /etc/cortx/s3/tmp/s3config.yaml.sample.old
       s3config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
-      sample_old_file = os.path.join(self.base_config_file_path, "s3", "tmp", "s3config.yaml.sample.old")
+      sample_old_file = os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old")
       shutil.copy(s3config_sample_file, sample_old_file)
       self.logger.info("copying config files for upgrade complete")
     except Exception as e:
