@@ -57,6 +57,8 @@ CONFIG:
   CONFSTORE_S3_DATA_ENDPOINTS: "cortx>s3>data>endpoints" #M (Usedby : s3_deployment, bgproducer)
 
   CONFSTORE_S3_INTERNAL_ENDPOINTS: "cortx>s3>internal>endpoints" #M (Usedby : s3_deployment, bgproducer)
+
+  CONFSTORE_CONSUL_ENDPOINTs: "cortx>external>consul>endpoints" #M (Usedby : s3_deployment)
   
   CONFSTORE_CLUSTER_ID_KEY: "node>machine-id>cluster_id" #M (Usedby: all)
   CONFSTORE_HOSTNAME_KEY: "node>machine-id>hostname" #M (Usedby: s3_deployment)
@@ -179,3 +181,7 @@ S3_CONF_SYMLINK: "/opt/seagate/cortx/s3/install/logrotate/s3config.yaml"
 
 # HAProxy log file symbolic link
 S3_HAPROXY_LOG_SYMLINK: "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy.log"
+
+# Consul entries for configuring s3 openldap schema
+S3_CONSUL_INDEX: "s3_consul_index"
+S3_CONSUL_OPENLDAP_KEY: "component>s3>openldap_lock"
