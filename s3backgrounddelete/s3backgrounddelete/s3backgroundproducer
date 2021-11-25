@@ -6,18 +6,25 @@ from s3backgrounddelete.object_recovery_scheduler import ObjectRecoveryScheduler
 
 if (len(sys.argv)>1):
   producer_name = str(sys.argv[1])
+  print (f"IF- 1")
 else:
   producer_name = "prod1"
+  print (f"ELSE- 1")
 
 if (len(sys.argv)>2):
   base_config_path = str(sys.argv[2])
+  print (f"IF- 2")
 else:
   base_config_path = "/etc/cortx"
+  print (f"ELSE- 2")
 
-if (len(sys.argv)>1):
+if (len(sys.argv)>3):
   config_type = str(sys.argv[3])
+  print (f"IF- 3")
 else:
   config_type = "yaml://"
+  print (f"ELSE - 3")
 
+print (f"Producer_name - {producer_name} base_config_path - {base_config_path} config_type - {config_type}")
 scheduler = ObjectRecoveryScheduler(producer_name,base_config_path,config_type)
 scheduler.schedule_periodically()

@@ -162,7 +162,7 @@ def main():
       os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
     elif args.service == 's3bgconsumer':
       # Start the Background Consumer
-      logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.shi {base_config_path} yaml://")
+      logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path} yaml://")
       logger.info(f"Starting S3 Background delete Consumer...")
       os.system(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path} yaml://")
 
@@ -198,6 +198,8 @@ def main():
       os.system(f"tail -f {haproxy_log_path}")
     else:
       logger.error(f"Invalid argument {args.service}")
+
+  sleep infinity
   except Exception as e:
     logger.error(f"{str(e)}")
     logger.error(f"{traceback.format_exc()}")
