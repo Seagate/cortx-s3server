@@ -288,7 +288,7 @@ abstract class PolicyValidator {
             response = responseGenerator.malformedPolicy(
                 "Statement IDs (SID) in a single policy must be unique.");
             LOGGER.error(
-                "Statement IDs (SID) in a single policy must be unique.");
+                "Duplicate Statement ID (SID) found in the policy- " + sid);
             return response;
           } else {
             sids.add(sid);
