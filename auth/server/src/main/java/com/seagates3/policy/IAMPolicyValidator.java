@@ -49,6 +49,7 @@ class IAMPolicyValidator extends PolicyValidator {
   static Set<String> statementElements = new HashSet<>();
   Set<String> sids = new HashSet<>();
   ArnParser iamArnparser = null;
+  ArnParser s3Arnparser = null;
  private
   static final int MAX_IAM_POLICY_SIZE = 6144;
 
@@ -56,6 +57,7 @@ class IAMPolicyValidator extends PolicyValidator {
   IAMPolicyValidator() {
     responseGenerator = new PolicyResponseGenerator();
     iamArnparser = new IAMArnParser();
+    s3Arnparser = new S3ArnParser();
     initializePolicyElements();
     initializeStatementElements();
   }
@@ -206,7 +208,7 @@ class IAMPolicyValidator extends PolicyValidator {
 
   @Override boolean isArnFormatValid(String arn) {
 
-    return iamArnparser.isArnFormatValid(arn);
+    return iamArnparser.isArnFormatValid(arn) || s3Arnparser.isArnFormatValid(arn);
   }
 
   @Override ServerResponse

@@ -37,13 +37,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   @Test public void testValidatePolicyPositive() {
     String positiveJsonInput =
-        "{\r\n" + "\"Version\": \"2012-10-17\",\r\n" +
-        "  \"Statement\": [\r\n" + "    {\r\n" +
-        "      \"Sid\": \"Stmt1632740110513\",\r\n" +
-        "      \"Action\": [\r\n" + "        \"s3:PutBucketAcljhghsghsd\"\r\n" +
-        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
-        "      \"Resource\": \"arn:aws:iam::buck1\"\r\n" + "	  \r\n" +
-        "    }\r\n" + "\r\n" + "  ]\r\n" + "}";
+		"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
+        "\"VisualEditor0\"," +
+        "\"Effect\":\"Allow\",\"Action\":[\"iam:CreatePolicy\",\"iam:" +
+        "ListAccessKeys\"],\"Resource\":[\"arn:aws:iam::352620587691:user/" +
+        "abc\",\"arn:aws:iam::352620587691:policy/testpolicy\"]}]}";
     ServerResponse response = validator.validatePolicy(null, positiveJsonInput);
     Assert.assertNull(response);
   }
