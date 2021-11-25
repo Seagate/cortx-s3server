@@ -86,9 +86,6 @@ class S3BucketMetadata {
   virtual ~S3BucketMetadata();
 
   const std::string& get_request_id() const { return request_id; }
-  const std::string& get_bucket_versioning() const {
-    return bucket_versioning_status;
-  }
 
   const std::string& get_stripped_request_id() const {
     return stripped_request_id;

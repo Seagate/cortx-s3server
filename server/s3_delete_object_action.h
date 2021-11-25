@@ -49,6 +49,10 @@ class S3DeleteObjectAction : public S3ObjectAction {
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
 
+  int layout_id;
+  struct m0_uint128 new_object_oid;
+  unsigned motr_write_payload_size;
+  std::string new_oid_str;
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
 
@@ -82,6 +86,9 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void delete_metadata_successful();
   void set_authorization_meta();
 
+  void _set_layout_id(int layout_id);
+  void create_object_successful();
+  void create_object_failed();
   void delete_handler();
   void metadata_handler();
   void create_delete_marker();
