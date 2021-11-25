@@ -458,7 +458,7 @@ TEST_F(S3ObjectMetadataTest, SaveMeatdataIndexOIDPresent) {
   metadata_obj_under_test->regenerate_version_id();
 
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
   metadata_obj_under_test->save(
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj));
@@ -468,7 +468,7 @@ TEST_F(S3ObjectMetadataTest, SaveMetadataWithoutParam) {
   metadata_obj_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
   metadata_obj_under_test->set_object_list_index_layout(
       object_list_index_layout);
 
@@ -494,7 +494,7 @@ TEST_F(S3ObjectMetadataTest, SaveMetadataWithParam) {
   metadata_obj_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
   metadata_obj_under_test->set_object_list_index_layout(
       object_list_index_layout);
 
