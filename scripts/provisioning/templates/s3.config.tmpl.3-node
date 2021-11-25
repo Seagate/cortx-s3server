@@ -64,13 +64,40 @@ node:
     hostname: "TMPL_HOSTNAME_1"
     cluster_id: "TMPL_CLUSTER_ID"
     type: storage_node
+    components:
+      - name: s3
+        services:
+          - io
+          - auth
+          - bg_consumer
+          - bg_producer
+          - openldap
+          - haproxy
   TMPL_MACHINE_ID_2:
     name: "POD-2"
     hostname: "TMPL_HOSTNAME_2"
     cluster_id: "TMPL_CLUSTER_ID"
     type: storage_node
+    components:
+      - name: s3
+        services:
+          - io
+          - auth
+          - bg_consumer
+          - bg_producer
+          - openldap
+          - haproxy
   TMPL_MACHINE_ID_3:
     name: "POD-3"
     hostname: "TMPL_HOSTNAME_3"
     cluster_id: "TMPL_CLUSTER_ID"
     type: storage_node
+    components:
+      - name: s3
+        services:
+          - io
+          - auth
+          - bg_consumer
+          - bg_producer
+          - openldap
+          - haproxy
