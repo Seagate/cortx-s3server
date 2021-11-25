@@ -20,7 +20,7 @@
 
 
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
-                        [--use_ipv6] [--skip_build] [--skip_ut_build]
+                        [--use_ipv6] [--skip_build] [--skip_ut_build] [--no_clean_build] [--build_only_s3server]
                         [--skip_tests] [--skip_ut_run] [--skip_st_run]
                         [--cleanup_only]
                         [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
@@ -48,6 +48,10 @@ where:
 --skip_build             Do not run build step
 
 --skip_ut_build          Do not run build step for UTs
+
+--no_clean_build         Do not run clean build.
+
+--build_only_s3server    Only build/rebuild s3server, leave other targest as is.
 
 --skip_tests             Do not run tests, exit before test run
 
@@ -130,6 +134,8 @@ use_ipv6=0
 restart_haproxy=0
 skip_build=0
 skip_ut_build=0
+no_clean_build=0
+build_only_s3server=0
 cleanup_only=0
 skip_tests=0
 skip_ut_run=0
@@ -189,6 +195,12 @@ else
           ;;
       --skip_ut_build ) skip_ut_build=1;
           echo "Skip UTs build step";
+          ;;
+      --no_clean_build ) no_clean_build=1;
+          echo "Do not run clean build";
+          ;;
+      --build_only_s3server ) build_only_s3server=1;
+          echo "Only build/rebuild s3server, leave other targest as is";
           ;;
       --skip_tests ) skip_tests=1;
           echo "Skip test step";
@@ -418,6 +430,18 @@ then
     if [ $skip_tests -ne 0 ]
     then
         extra_opts+=" --no-java-tests"
+    fi
+    if [ $no_clean_build -ne 0 ]
+    then
+        extra_opts+=" --no-clean-build"
+    fi
+    if [ $build_only_s3server -ne 0 ]
+    then
+        extra_opts+=" --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-motrkvscli-build"
+        extra_opts+=" --no-base64-encoder-decoder-build --no-auth-build --no-jclient-build"
+        extra_opts+=" --no-jcloudclient-build --no-java-tests --no-s3addbplugin-build"
+        extra_opts+=" --no-s3confstoretool-build --no-s3background-build --no-s3msgbus-build"
+        extra_opts+=" --no-s3cipher-build --no-s3iamcli-build"
     fi
     ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag $extra_opts --bazel_cpu_usage_limit $bazel_cpu_limit --bazel_ram_usage_limit $bazel_ram_limit
 fi

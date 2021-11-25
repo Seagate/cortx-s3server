@@ -60,7 +60,7 @@ const char xml_spaces[] = "        ";
 // 5242880 -- 5MB
 #define MINIMUM_ALLOWED_PART_SIZE 5242880
 // 5368709120 -- 5GB
-#define MAXIMUM_ALLOWED_PART_SIZE 5368709120
+#define MAXIMUM_ALLOWED_PUT_SIZE 5368709120
 // Maximum size of object allowed is 5TB
 #define MAXIMUM_ALLOWED_OBJECT_SIZE 5497558138880
 // Minmimum part number for multipart operations
