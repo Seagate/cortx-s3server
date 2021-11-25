@@ -37,7 +37,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   @Test public void testValidatePolicyPositive() {
     String positiveJsonInput =
-		"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
+        "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
         "\"VisualEditor0\"," +
         "\"Effect\":\"Allow\",\"Action\":[\"iam:CreatePolicy\",\"iam:" +
         "ListAccessKeys\"],\"Resource\":[\"arn:aws:iam::352620587691:user/" +

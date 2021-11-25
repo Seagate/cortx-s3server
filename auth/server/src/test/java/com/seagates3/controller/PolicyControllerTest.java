@@ -81,16 +81,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor.setAccount(account);
     requestBody.put("PolicyName", "policy1");
     requestBody.put("PolicyARN", "arn:aws:iam::352620587691:policy/policy1");
-    requestBody.put("PolicyDocument",
-                    "{\r\n" + "\"Version\": \"2012-10-17\",\r\n" +
-                        "  \"Statement\": [\r\n" + "    {\r\n" +
-                        "      \"Sid\": \"Stmt1632740110513\",\r\n" +
-                        "      \"Action\": [\r\n" +
-                        "        \"s3:PutBucketAcljhghsghsd\"\r\n" +
-                        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
-                        "      \"Resource\": \"arn:aws:iam::352620587691:buck1\"\r\n" +
-                        "	  \r\n" + "    }\r\n" + "\r\n" + "  ]\r\n" +
-                        "}");
+    requestBody.put(
+        "PolicyDocument",
+        "{\r\n" + "\"Version\": \"2012-10-17\",\r\n" +
+            "  \"Statement\": [\r\n" + "    {\r\n" +
+            "      \"Sid\": \"Stmt1632740110513\",\r\n" +
+            "      \"Action\": [\r\n" +
+            "        \"s3:PutBucketAcljhghsghsd\"\r\n" + "      ],\r\n" +
+            "      \"Effect\": \"Allow\",\r\n" +
+            "      \"Resource\": \"arn:aws:iam::352620587691:buck1\"\r\n" +
+            "	  \r\n" + "    }\r\n" + "\r\n" + "  ]\r\n" + "}");
 
     PowerMockito.doReturn(mockPolicyDao)
         .when(DAODispatcher.class, "getResourceDAO", DAOResource.POLICY);
@@ -119,8 +119,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                         response.getResponseStatus());
   }
   @Test public void deletePolicySuccess() throws DataAccessException {
-    Mockito.when(mockPolicyDao.findByArn("arn:aws:iam::352620587691:policy/policy1",
-                                         account)).thenReturn(policy);
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
     Mockito.doNothing().when(mockPolicyDao).delete (policy);
     ServerResponse response = policyController.delete ();
     Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
@@ -131,8 +132,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                         response.getResponseStatus());
   }
   @Test public void deletePolicyFailedException() throws DataAccessException {
-    Mockito.when(mockPolicyDao.findByArn("arn:aws:iam::352620587691:policy/policy1",
-                                         account)).thenReturn(policy);
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
     Mockito.doThrow(new DataAccessException("failed to delete policy\n"))
         .when(mockPolicyDao)
         .delete (policy);
@@ -157,8 +159,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Assert.assertEquals(null, response);
   }
   @Test public void getPolicySuccess() throws DataAccessException {
-    Mockito.when(mockPolicyDao.findByArn("arn:aws:iam::352620587691:policy/policy1",
-                                         account)).thenReturn(policy);
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
     ServerResponse response = policyController.get();
     Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }

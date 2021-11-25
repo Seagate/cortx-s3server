@@ -208,7 +208,8 @@ class IAMPolicyValidator extends PolicyValidator {
 
   @Override boolean isArnFormatValid(String arn) {
 
-    return iamArnparser.isArnFormatValid(arn) || s3Arnparser.isArnFormatValid(arn);
+    return iamArnparser.isArnFormatValid(arn) ||
+           s3Arnparser.isArnFormatValid(arn);
   }
 
   @Override ServerResponse
