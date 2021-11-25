@@ -160,6 +160,8 @@ def main():
 
       # Print last few line of S3 bgdelete producer log  file
       os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
+      time.sleep(36000)
+
     elif args.service == 's3bgconsumer':
       # Start the Background Consumer
       logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path} yaml://")
@@ -172,6 +174,8 @@ def main():
 
       # Print last few line of S3 bgdelete consumer log  file
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
+      time.sleep(36000)
+
     elif args.service == 'haproxy':
       haproxy_log_path = os.path.join(base_logdir_path, 's3', machine_id, 'haproxy/haproxy.log')
       logger.info(f"haproxy_log_path: {haproxy_log_path}")
@@ -199,7 +203,7 @@ def main():
     else:
       logger.error(f"Invalid argument {args.service}")
 
-  time.sleep(36000)
+
   except Exception as e:
     logger.error(f"{str(e)}")
     logger.error(f"{traceback.format_exc()}")
