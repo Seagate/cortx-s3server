@@ -67,19 +67,18 @@ def main():
   cleanupCmd.add_argument("--pre_factory", help='Revert to factory state', action='store_true')
   cleanupCmd.add_argument("--services", help='services', type=str, required=False)
 
-  #preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
-  #preupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
-  #preupgradeCmd.add_argument("--services", help='services', type=str, required=False)
+  preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
+  preupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+  preupgradeCmd.add_argument("--services", help='services', type=str, required=False)
 
-  #postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
-  #postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
-  #postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
-  #postupgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
-
-  postupgradeCmd = subparsers.add_parser('upgrade', help='setup post upgrade')
+  postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
   postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
   postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
-  postupgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
+
+  upgradeCmd = subparsers.add_parser('upgrade', help='setup post upgrade')
+  upgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+  upgradeCmd.add_argument("--services", help='services', type=str, required=False)
+  upgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
 
   args = parser.parse_args()
 
@@ -133,8 +132,13 @@ def main():
     elif args.command == 'postupgrade':
       from postupgradecmd import PostUpgradeCmd
       logger.info('post-upgrade started.')
-      PostUpgradeCmd(args.config, args.services, args.commit).process()
+      PostUpgradeCmd(args.config, args.services).process()
       logger.info('post-upgrade successful.')
+    elif args.command == 'upgrade':
+      from upgradecmd import UpgradeCmd
+      logger.info('upgrade started.')
+      UpgradeCmd(args.config, args.services, args.commit).process()
+      logger.info('upgrade successful.')
 
   except Exception as e:
     logger.error(f"{str(e)}")

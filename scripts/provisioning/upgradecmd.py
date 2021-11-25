@@ -23,20 +23,20 @@ from merge import merge_configs
 import os
 import shutil
 
-class PostUpgradeCmd(SetupCmd):
-  """Post Upgrade Setup Cmd."""
-  name = "postupgrade"
+class UpgradeCmd(SetupCmd):
+  """Upgrade Setup Cmd."""
+  name = "upgrade"
 
-  def __init__(self, config: str, services: str = None):
+  def __init__(self, config: str, services: str, commit: str = None):
     """Constructor."""
     try:
-      super(PostUpgradeCmd, self).__init__(config, services)
+      super(UpgradeCmd, self).__init__(config, services, commit)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}, commit = {self.commit}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
@@ -51,6 +51,17 @@ class PostUpgradeCmd(SetupCmd):
       self.logger.info("Delete config file started")
       self.delete_config_files()
       self.logger.info("Delete config file completed")
+
+      # check necessary files before calling merge
+      sample_old_file = os.path.join(self.base_config_file_path, "s3", "tmp", "s3config.yaml.sample.old")
+      if not os.path.exists(sample_old_file):
+        self.logger.info(f"{sample_old_file} backup file not found")
+        raise S3PROVError(f'process: {self.name} failed')
+      # overwrite /opt/seagate/cortx/s3/conf/s3config.yaml.sample
+      # to /etc/cortx/s3/conf/s3config.yaml
+      s3config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
+      s3config_file = self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+      shutil.copy(s3config_sample_file, s3config_file)
 
       # merge_configs() is imported from the merge.py
       # Upgrade config files
