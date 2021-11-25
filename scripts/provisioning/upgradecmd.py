@@ -38,6 +38,7 @@ class UpgradeCmd(SetupCmd):
     """Main processing function."""
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}, commit = {self.commit}")
     try:
+      service_list = services.split(",")
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
       self.logger.info("validations completed")
@@ -52,22 +53,71 @@ class UpgradeCmd(SetupCmd):
       self.delete_config_files()
       self.logger.info("Delete config file completed")
 
-      # check necessary files before calling merge
-      sample_old_file = os.path.join(self.base_config_file_path, "s3", "tmp", "s3config.yaml.sample.old")
-      if not os.path.exists(sample_old_file):
-        self.logger.info(f"{sample_old_file} backup file not found")
-        raise S3PROVError(f'process: {self.name} failed')
-      # overwrite /opt/seagate/cortx/s3/conf/s3config.yaml.sample
-      # to /etc/cortx/s3/conf/s3config.yaml
-      s3config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
-      s3config_file = self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
-      shutil.copy(s3config_sample_file, s3config_file)
+      if "s3" in service_list:
+        # check necessary files before calling merge
+        sample_old_file = os.path.join(self.base_config_file_path, "s3", "tmp", "s3config.yaml.sample.old")
+        if not os.path.exists(sample_old_file):
+          self.logger.info(f"{sample_old_file} backup file not found")
+          raise S3PROVError(f'process: {self.name} failed')
+        # overwrite /opt/seagate/cortx/s3/conf/s3config.yaml.sample
+        # to /etc/cortx/s3/conf/s3config.yaml
+        s3_config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
+        s3_config_file = self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+        shutil.copy(s3_config_sample_file, s3_config_file)
+
+      if "auth" in service_list:
+        # check necessary files before calling merge
+        sample_old_file = os.path.join(self.base_config_file_path, "auth/resources/authserver.properties")
+        if not os.path.exists(sample_old_file):
+          self.logger.info(f"{sample_old_file} backup file not found")
+          raise S3PROVError(f'process: {self.name} failed')
+        # overwrite /opt/seagate/cortx/auth/resources/authserver.properties
+        # to /etc/cortx/auth/resources/authserver.properties
+        s3_auth_config_sample_file = self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE')
+        s3_auth_config_file = self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+        shutil.copy(s3_auth_config_sample_file, s3_auth_config_file)
+
+      if "keystore" in service_list:
+        # check necessary files before calling merge
+        sample_old_file = os.path.join(self.base_config_file_path, "auth/resources/keystore.properties")
+        if not os.path.exists(sample_old_file):
+          self.logger.info(f"{sample_old_file} backup file not found")
+          raise S3PROVError(f'process: {self.name} failed')
+        # overwrite /opt/seagate/cortx/auth/resources/keystore.properties
+        # to /etc/cortx/auth/resources/keystore.properties
+        s3_keystore_config_sample_file = self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE')
+        s3_keystore_config_file = self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+        shutil.copy(s3_keystore_config_sample_file, s3_keystore_config_file)
+
+      if "bgdelete" in service_list:
+        # check necessary files before calling merge
+        sample_old_file = os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml")
+        if not os.path.exists(sample_old_file):
+          self.logger.info(f"{sample_old_file} backup file not found")
+          raise S3PROVError(f'process: {self.name} failed')
+        # overwrite /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+        # to /etc/cortx/s3/s3backgrounddelete/config.yaml
+        s3_bgdelete_config_sample_file = self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')
+        s3_bgdelete_config_file = self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+        shutil.copy(s3_bgdelete_config_sample_file, s3_bgdelete_config_file)
+
+      if "cluster" in service_list:
+        # check necessary files before calling merge
+        sample_old_file = os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml")
+        if not os.path.exists(sample_old_file):
+          self.logger.info(f"{sample_old_file} backup file not found")
+          raise S3PROVError(f'process: {self.name} failed')
+        # overwrite /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+        # to /etc/cortx/s3/s3backgrounddelete/config.yaml
+        s3_cluster_config_sample_file = self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')
+        s3_cluster_config_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+        shutil.copy(s3_cluster_config_sample_file, s3_cluster_config_file)
 
       # merge_configs() is imported from the merge.py
       # Upgrade config files
       self.logger.info("merge configs started")
       config_file_path = "/etc/cortx"
-      merge_configs(config_file_path, self.s3_tmp_dir)
+      merge_configs(config_file_path, self.s3_tmp_dir, service_list)
       self.logger.info("merge configs completed")
 
       # Remove temporary .old files from S3 temporary location
