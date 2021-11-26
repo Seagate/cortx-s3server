@@ -88,7 +88,7 @@ class UpgradeCmd(SetupCmd):
       raise S3PROVError(f'process: {self.name} failed with exception: {e}')
 
   def copy_config_files(self):
-    """ Copy sample and unsafe attribute config files from /opt/seagate/cortx to /etc/cortx."""
+    """Copy sample and unsafe attribute config files from /opt/seagate/cortx to /etc/cortx."""
     config_files = [self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
                     self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'),
                     self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
@@ -144,7 +144,7 @@ class UpgradeCmd(SetupCmd):
         shutil.copy(s3_sample_file, s3_file)
 
   def post_merge_copy(self):
-    """post merge copy"""
+    """Post merge copy."""
     # Copy /opt/seagate/cortx/s3/conf/s3config.yaml.sample to
     #      /etc/cortx/s3/tmp/s3config.yaml.sample.old
     s3_config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
@@ -173,13 +173,13 @@ class UpgradeCmd(SetupCmd):
     self.logger.info("copying config files for upgrade complete")
 
   def delete_config_files(self):
-    """ delete config file which are installed by rpm"""
+    """Delete config file which are installed by rpm."""
     config_files = [self.get_confkey('S3_CONFIG_FILE'),
                 self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
                 self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
                 self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
                 self.get_confkey('S3_CLUSTER_CONFIG_FILE')]
-    
+
     # remove config file
     for config_file in config_files:
       self.DeleteFile(config_file)
