@@ -139,13 +139,56 @@ def policy_tests():
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
 
+    # delete testAcc2 account
+    test_msg = "Delete account testAcc2"
+    account_args = {'AccountName': 'testAcc2', 'Email': 'testAcc2@seagate.com',  'force': True}
+    S3ClientConfig.access_key_id = testAcc2_access_key
+    S3ClientConfig.secret_key = testAcc2_secret_key
+    AuthTest(test_msg).delete_account(**account_args).execute_test().command_is_successful()
+
     #delete-policy
     AwsIamTest('Delete Policy').delete_policy(arn2).execute_test().command_is_successful()
 
-    #create-policy
+    #create-policy validation fails: version-missing
     samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy-version-missing.json')
     samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
-    result = AwsIamTest('Create Policy').create_policy("iampolicyversion",samplepolicy_testing)\
+    result = AwsIamTest('Policy Validation-Version Missing').create_policy("invalidPolicy1",samplepolicy_testing)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+    #create-policy validation fails: statement-missing
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy-statement-missing.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Policy Validation-Statement Missing').create_policy("invalidPolicy2",samplepolicy_testing)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+    #create-policy validation fails: unknown-statement-element
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy-unknown-stmt-ele.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Policy Validation-Unknown stmt ele').create_policy("invalidPolicy3",samplepolicy_testing)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+    #create-policy validation fails: invalid-resource-arn
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy-invalid-resource-arn.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Policy Validation-Invalid resource arn').create_policy("invalidPolicy4",samplepolicy_testing)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+    #create-policy validation fails: invalid effect
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy-invalid-effect.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Policy Validation-Invalid Effect').create_policy("invalidPolicy5",samplepolicy_testing)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+    #create-policy validation fails: max-policy-size-exceed
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy-max-size-exceed.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Policy Validation-Max size exceed').create_policy("invalidPolicy6",samplepolicy_testing)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("LimitExceeded")
+
+    #create-policy validation fails: duplicate-SIDs
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy-duplicate-sids.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Policy Validation-Duplicate SIDs').create_policy("invalidPolicy7",samplepolicy_testing)\
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
 
 if __name__ == '__main__':

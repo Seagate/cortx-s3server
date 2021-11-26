@@ -1,0 +1,17 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreatePolicy",
+                "iam:ListAccessKeys"
+            ],
+            "Resource": [
+                "arn:awss:iam::352620587691:user/abc",
+                "arn:aws:ia::352620587691:policy/testpolicy"
+            ]
+        }
+    ]
+}
