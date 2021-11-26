@@ -27,6 +27,7 @@ import math
 import urllib
 import fcntl
 import glob
+import uuid
 from pathlib import Path
 from  ast import literal_eval
 from os import path
@@ -40,7 +41,6 @@ from s3_haproxy_config import S3HaproxyConfig
 from ldapaccountaction import LdapAccountAction
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
 import xml.etree.ElementTree as ET
-from cortx.utils.conf_store import Conf
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -224,26 +224,25 @@ class ConfigCmd(SetupCmd):
       ldap_lock = False
       self.logger.info('checking for concurrent execution scenario for s3 ldap scheam push using consul kv lock.')
       openldap_key=self.get_confkey("S3_CONSUL_OPENLDAP_KEY")
-      consul_index=self.get_confkey("S3_CONSUL_INDEX")
       consul_endpoint_url=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "fqdn", "tcp")
       consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "port", "tcp")
       # consul url will be : consul://consul-server.default.svc.cluster.local:8500
       consul_url='consul://' + f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
-      self.logger.info('loading consul service with index as:', f'{consul_index}', 'and consul endpoint URL as:', f'{consul_url}')
-      Conf.load(f'{consul_index}', f'{consul_url}')
+      self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
+      # Conf.load(f'{consul_index}', f'{consul_url}')
+      consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
       while(True):
           try:
-              opendldap_val = Conf.get(f'{consul_index}', f'{openldap_key}')
-              self.logger.info('openldap value is:', f'{opendldap_val}')
+              opendldap_val = consul_confstore.get_config(f'{openldap_key}')
+              self.logger.info(f'openldap lock value is:{opendldap_val}')
               if opendldap_val is None:
-                  self.logger.info('Setting confstore value for key :', f'{openldap_key}', ' and value as :', f'{self.machine_id}')
-                  Conf.set(f'{consul_index}', f'{openldap_key}', f'{self.machine_id}')
-                  self.logger.info('Saving confstore with latest value')
-                  Conf.save(f'{consul_index}')
+                  self.logger.info(f'Setting confstore value for key :{openldap_key} and value as :{self.machine_id}')
+                  consul_confstore.set_config(f'{openldap_key}', f'{self.machine_id}', True)
+                  self.logger.info('Updated confstore with latest value')
                   time.sleep(5)
                   continue
               if opendldap_val == self.machine_id:
-                  self.logger.info('Found lock already acquired hence enabling flag')
+                  self.logger.info(f'Found lock already acquired hence enabling flag')
                   ldap_lock = True
                   break
               if opendldap_val != self.machine_id:
@@ -252,18 +251,18 @@ class ConfigCmd(SetupCmd):
                   break
 
           except Exception as e:
-              self.logger.error('Exception occured while connecting consul service endpoint', f'{e}')
+              self.logger.error(f'Exception occured while connecting consul service endpoint {e}')
               break
       if ldap_lock == True:
         # push openldap schema
         self.logger.info('Pushing s3 ldap schema ....!!')
         self.configure_s3_schema()
         self.logger.info('Pushed s3 ldap schema successfully....!!')
-        self.logger.info('Deleting consule key :', f'{openldap_key}', ' from index :', f'{consul_index}')
-        Conf.delete(f'{consul_index}', f'{openldap_key}')
-        self.logger.info('deleted openldap key-value from consul index as:', f'{consul_index}', 'using consul endpoint URL as:', f'{consul_url}')
+        self.logger.info(f'Deleting consule key :{openldap_key}')
+        consul_confstore.delete_key(f'{openldap_key}', True)
+        self.logger.info(f'deleted openldap key-value from consul using consul endpoint URL as:{consul_url}')
         # below code for testing purpose
-        val = Conf.get(f'{consul_index}', f'{openldap_key}')
+        val = consul_confstore.get_config(f'{openldap_key}')
         self.logger.info('get s3 value from consul wth same key (expected as None) : ', f'{val}')
 
   def configure_s3_schema(self):

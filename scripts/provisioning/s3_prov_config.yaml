@@ -183,5 +183,4 @@ S3_CONF_SYMLINK: "/opt/seagate/cortx/s3/install/logrotate/s3config.yaml"
 S3_HAPROXY_LOG_SYMLINK: "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy.log"
 
 # Consul entries for configuring s3 openldap schema
-S3_CONSUL_INDEX: "s3_consul_index"
 S3_CONSUL_OPENLDAP_KEY: "component>s3>openldap_lock"
