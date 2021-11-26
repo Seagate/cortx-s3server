@@ -31,6 +31,7 @@
 #include "s3_put_object_action_base.h"
 #include "s3_object_data_copier.h"
 #include "s3_object_metadata.h"
+#include "s3_bucket_counters.h"
 
 const uint64_t MaxCopyObjectSourceSize = 5368709120UL;  // 5GB
 
@@ -103,6 +104,9 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();
+  void save_dest_bucket_counters();
+  void save_bucket_counters_success();
+  void save_bucket_counters_failed();
   void start_response();
   void send_response_to_s3_client() final;
 
