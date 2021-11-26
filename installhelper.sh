@@ -137,6 +137,7 @@ cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/preparecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/preupgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/postupgradecmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/upgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/starthaproxy.sh $S3_INSTALL_LOCATION/bin

@@ -86,7 +86,7 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     cs_conf_file.save_config()
     logger.info(f'config file {str(configFile)} upgrade completed')
 
-def merge_configs(config_file_path: str, s3_tmp_dir, service_list = ["s3", "auth", "keystore", "bgdelete", "cluster"]):
+def merge_configs(config_file_path: str, s3_tmp_dir, service_list = ["io", "auth", "bg_consumer", "bg_producer"]):
     """
     - This function will merge all S3 config files during upgrade
     - This function should be used outside this file to call configs upgrade
@@ -132,8 +132,19 @@ def merge_configs(config_file_path: str, s3_tmp_dir, service_list = ["s3", "auth
         }
     }
 
-    for service in service_list:
-      if service in g_upgrade_items:
+    lookup_service = { "io"           : ["cluster", "s3"],
+                       "auth"         : ["cluster", "keystore", "auth"],
+                       "bg_consumer"  : ["cluster", "bgdelete"],
+                       "bg_producer"  : ["cluster", "bgdelete"]
+    }
+
+    for ser_key in service_list:
+      if ser_key not in lookup_service:
+        raise Exception(f'ERROR: {ser_key} incorrect service passed')
+
+    for ser_key in service_list:
+      ser_list = lookup_service[ser_key]
+      for upgrade_item in ser_list:
         upgrade_config(g_upgrade_items[upgrade_item]['configFile'],
           g_upgrade_items[upgrade_item]['oldSampleFile'],
           g_upgrade_items[upgrade_item]['newSampleFile'],
