@@ -50,6 +50,7 @@ class S3DeleteObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
 
   int layout_id;
+  size_t dummy_size = 100;
   struct m0_uint128 new_object_oid;
   unsigned motr_write_payload_size;
   std::string new_oid_str;

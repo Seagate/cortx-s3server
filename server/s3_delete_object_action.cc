@@ -23,6 +23,7 @@
 #include "s3_iem.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_common_utilities.h"
+#include "s3_uri_to_motr_oid.h"
 
 extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
@@ -65,6 +66,8 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
+  S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
+                 &new_object_oid);
   setup_steps();
 }
 
@@ -191,7 +194,7 @@ void S3DeleteObjectAction::create_delete_marker() {
   }
 
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
-      request->get_content_length()));
+      dummy_size));
 
   motr_writer->create_object(
       std::bind(&S3DeleteObjectAction::create_object_successful, this),
@@ -249,7 +252,7 @@ void S3DeleteObjectAction::save_delete_marker() {
 
   // save metadata to object index and version index
   // bypass shutdown signal check for next task
-  check_shutdown_signal_for_next_task(false);
+  // check_shutdown_signal_for_next_task(false);
   delete_marker_metadata->save(
       std::bind(&S3DeleteObjectAction::save_delete_marker_success, this),
       std::bind(&S3DeleteObjectAction::save_delete_marker_failed, this));
