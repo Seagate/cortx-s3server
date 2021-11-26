@@ -160,7 +160,6 @@ def main():
 
       # Print last few line of S3 bgdelete producer log  file
       os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
-      time.sleep(36000)
 
     elif args.service == 's3bgconsumer':
       # Start the Background Consumer
@@ -174,7 +173,6 @@ def main():
 
       # Print last few line of S3 bgdelete consumer log  file
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
-      time.sleep(36000)
 
     elif args.service == 'haproxy':
       haproxy_log_path = os.path.join(base_logdir_path, 's3', machine_id, 'haproxy/haproxy.log')
