@@ -47,7 +47,9 @@ class IAMPolicyValidator extends PolicyValidator {
       LoggerFactory.getLogger(IAMPolicyValidator.class.getName());
   static Set<String> policyElements = new HashSet<>();
   static Set<String> statementElements = new HashSet<>();
+  Set<String> sids = new HashSet<>();
   ArnParser iamArnparser = null;
+  ArnParser s3Arnparser = null;
  private
   static final int MAX_IAM_POLICY_SIZE = 6144;
 
@@ -55,6 +57,7 @@ class IAMPolicyValidator extends PolicyValidator {
   IAMPolicyValidator() {
     responseGenerator = new PolicyResponseGenerator();
     iamArnparser = new IAMArnParser();
+    s3Arnparser = new S3ArnParser();
     initializePolicyElements();
     initializeStatementElements();
   }
@@ -136,7 +139,7 @@ class IAMPolicyValidator extends PolicyValidator {
         if (response != null) return response;
       } else if (JsonDocumentFields.STATEMENT.equals(key)) {
         LOGGER.debug("Validating IAM policy statement field syntax");
-        response = validateStatementSyntax(jsonObject);
+        response = validateStatementSyntax(jsonObject, sids);
         if (response != null) return response;
 
         if (jsonObject.get(JsonDocumentFields.STATEMENT) instanceof JSONArray) {
@@ -205,7 +208,8 @@ class IAMPolicyValidator extends PolicyValidator {
 
   @Override boolean isArnFormatValid(String arn) {
 
-    return iamArnparser.isArnFormatValid(arn);
+    return iamArnparser.isArnFormatValid(arn) ||
+           s3Arnparser.isArnFormatValid(arn);
   }
 
   @Override ServerResponse
