@@ -46,7 +46,8 @@ class CORTXS3Config(object):
         self.logger = logging.getLogger(__name__ + "CORTXS3Config")
         self.s3bdg_access_key = None
         self.s3bgd_secret_key = None
-        if os.path.isfile(os.path.join(base_cfg_path,"/s3/s3backgrounddelete/config.yaml")):
+        self.logger.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
+        if os.path.isfile(os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")):
             # Load config.yaml file through confstore.
             bgdelete_conf_file = cfg_type + os.path.join(base_cfg_path,"/s3/s3backgrounddelete/config.yaml")
             if self.s3confstore is None:
