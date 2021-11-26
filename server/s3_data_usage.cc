@@ -18,12 +18,14 @@
  *
  */
 
+#include "s3_data_usage.h"
+
 #include <json/json.h>
-#include "s3_bucket_counters.h"
+
 #include "s3_log.h"
 
-#define JSON_OBJECTS_COUNT  "objects_count"
-#define JSON_BYTES_COUNT    "bytes_count"
+#define JSON_OBJECTS_COUNT "objects_count"
+#define JSON_BYTES_COUNT "bytes_count"
 #define JSON_DEGRADED_COUNT "degraded_count"
 
 extern struct s3_motr_idx_layout bucket_object_count_index_layout;
@@ -79,10 +81,12 @@ std::shared_ptr<S3BucketObjectCounter> S3DataUsageCache::get_bucket_counters(
   }
 }
 
-void S3DataUsageCache::update_bucket_capacity(
-    std::shared_ptr<RequestObject> req, std::shared_ptr<S3BucketMetadata> src,
-    int64_t objects_count_increment, int64_t bytes_count_increment,
-    std::function<void()> on_success, std::function<void()> on_failure) {
+void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
+                                         std::shared_ptr<S3BucketMetadata> src,
+                                         int64_t objects_count_increment,
+                                         int64_t bytes_count_increment,
+                                         std::function<void()> on_success,
+                                         std::function<void()> on_failure) {
   s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Entry", __func__);
 
   std::shared_ptr<S3BucketObjectCounter> counter(get_bucket_counters(req, src));
@@ -160,7 +164,6 @@ void S3BucketObjectCounter::load_successful() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   if (this->from_json(motr_kv_reader->get_value()) != 0) {
-
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 ":%" SCNx64 ", Key = %s, Value = %s\n",

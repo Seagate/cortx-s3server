@@ -37,7 +37,7 @@
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_probable_delete_record.h"
-#include "s3_bucket_counters.h"
+#include "s3_data_usage.h"
 
 class S3DeleteMultipleObjectsAction : public S3BucketAction {
   std::vector<std::shared_ptr<S3ObjectMetadata>> objects_metadata;

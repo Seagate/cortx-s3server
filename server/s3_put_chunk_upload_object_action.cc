@@ -739,7 +739,7 @@ void S3PutChunkUploadObjectAction::save_bucket_counters() {
     inc_obj_size = new_object_metadata->get_content_length();
   }
 
-  S3BucketCapacityCache::update_bucket_capacity(
+  S3DataUsageCache::get_instance()->update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3PutChunkUploadObjectAction::save_bucket_counters_success,
                 this),

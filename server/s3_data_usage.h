@@ -20,13 +20,14 @@
 
 #pragma once
 
-#include <string>
-#include <map>
-#include <functional>
 #include <cstdint>
+#include <functional>
+#include <map>
+#include <string>
+
+#include "s3_factory.h"
 #include "s3_motr_kvs_reader.h"
 #include "s3_motr_kvs_writer.h"
-#include "s3_factory.h"
 
 class S3BucketObjectCounter;
 
@@ -55,12 +56,11 @@ class S3DataUsageCache {
   S3DataUsageCache() {}
 
   std::shared_ptr<S3BucketObjectCounter> get_bucket_counters(
-    std::shared_ptr<RequestObject> req,
-    std::shared_ptr<S3BucketMetadata> bkt_md);
+      std::shared_ptr<RequestObject> req,
+      std::shared_ptr<S3BucketMetadata> bkt_md);
 };
 
 class S3BucketObjectCounter {
-
  private:
   std::string request_id;
   std::string bucket_name;

@@ -32,7 +32,7 @@
 #include "s3_probable_delete_record.h"
 #include "s3_aws_etag.h"
 #include "s3_uuid.h"
-#include "s3_bucket_counters.h"
+#include "s3_data_usage.h"
 
 enum class S3PostCompleteActionState {
   empty,                         // Initial state

@@ -302,7 +302,7 @@ void S3DeleteObjectAction::save_bucket_counters() {
   inc_object_count = -1;
   inc_obj_size = -(object_metadata->get_content_length());
 
-  S3DataUsageCache::get_instance()->update_bucket_capacity(
+  S3DataUsageCache::get_instance()->update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3DeleteObjectAction::save_bucket_counters_success, this),
       std::bind(&S3DeleteObjectAction::save_bucket_counters_failed, this));
