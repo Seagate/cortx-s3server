@@ -305,7 +305,7 @@ ChildNodes S3PutReplicationBody::convert_str_to_enum(const unsigned char *str) {
 bool S3PutReplicationBody::read_rule_node(
     xmlNodePtr &rule_node, std::map<std::string, std::string> &rule_tags,
     bool &is_and_node_present, bool &is_rule_prefix_present,
-    bool &is_filter_empty, bool is_priority_present) {
+    bool &is_filter_empty, bool &is_priority_present) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   rule_number_cnt++;
   s3_log(S3_LOG_INFO, request_id, "Reading rule[%d]\n", rule_number_cnt);

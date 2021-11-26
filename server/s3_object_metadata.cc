@@ -22,7 +22,6 @@
 #include <cassert>
 
 #include <json/json.h>
-
 #include "base64.h"
 #include "s3_datetime.h"
 #include "s3_factory.h"
@@ -789,7 +788,20 @@ std::string S3ObjectMetadata::to_json() {
   }
   if (is_rep_policy_applicable) {
     root["x-amz-replication-status"] = obj_replication_status;
-    root["destination_bucket_name"] = destination_bucket_name;
+
+    Json::Value dest_node;
+    Json::Value map_node(Json::arrayValue);
+    Json::Value map_object;
+    std::map<std::string, std::string> rep_config_map;
+    for (auto dest_bucket : destination_bucket_map) {
+      rep_config_map = dest_bucket.second;
+      for (auto itr : rep_config_map) {
+        map_object["DeleteMarkerReplicationStatus"] = itr.first;
+        map_node.append(map_object);
+      }
+      dest_node[dest_bucket.first] = map_node;
+    }
+    root["x-amz-replication-config"] = dest_node;
   }
   S3DateTime current_time;
   current_time.init_current_time();
@@ -936,11 +948,10 @@ int S3ObjectMetadata::from_json(std::string content) {
     object_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
   }
 
-  if (!newroot["x-amz-replication-status"].isNull() &&
-      !newroot["destination_bucket_name"].isNull()) {
+  if (!newroot["x-amz-replication-status"].isNull()) {
     obj_replication_status = newroot["x-amz-replication-status"].asString();
-    destination_bucket_name = newroot["destination_bucket_name"].asString();
   }
+
   acl_from_json(newroot["ACL"].asString());
 
   return 0;
@@ -971,17 +982,15 @@ void S3ObjectMetadata::set_tags(
 
 void S3ObjectMetadata::set_replication_status_and_dest_bucket(
     bool is_rep_applicable,
-    const std::map<std::string, std::string>& new_object_tags_map,
+    const std::map<std::string, std::string>& object_tags_map,
     const std::string& rep_config_json) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (check_bucket_replication_policy(new_object_tags_map, rep_config_json)) {
+  if (check_bucket_replication_policy(object_tags_map, rep_config_json)) {
     obj_replication_status = "PENDING";
     is_rep_policy_applicable = is_rep_applicable;
     s3_log(S3_LOG_DEBUG, stripped_request_id,
-           "destination_bucket_name =%s , is_rep_policy_applicable = %d, "
-           "obj_replication_status = %s \n",
-           destination_bucket_name.c_str(), is_rep_policy_applicable,
-           obj_replication_status.c_str());
+           " is_rep_policy_applicable = %d, obj_replication_status = %s \n",
+           is_rep_policy_applicable, obj_replication_status.c_str());
   }
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
@@ -1625,7 +1634,7 @@ void S3ObjectExtendedMetadata::remove_ext_object_metadata_failed() {
 }
 void S3ObjectMetadata::get_tags_from_replication_policy(
     std::map<std::string, std::string>& rep_config_object_tags_map,
-    Json::Value tag_array) {
+    const Json::Value tag_array) {
   std::string key_str, val_str;
   for (unsigned int index = 0; index < tag_array.size(); ++index) {
     Json::Value tag_object = tag_array[index];
@@ -1637,37 +1646,34 @@ void S3ObjectMetadata::get_tags_from_replication_policy(
   }
 }
 
-// Check if bucket replication policy is applicable to the current object
-// If applicable it returns true
+/*Description : This function checks if bucket replication policy is applicable
+   to the current object and updates the destination bucket map.
+        * Returns : True if bucket policy is applicable to object
+        * IN Parameters :
+               1] object_tags_map :: current object's tags map
+               2] rep_config_json :: replication configuration in json string
+   format
+*/
 bool S3ObjectMetadata::check_bucket_replication_policy(
-    const std::map<std::string, std::string>& new_object_tags_map,
+    const std::map<std::string, std::string>& object_tags_map,
     const std::string& rep_config_json) {
-  std::string prefix;
-  std::map<std::string, std::string> rep_config_object_tags_map;
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  // get object name
-  std::string object_name = request->get_object_name();
-  s3_log(S3_LOG_DEBUG, stripped_request_id, "object_name = %s \n",
-         object_name.c_str());
-
-  // Check if prefix and tags provide in replication policy matches to the
-  // current object
   Json::Reader reader;
   Json::Value newroot;
-
   bool parsingSuccessful = reader.parse(rep_config_json.c_str(), newroot);
   if (!parsingSuccessful) {
     s3_log(S3_LOG_DEBUG, request_id, "Json Parsing failed.\n");
     return false;
   }
-
-  std::string key_str, val_str;
+  destination_bucket_map.clear();
   Json::Value rule_array = newroot["Rules"];
   Json::Value rule_object;
 
   // Iterate over the number of rules present in replication configuration.
   for (unsigned int index = 0; index < rule_array.size(); ++index) {
-    std::string rule_status;
+    std::string rule_status, new_rule_priority;
+    std::string new_dest_bucket_name, new_delete_marker_rep_status;
     rule_object = rule_array[index];
     // If rule is in disabled state, replication state will not be added to
     // object
@@ -1679,92 +1685,206 @@ bool S3ObjectMetadata::check_bucket_replication_policy(
         continue;
       }
     }
-    // Get the destination bucket name
-    if (!rule_object["Destination"].isNull()) {
-      destination_bucket_name = rule_object["Destination"]["Bucket"].asString();
-      s3_log(S3_LOG_DEBUG, request_id, "destination_bucket_name = %s\n",
-             destination_bucket_name.c_str());
-    }
-    if (!rule_object["Filter"].isNull()) {
 
-      if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
-          rule_object["Filter"]["And"]["Prefix"].isNull()) {
-        // If tag,and nodes are present in filter and Prefix is not present.
-        Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
-        get_tags_from_replication_policy(rep_config_object_tags_map, tag_array);
-        // Only multiple tags are present
-        if (!rep_config_object_tags_map.empty() &&
-            !new_object_tags_map.empty() && prefix.empty()) {
-          if (rep_config_object_tags_map == new_object_tags_map) {
+    if (check_replication_filter_match(rule_object, object_tags_map)) {
+      get_rule_configuration_from_replication_policy(
+          rule_object, new_dest_bucket_name, new_delete_marker_rep_status,
+          new_rule_priority);
+      check_and_update_destination_bucket_map(new_dest_bucket_name,
+                                              new_delete_marker_rep_status,
+                                              new_rule_priority);
 
-            s3_log(S3_LOG_DEBUG, request_id,
-                   "Multiple tags are present - Matched with object tags\n");
-            return true;
-          }
-        }
-
-      } else if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
-                 !rule_object["Filter"]["And"]["Prefix"].isNull()) {
-
-        // If tag,and,Prefix nodes are present  in filter
-        prefix = rule_object["Filter"]["And"]["Prefix"].asString();
-        Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
-        get_tags_from_replication_policy(rep_config_object_tags_map, tag_array);
-        // Prefix and tags are present
-        if (!rep_config_object_tags_map.empty() &&
-            !new_object_tags_map.empty() && !prefix.empty()) {
-
-          if ((rep_config_object_tags_map == new_object_tags_map) &&
-              (object_name.rfind(prefix, 0) == 0)) {
-            s3_log(S3_LOG_DEBUG, request_id,
-                   "Prefix and tags are present - Matched with object tags and "
-                   "object name\n");
-            return true;
-          }
-        }
-
-      } else if (!rule_object["Filter"]["Tag"].isNull()) {
-        // If only tag node is present in filter
-        key_str = rule_object["Filter"]["Tag"]["Key"].asString();
-        val_str = rule_object["Filter"]["Tag"]["Value"].asString();
-
-        // store tags as a map
-        rep_config_object_tags_map[key_str] = val_str;
-
-        // Only tag is present
-        if (!rep_config_object_tags_map.empty() &&
-            !new_object_tags_map.empty() && prefix.empty()) {
-          if ((rep_config_object_tags_map == new_object_tags_map)) {
-            s3_log(S3_LOG_DEBUG, request_id,
-                   "tag is present - Matched with object tag\n");
-            return true;
-          }
-        }
-      } else if (!rule_object["Filter"]["Prefix"].isNull()) {
-        // If only Prefix node is present in filter
-        prefix = rule_object["Filter"]["Prefix"].asString();
-        s3_log(S3_LOG_DEBUG, request_id, "prefix = %s object_name = %s\n",
-               prefix.c_str(), object_name.c_str());
-        // Only Prefix is present - object tags might be present so only
-        // checking if replication config tags are empty
-        if (rep_config_object_tags_map.empty() && !prefix.empty()) {
-          if (object_name.rfind(prefix, 0) == 0) {
-            s3_log(S3_LOG_DEBUG, request_id,
-                   "Prefix is present - Matched with object name\n");
-            return true;
-          }
-        } else if (prefix.empty()) {  // Prefix can be empty - This means every
-                                      // object will be replicate.
-          s3_log(S3_LOG_DEBUG, request_id, "Empty Prefix is present.\n");
-          return true;
-        }
-      }
     } else {
-      s3_log(S3_LOG_DEBUG, request_id, "Empty Filter is present.\n");
-      // Empty filter is specified - This means every object will be replicated.
+      s3_log(S3_LOG_DEBUG, request_id, "Filter does not matched.\n");
+      return false;
+    }
+  }
+  // Added this log for demo purpose.Can be remove later.
+  for (auto dest : destination_bucket_map) {
+    std::map<std::string, std::string> dest_map = dest.second;
+
+    s3_log(S3_LOG_INFO, stripped_request_id, " %s ::[%s, %s ]\n",
+           dest.first.c_str(),
+           dest_map["DeleteMarkerReplicationStatus"].c_str(),
+           dest_map["Priority"].c_str());
+  }
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+  return true;
+}
+
+/*Description : This function will check if new_dest_bucket_name is present in
+   destination_bucket_map and update the map accordingly.
+        * Returns : Nothing
+        * IN Parameters :
+               1] new_dest_bucket_name :: destination bucket name
+               2] new_delete_marker_rep_status :: delete marker repication
+   status
+               3] new_rule_priority :: rule priority
+*/
+void S3ObjectMetadata::check_and_update_destination_bucket_map(
+    const std::string& new_dest_bucket_name,
+    const std::string& new_delete_marker_rep_status,
+    const std::string& str_new_rule_priority) {
+  // destination bucket name present in different rules
+  // If yes check priority.Highest priority rule will be selected.
+  std::string str_rule_priority;
+  if (destination_bucket_map.find(new_dest_bucket_name) !=
+      destination_bucket_map.end()) {
+    s3_log(S3_LOG_DEBUG, request_id, "same dest bucket \n");
+    str_rule_priority =
+        destination_bucket_map[new_dest_bucket_name]["Priority"];
+    int rule_priority = stoi(str_rule_priority);
+    int new_rule_priority = stoi(str_new_rule_priority);
+    if (new_rule_priority > rule_priority) {
+      destination_bucket_map[new_dest_bucket_name]
+                            ["DeleteMarkerReplicationStatus"] =
+                                new_delete_marker_rep_status;
+      destination_bucket_map[new_dest_bucket_name]["Priority"] =
+          str_new_rule_priority;
+    }
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "different dest bucket \n");
+    // Store destination bucket name in map as different destination bucket
+    // name can be present in different rules.
+    // Storing destination bucket names along with  deleteMarker status and
+    // priority in map.
+    destination_bucket_map[new_dest_bucket_name]
+                          ["DeleteMarkerReplicationStatus"] =
+                              new_delete_marker_rep_status;
+    destination_bucket_map[new_dest_bucket_name]["Priority"] =
+        str_new_rule_priority;
+  }
+}
+
+/*Description : This function will get the destination bucket name,
+   DeleteMarkerReplication and rule priority of perticular rule.
+        * Returns : Nothing
+        * In Parameters:
+               1]  rule_object:: current rule object from rule array
+        * OUT Parameters :
+               1] new_dest_bucket_name :: destination bucket name
+               2] new_delete_marker_rep_status :: delete marker repication
+   status
+               3] new_rule_priority :: rule priority
+*/
+void S3ObjectMetadata::get_rule_configuration_from_replication_policy(
+    const Json::Value& rule_object, std::string& new_dest_bucket_name,
+    std::string& new_delete_marker_rep_status, std::string& new_rule_priority) {
+  // Get the destination bucket name
+  if (!rule_object["Destination"].isNull()) {
+    new_dest_bucket_name = rule_object["Destination"]["Bucket"].asString();
+
+    s3_log(S3_LOG_DEBUG, request_id, "destination_bucket_name = %s\n",
+           new_dest_bucket_name.c_str());
+  }
+  // Get deleteMarkerReplication state
+  if (!rule_object["DeleteMarkerReplication"].isNull()) {
+    new_delete_marker_rep_status =
+        rule_object["DeleteMarkerReplication"]["Status"].asString();
+    s3_log(S3_LOG_DEBUG, request_id, "DeleteMarkerReplication = %s\n",
+           new_delete_marker_rep_status.c_str());
+  }
+  // Get the rule priority
+  if (!rule_object["Priority"].isNull()) {
+    new_rule_priority = rule_object["Priority"].asString();
+  }
+}
+
+/*Description : This function Checks if current object matches with the filter
+   present in replication policy.
+        * Returns : True if replication filter matches with object.
+        * IN Parameters :
+               1] rule_object:: current rule object from rule array
+               2] rep_config_object_tags_map :: map of tags present in
+   replication policy
+               3] object_tags_map :: map of tags of current object
+
+*/
+bool S3ObjectMetadata::check_replication_filter_match(
+    const Json::Value& rule_object,
+    const std::map<std::string, std::string>& object_tags_map) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  std::string prefix;
+  std::string key_str, val_str;
+  std::map<std::string, std::string> rep_config_object_tags_map;
+  if (rule_object["Filter"].isNull()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Empty Filter is present.\n");
+    // Empty filter is specified - This means every object will be replicated.
+    return true;
+  }
+  if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
+      rule_object["Filter"]["And"]["Prefix"].isNull()) {
+    // If tag,and nodes are present in filter and Prefix is not present.
+    Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
+    get_tags_from_replication_policy(rep_config_object_tags_map, tag_array);
+    // Only multiple tags are present
+    if (!rep_config_object_tags_map.empty() && !object_tags_map.empty() &&
+        prefix.empty()) {
+      if (rep_config_object_tags_map == object_tags_map) {
+
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Multiple tags are present - Matched with object tags\n");
+        return true;
+      }
+    }
+
+  } else if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
+             !rule_object["Filter"]["And"]["Prefix"].isNull()) {
+
+    // If "tag","and","Prefix" nodes are present in filter
+    prefix = rule_object["Filter"]["And"]["Prefix"].asString();
+    Json::Value tag_array = rule_object["Filter"]["And"]["Tag"];
+    get_tags_from_replication_policy(rep_config_object_tags_map, tag_array);
+    // Prefix and tags are present (Empty Prefix can be present)
+    if (!rep_config_object_tags_map.empty() && !object_tags_map.empty()) {
+
+      if ((rep_config_object_tags_map == object_tags_map) &&
+          (object_name.rfind(prefix, 0) == 0)) {
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Prefix and tags are present - Matched with object tags and "
+               "object name\n");
+        return true;
+      }
+    }
+
+  } else if (!rule_object["Filter"]["Tag"].isNull()) {
+    // If only tag node is present in filter
+    key_str = rule_object["Filter"]["Tag"]["Key"].asString();
+    val_str = rule_object["Filter"]["Tag"]["Value"].asString();
+
+    // store tags as a map
+    rep_config_object_tags_map[key_str] = val_str;
+
+    // Only tag is present
+    if (!rep_config_object_tags_map.empty() && !object_tags_map.empty() &&
+        prefix.empty()) {
+      if ((rep_config_object_tags_map == object_tags_map)) {
+        s3_log(S3_LOG_DEBUG, request_id,
+               "tag is present - Matched with object tag\n");
+        return true;
+      }
+    }
+  } else if (!rule_object["Filter"]["Prefix"].isNull()) {
+    // If only Prefix node is present in filter
+    prefix = rule_object["Filter"]["Prefix"].asString();
+    s3_log(S3_LOG_DEBUG, request_id, "prefix = %s object_name = %s\n",
+           prefix.c_str(), object_name.c_str());
+
+    // Only Prefix is present - object tags might be present so only
+    // checking if replication config tags are empty
+    if (rep_config_object_tags_map.empty() && !prefix.empty()) {
+      if (object_name.rfind(prefix, 0) == 0) {
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Prefix is present - Matched with object name\n");
+        return true;
+      }
+    } else if (prefix.empty()) {  // Prefix can be empty - This means every
+                                  // object will be replicate.
+      s3_log(S3_LOG_DEBUG, request_id, "Empty Prefix is present.\n");
       return true;
     }
   }
 
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
   return false;
 }
