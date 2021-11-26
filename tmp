@@ -1,0 +1,49 @@
+diff --git a/scripts/provisioning/s3_setup b/scripts/provisioning/s3_setup
+index e556a25..5ce9cf5 100755
+--- a/scripts/provisioning/s3_setup
++++ b/scripts/provisioning/s3_setup
+@@ -75,6 +75,11 @@ def main():
+   postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+   postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
+ 
++  upgradeCmd = subparsers.add_parser('upgrade', help='setup upgrade')
++  upgradeCmd.add_argument("--config", help='config URL', type=str, required=False)
++  upgradeCmd.add_argument("--services", help='services', type=str, required=False)
++  upgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
++
+   args = parser.parse_args()
+ 
+   logger_dir_path = create_logger_directory(args.config)
+@@ -129,6 +134,8 @@ def main():
+       logger.info('post-upgrade started.')
+       PostUpgradeCmd(args.config, args.services).process()
+       logger.info('post-upgrade successful.')
++    elif args.command == 'upgrade':
++      logger.info('upgrade done.')
+ 
+   except Exception as e:
+     logger.error(f"{str(e)}")
+diff --git a/scripts/provisioning/setup.yaml b/scripts/provisioning/setup.yaml
+index b6e6d69..20b7373 100644
+--- a/scripts/provisioning/setup.yaml
++++ b/scripts/provisioning/setup.yaml
+@@ -114,10 +114,13 @@ s3:
+     cmd: /opt/seagate/cortx/s3/bin/s3_setup restore
+     args: --location $END-POINT
+   upgrade:
+-    pre:
+-      cmd: /opt/seagate/cortx/s3/bin/s3_setup preupgrade
+-      when: {{ level == 'node' and flow == 'upgrade-offline' }}
+-    post:
+-      cmd: /opt/seagate/cortx/s3/bin/s3_setup postupgrade
+-      when: {{ level == 'node' and flow == 'upgrade-offline' }}
++    cmd: /opt/seagate/cortx/s3/bin/s3_setup upgrade
++    args: --config $URL
++ #upgrade:
++ #  pre:
++ #    cmd: /opt/seagate/cortx/s3/bin/s3_setup preupgrade
++ #    args: --config $URL
++ #  post:
++ #    cmd: /opt/seagate/cortx/s3/bin/s3_setup postupgrade
++ #    args: --config $URL
+ 
