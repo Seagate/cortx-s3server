@@ -30,29 +30,29 @@
 
 class S3BucketObjectCounter;
 
-class S3BucketCapacityCache {
+class S3DataUsageCache {
  public:
-  S3BucketCapacityCache(const S3BucketCapacityCache&) = delete;
-  S3BucketCapacityCache& operator=(const S3BucketCapacityCache&) = delete;
+  S3DataUsageCache(const S3DataUsageCache&) = delete;
+  S3DataUsageCache& operator=(const S3DataUsageCache&) = delete;
 
-  static S3BucketCapacityCache* get_instance();
+  static S3DataUsageCache* get_instance();
 
-  void update_bucket_capacity(std::shared_ptr<RequestObject> req,
-                              std::shared_ptr<S3BucketMetadata> src,
-                              int64_t objects_count_increment,
-                              int64_t bytes_count_increment,
-                              std::function<void()> on_success,
-                              std::function<void()> on_failure);
+  void update_data_usage(std::shared_ptr<RequestObject> req,
+                         std::shared_ptr<S3BucketMetadata> src,
+                         int64_t objects_count_increment,
+                         int64_t bytes_count_increment,
+                         std::function<void()> on_success,
+                         std::function<void()> on_failure);
 
-  virtual ~S3BucketCapacityCache() {}
+  virtual ~S3DataUsageCache() {}
 
  private:
-  static std::unique_ptr<S3BucketCapacityCache> singleton;
+  static std::unique_ptr<S3DataUsageCache> singleton;
 
   std::map<std::string, std::shared_ptr<S3BucketObjectCounter> >
       bucket_wise_cache;
 
-  S3BucketCapacityCache() {}
+  S3DataUsageCache() {}
 
   std::shared_ptr<S3BucketObjectCounter> get_bucket_counters(
     std::shared_ptr<RequestObject> req,

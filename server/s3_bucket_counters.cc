@@ -28,11 +28,11 @@
 
 extern struct s3_motr_idx_layout bucket_object_count_index_layout;
 
-std::unique_ptr<S3BucketCapacityCache> S3BucketCapacityCache::singleton;
+std::unique_ptr<S3DataUsageCache> S3DataUsageCache::singleton;
 
-S3BucketCapacityCache* S3BucketCapacityCache::get_instance() {
+S3DataUsageCache* S3DataUsageCache::get_instance() {
   if (!singleton) {
-    singleton.reset(new S3BucketCapacityCache());
+    singleton.reset(new S3DataUsageCache());
   }
   return singleton.get();
 }
@@ -49,7 +49,7 @@ std::string generate_unique_id() {
   return "1";
 }
 
-std::shared_ptr<S3BucketObjectCounter> S3BucketCapacityCache::get_bucket_counters(
+std::shared_ptr<S3BucketObjectCounter> S3DataUsageCache::get_bucket_counters(
     std::shared_ptr<RequestObject> req,
     std::shared_ptr<S3BucketMetadata> bkt_md) {
   s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Entry", __func__);
@@ -79,7 +79,7 @@ std::shared_ptr<S3BucketObjectCounter> S3BucketCapacityCache::get_bucket_counter
   }
 }
 
-void S3BucketCapacityCache::update_bucket_capacity(
+void S3DataUsageCache::update_bucket_capacity(
     std::shared_ptr<RequestObject> req, std::shared_ptr<S3BucketMetadata> src,
     int64_t objects_count_increment, int64_t bytes_count_increment,
     std::function<void()> on_success, std::function<void()> on_failure) {
