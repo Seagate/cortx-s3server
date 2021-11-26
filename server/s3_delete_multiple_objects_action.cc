@@ -89,6 +89,7 @@ void S3DeleteMultipleObjectsAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::validate_request, this);
   ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::fetch_objects_info, this);
+  ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::save_bucket_counters, this);
   // ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::fetch_objects_extended_info,
   //                this);
   // Delete will be cycling between delete_objects_metadata and delete_objects
@@ -178,7 +179,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info() {
     for (const auto& key : keys_to_delete) {
       delete_objects_response.add_success(key);
     }
-    send_response_to_s3_client();
+    next();
   } else {
     if (delete_index_in_req < delete_request.get_count()) {
       keys_to_delete.clear();
@@ -210,7 +211,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_failed() {
     if (delete_index_in_req < delete_request.get_count()) {
       fetch_objects_info();
     } else {
-      send_response_to_s3_client();
+      next();
     }
   } else {
     set_s3_error("InternalError");
@@ -281,8 +282,10 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
     } else {
       if (!at_least_one_delete_successful) {
         set_s3_error("InternalError");
+        send_response_to_s3_client();
+      } else {
+        next();
       }
-      send_response_to_s3_client();
     }
   } else {
     // next();
@@ -340,6 +343,42 @@ void S3DeleteMultipleObjectsAction::fetch_objects_extended_info_failed() {
     add_object_oid_to_probable_dead_oid_list();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3DeleteMultipleObjectsAction::save_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  inc_object_count = -objects_metadata.size();
+  for (auto& object_metadata : objects_metadata) {
+    inc_obj_size -= (object_metadata->get_content_length());
+  }
+
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters_success,
+                this),
+      std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters_failed,
+                this));
+
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3DeleteMultipleObjectsAction::save_bucket_counters_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  next();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+// TODO : how to handle failures to save bucket counters at this stage.
+// Currently just logging error and moving ahead.
+void S3DeleteMultipleObjectsAction::save_bucket_counters_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+  set_s3_error("InternalError");
+  next();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
 void S3DeleteMultipleObjectsAction::_add_object_oid_to_probable_dead_oid_list(
@@ -534,7 +573,7 @@ void S3DeleteMultipleObjectsAction::delete_extended_metadata_successful() {
     // Try to fetch the remaining
     fetch_objects_info();
   } else {
-    send_response_to_s3_client();
+    next();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -592,8 +631,10 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata_failed() {
     } else {
       if (!at_least_one_delete_successful) {
         set_s3_error("InternalError");
+        send_response_to_s3_client();
+      } else {
+        next();
       }
-      send_response_to_s3_client();
     }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
