@@ -123,6 +123,10 @@ static void str_set_default(std::string& sref, const char* sz) {
   }
 }
 
+void S3ObjectMetadata::set_bucket_versioning_status(
+    const std::string& versioning_status) {
+  bucket_versioning_status = versioning_status;
+}
 void S3ObjectMetadata::initialize(bool ismultipart,
                                   const std::string& uploadid) {
   is_multipart = ismultipart;
@@ -806,14 +810,45 @@ std::string S3ObjectMetadata::to_json() {
 std::string S3ObjectMetadata::version_entry_to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
   Json::Value root;
-  // Processing version entry currently only needs minimal information
-  // In future when real S3 versioning is supported, this method will not be
-  // required and we can simply use to_json.
+  root["Bucket-Name"] = bucket_name;
+  if (s3_di_fi_is_enabled("di_metadata_bcktname_on_write_corrupted")) {
+    root["Bucket-Name"] = "@" + bucket_name + "@";
+  }
+  root["Object-Name"] = object_name;
+  if (s3_di_fi_is_enabled("di_metadata_objname_on_write_corrupted")) {
+    root["Object-Name"] = "@" + object_name + "@";
+  }
+  root["Object-URI"] = object_key_uri;
+  root["layout_id"] = layout_id;
+
+  if (is_multipart) {
+    root["Upload-ID"] = upload_id;
+    root["motr_part_layout"] = motr_part_layout_str;
+    root["motr_old_oid"] = motr_old_oid_str;
+    root["old_layout_id"] = old_layout_id;
+    root["motr_old_object_version_id"] = motr_old_object_version_id;
+  }
 
   // root["Object-Name"] = object_name;
   root["motr_oid"] = motr_oid_str;
-  root["layout_id"] = layout_id;
-  root["PVID"] = pvid_str;
+  root["PVID"] = this->pvid_str;
+
+  for (auto sit : system_defined_attribute) {
+    root["System-Defined"][sit.first] = sit.second;
+  }
+  for (auto uit : user_defined_attribute) {
+    root["User-Defined"][uit.first] = uit.second;
+  }
+  for (const auto& tag : object_tags) {
+    root["User-Defined-Tags"][tag.first] = tag.second;
+  }
+  if (encoded_acl == "") {
+
+    root["ACL"] = request->get_default_acl();
+
+  } else {
+    root["ACL"] = encoded_acl;
+  }
 
   S3DateTime current_time;
   current_time.init_current_time();
@@ -821,7 +856,6 @@ std::string S3ObjectMetadata::version_entry_to_json() {
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
-  ;
 }
 
 /*

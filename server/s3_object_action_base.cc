@@ -106,6 +106,8 @@ void S3ObjectAction::fetch_object_info() {
 
 void S3ObjectAction::fetch_object_info_success() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  object_metadata->set_bucket_versioning_status(
+      bucket_metadata->get_bucket_versioning_status());
   request->set_object_size(object_metadata->get_content_length());
   // TODO: Read extended object's parts/fragments, depending on the type of
   // primary object.
