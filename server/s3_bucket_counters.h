@@ -28,10 +28,6 @@
 #include "s3_motr_kvs_writer.h"
 #include "s3_factory.h"
 
-#define OBJECT_COUNT "Object_count"
-#define TOTAL_SIZE "Total_size"
-#define DEGRADED_COUNT "Degraded_count"
-
 class S3BucketObjectCounter;
 
 class S3BucketCapacityCache {

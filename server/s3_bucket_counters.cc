@@ -22,6 +22,10 @@
 #include "s3_bucket_counters.h"
 #include "s3_log.h"
 
+#define JSON_OBJECTS_COUNT  "objects_count"
+#define JSON_BYTES_COUNT    "bytes_count"
+#define JSON_DEGRADED_COUNT "degraded_count"
+
 extern struct s3_motr_idx_layout bucket_object_count_index_layout;
 
 std::unique_ptr<S3BucketCapacityCache> S3BucketCapacityCache::singleton;
@@ -230,11 +234,11 @@ std::string S3BucketObjectCounter::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
 
   Json::Value root;
-  root[OBJECT_COUNT] =
+  root[JSON_OBJECTS_COUNT] =
       Json::Value((Json::Value::UInt64)(saved_object_count + inc_object_count));
-  root[TOTAL_SIZE] =
+  root[JSON_BYTES_COUNT] =
       Json::Value((Json::Value::UInt64)(saved_total_size + inc_total_size));
-  root[DEGRADED_COUNT] = Json::Value(
+  root[JSON_DEGRADED_COUNT] = Json::Value(
       (Json::Value::UInt64)(saved_degraded_count + inc_degraded_count));
 
   Json::FastWriter fastWriter;
@@ -252,9 +256,9 @@ int S3BucketObjectCounter::from_json(std::string content) {
     return -1;
   }
 
-  saved_object_count = newroot[OBJECT_COUNT].asUInt64();
-  saved_total_size = newroot[TOTAL_SIZE].asUInt64();
-  saved_degraded_count = newroot[DEGRADED_COUNT].asUInt64();
+  saved_object_count = newroot[JSON_OBJECTS_COUNT].asUInt64();
+  saved_total_size = newroot[JSON_BYTES_COUNT].asUInt64();
+  saved_degraded_count = newroot[JSON_DEGRADED_COUNT].asUInt64();
 
   s3_log(S3_LOG_INFO, request_id,
          "%s Load complete. saved_object_count = %lu, saved_total_size = %lu, "
