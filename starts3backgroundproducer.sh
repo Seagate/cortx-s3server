@@ -20,4 +20,4 @@
 
 cd "$(dirname "$0")"
 
-/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
+/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer "prod1" $1 $2

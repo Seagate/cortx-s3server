@@ -39,10 +39,10 @@ from s3backgrounddelete.cortx_s3_signal import SigTermHandler
 class ObjectRecoveryProcessor(object):
     """Provides consumer for object recovery"""
 
-    def __init__(self):
+    def __init__(self,base_config_path:str = "/etc/cortx",config_type:str = "yaml://"):
         """Initialise Server, config and create logger."""
         self.server = None
-        self.config = CORTXS3Config()
+        self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type)
         self.create_logger_directory()
         self.create_logger()
         self.signal = DynamicConfigHandler(self)
