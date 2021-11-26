@@ -24,6 +24,7 @@
 #define __S3_SERVER_S3_LIST_OBJECT_VERSIONS_ACTION_H__
 
 #include <memory>
+#include <vector>
 
 #include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
@@ -40,13 +41,30 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   bool fetch_successful;
   size_t key_Count;
   short retry_count = 0;
-
+  bool response_is_truncated;
+  std::string saved_last_key;
+  // Identify total keys visited/touched in object versions listing
+  size_t total_keys_visited;
   std::string last_key;  // last key during each iteration
+  std::string next_key_marker;
   // Request Input params
   std::string bucket_name;
   std::string request_prefix;
   std::string request_delimiter;
-  std::string request_marker_key;
+  std::string request_key_marker;
+  size_t max_keys;
+  std::string encoding_type;
+
+  std::vector<std::shared_ptr<S3ObjectMetadata>> versions_list;
+  std::set<std::string> common_prefixes;
+  std::string response_xml;
+
+  void set_next_key_marker(std::string next, bool url_encode = true);
+  void add_object_version(std::shared_ptr<S3ObjectMetadata> object);
+  void add_common_prefix(std::string);
+  bool is_prefix_in_common_prefix(std::string& prefix);
+  std::string& get_response_xml();
+  std::string get_encoded_key_value(const std::string& key_value);
 
  public:
   S3ListObjectVersionsAction(
@@ -60,10 +78,10 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   void setup_steps();
   void fetch_bucket_info_failed();
   // Derived class can override S3 request validation logic
-  virtual void validate_request();
-  void get_next_object_versions();
-  void get_next_object_versions_successful();
-  void get_next_object_versions_failed();
+  void validate_request();
+  void get_next_versions();
+  void get_next_versions_successful();
+  void get_next_versions_failed();
   void send_response_to_s3_client();
 };
 

@@ -153,7 +153,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string motr_part_layout_str;
 
   bool is_multipart = false;
-  bool is_delete_marker = false;
+  bool delete_marker = false;
 
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -296,7 +296,9 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
-  bool is_delete_marker() { return is_delete_marker; };
+  bool is_delete_marker() {
+    return delete_marker;
+  };
 
   virtual struct m0_fid get_pvid() const;
   void set_pvid(const struct m0_fid* p_pvid);
