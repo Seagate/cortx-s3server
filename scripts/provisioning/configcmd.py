@@ -154,7 +154,7 @@ class ConfigCmd(SetupCmd):
         self.configure_haproxy()
 
       # create topic for background delete
-      bgdeleteconfig = CORTXS3Config()
+      bgdeleteconfig = CORTXS3Config(self.base_config_file_path, "yaml://")
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
         self.logger.info('Create topic started')
         self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
