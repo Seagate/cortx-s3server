@@ -20,9 +20,6 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_BUCKET_COUNTERS_H__
-#define __S3_SERVER_S3_BUCKET_COUNTERS_H__
-
 #include <string>
 #include <map>
 #include <functional>
@@ -110,5 +107,3 @@ class S3BucketObjectCounter {
   std::string to_json();
   int from_json(std::string content);
 };
-
-#endif  //__S3_SERVER_S3_BUCKET_COUNTERS_H__
