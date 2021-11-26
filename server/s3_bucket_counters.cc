@@ -77,13 +77,13 @@ std::shared_ptr<S3BucketObjectCounter> S3BucketCapacityCache::get_bucket_counter
 
 void S3BucketCapacityCache::update_bucket_capacity(
     std::shared_ptr<RequestObject> req, std::shared_ptr<S3BucketMetadata> src,
-    int64_t increment_object_count, int64_t bytes_incremented,
+    int64_t objects_count_increment, int64_t bytes_count_increment,
     std::function<void()> on_success, std::function<void()> on_failure) {
   s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Entry", __func__);
 
   std::shared_ptr<S3BucketObjectCounter> counter(get_bucket_counters(req, src));
-  counter->add_inc_object_count(increment_object_count);
-  counter->add_inc_size(bytes_incremented);
+  counter->add_inc_object_count(objects_count_increment);
+  counter->add_inc_size(bytes_count_increment);
   counter->save(on_success, on_failure);
 
   s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Exit", __func__);

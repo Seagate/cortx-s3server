@@ -43,8 +43,8 @@ class S3BucketCapacityCache {
 
   void update_bucket_capacity(std::shared_ptr<RequestObject> req,
                               std::shared_ptr<S3BucketMetadata> src,
-                              int64_t increment_object_count,
-                              int64_t bytes_incremented,
+                              int64_t objects_count_increment,
+                              int64_t bytes_count_increment,
                               std::function<void()> on_success,
                               std::function<void()> on_failure);
 
