@@ -12,6 +12,7 @@ import com.seagates3.dao.PolicyDAO;
 import com.seagates3.dao.UserDAO;
 import com.seagates3.dao.UserPolicyDAO;
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.exception.GuardClauseException;
 import com.seagates3.model.Policy;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
@@ -42,52 +43,28 @@ public class UserPolicyController extends AbstractController {
 		String policyARN = requestBody.get("PolicyArn");
 
 		LOGGER.info("Attach policy: " + policyARN + " to user: " + userName);
-		User user = null;
-		try {
-			user = userDAO.find(requestor.getAccount().getName(), userName);
-		} catch (DataAccessException ex) {
-			LOGGER.error("Exception occurred when finding the user [" + userName + "].");
-			return userPolicyResponseGenerator.internalServerError();
-		}
+		ServerResponse serverResponse = null;
 
-		if (!user.exists()) {
-			LOGGER.error("User [" + user.getName() + "] does not exists.");
-			return userPolicyResponseGenerator.noSuchEntity();
-		}
+		try {
+			User user = userDAO.find(requestor.getAccount().getName(), userName);
+			checkIfUserExists(user, userName);
 
-		Policy policy = null;
-		try {
-			policy = policyDAO.findByArn(policyARN, requestor.getAccount());
-		} catch (DataAccessException ex) {
-			LOGGER.error("Failed to find the requested policy in ldap- " + policyARN);
-			return userPolicyResponseGenerator.internalServerError();
-		}
-		if (policy == null || !policy.exists()) {
-			LOGGER.error("Policy [" + policyARN + "] does not exists.");
-			return userPolicyResponseGenerator.noSuchEntity();
-		}
-		boolean isPolicyAttached = user.getPolicyIds().contains(policy.getPolicyId());
-		if (isPolicyAttached) {
-			LOGGER.error("Policy [" + policyARN + "] is already attached to user [" + userName + "].");
-			return userPolicyResponseGenerator.userPolicyAlreadyAttached();
-		}
-		if (!Boolean.getBoolean(policy.getIsPolicyAttachable())) {
-			LOGGER.error("Cannot attach non-attachable policy [" + policyARN + "] to user [" + userName + "].");
-			return userPolicyResponseGenerator.attachNonAttachablePolicy();
-		}
-		if (user.getPolicyIds().size() == AuthServerConfig.USER_POLICY_ATTACH_QUOTA) {
-			LOGGER.error("Cannot attach policy [" + policyARN + "] to user [" + userName
-					+ "] as policy attach quota is exceeded.");
-			return userPolicyResponseGenerator.userPolicyAttachQuotaViolation();
-		}
-		try {
+			Policy policy = policyDAO.findByArn(policyARN, requestor.getAccount());
+			checkIfPolicyExists(policy, policyARN);
+			checkIfPolicyIsAttached(user, policy, userName, policyARN);
+			checkIfPolicyIsAttachable(policy, userName, policyARN);
+			checkIfAttachPolicyExceedsQuota(user, userName, policyARN);
+
 			userPolicyDAO.attach(new UserPolicy(user, policy));
+
+			serverResponse = userPolicyResponseGenerator.generateAttachUserPolicyResponse();
 		} catch (DataAccessException ex) {
-			LOGGER.error("Exception while attaching the policy [" + policyARN + "] to user [" + userName + "].");
-			return userPolicyResponseGenerator.internalServerError();
+			serverResponse = userPolicyResponseGenerator.internalServerError();
+		} catch (GuardClauseException grdClsEx) {
+			serverResponse = grdClsEx.getServerResponse();
 		}
 
-		return userPolicyResponseGenerator.generateAttachUserPolicyResponse();
+		return serverResponse;
 	}
 
 	public ServerResponse detach() throws DataAccessException {
@@ -95,43 +72,75 @@ public class UserPolicyController extends AbstractController {
 		String policyARN = requestBody.get("PolicyArn");
 
 		LOGGER.info("Detach policy: " + policyARN + " from user: " + userName);
-		User user;
+		ServerResponse serverResponse = null;
+
 		try {
-			user = userDAO.find(requestor.getAccount().getName(), userName);
+			User user = userDAO.find(requestor.getAccount().getName(), userName);
+			checkIfUserExists(user, userName);
+
+			Policy policy = policyDAO.findByArn(policyARN, requestor.getAccount());
+			checkIfPolicyExists(policy, policyARN);
+			checkIfPolicyIsNotAttached(user, policy, userName, policyARN);
+
+			userPolicyDAO.detach(new UserPolicy(user, policy));
+
+			serverResponse = userPolicyResponseGenerator.generateDetachUserPolicyResponse();
 		} catch (DataAccessException ex) {
-			LOGGER.error("Exception occurred when finding the user [" + userName + "].");
-			return userPolicyResponseGenerator.internalServerError();
+			serverResponse = userPolicyResponseGenerator.internalServerError();
+		} catch (GuardClauseException grdClsEx) {
+			serverResponse = grdClsEx.getServerResponse();
 		}
 
-		if (!user.exists()) {
-			LOGGER.error("User [" + user.getName() + "] does not exists.");
-			return userPolicyResponseGenerator.noSuchEntity();
-		}
+		return serverResponse;
+	}
 
-		Policy policy = null;
-		try {
-			policy = policyDAO.findByArn(policyARN, requestor.getAccount());
-		} catch (DataAccessException ex) {
-			LOGGER.error("Failed to find the requested policy in ldap- " + policyARN);
-			return userPolicyResponseGenerator.internalServerError();
+	private void checkIfUserExists(User user, String userName) throws GuardClauseException {
+		if (user == null || !user.exists()) {
+			LOGGER.error("User [" + userName + "] does not exists.");
+			throw new GuardClauseException(userPolicyResponseGenerator.noSuchEntity());
 		}
+	}
+
+	private void checkIfPolicyExists(Policy policy, String policyARN) throws GuardClauseException {
 		if (policy == null || !policy.exists()) {
 			LOGGER.error("Policy [" + policyARN + "] does not exists.");
-			return userPolicyResponseGenerator.noSuchEntity();
+			throw new GuardClauseException(userPolicyResponseGenerator.noSuchEntity());
 		}
+	}
+
+	private void checkIfPolicyIsAttached(User user, Policy policy, String userName, String policyARN)
+			throws GuardClauseException {
+		boolean isPolicyAttached = user.getPolicyIds().contains(policy.getPolicyId());
+		if (isPolicyAttached) {
+			LOGGER.error("Policy [" + policyARN + "] is already attached to user [" + userName + "].");
+			throw new GuardClauseException(userPolicyResponseGenerator.userPolicyAlreadyAttached());
+		}
+	}
+
+	private void checkIfPolicyIsNotAttached(User user, Policy policy, String userName, String policyARN)
+			throws GuardClauseException {
 		boolean isPolicyAttached = user.getPolicyIds().contains(policy.getPolicyId());
 		if (!isPolicyAttached) {
 			LOGGER.error("Policy [" + policyARN + "] is not attached to the user [" + userName + "].");
-			return userPolicyResponseGenerator.detachNonAttachedPolicy();
+			throw new GuardClauseException(userPolicyResponseGenerator.userPolicyAlreadyAttached());
 		}
-		try {
-			userPolicyDAO.detach(new UserPolicy(user, policy));
-		} catch (DataAccessException ex) {
-			LOGGER.error("Exception while detaching the policy [" + policyARN + "] from user [" + userName + "].");
-			return userPolicyResponseGenerator.internalServerError();
-		}
+	}
 
-		return userPolicyResponseGenerator.generateDetachUserPolicyResponse();
+	private void checkIfPolicyIsAttachable(Policy policy, String userName, String policyARN)
+			throws GuardClauseException {
+		if (!Boolean.getBoolean(policy.getIsPolicyAttachable())) {
+			LOGGER.error("Cannot attach non-attachable policy [" + policyARN + "] to user [" + userName + "].");
+			throw new GuardClauseException(userPolicyResponseGenerator.attachNonAttachablePolicy());
+		}
+	}
+
+	private void checkIfAttachPolicyExceedsQuota(User user, String userName, String policyARN)
+			throws GuardClauseException {
+		if (user.getPolicyIds().size() == AuthServerConfig.USER_POLICY_ATTACH_QUOTA) {
+			LOGGER.error("Cannot attach policy [" + policyARN + "] to user [" + userName
+					+ "] as policy attach quota is exceeded.");
+			throw new GuardClauseException(userPolicyResponseGenerator.userPolicyAttachQuotaViolation());
+		}
 	}
 
 }
