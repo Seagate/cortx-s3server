@@ -36,6 +36,7 @@ public
    ROLE("Role"),
    SAML_PROVIDER("SAMLProvider"),
    USER("User"),
+   USER_POLICY("UserPolicy"),
    USER_LOGIN_PROFILE("UserLoginProfile"),
    ACCOUNT_LOGIN_PROFILE("AccountLoginProfile");
    private final String className;

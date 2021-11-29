@@ -60,6 +60,8 @@ public class AuthServerConfig {
      static final String XSD_PATH = "/AmazonS3_V2.xsd";
     public
      static final int MAX_GRANT_SIZE = 100;
+    public
+     static final int USER_POLICY_ATTACH_QUOTA = 20;
     private static Logger logger;
 
     /**
