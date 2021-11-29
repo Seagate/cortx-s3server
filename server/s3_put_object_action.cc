@@ -159,6 +159,9 @@ void S3PutObjectAction::validate_put_request() {
     s3_log(S3_LOG_ERROR, request_id, "Missing mandatory Content-Length header");
     set_s3_error("MissingContentLength");
     send_response_to_s3_client();
+  } else if (request->get_content_length() > MAXIMUM_ALLOWED_PUT_SIZE) {
+    set_s3_error("EntityTooLarge");
+    send_response_to_s3_client();
   } else {
     next();
   }

@@ -87,6 +87,7 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     logger.info(f'config file {str(configFile)} upgrade completed')
 
 def merge_configs(config_file_path: str, s3_tmp_dir, service_list = ["io", "auth", "bg_consumer", "bg_producer"]):
+
     """
     - This function will merge all S3 config files during upgrade
     - This function should be used outside this file to call configs upgrade

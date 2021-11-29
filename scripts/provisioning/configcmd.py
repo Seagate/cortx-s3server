@@ -52,6 +52,8 @@ class ConfigCmd(SetupCmd):
       self.logger.info(f'Setup type : {self.setup_type}')
       self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
       self.logger.info(f'Cluster  id : {self.cluster_id}')
+      self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
+      self.logger.info(f'config file path : {self.base_config_file_path}')
       self.base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
       self.logger.info(f'log file path : {self.base_log_file_path}')
 
@@ -152,7 +154,7 @@ class ConfigCmd(SetupCmd):
         self.configure_haproxy()
 
       # create topic for background delete
-      bgdeleteconfig = CORTXS3Config()
+      bgdeleteconfig = CORTXS3Config(self.base_config_file_path, "yaml://")
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
         self.logger.info('Create topic started')
         self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
