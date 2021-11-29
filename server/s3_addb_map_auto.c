@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 224;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 225;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -201,6 +201,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutChunkUploadObjectAction::mark_old_oid_for_deletion",
     "S3PutChunkUploadObjectAction::remove_new_oid_probable_record",
     "S3PutChunkUploadObjectAction::remove_old_oid_probable_record",
+    "S3PutChunkUploadObjectAction::save_bucket_counters",
     "S3PutChunkUploadObjectAction::save_metadata",
     "S3PutChunkUploadObjectAction::send_response_to_s3_client",
     "S3PutChunkUploadObjectAction::validate_put_chunk_request",

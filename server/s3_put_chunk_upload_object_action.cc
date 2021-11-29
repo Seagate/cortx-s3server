@@ -116,6 +116,7 @@ void S3PutChunkUploadObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::create_object, this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::initiate_data_streaming, this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::save_metadata, this);
+  ACTION_TASK_ADD(S3PutChunkUploadObjectAction::save_bucket_counters, this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::send_response_to_s3_client,
                   this);
   // ...
@@ -720,6 +721,51 @@ void S3PutChunkUploadObjectAction::save_object_metadata_failed() {
   // Clean up will be done after response.
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutChunkUploadObjectAction::save_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    // Overwrite Case.
+    inc_object_count = 0;
+    inc_obj_size = new_object_metadata->get_content_length() -
+                   object_metadata->get_content_length();
+  } else {
+    // Normal put request
+    inc_object_count = 1;
+    inc_obj_size = new_object_metadata->get_content_length();
+  }
+
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3PutChunkUploadObjectAction::save_bucket_counters_success,
+                this),
+      std::bind(&S3PutChunkUploadObjectAction::save_bucket_counters_failed,
+                this));
+
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3PutChunkUploadObjectAction::save_bucket_counters_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+  s3_put_chunk_action_state = S3PutChunkUploadObjectActionState::metadataSaved;
+  next();
+}
+
+void S3PutChunkUploadObjectAction::save_bucket_counters_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_put_chunk_action_state =
+      S3PutChunkUploadObjectActionState::metadataSaveFailed;
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+  set_s3_error("InternalError");
+  // Clean up will be done after response.
+  // we would want to remove the object from motr also
+  send_response_to_s3_client();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
 void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
