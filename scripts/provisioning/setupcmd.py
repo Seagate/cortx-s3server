@@ -470,64 +470,31 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
-  def validate_config_files(self, phase_name: str):
+  def validate_config_files(self, configFile: str, SampleFile: str, filetype: str):
     """Validate the sample file and config file keys.
     Both files should have same keys.
     if keys mismatch then there is some issue in the config file."""
 
-    self.logger.info(f'validating S3 config files for {phase_name}.')
-    upgrade_items = {
-    's3' : {
-          'configFile' : self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'SampleFile' : self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'fileType' : 'yaml://'
-      },
-      'auth' : {
-          'configFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'SampleFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'fileType' : 'properties://'
-      },
-      'keystore' : {
-          'configFile' : self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'SampleFile' : self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'fileType' : 'properties://'
-      },
-      'bgdelete' : {
-          'configFile' : self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'SampleFile' : self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'fileType' : 'yaml://'
-      },
-      'cluster' : {
-          'configFile' : self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'SampleFile' : self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-          'fileType' : 'yaml://'
-      }
-    }
+    self.logger.info(f'validating config file {str(configFile)}.')
 
-    for upgrade_item in upgrade_items:
-      configFile = upgrade_items[upgrade_item]['configFile']
-      SampleFile = upgrade_items[upgrade_item]['SampleFile']
-      filetype = upgrade_items[upgrade_item]['fileType']
-      self.logger.info(f'validating config file {str(configFile)}.')
+    # new sample file
+    conf_sample = filetype + SampleFile
+    cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample + "validator")
+    conf_sample_keys = cs_conf_sample.get_all_keys()
 
-      # new sample file
-      conf_sample = filetype + SampleFile
-      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample + "validator")
-      conf_sample_keys = cs_conf_sample.get_all_keys()
+    # active config file
+    conf_file =  filetype + configFile
+    cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file + "validator")
+    conf_file_keys = cs_conf_file.get_all_keys()
 
-      # active config file
-      conf_file =  filetype + configFile
-      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file + "validator")
-      conf_file_keys = cs_conf_file.get_all_keys()
-
-      # compare the keys of sample file and config file
-      if conf_sample_keys.sort() == conf_file_keys.sort():
-          self.logger.info(f'config file {str(configFile)} validated successfully.')
-      else:
-          self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
-          self.logger.error(f'sample file keys: {str(conf_sample_keys)}')
-          self.logger.error(f'config file keys: {str(conf_file_keys)}')
-          raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.')
+    # compare the keys of sample file and config file
+    if conf_sample_keys.sort() == conf_file_keys.sort():
+        self.logger.info(f'config file {str(configFile)} validated successfully.')
+    else:
+        self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
+        self.logger.error(f'sample file keys: {str(conf_sample_keys)}')
+        self.logger.error(f'config file keys: {str(conf_file_keys)}')
+        raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.')
 
   def DeleteDirContents(self, dirname: str,  skipdirs: list = []):
     """Delete files and directories inside given directory.
