@@ -62,10 +62,10 @@ public class UserImpl implements UserDAO {
      user.setName(userName);
 
      String[] attrs = {
-         LDAPUtils.USER_ID,            LDAPUtils.PATH,
-         LDAPUtils.ARN,                LDAPUtils.ROLE_NAME,
-         LDAPUtils.OBJECT_CLASS,       LDAPUtils.CREATE_TIMESTAMP,
-         LDAPUtils.PASSWORD,           LDAPUtils.PASSWORD_RESET_REQUIRED,
+         LDAPUtils.USER_ID,             LDAPUtils.PATH,
+         LDAPUtils.ARN,                 LDAPUtils.ROLE_NAME,
+         LDAPUtils.OBJECT_CLASS,        LDAPUtils.CREATE_TIMESTAMP,
+         LDAPUtils.PASSWORD,            LDAPUtils.PASSWORD_RESET_REQUIRED,
          LDAPUtils.PROFILE_CREATE_DATE, LDAPUtils.POLICY_ID};
 
      String userBaseDN = String.format(
@@ -148,11 +148,12 @@ public class UserImpl implements UserDAO {
          LOGGER.debug("ARN value not found in ldap");
        }
        try {
-         List<String> policyIds = new ArrayList<String>(Arrays.asList(entry.getAttribute(LDAPUtils.POLICY_ID).getStringValueArray()));
+         List<String> policyIds = new ArrayList<String>(Arrays.asList(
+             entry.getAttribute(LDAPUtils.POLICY_ID).getStringValueArray()));
          user.setPolicyIds(policyIds);
        }
        catch (Exception e) {
-           LOGGER.debug("Policy Id value not found in ldap");
+         LOGGER.debug("Policy Id value not found in ldap");
        }
      }
      return user;

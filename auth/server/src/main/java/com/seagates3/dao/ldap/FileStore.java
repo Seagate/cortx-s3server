@@ -93,13 +93,13 @@ class FileStore implements AuthStore {
     }
   }
 
-@Override
-public void attach(Map<String, Object> dataMap, String prefix) throws DataAccessException {
-	// TODO Add file store implementation for attach policy
-}
+  @Override public void attach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
+    // TODO Add file store implementation for attach policy
+  }
 
-@Override
-public void detach(Map<String, Object> dataMap, String prefix) throws DataAccessException {
-	// TODO Add file store implementation for detach policy
-}
+  @Override public void detach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
+    // TODO Add file store implementation for detach policy
+  }
 }

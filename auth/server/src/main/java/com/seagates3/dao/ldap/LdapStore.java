@@ -140,8 +140,8 @@ class LdapStore implements AuthStore {
     }
   }
 
-@Override
-public void attach(Map<String, Object> dataMap, String prefix) throws DataAccessException {
+  @Override public void attach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
     String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
     LOGGER.debug("calling method - " + METHOD_ATTACH + " of class - " +
                  className);
@@ -165,10 +165,10 @@ public void attach(Map<String, Object> dataMap, String prefix) throws DataAccess
       LOGGER.error("Failed to attach - " + prefix);
       throw new DataAccessException("failed to attach- " + prefix + e);
     }
-}
+  }
 
-@Override
-public void detach(Map<String, Object> dataMap, String prefix) throws DataAccessException {
+  @Override public void detach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
     String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
     LOGGER.debug("calling method - " + METHOD_DETACH + " of class - " +
                  className);
@@ -192,6 +192,6 @@ public void detach(Map<String, Object> dataMap, String prefix) throws DataAccess
       LOGGER.error("Failed to detach - " + prefix);
       throw new DataAccessException("failed to detach- " + prefix + e);
     }
-}
+  }
 }
 

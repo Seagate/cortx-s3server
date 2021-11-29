@@ -27,9 +27,9 @@ interface AuthStore {
 
  public
   void attach(Map<String, Object> dataMap,
-           String prefix) throws DataAccessException;
+              String prefix) throws DataAccessException;
 
  public
   void detach(Map<String, Object> dataMap,
-          String prefix) throws DataAccessException;
+              String prefix) throws DataAccessException;
 }

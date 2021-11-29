@@ -183,7 +183,7 @@ class XMLResponseFormatter extends AbstractResponseFormatter {
     }
 
     @Override public ServerResponse formatDetachUserPolicyResponse(
-            String operation) {
+        String operation) {
       return success(operation);
     }
 
