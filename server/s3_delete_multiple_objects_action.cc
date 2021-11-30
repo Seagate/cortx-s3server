@@ -352,7 +352,9 @@ void S3DeleteMultipleObjectsAction::save_bucket_counters() {
 
   inc_object_count = -objects_metadata.size();
   for (auto& object_metadata : objects_metadata) {
-    inc_obj_size -= (object_metadata->get_content_length());
+    if (object_metadata->get_state() != S3ObjectMetadataState::invalid) {
+      inc_obj_size -= (object_metadata->get_content_length());
+    }
   }
 
   S3BucketCapacityCache::update_bucket_capacity(
@@ -361,12 +363,6 @@ void S3DeleteMultipleObjectsAction::save_bucket_counters() {
       std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters_failed,
                 this));
 
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-}
-
-void S3DeleteMultipleObjectsAction::save_bucket_counters_success() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  next();
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
