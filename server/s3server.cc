@@ -68,6 +68,7 @@
 #define BUCKET_METADATA_LIST_INDEX_OID_U_LO 2
 #define OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO 3
 #define GLOBAL_INSTANCE_INDEX_U_LO 4
+#define BUCKET_OBJECT_COUNT_INDEX_OID_U_LO 5
 
 extern "C" void mem_log_msg_func(int mempool_log_level, const char *msg) {
   if (mempool_log_level == MEMPOOL_LOG_INFO) {
@@ -95,6 +96,8 @@ struct s3_motr_idx_layout global_bucket_list_index_layout;
 struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 // index will have s3server instance information
 struct s3_motr_idx_layout global_instance_list_index_layout;
+// index will have s3server instance information
+struct s3_motr_idx_layout bucket_object_count_index_layout;
 // objects listed in this index are probable delete candidates and not absolute.
 struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
@@ -1091,6 +1094,26 @@ int main(int argc, char **argv) {
          global_instance_list_index_layout.pver.f_container,
          global_instance_list_index_layout.pver.f_key,
          global_instance_list_index_layout.layout_type);
+
+  // bucket_object_count_index_layout - will hold accountid/bucket_name as key,
+  // bucket medata as value.
+  rc = create_global_index(bucket_object_count_index_layout,
+                           BUCKET_OBJECT_COUNT_INDEX_OID_U_LO);
+  if (rc < 0) {
+    s3daemon.delete_pidfile();
+    fini_auth_ssl();
+    fini_motr();
+    finalize_cli_options();
+    s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
+  }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Bucket object count index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
+         "layout_type: 0x%x",
+         bucket_object_count_index_layout.oid.u_hi,
+         bucket_object_count_index_layout.oid.u_lo,
+         bucket_object_count_index_layout.pver.f_container,
+         bucket_object_count_index_layout.pver.f_key,
+         bucket_object_count_index_layout.layout_type);
 
   extern struct m0_config motr_conf;
 

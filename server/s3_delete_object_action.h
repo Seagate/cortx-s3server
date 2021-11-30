@@ -32,6 +32,7 @@
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_probable_delete_record.h"
+#include "s3_bucket_counters.h"
 
 enum class S3DeleteObjectActionState {
   empty,             // Initial state
@@ -75,6 +76,9 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void delete_metadata();
   void delete_metadata_failed();
   void delete_metadata_successful();
+  void save_bucket_counters();
+  void save_bucket_counters_success();
+  void save_bucket_counters_failed();
   void set_authorization_meta();
 
   void populate_probable_dead_oid_list();

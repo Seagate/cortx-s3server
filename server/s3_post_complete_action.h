@@ -32,6 +32,7 @@
 #include "s3_probable_delete_record.h"
 #include "s3_aws_etag.h"
 #include "s3_uuid.h"
+#include "s3_bucket_counters.h"
 
 enum class S3PostCompleteActionState {
   empty,                         // Initial state
@@ -147,6 +148,9 @@ class S3PostCompleteAction : public S3ObjectAction {
   void save_metadata();
   void save_object_metadata_succesful();
   void save_object_metadata_failed();
+  void save_bucket_counters();
+  void save_bucket_counters_success();
+  void save_bucket_counters_failed();
   void delete_multipart_metadata();
   void delete_multipart_metadata_success();
   void delete_multipart_metadata_failed();

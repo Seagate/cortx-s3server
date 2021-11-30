@@ -289,9 +289,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
               get_object_list_index_layout())
       .WillRepeatedly(ReturnRef(zero_index_layout));
 
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->fetch_objects_info();
 }
 
@@ -384,9 +381,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       .Times(AtLeast(1))
       .WillOnce(Return(S3MotrKVSReaderOpState::missing));
 
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->fetch_objects_info_failed();
 }
 
@@ -541,11 +535,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
   action_under_test->at_least_one_delete_successful = true;
 
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume(_)).Times(1);
-
   action_under_test->fetch_objects_info_successful();
 
   EXPECT_EQ(0, action_under_test->oids_to_delete.size());
@@ -607,10 +596,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .Times(1)
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume(_)).Times(1);
+
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
 

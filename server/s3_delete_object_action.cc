@@ -78,6 +78,7 @@ void S3DeleteObjectAction::setup_steps() {
   // To delete stale objects: ref: MINT-602
   ACTION_TASK_ADD(S3DeleteObjectAction::populate_probable_dead_oid_list, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
+  ACTION_TASK_ADD(S3DeleteObjectAction::save_bucket_counters, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
   // ...
 }
@@ -291,6 +292,39 @@ void S3DeleteObjectAction::delete_metadata_failed() {
   s3_del_obj_action_state = S3DeleteObjectActionState::metadataDeleteFailed;
   set_s3_error("InternalError");
   send_response_to_s3_client();
+}
+
+void S3DeleteObjectAction::save_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  inc_object_count = -1;
+  inc_obj_size = -(object_metadata->get_content_length());
+
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3DeleteObjectAction::save_bucket_counters_success, this),
+      std::bind(&S3DeleteObjectAction::save_bucket_counters_failed, this));
+
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3DeleteObjectAction::save_bucket_counters_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+  s3_del_obj_action_state = S3DeleteObjectActionState::metadataDeleted;
+  next();
+}
+
+// TODO : how to handle failures to save bucket counters at this stage.
+// Currently just logging error and moving ahead.
+void S3DeleteObjectAction::save_bucket_counters_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_del_obj_action_state = S3DeleteObjectActionState::metadataDeleted;
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+  next();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
 void S3DeleteObjectAction::send_response_to_s3_client() {

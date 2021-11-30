@@ -35,6 +35,7 @@
 #include "s3_probable_delete_record.h"
 #include "s3_timer.h"
 #include "evhtp_wrapper.h"
+#include "s3_bucket_counters.h"
 
 class S3PutObjectAction : public S3ObjectAction {
   S3PutObjectActionState s3_put_action_state;
@@ -119,6 +120,9 @@ class S3PutObjectAction : public S3ObjectAction {
 
   void write_object_successful();
   void write_object_failed();
+  void save_bucket_counters();
+  void save_bucket_counters_success();
+  void save_bucket_counters_failed();
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();
