@@ -350,9 +350,9 @@ void S3DeleteMultipleObjectsAction::save_bucket_counters() {
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
 
-  inc_object_count = -objects_metadata.size();
   for (auto& object_metadata : objects_metadata) {
     if (object_metadata->get_state() != S3ObjectMetadataState::invalid) {
+      inc_object_count -= 1;
       inc_obj_size -= (object_metadata->get_content_length());
     }
   }
