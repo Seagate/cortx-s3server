@@ -518,29 +518,35 @@ class SetupCmd(object):
     }
 
     for upgrade_item in upgrade_items:
-      configFile = upgrade_items[upgrade_item]['configFile']
-      SampleFile = upgrade_items[upgrade_item]['SampleFile']
-      filetype = upgrade_items[upgrade_item]['fileType']
-      self.logger.info(f'validating config file {str(configFile)}.')
+      self.validate_config_file(upgrade_items[upgrade_item]['configFile'],
+                              upgrade_items[upgrade_item]['SampleFile'],
+                              upgrade_items[upgrade_item]['fileType'])
 
-      # new sample file
-      conf_sample = filetype + SampleFile
-      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample + "validator")
-      conf_sample_keys = cs_conf_sample.get_all_keys()
+  def validate_config_file(self, configFile: str, SampleFile: str, filetype: str):
+    """Validate the sample file and config file keys.
+    Both files should have same keys.
+    if keys mismatch then there is some issue in the config file."""
 
-      # active config file
-      conf_file =  filetype + configFile
-      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file + "validator")
-      conf_file_keys = cs_conf_file.get_all_keys()
+    self.logger.info(f'validating config file {str(configFile)}.')
 
-      # compare the keys of sample file and config file
-      if conf_sample_keys.sort() == conf_file_keys.sort():
-          self.logger.info(f'config file {str(configFile)} validated successfully.')
-      else:
-          self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
-          self.logger.error(f'sample file keys: {str(conf_sample_keys)}')
-          self.logger.error(f'config file keys: {str(conf_file_keys)}')
-          raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.')
+    # new sample file
+    conf_sample = filetype + SampleFile
+    cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample + "validator")
+    conf_sample_keys = cs_conf_sample.get_all_keys()
+
+    # active config file
+    conf_file =  filetype + configFile
+    cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file + "validator")
+    conf_file_keys = cs_conf_file.get_all_keys()
+
+    # compare the keys of sample file and config file
+    if conf_sample_keys.sort() == conf_file_keys.sort():
+        self.logger.info(f'config file {str(configFile)} validated successfully.')
+    else:
+        self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
+        self.logger.error(f'sample file keys: {str(conf_sample_keys)}')
+        self.logger.error(f'config file keys: {str(conf_file_keys)}')
+        raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.')
 
   def DeleteDirContents(self, dirname: str,  skipdirs: list = []):
     """Delete files and directories inside given directory.
@@ -656,3 +662,14 @@ class SetupCmd(object):
       conn.modify_s(dn, mod_attrs)
     except:
       self.logger.info('Attribute '+ attr_to_delete + ' is not configured for dn '+ dn)
+
+  def copy_config_files(self, config_files: list):
+    """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
+    # copy all the config files from the /opt/seagate/cortx to /etc/cortx
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
+      self.logger.info(f"Dest config file: {dest_config_file}")
+      os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
+      shutil.copy(config_file, dest_config_file)
+      self.logger.info("Config file copied successfully to /etc/cortx")
