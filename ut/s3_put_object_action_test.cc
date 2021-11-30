@@ -78,6 +78,7 @@ class S3PutObjectActionTest : public testing::Test {
     old_layout_id = 2;
     index_layout = {{0x11ffff, 0x1ffff}};
     zero_oid = {0ULL, 0ULL};
+    versioning_Status = "Enabled";
 
     layout_id =
         S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
@@ -149,7 +150,7 @@ class S3PutObjectActionTest : public testing::Test {
   std::string MockObjectTagsStr;
   std::string MockRequestId;
   int call_count_one;
-  std::string bucket_name, object_name;
+  std::string bucket_name, object_name, versioning_Status;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -1217,4 +1218,122 @@ TEST_F(S3PutObjectActionTest, ValidateMissingContentLength) {
 
   EXPECT_STREQ("MissingContentLength",
                action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutObjectActionTest, SaveObjectMetadataWithVersioningEnabled) {
+  CREATE_OBJECT_METADATA;
+  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
+      versioning_Status);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_bucket_versioning_status())
+      .WillOnce(ReturnRef(versioning_Status));
+
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(
+      index_layout);
+
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+
+  EXPECT_CALL(*ptr_mock_request, get_data_length_str()).Times(1).WillOnce(
+      Return("1024"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("content-md5"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              reset_date_time_to_current()).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              set_content_length(Eq("1024"))).Times(AtLeast(1));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_content_md5())
+      .Times(AtLeast(1))
+      .WillOnce(Return("abcd1234abcd"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_tags(_))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Content-Type"))
+      .Times(1)
+      .WillOnce(Return(""));
+  std::map<std::string, std::string> input_headers;
+  input_headers["x-amz-meta-item-1"] = "1024";
+  input_headers["x-amz-meta-item-2"] = "s3.seagate.com";
+
+  EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              add_user_defined_attribute(Eq("x-amz-meta-item-1"), Eq("1024")))
+      .Times(AtLeast(1));
+  EXPECT_CALL(
+      *(object_meta_factory->mock_object_metadata),
+      add_user_defined_attribute(Eq("x-amz-meta-item-2"), Eq("s3.seagate.com")))
+      .Times(AtLeast(1));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), save(_, _))
+      .Times(AtLeast(1));
+
+  action_under_test->save_metadata();
+}
+
+TEST_F(S3PutObjectActionTest, VersionEntryToJsonWhenVersioningEnabled) {
+  CREATE_OBJECT_METADATA;
+  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
+      versioning_Status);
+  object_meta_factory->mock_object_metadata->version_entry_to_json();
+}
+
+TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenVersioningEnabled) {
+  CREATE_OBJECT_METADATA;
+  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
+      versioning_Status);
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillOnce(Return(S3ObjectMetadataState::present));
+
+  struct m0_uint128 old_oid = {0x1ffff, 0x1ffff};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .Times(1)
+      .WillOnce(Return(old_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(1)
+      .WillOnce(Return(layout_id));
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutObjectActionTest::func_callback_one, this);
+
+  struct m0_uint128 oid_before_regen = action_under_test->new_object_oid;
+  action_under_test->fetch_object_info_success();
+
+  EXPECT_EQ(1, call_count_one);
+  EXPECT_OID_NE(zero_oid, action_under_test->old_object_oid);
+  EXPECT_OID_NE(oid_before_regen, action_under_test->new_object_oid);
+}
+
+TEST_F(S3PutObjectActionTest, CreateObjectFirstAttemptWithVersioningEnabled) {
+  CREATE_OBJECT_METADATA;
+  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
+      versioning_Status);
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(1024));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(1);
+  action_under_test->create_object();
+  EXPECT_TRUE(action_under_test->motr_writer != nullptr);
+}
+
+TEST_F(S3PutObjectActionTest, CreateObjectSecondAttemptWithVersioningEnabled) {
+  CREATE_OBJECT_METADATA;
+  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
+      versioning_Status);
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(2).WillRepeatedly(
+      Return(1024));
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(2);
+  action_under_test->create_object();
+  action_under_test->tried_count = 1;
+  action_under_test->create_object();
+  EXPECT_TRUE(action_under_test->motr_writer != nullptr);
 }

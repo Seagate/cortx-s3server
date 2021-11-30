@@ -1637,6 +1637,12 @@ AwsTest('Aws can upload 1kfileH').put_object("seagatebuckettag", "1kfileH", 1000
 # **************** Create file with the above created objects **********************************
 object_list_file = create_object_list_file("obj_list_file_all_exist_not_quiet_mode.json", ["1kfileF", "1kfileG", "1kfileH"], "false")
 
+#******** PutObject with Bucket versioning enabled ********
+AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("seagatebucket", "Enabled")\
+  .execute_test().command_is_successful()
+AwsTest('Aws can put object on versioning enabled bucket').put_object("seagatebucket", "1kfile", 1024)\
+  .execute_test().command_is_successful()
+
 # **************** Delete multiple objects *****************************************************
 AwsTest('Aws can delete multiple objects when all objects exist in bucket, quiet_mode: false')\
     .delete_multiple_objects("seagatebuckettag", object_list_file)\
