@@ -94,7 +94,8 @@ class S3ObjectMetadataCopyable {
   std::map<std::string, std::string> user_defined_attribute;
   std::map<std::string, std::string> object_tags;
   std::string obj_replication_status;
-  std::string destination_bucket_name;
+  std::map<std::string, std::map<std::string, std::string>>
+      destination_bucket_map;
   bool is_rep_policy_applicable{false};
 
   std::shared_ptr<S3RequestObject> request;
@@ -370,9 +371,20 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   bool check_bucket_replication_policy(
       const std::map<std::string, std::string>& new_object_tags_map,
       const std::string& rep_config_json);
+  bool check_replication_filter_match(
+      const Json::Value& rule_object,
+      const std::map<std::string, std::string>& new_object_tags_map);
   void get_tags_from_replication_policy(
       std::map<std::string, std::string>& rep_config_object_tags_map,
       Json::Value tag_array);
+  void get_rule_configuration_from_replication_policy(
+      const Json::Value& rule_object, std::string& new_dest_bucket_name,
+      std::string& new_delete_marker_rep_status,
+      std::string& new_rule_priority);
+  void check_and_update_destination_bucket_map(
+      const std::string& new_dest_bucket_name,
+      const std::string& new_delete_marker_rep_status,
+      const std::string& new_rule_priority);
   virtual const std::map<std::string, std::string>& get_tags();
   virtual void delete_object_tags();
   virtual std::string get_tags_as_xml();

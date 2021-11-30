@@ -657,6 +657,40 @@ TEST_F(S3ObjectMetadataTest, ValidateReplicationPolicyAgainstObject5) {
       object_tags_map, bucket_replication_config));
 }
 
+// Multiple rules applicable to same object present in replication policy
+TEST_F(S3ObjectMetadataTest, ValidateReplicationPolicywithMultipleRules) {
+  const std::string bucket_replication_config =
+      "    {                                                       "
+      "       \"Role\": \"role-string\",                           "
+      "       \"Rules\": [{                                        "
+      "               \"DeleteMarkerReplication\": {               "
+      "                       \"Status\": \"Disabled\"             "
+      "               },                                           "
+      "               \"Destination\": {                           "
+      "                       \"Bucket\": \"dest-bucket\"          "
+      "               },                                           "
+      "               \"Filter\": null,                            "
+      "               \"ID\": \"Rule-1\",                          "
+      "               \"Priority\": 1,                             "
+      "               \"Status\": \"Enabled\"                      "
+      "       },                                                   "
+      "       {                                                    "
+      "               \"DeleteMarkerReplication\": {               "
+      "                       \"Status\": \"Enabled\"              "
+      "               },                                           "
+      "               \"Destination\": {                           "
+      "                       \"Bucket\": \"dest-bucket-1\"        "
+      "               },                                           "
+      "               \"Filter\": null,                            "
+      "               \"ID\": \"Rule-2\",                          "
+      "               \"Priority\": 2,                             "
+      "               \"Status\": \"Enabled\"                      "
+      "        }]                                                  "
+      "    }                                                       ";
+  EXPECT_TRUE(metadata_obj_under_test->check_bucket_replication_policy(
+      object_tags_map, bucket_replication_config));
+}
+
 TEST_F(S3ObjectMetadataTest, ValidateInvalidReplicationPolicyAgainstObject) {
   const std::string bucket_replication_config =
       "    {                                                       "

@@ -79,7 +79,7 @@ class S3PutReplicationBody {
                               std::map<std::string, std::string> &rule_tags,
                               bool &is_and_node_present,
                               bool &is_rule_prefix_present,
-                              bool &is_filter_empty, bool is_priority_present);
+                              bool &is_filter_empty, bool &is_priority_present);
   bool validate_destination_node(xmlNodePtr destination_node);
   bool validate_delete_marker_replication_status(xmlNodePtr del_rep_node);
   bool validate_rule_status(const std::string &status, xmlNodePtr &node_name,
