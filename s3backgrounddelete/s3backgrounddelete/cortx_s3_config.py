@@ -516,4 +516,3 @@ class CORTXS3Config(object):
             raise KeyError(
                 "Could not parse purge sleep from config file " +
                 self._conf_file)
-
