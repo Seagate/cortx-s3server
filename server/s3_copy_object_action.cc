@@ -70,6 +70,7 @@ void S3CopyObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3CopyObjectAction::create_one_or_more_objects, this);
   ACTION_TASK_ADD(S3CopyObjectAction::copy_one_or_more_objects, this);
   ACTION_TASK_ADD(S3CopyObjectAction::save_metadata, this);
+  ACTION_TASK_ADD(S3CopyObjectAction::save_dest_bucket_counters, this);
   ACTION_TASK_ADD(S3CopyObjectAction::send_response_to_s3_client, this);
 }
 
@@ -447,6 +448,48 @@ void S3CopyObjectAction::save_object_metadata_failed() {
   // Clean up will be done after response.
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::save_dest_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    // Overwrite Case.
+    inc_object_count = 0;
+    inc_obj_size = new_object_metadata->get_content_length() -
+                   object_metadata->get_content_length();
+  } else {
+    // Normal put request
+    inc_object_count = 1;
+    inc_obj_size = new_object_metadata->get_content_length();
+  }
+
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3CopyObjectAction::save_bucket_counters_success, this),
+      std::bind(&S3CopyObjectAction::save_bucket_counters_failed, this));
+
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3CopyObjectAction::save_bucket_counters_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+  s3_put_action_state = S3PutObjectActionState::metadataSaved;
+  next();
+}
+
+void S3CopyObjectAction::save_bucket_counters_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_put_action_state = S3PutObjectActionState::metadataSaveFailed;
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+  set_s3_error("InternalError");
+  // Clean up will be done after response.
+  // we would want to remove the object from motr also
+  send_response_to_s3_client();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
 const char xml_decl[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";

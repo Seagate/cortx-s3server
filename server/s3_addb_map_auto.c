@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 223;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 229;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -80,6 +80,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3CopyObjectAction::check_source_bucket_authorization",
     "S3CopyObjectAction::copy_one_or_more_objects",
     "S3CopyObjectAction::create_one_or_more_objects",
+    "S3CopyObjectAction::save_dest_bucket_counters",
     "S3CopyObjectAction::save_metadata",
     "S3CopyObjectAction::send_response_to_s3_client",
     "S3CopyObjectAction::set_source_bucket_authorization_metadata",
@@ -103,6 +104,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3DeleteBucketTaggingActionTest::func_callback_one",
     "S3DeleteMultipleObjectsAction::fetch_objects_extended_info",
     "S3DeleteMultipleObjectsAction::fetch_objects_info",
+    "S3DeleteMultipleObjectsAction::save_bucket_counters",
     "S3DeleteMultipleObjectsAction::send_response_to_s3_client",
     "S3DeleteMultipleObjectsAction::validate_request",
     "S3DeleteMultipleObjectsActionTest::func_callback_one",
@@ -113,6 +115,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3DeleteObjectAction::mark_oids_for_deletion",
     "S3DeleteObjectAction::populate_probable_dead_oid_list",
     "S3DeleteObjectAction::remove_probable_record",
+    "S3DeleteObjectAction::save_bucket_counters",
     "S3DeleteObjectAction::send_response_to_s3_client",
     "S3DeleteObjectTaggingAction::delete_object_tags",
     "S3DeleteObjectTaggingAction::send_response_to_s3_client",
@@ -161,6 +164,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PostCompleteAction::mark_old_oid_for_deletion",
     "S3PostCompleteAction::remove_new_oid_probable_record",
     "S3PostCompleteAction::remove_old_oid_probable_record",
+    "S3PostCompleteAction::save_bucket_counters",
     "S3PostCompleteAction::save_metadata",
     "S3PostCompleteAction::send_response_to_s3_client",
     "S3PostCompleteActionTest::func_callback_one",
@@ -199,6 +203,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutChunkUploadObjectAction::mark_old_oid_for_deletion",
     "S3PutChunkUploadObjectAction::remove_new_oid_probable_record",
     "S3PutChunkUploadObjectAction::remove_old_oid_probable_record",
+    "S3PutChunkUploadObjectAction::save_bucket_counters",
     "S3PutChunkUploadObjectAction::save_metadata",
     "S3PutChunkUploadObjectAction::send_response_to_s3_client",
     "S3PutChunkUploadObjectAction::validate_put_chunk_request",
@@ -235,6 +240,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutObjectAction::mark_old_oid_for_deletion",
     "S3PutObjectAction::remove_new_oid_probable_record",
     "S3PutObjectAction::remove_old_oid_probable_record",
+    "S3PutObjectAction::save_bucket_counters",
     "S3PutObjectAction::save_metadata",
     "S3PutObjectAction::send_response_to_s3_client",
     "S3PutObjectAction::validate_put_request",

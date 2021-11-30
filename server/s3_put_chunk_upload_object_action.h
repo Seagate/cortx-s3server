@@ -34,6 +34,7 @@
 #include "s3_object_metadata.h"
 #include "s3_probable_delete_record.h"
 #include "s3_timer.h"
+#include "s3_bucket_counters.h"
 
 enum class S3PutChunkUploadObjectActionState {
   empty,             // Initial state
@@ -142,6 +143,9 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();
+  void save_bucket_counters();
+  void save_bucket_counters_success();
+  void save_bucket_counters_failed();
   void send_response_to_s3_client();
 
   void add_object_oid_to_probable_dead_oid_list();
