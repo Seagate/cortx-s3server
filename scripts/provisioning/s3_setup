@@ -75,6 +75,11 @@ def main():
   postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
   postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
 
+  upgradeCmd = subparsers.add_parser('upgrade', help='setup upgrade')
+  upgradeCmd.add_argument("--config", help='config URL', type=str, required=False)
+  upgradeCmd.add_argument("--services", help='services', type=str, required=False)
+  upgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
+
   args = parser.parse_args()
 
   logger_dir_path = create_logger_directory(args.config)
@@ -129,6 +134,8 @@ def main():
       logger.info('post-upgrade started.')
       PostUpgradeCmd(args.config, args.services).process()
       logger.info('post-upgrade successful.')
+    elif args.command == 'upgrade':
+      logger.info('upgrade done.')
 
   except Exception as e:
     logger.error(f"{str(e)}")

@@ -114,10 +114,13 @@ s3:
     cmd: /opt/seagate/cortx/s3/bin/s3_setup restore
     args: --location $END-POINT
   upgrade:
-    pre:
-      cmd: /opt/seagate/cortx/s3/bin/s3_setup preupgrade
-      when: {{ level == 'node' and flow == 'upgrade-offline' }}
-    post:
-      cmd: /opt/seagate/cortx/s3/bin/s3_setup postupgrade
-      when: {{ level == 'node' and flow == 'upgrade-offline' }}
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup upgrade
+    args: --config $URL
+ #upgrade:
+ #  pre:
+ #    cmd: /opt/seagate/cortx/s3/bin/s3_setup preupgrade
+ #    args: --config $URL
+ #  post:
+ #    cmd: /opt/seagate/cortx/s3/bin/s3_setup postupgrade
+ #    args: --config $URL
 
