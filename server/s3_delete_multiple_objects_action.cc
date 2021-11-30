@@ -89,7 +89,7 @@ void S3DeleteMultipleObjectsAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::validate_request, this);
   ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::fetch_objects_info, this);
-  ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::save_bucket_counters, this);
+  // ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::save_bucket_counters, this);
   // ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::fetch_objects_extended_info,
   //                this);
   // Delete will be cycling between delete_objects_metadata and delete_objects
@@ -357,8 +357,7 @@ void S3DeleteMultipleObjectsAction::save_bucket_counters() {
 
   S3BucketCapacityCache::update_bucket_capacity(
       request, bucket_metadata, inc_object_count, inc_obj_size,
-      std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters_success,
-                this),
+      std::bind(&S3DeleteMultipleObjectsAction::delete_extended_metadata, this),
       std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters_failed,
                 this));
 
@@ -524,7 +523,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
   }
   motr_kv_writer->delete_keyval(
       object_list_index_layout, keys,
-      std::bind(&S3DeleteMultipleObjectsAction::delete_extended_metadata, this),
+      std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters, this),
       std::bind(&S3DeleteMultipleObjectsAction::delete_objects_metadata_failed,
                 this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -532,6 +531,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
 
 void S3DeleteMultipleObjectsAction::delete_extended_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
   if (extended_keys_list_to_be_deleted.size() > 0) {
     motr_kv_writer->delete_keyval(
         extended_list_index_layout, extended_keys_list_to_be_deleted,
