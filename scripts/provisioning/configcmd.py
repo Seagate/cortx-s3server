@@ -147,9 +147,8 @@ class ConfigCmd(SetupCmd):
           self.create_symbolic_link(src_path, dst_path)
           index += 1
 
-      if(self.services is None or 'openldap' in self.services):
-        # Configure openldap only
-        self.push_s3_ldap_schema()
+      # Configure s3 openldap schema
+      self.push_s3_ldap_schema()
 
 
       if skip_haproxy == False:
