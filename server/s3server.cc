@@ -33,6 +33,7 @@
 #include "fid/fid.h"
 #include "murmur3_hash.h"
 #include "s3_bucket_metadata_cache.h"
+#include "s3_data_usage.h"
 #include "s3_motr_layout.h"
 #include "s3_common_utilities.h"
 #include "s3_daemonize_server.h"
@@ -1257,6 +1258,9 @@ int main(int argc, char **argv) {
           g_option_instance->get_bucket_metadata_cache_max_size(),
           g_option_instance->get_bucket_metadata_cache_expire_sec(),
           g_option_instance->get_bucket_metadata_cache_refresh_sec()));
+
+  S3DataUsageCache::get_instance()->set_max_cache_size(
+    g_option_instance->get_bucket_metadata_cache_max_size());
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()

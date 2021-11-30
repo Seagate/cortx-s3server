@@ -37,6 +37,7 @@ class S3DataUsageCache {
   S3DataUsageCache& operator=(const S3DataUsageCache&) = delete;
 
   static S3DataUsageCache* get_instance();
+  void set_max_cache_size(size_t max_size);
 
   void update_data_usage(std::shared_ptr<RequestObject> req,
                          std::shared_ptr<S3BucketMetadata> src,
@@ -52,6 +53,7 @@ class S3DataUsageCache {
 
   std::map<std::string, std::shared_ptr<S3BucketObjectCounter> >
       bucket_wise_cache;
+  size_t max_cache_size;
 
   S3DataUsageCache() {}
 

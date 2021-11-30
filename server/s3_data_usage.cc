@@ -39,6 +39,13 @@ S3DataUsageCache* S3DataUsageCache::get_instance() {
   return singleton.get();
 }
 
+void S3DataUsageCache::set_max_cache_size(size_t max_size) {
+  s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, "", "Set data usage cache size to %zu", max_size);
+  max_cache_size = max_size;
+  s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
+}
+
 std::string get_cache_key(std::shared_ptr<S3BucketMetadata> bkt_md) {
   s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
