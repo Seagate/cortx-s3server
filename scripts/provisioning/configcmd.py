@@ -88,7 +88,21 @@ class ConfigCmd(SetupCmd):
 
       # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
       self.logger.info("copy config files started")
-      self.copy_config_files()
+      self.copy_config_files([self.get_confkey('S3_CONFIG_FILE'),
+                    self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')])
       self.logger.info("copy config files completed")
 
       # copy s3 authserver resources to base dir of config files (/etc/cortx)
@@ -694,33 +708,6 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CLUSTER_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_ROOTDN_USER_KEY", "cluster_config>rootdn_user")
     self.update_config_value("S3_CLUSTER_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY", "cluster_config>rootdn_pass")
     self.logger.info("Update s3 cluster config file completed")
-
-  def copy_config_files(self):
-    """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
-    config_files = [self.get_confkey('S3_CONFIG_FILE'),
-                    self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')]
-
-    # copy all the config files from the /opt/seagate/cortx to /etc/cortx
-    for config_file in config_files:
-      self.logger.info(f"Source config file: {config_file}")
-      dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
-      self.logger.info(f"Dest config file: {dest_config_file}")
-      os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
-      shutil.copy(config_file, dest_config_file)
-      self.logger.info("Config file copied successfully to /etc/cortx")
 
   def copy_s3authserver_resources(self):
     """Copy config files from /opt/seagate/cortx/auth/resources  to /etc/cortx/auth/resources."""
