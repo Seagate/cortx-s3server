@@ -224,12 +224,14 @@ class ConfigCmd(SetupCmd):
       ldap_lock = False
       self.logger.info('checking for concurrent execution scenario for s3 ldap scheam push using consul kv lock.')
       openldap_key=self.get_confkey("S3_CONSUL_OPENLDAP_KEY")
+      # TODO : update protocol and port
       consul_endpoint_url=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "fqdn", "tcp")
-      consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "port", "tcp")
+      consul_endpoint_port=8500
+      consul_protocol='consul://'
+      # consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "port", "tcp")
       # consul url will be : consul://consul-server.default.svc.cluster.local:8500
-      consul_url='consul://' + f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
+      consul_url= f'{consul_protocol}'+ f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
       self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
-      # Conf.load(f'{consul_index}', f'{consul_url}')
       consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
       while(True):
           try:
