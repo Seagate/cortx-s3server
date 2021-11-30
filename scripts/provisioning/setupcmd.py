@@ -100,7 +100,6 @@ class SetupCmd(object):
     self.s3_tmp_dir = os.path.join(self.base_config_file_path, "s3/tmp")
     self.logger.info(f'tmp dir : {self.s3_tmp_dir}')
 
-
   @property
   def url(self) -> str:
     return self._url
