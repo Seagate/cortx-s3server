@@ -25,7 +25,7 @@ import shutil
 
 class UpgradeCmd(SetupCmd):
 
-  """Upgrade Setup Cmd."""
+  """Upgrade Setup Cmd"""
   name = "upgrade"
 
   def __init__(self, config: str, services: str, commit: str = None):
@@ -39,9 +39,59 @@ class UpgradeCmd(SetupCmd):
     """Main processing function."""
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}, commit = {self.commit}")
     try:
+      # TODO : Print the existing version and upgrade version
+      # Existing version will come from confstore.
+      # Upgrade version will come from release.info file or rpm.
+      lookup_service = { "haproxy"      : [],
+                         "s3server"     : ["keystore", "s3"],
+                         "authserver"   : ["keystore", "auth"],
+                         "s3bgschedular": ["bgdelete"],
+                         "s3bgworker"   : ["bgdelete"]
+      }
+      g_upgrade_items = {
+        's3' : {
+              'configFile' : os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml"),
+              'oldSampleFile' : os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old"),
+              'newSampleFile' : os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml.sample"),
+              'unsafeAttributesFile' : os.path.join(self.base_config_file_path, "s3/conf/s3config_unsafe_attributes.yaml"),
+              'fileType' : 'yaml://'
+         },
+         'auth' : {
+              'configFile' : os.path.join(self.base_config_file_path, "auth/resources/authserver.properties"),
+              'oldSampleFile' : os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old"),
+              'newSampleFile' : os.path.join(self.base_config_file_path, "auth/resources/authserver.properties.sample"),
+              'unsafeAttributesFile' : os.path.join(self.base_config_file_path, "auth/resources/authserver_unsafe_attributes.properties"),
+              'fileType' : 'properties://'
+         },
+         'keystore' : {
+              'configFile' : os.path.join(self.base_config_file_path, "auth/resources/keystore.properties"),
+              'oldSampleFile' : os.path.join(self.s3_tmp_dir,"keystore.properties.sample.old"),
+              'newSampleFile' : os.path.join(self.base_config_file_path, "auth/resources/keystore.properties.sample"),
+              'unsafeAttributesFile' : os.path.join(self.base_config_file_path, "auth/resources/keystore_unsafe_attributes.properties"),
+              'fileType' : 'properties://'
+         },
+         'bgdelete' : {
+              'configFile' : os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
+              'oldSampleFile' : os.path.join(self.s3_tmp_dir, "config.yaml.sample.old"),
+              'newSampleFile' : os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
+              'unsafeAttributesFile' : os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml"),
+              'fileType' : 'yaml://'
+         },
+         'cluster' : {
+              'configFile' : os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml"),
+              'oldSampleFile' : os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old"),
+              'newSampleFile' : os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml.sample"),
+              'unsafeAttributesFile' : os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml"),
+              'fileType' : 'yaml://'
+         }
+      }
       if self.services is None:
-        self.services = "io,auth,bg_consumer,bg_producer"
+        self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
       service_list = self.services.split(",")
+      for ser_key in service_list:
+        if ser_key not in lookup_service:
+          raise Exception(f'ERROR: {ser_key} incorrect service passed')
+
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
       self.logger.info("validations completed")
@@ -51,21 +101,29 @@ class UpgradeCmd(SetupCmd):
       self.copy_config_files()
       self.logger.info("Copy .ample and unsafe attribute files completed")
 
-      # remove config file if present as they are get installed by default on /opt/seage/cortx by rpms
-      self.logger.info("Delete config file started")
-      self.delete_config_files()
-      self.logger.info("Delete config file completed")
-
       # service based check for old files and copy necessary config files
       self.logger.info("Check and copy files based on service - start")
-      self.service_based_check_and_copy(service_list)
+      old_file_list = []
+      for ser_key in service_list:
+        ser_list = lookup_service[ser_key]
+        for upgrade_item in ser_list:
+          old_file_list.append(g_upgrade_items[upgrade_item]['oldSampleFile'])
+        self.old_file_check(old_file_list)
       self.logger.info("Check and copy files based on service - complete")
 
       # merge_configs() is imported from the merge.py
       # Upgrade config files
       self.logger.info("merge configs started")
-      config_file_path = "/etc/cortx"
-      merge_configs(config_file_path, self.s3_tmp_dir, service_list)
+      file_list = []
+      for ser_key in service_list:
+        ser_list = lookup_service[ser_key]
+        for upgrade_item in ser_list:
+          file_list.append(g_upgrade_items[upgrade_item]['configFile'],
+                           g_upgrade_items[upgrade_item]['oldSampleFile'],
+                           g_upgrade_items[upgrade_item]['newSampleFile'],
+                           g_upgrade_items[upgrade_item]['unsafeAttributesFile'],
+                           g_upgrade_items[upgrade_item]['fileType'])
+          merge_configs(self.base_config_file_path, self.s3_tmp_dir, file_list)
       self.logger.info("merge configs completed")
 
       # Validating config files after upgrade
@@ -109,39 +167,12 @@ class UpgradeCmd(SetupCmd):
       shutil.move(config_file, dest_config_file)
       self.logger.info("Config file copied successfully to /etc/cortx")
 
-  def service_based_check_and_copy(self, service_list):
-    """ Copy sample and unsafe attribute config files from /opt/seagate/cortx to /etc/cortx."""
-    lookup_service = { "io"           : ["cluster", "s3"],
-                       "auth"         : ["cluster", "keystore", "auth"],
-                       "bg_consumer"  : ["cluster", "bgdelete"],
-                       "bg_producer"  : ["cluster", "bgdelete"]
-    }
-    old_files = {'s3'       : os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old"),
-                 'auth'     : os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old"),
-                 'keystore' : os.path.join(self.s3_tmp_dir, "keystore.properties.sample.old"),
-                 'bgdelete' : os.path.join(self.s3_tmp_dir, "config.yaml.sample.old"),
-                 'cluster'  : os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old")
-    }
-    config_files = {'s3'       : self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
-                    'auth'     : self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
-                    'keystore' : self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
-                    'bgdelete' : self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
-                    'cluster'  : self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')
-    }
-
-    for ser_key in service_list:
-      ser_list = lookup_service[ser_key]
-      for item in ser_list:
-        # check necessary files before calling merge
-        sample_old_file = old_files[item]
+  def old_file_check(self, old_file_list):
+    """Check for '.old' files and fail if not found."""
+    for sample_old_file in old_file_list:
         if not os.path.exists(sample_old_file):
           self.logger.info(f"{sample_old_file} backup file not found")
           raise S3PROVError(f'process: {self.name} failed')
-        # overwrite /opt/seagate/cortx/*/*.sample
-        # to /etc/cortx/*/*.sample
-        s3_sample_file = config_files[item]
-        s3_file = s3_sample_file.replace("/opt/seagate/cortx", self.base_config_file_path)
-        shutil.copy(s3_sample_file, s3_file)
 
   def post_merge_copy(self):
     """Post merge copy."""
@@ -172,15 +203,3 @@ class UpgradeCmd(SetupCmd):
     shutil.copy(s3_cluster_config_sample_file, s3_cluster_config_sample_file_old)
     self.logger.info("copying config files for upgrade complete")
 
-  def delete_config_files(self):
-    """Delete config file which are installed by rpm."""
-    config_files = [self.get_confkey('S3_CONFIG_FILE'),
-                self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
-                self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
-                self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
-                self.get_confkey('S3_CLUSTER_CONFIG_FILE')]
-
-    # remove config file
-    for config_file in config_files:
-      self.DeleteFile(config_file)
-      self.logger.info(f"Config file {config_file} deleted successfully")

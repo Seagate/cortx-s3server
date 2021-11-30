@@ -86,7 +86,7 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     cs_conf_file.save_config()
     logger.info(f'config file {str(configFile)} upgrade completed')
 
-def merge_configs(config_file_path: str, s3_tmp_dir, service_list = ["io", "auth", "bg_consumer", "bg_producer"]):
+def merge_configs(config_file_path: str, s3_tmp_dir, file_list):
 
     """
     - This function will merge all S3 config files during upgrade
@@ -95,62 +95,7 @@ def merge_configs(config_file_path: str, s3_tmp_dir, service_list = ["io", "auth
     # Use existing s3-deployment-logger or setup new console logger
     setup_logger()
 
-    g_upgrade_items = {
-    's3' : {
-            'configFile' : os.path.join(config_file_path, "s3/conf/s3config.yaml"),
-            'oldSampleFile' : os.path.join(s3_tmp_dir, "s3config.yaml.sample.old"),
-            'newSampleFile' : os.path.join(config_file_path, "s3/conf/s3config.yaml.sample"),
-            'unsafeAttributesFile' : os.path.join(config_file_path, "s3/conf/s3config_unsafe_attributes.yaml"),
-            'fileType' : 'yaml://'
-        },
-        'auth' : {
-            'configFile' : os.path.join(config_file_path, "auth/resources/authserver.properties"),
-            'oldSampleFile' : os.path.join(s3_tmp_dir, "authserver.properties.sample.old"),
-            'newSampleFile' : os.path.join(config_file_path, "auth/resources/authserver.properties.sample"),
-            'unsafeAttributesFile' : os.path.join(config_file_path, "auth/resources/authserver_unsafe_attributes.properties"),
-            'fileType' : 'properties://'
-        },
-        'keystore' : {
-            'configFile' : os.path.join(config_file_path, "auth/resources/keystore.properties"),
-            'oldSampleFile' : os.path.join(s3_tmp_dir,"keystore.properties.sample.old"),
-            'newSampleFile' : os.path.join(config_file_path, "auth/resources/keystore.properties.sample"),
-            'unsafeAttributesFile' : os.path.join(config_file_path, "auth/resources/keystore_unsafe_attributes.properties"),
-            'fileType' : 'properties://'
-        },
-        'bgdelete' : {
-            'configFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/config.yaml"),
-            'oldSampleFile' : os.path.join(s3_tmp_dir, "config.yaml.sample.old"),
-            'newSampleFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
-            'unsafeAttributesFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml"),
-            'fileType' : 'yaml://'
-        },
-        'cluster' : {
-            'configFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml"),
-            'oldSampleFile' : os.path.join(s3_tmp_dir, "s3_cluster.yaml.sample.old"),
-            'newSampleFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml.sample"),
-            'unsafeAttributesFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml"),
-            'fileType' : 'yaml://'
-        }
-    }
-
-    lookup_service = { "io"           : ["cluster", "s3"],
-                       "auth"         : ["cluster", "keystore", "auth"],
-                       "bg_consumer"  : ["cluster", "bgdelete"],
-                       "bg_producer"  : ["cluster", "bgdelete"]
-    }
-
-    for ser_key in service_list:
-      if ser_key not in lookup_service:
-        raise Exception(f'ERROR: {ser_key} incorrect service passed')
-
-    for ser_key in service_list:
-      ser_list = lookup_service[ser_key]
-      for upgrade_item in ser_list:
-        upgrade_config(g_upgrade_items[upgrade_item]['configFile'],
-          g_upgrade_items[upgrade_item]['oldSampleFile'],
-          g_upgrade_items[upgrade_item]['newSampleFile'],
-          g_upgrade_items[upgrade_item]['unsafeAttributesFile'],
-          g_upgrade_items[upgrade_item]['fileType'])
+    upgrade_config(file_list)
 
 def setup_logger():
     """
