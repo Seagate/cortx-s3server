@@ -161,7 +161,7 @@ class UserPolicyController extends AbstractController {
  private
   void checkIfPolicyIsAttachable(Policy policy, String userName,
                                  String policyARN) throws GuardClauseException {
-    if (!Boolean.getBoolean(policy.getIsPolicyAttachable())) {
+    if (!Boolean.valueOf(policy.getIsPolicyAttachable())) {
       LOGGER.error("Cannot attach non-attachable policy [" + policyARN +
                    "] to user [" + userName + "].");
       throw new GuardClauseException(
