@@ -62,3 +62,13 @@ node:
     hostname: "TMPL_HOSTNAME"
     cluster_id: "TMPL_CLUSTER_ID"
     type: storage_node
+    components:
+      - name: s3
+        services:
+          - io
+          - auth
+          - bg_consumer
+          - bg_producer
+          - openldap
+          - haproxy
+

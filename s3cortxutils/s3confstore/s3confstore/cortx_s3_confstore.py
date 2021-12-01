@@ -86,6 +86,10 @@ class S3CortxConfStore:
     """Get machine id from the constore"""
     return Conf.machine_id
 
+  def search(self, parent_key:str, key_to_search:str, value_to_search: str):
+    """Search the values for given key under the parent key."""
+    return Conf.search(self.default_index, parent_key, key_to_search, value_to_search)
+
   @staticmethod
   def validate_configfile(configfile: str):
     """Validate the 'configfile' url, if its a valid file and of supported format."""
