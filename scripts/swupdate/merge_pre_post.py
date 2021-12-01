@@ -17,6 +17,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+# IMP : for preupgrade and postupgrade cmd,
+# merge_configs() is imported from the merge_pre_post.py
 
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import os.path
