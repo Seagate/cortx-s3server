@@ -80,7 +80,7 @@ class UpgradeCmd(SetupCmd):
       if 's3server' in service_list:
         self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old")])
-        self.copy_config_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE')
+        self.copy_config_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE')])
         merge_configs(
           os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml"),
