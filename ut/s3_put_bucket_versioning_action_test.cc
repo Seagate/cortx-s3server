@@ -55,7 +55,9 @@ class S3PutBucketVersioningActionTest : public testing::Test {
         request_mock, bucket_meta_factory, bucket_versioning_body_factory_mock);
     mock_request_id = "mock_request_id";
     mock_bucket_version_str = "MockBucketVersion";
-
+    s3_motr_api_mock = std::make_shared<MockS3Motr>();
+    mock_motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
+        request_mock, s3_motr_api_mock);
     call_count_one = 0;
   }
 
@@ -64,11 +66,15 @@ class S3PutBucketVersioningActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3PutVersioningBodyFactory>
       bucket_versioning_body_factory_mock;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> mock_motr_kvs_reader_factory;
+  std::shared_ptr<MockS3Motr> s3_motr_api_mock;
   std::string mock_bucket_versioning_state;
   std::string mock_bucket_version_str;
   std::string mock_request_id;
   int call_count_one;
   std::string bucket_name;
+
+  struct s3_motr_idx_layout index_layout = {{0x11ffff, 0x1ffff}};
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -177,7 +183,9 @@ TEST_F(S3PutBucketVersioningActionTest,
   EXPECT_EQ(1, call_count_one);
 }
 
-TEST_F(S3PutBucketVersioningActionTest, ValidateRequestXmlWithSuspendedState) {
+#if 0
+TEST_F(S3PutBucketVersioningActionTest, ValidateRequestXmlWithSuspendedState)
+{
 
   mock_bucket_version_str =
       "<VersioningConfiguration "
@@ -203,6 +211,7 @@ TEST_F(S3PutBucketVersioningActionTest, ValidateRequestXmlWithSuspendedState) {
   action_under_test_ptr->validate_request_xml_versioning_status();
   EXPECT_EQ(1, call_count_one);
 }
+#endif
 
 TEST_F(S3PutBucketVersioningActionTest, ValidateInvalidRequestXmlTags) {
 
@@ -324,4 +333,84 @@ TEST_F(S3PutBucketVersioningActionTest, SendResponseToClientInternalError) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
+}
+
+TEST_F(S3PutBucketVersioningActionTest, CanUpdateVersioningStatusSuspended) {
+  action_under_test_ptr->bucket_version_status = "Suspended";
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(401, _)).Times(AtLeast(1));
+  action_under_test_ptr->can_update_versioning_status();
+  EXPECT_STREQ("OperationNotSupported",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutBucketVersioningActionTest, CanUpdateVersioningStatusEnabled) {
+  action_under_test_ptr->bucket_version_status = "Enabled";
+  action_under_test_ptr->s3_motr_kvs_reader_factory =
+      mock_motr_kvs_reader_factory;
+  action_under_test_ptr->motr_kv_reader =
+      mock_motr_kvs_reader_factory->mock_motr_kvs_reader;
+  action_under_test_ptr->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(1)
+      .WillOnce(ReturnRef(index_layout));
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
+              next_keyval(_, _, _, _, _, _)).Times(1);
+  action_under_test_ptr->can_update_versioning_status();
+}
+
+TEST_F(S3PutBucketVersioningActionTest, CheckIfBucketEmpty) {
+  action_under_test_ptr->s3_motr_kvs_reader_factory =
+      mock_motr_kvs_reader_factory;
+  action_under_test_ptr->motr_kv_reader =
+      mock_motr_kvs_reader_factory->mock_motr_kvs_reader;
+  action_under_test_ptr->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+              get_object_list_index_layout())
+      .Times(1)
+      .WillOnce(ReturnRef(index_layout));
+
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
+              next_keyval(_, _, _, _, _, _)).Times(1);
+  action_under_test_ptr->check_if_bucket_empty();
+}
+
+TEST_F(S3PutBucketVersioningActionTest, GetObjectSuccessFull) {
+  action_under_test_ptr->s3_motr_kvs_reader_factory =
+      mock_motr_kvs_reader_factory;
+  action_under_test_ptr->motr_kv_reader =
+      mock_motr_kvs_reader_factory->mock_motr_kvs_reader;
+  std::map<std::string, std::pair<int, std::string>> key_val;
+  key_val.insert(std::make_pair("key", std::make_pair(0, "value")));
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
+              get_key_values())
+      .Times(1)
+      .WillOnce(ReturnRef(key_val));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(401, _)).Times(AtLeast(1));
+
+  action_under_test_ptr->get_object_successful();
+  EXPECT_STREQ("OperationNotSupported",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutBucketVersioningActionTest, GetObjectFailed) {
+  action_under_test_ptr->s3_motr_kvs_reader_factory =
+      mock_motr_kvs_reader_factory;
+  action_under_test_ptr->motr_kv_reader =
+      mock_motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
+              get_state())
+      .Times(1)
+      .WillOnce(Return(S3MotrKVSReaderOpState::missing));
+  call_count_one = 0;
+  action_under_test_ptr->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketVersioningActionTest::func_callback_one,
+                         this);
+  action_under_test_ptr->get_object_failed();
+  EXPECT_EQ(1, call_count_one);
 }

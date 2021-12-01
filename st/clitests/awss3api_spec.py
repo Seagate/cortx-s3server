@@ -1786,16 +1786,27 @@ AwsTest('Aws can not get object with empty versionId')\
     .command_error_should_have("Version id cannot be the empty string")
 
 #******** Suspend Versioning on Bucket ********
-AwsTest('Aws can suspend versioning on bucket')\
-    .put_bucket_versioning(bucket, "Suspended")\
-    .execute_test()\
-    .command_is_successful()
+# XXX: Temporarily disabled until suspension is supported
+# AwsTest('Aws can suspend versioning on bucket')\
+#     .put_bucket_versioning(bucket, "Suspended")\
+#     .execute_test()\
+#     .command_is_successful()
 
 #******** Get Bucket Versioning Suspended status ********
-AwsTest('Aws can get bucket versioning Suspended status')\
-    .get_bucket_versioning(bucket)\
-    .execute_test()\
-    .command_response_should_have("Suspended")
+# XXX: Temporarily disabled until suspension is supported
+# AwsTest('Aws can get bucket versioning Suspended status')\
+#     .get_bucket_versioning(bucket)\
+#     .execute_test()\
+#     .command_response_should_have("Suspended")
+
+#******** Suspend Versioning on Bucket ********
+# XXX: Temporary until suspension is supported
+AwsTest('Can not suspend versioning on bucket')\
+    .put_bucket_versioning(bucket, "Suspended")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("OperationNotSupported")
+
 
 #******** Test Cleanup ********
 AwsTest('Aws can delete the object')\
