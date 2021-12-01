@@ -23,10 +23,8 @@ from setupcmd import SetupCmd, S3PROVError
 # merge_configs() is imported from the merge.py
 from merge import merge_configs
 import os
-import shutil
 
 class UpgradeCmd(SetupCmd):
-
   """Upgrade Setup Cmd"""
   name = "upgrade"
 
@@ -155,5 +153,5 @@ class UpgradeCmd(SetupCmd):
       if not os.path.exists(sample_old_file):
         self.logger.info(f"{sample_old_file} backup file not found")
         raise S3PROVError(f'process: {self.name} failed')
-      self.logger.info(f"file is present : {config_file}")
+      self.logger.info(f"file is present : {sample_old_file}")
 
