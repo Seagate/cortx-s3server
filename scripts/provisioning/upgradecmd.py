@@ -54,7 +54,7 @@ class UpgradeCmd(SetupCmd):
       self.phase_prereqs_validate(self.name)
       self.logger.info("validations completed")
 
-      # after merge, make '.old' files
+      # before calling merge logic, make '.old' files
       self.logger.info("post merge copy files start")
       self.make_sample_old_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')])
       if 'haproxy' in service_list:
@@ -70,7 +70,7 @@ class UpgradeCmd(SetupCmd):
         self.make_sample_old_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')])
       self.logger.info("post merge copy files complete")
 
-      # service based check for old files and copy necessary config files
+      # check for old files before merge logic
       self.logger.info("Check and copy files based on service - start")
       self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old")])
@@ -91,7 +91,7 @@ class UpgradeCmd(SetupCmd):
             [os.path.join(self.s3_tmp_dir, "config.yaml.sample.old")])
       self.logger.info("Check and copy files based on service - complete")
 
-      # after rpm install, sample and unsafe attribute files needs to copy to /etc/cortx for merge logic
+      # copy sample and unsafe attribute files to /etc/cortx for merge logic
       self.logger.info("Copy .sample and unsafe attribute files started")
       self.copy_config_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')
                               self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')])
