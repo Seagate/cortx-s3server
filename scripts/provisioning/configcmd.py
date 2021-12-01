@@ -20,12 +20,14 @@
 
 import sys
 import os
+import time
 import errno
 import shutil
 import math
 import urllib
 import fcntl
 import glob
+import uuid
 from pathlib import Path
 from  ast import literal_eval
 from os import path
@@ -88,7 +90,21 @@ class ConfigCmd(SetupCmd):
 
       # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
       self.logger.info("copy config files started")
-      self.copy_config_files()
+      self.copy_config_files([self.get_confkey('S3_CONFIG_FILE'),
+                    self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')])
       self.logger.info("copy config files completed")
 
       # copy s3 authserver resources to base dir of config files (/etc/cortx)
@@ -145,9 +161,9 @@ class ConfigCmd(SetupCmd):
           self.create_symbolic_link(src_path, dst_path)
           index += 1
 
-      if(self.services is None or 'openldap' in self.services):
-        # Configure openldap only
-        self.configure_s3_schema()
+
+      # Configure s3 openldap schema
+      self.push_s3_ldap_schema()
 
       if skip_haproxy == False:
         # Configure haproxy only
@@ -235,6 +251,60 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f"{confstore_key} does not specify endpoint fqdn {endpoint} for endpoint type {endpoint_type}")
     return endpoint[expected_token]
 
+  def push_s3_ldap_schema(self):
+      """ Push s3 ldap schema with below checks,
+          1. While pushing schema, global lock created in consul kv store as <index, key, value>.
+             e.g. <s3_consul_index, component>s3>openldap_lock, machine_id>
+          2. Before pushing s3 schema,
+             a. Check for s3 openldap lock from consul kv store
+             b. if lock is None/machine-id, then go ahead and push s3 ldap schema.
+             c. if lock has other values except machine-id/None, then wait for the lock and retry again.
+          3. Once s3 schema is pushed, delete the s3 key from consul kv store.
+      """
+      ldap_lock = False
+      self.logger.info('checking for concurrent execution scenario for s3 ldap scheam push using consul kv lock.')
+      openldap_key=self.get_confkey("S3_CONSUL_OPENLDAP_KEY")
+      # TODO : update protocol and port
+      consul_endpoint_url=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "fqdn", "tcp")
+      consul_endpoint_port=8500
+      consul_protocol='consul://'
+      # consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "port", "tcp")
+      # consul url will be : consul://consul-server.default.svc.cluster.local:8500
+      consul_url= f'{consul_protocol}'+ f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
+      self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
+      consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
+      while(True):
+          try:
+              opendldap_val = consul_confstore.get_config(f'{openldap_key}')
+              self.logger.info(f'openldap lock value is:{opendldap_val}')
+              if opendldap_val is None:
+                  self.logger.info(f'Setting confstore value for key :{openldap_key} and value as :{self.machine_id}')
+                  consul_confstore.set_config(f'{openldap_key}', f'{self.machine_id}', True)
+                  self.logger.info('Updated confstore with latest value')
+                  time.sleep(5)
+                  continue
+              if opendldap_val == self.machine_id:
+                  self.logger.info(f'Found lock acquired successfully hence processing with openldap schema push')
+                  ldap_lock = True
+                  break
+              if opendldap_val != self.machine_id:
+                  self.logger.info(f'openldap lock is already acquired by {opendldap_val}, Hence skipping openldap schema configuration')
+                  ldap_lock = False
+                  break
+
+          except Exception as e:
+              self.logger.error(f'Exception occured while connecting consul service endpoint {e}')
+              break
+      if ldap_lock == True:
+        # push openldap schema
+        self.logger.info('Pushing s3 ldap schema ....!!')
+        self.configure_s3_schema()
+        self.logger.info('Pushed s3 ldap schema successfully....!!')
+        self.logger.info(f'Deleting consule key :{openldap_key}')
+        consul_confstore.delete_key(f'{openldap_key}', True)
+        self.logger.info(f'deleted openldap key-value from consul using consul endpoint URL as:{consul_url}')
+
+
   def configure_s3_schema(self):
     self.logger.info('openldap s3 configuration started')
     server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_S3_OPENLDAP_SERVERS')
@@ -273,33 +343,14 @@ class ConfigCmd(SetupCmd):
       raise e
 
   def get_msgbus_partition_count(self):
-    """get total server nodes which will act as partition count."""
-    # Get storage set count to loop over to get all nodes
-    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT')
-    self.logger.info(f"storage_set_count : {storage_set_count}")
-    srv_io_node_count = 0
-    index = 0
-    while index < int(storage_set_count):
-      # Get all server nodes
-      server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("storage_set_count", str(index))
-      self.logger.info(f"server_nodes_list_key : {server_nodes_list_key}")
-      server_nodes_list = self.get_confvalue(server_nodes_list_key)
-      for server_node_id in server_nodes_list:
-        self.logger.info(f"server_node_id : {server_node_id}")
-        server_node_type_key = self.get_confkey('CONFIG>CONFSTORE_NODE_TYPE').replace('node-id', server_node_id)
-        self.logger.info(f"server_node_type_key : {server_node_type_key}")
-        # Get the type of each server node
-        server_node_type = self.get_confvalue(server_node_type_key)
-        self.logger.info(f"server_node_type : {server_node_type}")
-        if server_node_type == "storage_node":
-          self.logger.info(f"Node type is storage_node")
-          srv_io_node_count += 1
-      index += 1
+    """get total consumers (* 2) which will act as partition count."""
+    consumer_count = 0
+    search_values = self.search_confvalue("node", "services", "bg_consumer")
+    consumer_count = len(search_values)
+    self.logger.info(f"consumer_count : {consumer_count}")
 
-    self.logger.info(f"Server io node count : {srv_io_node_count}")
-
-    # Partition count should be ( number of hosts * 2 )
-    partition_count = srv_io_node_count * 2
+    # Partition count should be ( number of consumer * 2 )
+    partition_count = consumer_count * 2
     self.logger.info(f"Partition count : {partition_count}")
     return partition_count
 
@@ -636,33 +687,6 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CLUSTER_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_ROOTDN_USER_KEY", "cluster_config>rootdn_user")
     self.update_config_value("S3_CLUSTER_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY", "cluster_config>rootdn_pass")
     self.logger.info("Update s3 cluster config file completed")
-
-  def copy_config_files(self):
-    """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
-    config_files = [self.get_confkey('S3_CONFIG_FILE'),
-                    self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')]
-
-    # copy all the config files from the /opt/seagate/cortx to /etc/cortx
-    for config_file in config_files:
-      self.logger.info(f"Source config file: {config_file}")
-      dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
-      self.logger.info(f"Dest config file: {dest_config_file}")
-      os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
-      shutil.copy(config_file, dest_config_file)
-      self.logger.info("Config file copied successfully to /etc/cortx")
 
   def copy_s3authserver_resources(self):
     """Copy config files from /opt/seagate/cortx/auth/resources  to /etc/cortx/auth/resources."""

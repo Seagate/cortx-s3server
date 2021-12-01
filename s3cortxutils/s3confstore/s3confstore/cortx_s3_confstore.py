@@ -35,7 +35,7 @@ class S3CortxConfStore:
     self.default_index = index
 
     if config is not None:
-      self.validate_configfile(config)
+      # self.validate_configfile(config)
       self.load_config(self.default_index, self.config_file)
 
   @staticmethod
@@ -85,6 +85,10 @@ class S3CortxConfStore:
   def get_machine_id(self):
     """Get machine id from the constore"""
     return Conf.machine_id
+
+  def search(self, parent_key:str, key_to_search:str, value_to_search: str):
+    """Search the values for given key under the parent key."""
+    return Conf.search(self.default_index, parent_key, key_to_search, value_to_search)
 
   @staticmethod
   def validate_configfile(configfile: str):

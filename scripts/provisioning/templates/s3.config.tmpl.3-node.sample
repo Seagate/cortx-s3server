@@ -65,13 +65,41 @@ node:
     hostname: "ssc-vm-0080.colo.seagate.com"
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
     type: storage_node
+    components:
+      - name: s3
+        services:
+          - io
+          - auth
+          - bg_consumer
+          - bg_producer
+          - openldap
+          - haproxy
   1114a50a6bf6f9c93ebd3c49d07d3fd5:
     name: "POD-2"
     hostname: "ssc-vm-0081.colo.seagate.com"
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
     type: storage_node
+    components:
+      - name: s3
+        services:
+          - io
+          - auth
+          - bg_consumer
+          - bg_producer
+          - openldap
+          - haproxy
   1114a50a6bf6f9c93ebd3c49d07d3fd6:
     name: "POD-3"
     hostname: "ssc-vm-0082.colo.seagate.com"
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
     type: storage_node
+    components:
+      - name: s3
+        services:
+          - io
+          - auth
+          - bg_consumer
+          - bg_producer
+          - openldap
+          - haproxy
+
