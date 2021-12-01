@@ -1675,6 +1675,8 @@ bool S3ObjectMetadata::check_bucket_replication_policy(
     std::string rule_status, new_rule_priority;
     std::string new_dest_bucket_name, new_delete_marker_rep_status;
     rule_object = rule_array[index];
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Checking if object matches with Rule[%u].\n", index);
     // If rule is in disabled state, replication state will not be added to
     // object
     if (!rule_object["Status"].isNull()) {
@@ -1686,20 +1688,18 @@ bool S3ObjectMetadata::check_bucket_replication_policy(
       }
     }
 
-    if (check_replication_filter_match(rule_object, object_tags_map)) {
-      get_rule_configuration_from_replication_policy(
-          rule_object, new_dest_bucket_name, new_delete_marker_rep_status,
-          new_rule_priority);
-      check_and_update_destination_bucket_map(new_dest_bucket_name,
-                                              new_delete_marker_rep_status,
-                                              new_rule_priority);
+    if (!check_replication_filter_match(rule_object, object_tags_map)) continue;
 
-    } else {
-      s3_log(S3_LOG_DEBUG, request_id, "Filter does not matched.\n");
-      return false;
-    }
+    get_rule_configuration_from_replication_policy(
+        rule_object, new_dest_bucket_name, new_delete_marker_rep_status,
+        new_rule_priority);
+    check_and_update_destination_bucket_map(
+        new_dest_bucket_name, new_delete_marker_rep_status, new_rule_priority);
   }
+
   // Added this log for demo purpose.Can be remove later.
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "Contents of destination_bucket_map::\n");
   for (auto dest : destination_bucket_map) {
     std::map<std::string, std::string> dest_map = dest.second;
 
@@ -1708,8 +1708,9 @@ bool S3ObjectMetadata::check_bucket_replication_policy(
            dest_map["DeleteMarkerReplicationStatus"].c_str(),
            dest_map["Priority"].c_str());
   }
+
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-  return true;
+  return !destination_bucket_map.empty();
 }
 
 /*Description : This function will check if new_dest_bucket_name is present in
