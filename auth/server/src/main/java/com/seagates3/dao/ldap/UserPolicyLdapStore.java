@@ -1,6 +1,5 @@
 package com.seagates3.dao.ldap;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -33,14 +32,14 @@ class UserPolicyLdapStore {
     LOGGER.debug("Attaching policy [" + policy.getPolicyId() + "] to user [" +
                  user.getName() + "]");
 
-    ArrayList userModList =
-        getUserModListForAttachDetachPolicy(user, policy, true);
-    ArrayList policyModList =
-        getPolicyModListForAttachDetachPolicy(policy, true);
+    LDAPModification userMod =
+        getUserModForAttachDetachPolicy(user, policy, true);
+    LDAPModification policyMod =
+        getPolicyModForAttachDetachPolicy(policy, true);
 
     try {
-      LDAPUtils.modify(userDN, userModList);
-      LDAPUtils.modify(policyDN, policyModList);
+      LDAPUtils.modify(userDN, userMod);
+      LDAPUtils.modify(policyDN, policyMod);
     }
     catch (LDAPException ex) {
       String errMsg = "Failed to attach policy [" + policy.getPolicyId() +
@@ -62,14 +61,14 @@ class UserPolicyLdapStore {
     LOGGER.debug("Detaching policy [" + policy.getPolicyId() + "] from user [" +
                  user.getName() + "]");
 
-    ArrayList userModList =
-        getUserModListForAttachDetachPolicy(user, policy, false);
-    ArrayList policyModList =
-        getPolicyModListForAttachDetachPolicy(policy, false);
+    LDAPModification userMod =
+        getUserModForAttachDetachPolicy(user, policy, false);
+    LDAPModification policyMod =
+        getPolicyModForAttachDetachPolicy(policy, false);
 
     try {
-      LDAPUtils.modify(userDN, userModList);
-      LDAPUtils.modify(policyDN, policyModList);
+      LDAPUtils.modify(userDN, userMod);
+      LDAPUtils.modify(policyDN, policyMod);
     }
     catch (LDAPException ex) {
       String errMsg = "Failed to detach policy [" + policy.getPolicyId() +
@@ -99,9 +98,8 @@ class UserPolicyLdapStore {
   }
 
  private
-  ArrayList getUserModListForAttachDetachPolicy(User user, Policy policy,
-                                                boolean isAttach) {
-    ArrayList userModList = new ArrayList();
+  LDAPModification getUserModForAttachDetachPolicy(User user, Policy policy,
+                                                   boolean isAttach) {
     List<String> userPolicyIds = user.getPolicyIds();
     if (isAttach) {
       userPolicyIds.add(policy.getPolicyId());
@@ -111,22 +109,20 @@ class UserPolicyLdapStore {
     String[] policyIds = new String[userPolicyIds.size()];
     userPolicyIds.toArray(policyIds);
     LDAPAttribute attr = new LDAPAttribute(LDAPUtils.POLICY_ID, policyIds);
-    userModList.add(new LDAPModification(LDAPModification.REPLACE, attr));
 
-    return userModList;
+    return new LDAPModification(LDAPModification.REPLACE, attr);
   }
 
  private
-  ArrayList getPolicyModListForAttachDetachPolicy(Policy policy,
-                                                  boolean isAttach) {
+  LDAPModification getPolicyModForAttachDetachPolicy(Policy policy,
+                                                     boolean isAttach) {
     String newAttachmentCount =
         isAttach ? String.valueOf(policy.getAttachmentCount() + 1)
                  : String.valueOf(policy.getAttachmentCount() - 1);
-    ArrayList policyModList = new ArrayList();
+
     LDAPAttribute attr = new LDAPAttribute(LDAPUtils.POLICY_ATTACHMENT_COUNT,
                                            newAttachmentCount);
-    policyModList.add(new LDAPModification(LDAPModification.REPLACE, attr));
 
-    return policyModList;
+    return new LDAPModification(LDAPModification.REPLACE, attr);
   }
 }
