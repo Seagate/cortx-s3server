@@ -161,6 +161,7 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     result_data = s3confstore.get_config('bridge')
     self.assertTrue(result_data == mock_get_return.return_value)
 
+  @unittest.skip("Skipping as no need to test validation")
   def test_validate_configfile_doesnotexist(self):
     confurl = "json:///s3confstoreut-config-file-does-not-exist.json"
     index = "dummy_index_7"
@@ -169,6 +170,7 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
 
     self.assertEqual(cm.exception.code, 1)
 
+  @unittest.skip("Skipping as no need to test validation")
   @mock.patch('os.path')
   def test_validate_configfile_unsupportedformat(self, mock_path):
     mock_path.isfile.return_value = True
