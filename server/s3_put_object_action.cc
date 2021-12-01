@@ -103,8 +103,8 @@ void S3PutObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3PutObjectAction::validate_put_request, this);
   ACTION_TASK_ADD(S3PutObjectAction::create_object, this);
   ACTION_TASK_ADD(S3PutObjectAction::initiate_data_streaming, this);
-  ACTION_TASK_ADD(S3PutObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3PutObjectAction::save_bucket_counters, this);
+  ACTION_TASK_ADD(S3PutObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3PutObjectAction::send_response_to_s3_client, this);
   // ...
 }
@@ -619,18 +619,44 @@ void S3PutObjectAction::save_bucket_counters() {
 void S3PutObjectAction::save_bucket_counters_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-  s3_put_action_state = S3PutObjectActionState::metadataSaved;
+  s3_put_action_state = S3PutObjectActionState::savebktcountersSuccess;
   next();
 }
 
 void S3PutObjectAction::save_bucket_counters_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_put_action_state = S3PutObjectActionState::metadataSaveFailed;
+  s3_put_action_state = S3PutObjectActionState::savebktcountersFailed;
   s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
   set_s3_error("InternalError");
   // Clean up will be done after response.
   // we would want to remove the object from motr also
   send_response_to_s3_client();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3PutObjectAction::revert_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    // Overwrite Case.
+    inc_object_count = 0;
+    inc_obj_size = -(new_object_metadata->get_content_length() -
+                     object_metadata->get_content_length());
+  } else {
+    // Normal put request
+    inc_object_count = -1;
+    inc_obj_size = -(new_object_metadata->get_content_length());
+  }
+
+  // Failure cb should do bg work.
+  // success to call next.
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3PutObjectAction::next, this),
+      std::bind(&S3PutObjectAction::next, this));
+
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
@@ -981,7 +1007,9 @@ void S3PutObjectAction::startcleanup() {
              s3_put_action_state ==
                  S3PutObjectActionState::md5ValidationFailed ||
              s3_put_action_state ==
-                 S3PutObjectActionState::metadataSaveFailed) {
+                 S3PutObjectActionState::metadataSaveFailed ||
+             s3_put_action_state ==
+                 S3PutObjectActionState::savebktcountersFailed) {
     // PUT is assumed to be failed with a need to rollback
     s3_log(S3_LOG_DEBUG, request_id,
            "Cleanup new Object: s3_put_action_state[%d]\n",
@@ -993,6 +1021,10 @@ void S3PutObjectAction::startcleanup() {
       ACTION_TASK_ADD(S3PutObjectAction::remove_old_oid_probable_record, this);
     }
     ACTION_TASK_ADD(S3PutObjectAction::delete_new_object, this);
+
+    if (s3_put_action_state == S3PutObjectActionState::metadataSaveFailed) {
+      ACTION_TASK_ADD(S3PutObjectAction::revert_bucket_counters, this);
+    }
     // If delete object is successful, attempt to delete new probable record
   } else {
     s3_log(S3_LOG_DEBUG, request_id,
