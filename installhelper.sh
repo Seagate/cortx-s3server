@@ -143,6 +143,7 @@ cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/starthaproxy.sh $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
 cp -f scripts/swupdate/merge.py $S3_INSTALL_LOCATION/bin
+cp -f scripts/swupdate/merge_pre_post.py $S3_INSTALL_LOCATION/bin
 cp -f scripts/env/common/third-party-rpms.txt $S3_INSTALL_LOCATION/bin
 
 # Copy the mini-provisioner config files

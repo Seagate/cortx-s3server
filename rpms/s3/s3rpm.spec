@@ -417,6 +417,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
 /opt/seagate/cortx/s3/bin/merge.py
+/opt/seagate/cortx/s3/bin/merge_pre_post.py
 /opt/seagate/cortx/s3/bin/s3_haproxy_config.py
 /opt/seagate/cortx/s3/bin/third-party-rpms.txt
 /opt/seagate/cortx/s3/bin/starthaproxy.sh
