@@ -244,11 +244,11 @@ class ConfigCmd(SetupCmd):
                   time.sleep(5)
                   continue
               if opendldap_val == self.machine_id:
-                  self.logger.info(f'Found lock already acquired hence enabling flag')
+                  self.logger.info(f'Found lock acquired successfully hence processing with openldap schema push')
                   ldap_lock = True
                   break
               if opendldap_val != self.machine_id:
-                  self.logger.info('Ignoring given entry for this iteration')
+                  self.logger.info(f'openldap lock is already acquired by {opendldap_val}, Hence skipping openldap schema configuration')
                   ldap_lock = False
                   break
 
@@ -263,9 +263,6 @@ class ConfigCmd(SetupCmd):
         self.logger.info(f'Deleting consule key :{openldap_key}')
         consul_confstore.delete_key(f'{openldap_key}', True)
         self.logger.info(f'deleted openldap key-value from consul using consul endpoint URL as:{consul_url}')
-        # below code for testing purpose
-        val = consul_confstore.get_config(f'{openldap_key}')
-        self.logger.info('get s3 value from consul wth same key (expected as None) : ', f'{val}')
 
   def configure_s3_schema(self):
     self.logger.info('openldap s3 configuration started')
