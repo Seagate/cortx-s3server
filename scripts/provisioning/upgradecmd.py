@@ -97,7 +97,7 @@ class UpgradeCmd(SetupCmd):
         self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "keystore.properties.sample.old"),
              os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old")])
-        self.copy_config_files([self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE')
+        self.copy_config_files([self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
                                 self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE')])
@@ -126,7 +126,7 @@ class UpgradeCmd(SetupCmd):
       if 's3bgschedular' in service_list or 's3bgworker' in service_list:
         self.old_file_check()
             [os.path.join(self.s3_tmp_dir, "config.yaml.sample.old")])
-        self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')
+        self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE')])
         merge_configs(
           os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
