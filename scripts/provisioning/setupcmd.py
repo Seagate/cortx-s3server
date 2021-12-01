@@ -656,7 +656,7 @@ class SetupCmd(object):
       self.logger.info(f"Dest config file: {old_config_file}")
       os.makedirs(os.path.dirname(old_config_file), exist_ok=True)
       shutil.copy(config_file, old_config_file)
-      self.logger.info("Config file copied successfully to /etc/cortx")
+      self.logger.info("Config file copied successfully to /etc/cortx/s3/tmp")
 
   def modify_attribute(self, dn, attribute, value):
         # Open a connection

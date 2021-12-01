@@ -42,9 +42,9 @@ class UpgradeCmd(SetupCmd):
       # TODO : Print the existing version and upgrade version
       # Existing version will come from confstore.
       # Upgrade version will come from release.info file or rpm.
-      lookup_service = ["haproxy", "s3server", "authserver", "s3bgschedular", "s3bgworker"]
+      lookup_service = ["s3server", "authserver", "s3bgschedular", "s3bgworker"]
       if self.services is None:
-        self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+        self.services = "s3server,authserver,s3bgschedular,s3bgworker"
       service_list = self.services.split(",")
       for ser_key in service_list:
         if ser_key not in lookup_service:
@@ -54,126 +54,65 @@ class UpgradeCmd(SetupCmd):
       self.phase_prereqs_validate(self.name)
       self.logger.info("validations completed")
 
-      # before calling merge logic, make '.old' files
-      self.logger.info("post merge copy files start")
-      self.make_sample_old_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')])
-      if 'haproxy' in service_list:
-        pass
-      if 's3server' in service_list:
-        self.make_sample_old_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE')])
-      if 'authserver' in service_list:
-        self.make_sample_old_files([self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
-                                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE')])
-      if 's3bgschedular' in service_list:
-        self.make_sample_old_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')])
-      if 's3bgworker' in service_list:
-        self.make_sample_old_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')])
-      self.logger.info("post merge copy files complete")
-
       # check for old files before merge logic
-      self.logger.info("Check and copy files based on service - start")
       self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old")])
-      if 'haproxy' in service_list:
-        pass
-      if 's3server' in service_list:
-        self.old_file_check(
-            [os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old")])
-      if 'authserver' in service_list:
-        self.old_file_check(
-            [os.path.join(self.s3_tmp_dir, "keystore.properties.sample.old"),
-             os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old")])
-      if 's3bgschedular' in service_list:
-        self.old_file_check()
-            [os.path.join(self.s3_tmp_dir, "config.yaml.sample.old")])
-      if 's3bgworker' in service_list:
-        self.old_file_check()
-            [os.path.join(self.s3_tmp_dir, "config.yaml.sample.old")])
-      self.logger.info("Check and copy files based on service - complete")
-
       # copy sample and unsafe attribute files to /etc/cortx for merge logic
-      self.logger.info("Copy .sample and unsafe attribute files started")
       self.copy_config_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')
                               self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')])
-      if 'haproxy' in service_list:
-        pass
-      if 's3server' in service_list:
-        self.copy_config_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE')
-                                self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE')])
-      if 'authserver' in service_list:
-        self.copy_config_files([self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE')
-                                self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
-                                self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
-                                self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE')])
-      if 's3bgschedular' in service_list:
-        self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')
-                                self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE')])
-      if 's3bgworker' in service_list:
-        self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')
-                                self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE')])
-      self.logger.info("Copy .sample and unsafe attribute files completed")
-
-      # merge_configs() is imported from the merge.py
+      # IMP : for upgrade cmd, merge_configs() is imported from the merge.py
       # Upgrade config files
-      self.logger.info("merge configs started")
-      merge_configs(self.base_config_file_path, self.s3_tmp_dir,
+      merge_configs(
         os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml"),
         os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old"),
         os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml.sample"),
         os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml"),
         'yaml://')
+      # Validating config files after upgrade
+      self.validate_config_file(
+             os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml"),
+             os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml.sample"),
+             'yaml://')
+      # after calling merge logic, make '.old' files
+      self.make_sample_old_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')])
       if 'haproxy' in service_list:
         pass
       if 's3server' in service_list:
-        merge_configs(self.base_config_file_path, self.s3_tmp_dir,
+        self.old_file_check(
+            [os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old")])
+        self.copy_config_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE')
+                                self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE')])
+        merge_configs(
           os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml"),
           os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old"),
           os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml.sample"),
           os.path.join(self.base_config_file_path, "s3/conf/s3config_unsafe_attributes.yaml"),
           'yaml://')
+        self.validate_config_file(
+               os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml"),
+               os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml.sample"),
+               'yaml://')
+        self.make_sample_old_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE')])
       if 'authserver' in service_list:
-        merge_configs(self.base_config_file_path, self.s3_tmp_dir,
+        self.old_file_check(
+            [os.path.join(self.s3_tmp_dir, "keystore.properties.sample.old"),
+             os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old")])
+        self.copy_config_files([self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE')
+                                self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
+                                self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                                self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE')])
+        merge_configs(
           os.path.join(self.base_config_file_path, "auth/resources/keystore.properties"),
           os.path.join(self.s3_tmp_dir, "keystore.properties.sample.old"),
           os.path.join(self.base_config_file_path, "auth/resources/keystore.properties.sample"),
           os.path.join(self.base_config_file_path, "auth/resources/keystore_unsafe_attributes.properties"),
           'properties://')
-        merge_configs(self.base_config_file_path, self.s3_tmp_dir,
+        merge_configs(
           os.path.join(self.base_config_file_path, "auth/resources/authserver.properties"),
           os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old"),
           os.path.join(self.base_config_file_path, "auth/resources/authserver.properties.sample"),
           os.path.join(self.base_config_file_path, "auth/resources/authserver_unsafe_attributes.properties"),
           'properties://')
-      if 's3bgschedular' in service_list:
-        merge_configs(self.base_config_file_path, self.s3_tmp_dir,
-          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
-          os.path.join(self.s3_tmp_dir, "config.yaml.sample.old"),
-          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
-          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml"),
-          'yaml://')
-      if 's3bgworker' in service_list:
-        merge_configs(self.base_config_file_path, self.s3_tmp_dir,
-          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
-          os.path.join(self.s3_tmp_dir, "config.yaml.sample.old"),
-          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
-          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml"),
-          'yaml://')
-      self.logger.info("merge configs completed")
-
-      # Validating config files after upgrade
-      self.logger.info("config file validations started")
-      self.validate_config_file(
-             os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml"),
-             os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml.sample"),
-             'yaml://')
-      if 'haproxy' in service_list:
-        pass
-      if 's3server' in service_list:
-        self.validate_config_file(
-               os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml"),
-               os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml.sample"),
-               'yaml://')
-      if 'authserver' in service_list:
         self.validate_config_file(
                os.path.join(self.base_config_file_path, "auth/resources/keystore.properties"),
                os.path.join(self.base_config_file_path, "auth/resources/keystore.properties.sample"),
@@ -182,23 +121,24 @@ class UpgradeCmd(SetupCmd):
                os.path.join(self.base_config_file_path, "auth/resources/authserver.properties"),
                os.path.join(self.base_config_file_path, "auth/resources/authserver.properties.sample"),
                'properties://')
-      if 's3bgschedular' in service_list:
+        self.make_sample_old_files([self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
+                                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE')])
+      if 's3bgschedular' in service_list or 's3bgworker' in service_list:
+        self.old_file_check()
+            [os.path.join(self.s3_tmp_dir, "config.yaml.sample.old")])
+        self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')
+                                self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE')])
+        merge_configs(
+          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
+          os.path.join(self.s3_tmp_dir, "config.yaml.sample.old"),
+          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
+          os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml"),
+          'yaml://')
         self.validate_config_file(
                os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
                os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
                'yaml://')
-      if 's3bgworker' in service_list:
-        self.validate_config_file(
-               os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
-               os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
-               'yaml://')
-      self.logger.info("config file validations completed")
-
-      # Remove temporary .old files from S3 temporary location
-      self.logger.info("Remove sample.old files started")
-      regex = "*.sample.old"
-      self.DeleteFileOrDirWithRegex(self.s3_tmp_dir, regex)
-      self.logger.info("Remove sample.old files completed")
+        self.make_sample_old_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')])
 
     except Exception as e:
       raise S3PROVError(f'process: {self.name} failed with exception: {e}')
@@ -206,7 +146,8 @@ class UpgradeCmd(SetupCmd):
   def old_file_check(self, old_file_list):
     """Check for '.old' files and fail if not found."""
     for sample_old_file in old_file_list:
-        if not os.path.exists(sample_old_file):
-          self.logger.info(f"{sample_old_file} backup file not found")
-          raise S3PROVError(f'process: {self.name} failed')
+      if not os.path.exists(sample_old_file):
+        self.logger.info(f"{sample_old_file} backup file not found")
+        raise S3PROVError(f'process: {self.name} failed')
+      self.logger.info(f"file is present : {config_file}")
 
