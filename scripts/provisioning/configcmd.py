@@ -87,6 +87,40 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     self.logger.info("common config started")
+    self.process_common()
+    self.logger.info("common config completed")
+
+    try:
+      # if there are no services mentioned then configured all services.
+      if self.services == None or self.services == "":
+        self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+        self.logger.info(f"service = {self.services}")
+      self.services = self.services.split(",")
+      if "haproxy" in self.services:
+        self.logger.info("haproxy config started")
+        self.process_haproxy()
+        self.logger.info("haproxy config completed")
+      if "s3server" in self.services:
+        self.logger.info("s3server config started")
+        self.process_s3server()
+        self.logger.info("s3server config completed")
+      if "authserver" in self.services:
+        self.logger.info("authserver config started")
+        self.process_authserver()
+        self.logger.info("authserver config completed")
+      if "s3bgschedular" in self.services:
+        self.logger.info("s3bgschedular config started")
+        self.process_s3bgschedular()
+        self.logger.info("s3bgschedular config completed")
+      if "s3bgworker" in self.services:
+        self.logger.info("s3bgworker config started")
+        self.process_s3bgworker()
+        self.logger.info("s3bgworker config completed")
+    except Exception as e:
+      raise S3PROVError(f'process() failed with exception: {e}')
+
+  def process_common(self):
+    """ Prcoess mini provsioner steps common to all the services."""
     self.logger.info("copy cluster config files started")
     self.copy_config_files(self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
                     self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
@@ -99,42 +133,10 @@ class ConfigCmd(SetupCmd):
 
     # validating cluster config file after copying and updating to /etc/cortx
     self.logger.info("validate s3 cluster config file started")
-    self.validate_config_files(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+    self.validate_config_file(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               'yaml://')
     self.logger.info("validate s3 cluster config file completed")
-
-    self.logger.info("common config completed")
-
-    try:
-      self.services = self.services.split(",")
-      for service in self.services:
-        if service == "s3server":
-          self.logger.info("s3server config started")
-          self.process_s3server()
-          self.logger.info("s3server config completed")
-        if service == "haproxy":
-          self.logger.info("haproxy config started")
-          self.process_haproxy()
-          self.logger.info("haproxy config completed")
-        if service == "authserver":
-          self.logger.info("authserver config started")
-          self.process_authserver()
-          self.logger.info("authserver config completed")
-        if service == "s3bgschedular":
-          self.logger.info("s3bgschedular config started")
-          self.process_s3bgschedular()
-          self.logger.info("s3bgschedular config completed")
-        if service == "s3bgworker":
-          self.logger.info("s3bgworker config started")
-          self.process_s3bgworker()
-          self.logger.info("s3bgworker config completed")
-        else:
-          self.logger.error(f"Service {service} is not supported.")
-          raise S3PROVError(f"Service {service} is not supported.")
-
-    except Exception as e:
-      raise S3PROVError(f'process() failed with exception: {e}')
 
   def process_s3server(self):
     """ Process mini provisioner for s3server."""
@@ -159,7 +161,7 @@ class ConfigCmd(SetupCmd):
 
       # validating s3 config file after copying and updating to /etc/cortx
       self.logger.info("validate s3 config file started")
-      self.validate_config_files(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+      self.validate_config_file(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                  self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                  'yaml://')
       self.logger.info("validate s3 config files completed")
@@ -198,10 +200,10 @@ class ConfigCmd(SetupCmd):
 
     # validating auth config file after copying and updating to /etc/cortx
     self.logger.info("validate auth config file started")
-    self.validate_config_files(self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+    self.validate_config_file(self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               'properties://')
-    self.validate_config_files(self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+    self.validate_config_file(self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               'properties://')
     self.logger.info("validate auth config files completed")
@@ -222,27 +224,24 @@ class ConfigCmd(SetupCmd):
   def process_s3bgschedular(self):
     """ Process mini provisioner for s3bgschedular."""
     # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
-    self.logger.info("copy config files started")
-    self.copy_config_files(self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'))
-    self.logger.info("copy config files completed")
+    self.logger.info("copy bgdelete config file started")
+    if os.path.exists(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)):
+      self.logger.info("Skipping copy of bgdelete config file as it is already present in /etc/cortx")
+    else:
+      self.copy_config_files(self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
+                      self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
+                      self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'))
+    self.logger.info("copy bgdelete config file completed")
 
     # update s3 bgdelete scheduler config
     self.update_s3_bgdelete_scheduler_configs()
 
     # validating s3 bgdelete scheduler config file after copying and updating to /etc/cortx
     self.logger.info("validate s3 bgdelete scheduler config file started")
-    self.validate_config_files(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+    self.validate_config_file(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               'yaml://')
     self.logger.info("validate s3 bgdelete scheduler config files completed")
-
-    # read ldap credentials from config file
-    self.logger.info("read ldap credentials started")
-    self.read_ldap_credentials()
-    self.read_ldap_root_credentials()
-    self.logger.info("read ldap credentials completed")
 
     # create topic for background delete
     bgdeleteconfig = CORTXS3Config(self.base_config_file_path, "yaml://")
@@ -253,28 +252,24 @@ class ConfigCmd(SetupCmd):
                         self.get_msgbus_partition_count())
       self.logger.info('Create topic completed')
 
-    # create background delete account
-    ldap_endpoint_fqdn = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "fqdn", "ldap")
-
-    self.logger.info("create background delete account started")
-    self.create_bgdelete_account(ldap_endpoint_fqdn)
-    self.logger.info("create background delete account completed")
-
   def process_s3bgworker(self):
     """ Process mini provisioner for s3bgworker."""
     # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
-    self.logger.info("copy config files started")
-    self.copy_config_files(self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'))
-    self.logger.info("copy config files completed")
+    self.logger.info("copy bgdelete config file started")
+    if os.path.exists(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)):
+      self.logger.info("Skipping copy of bgdelete config file as it is already present in /etc/cortx")
+    else:
+      self.copy_config_files(self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
+                      self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
+                      self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'))
+    self.logger.info("copy bgdelete config file completed")
 
     # update s3 bgdelete worker config
     self.update_s3_bgdelete_worker_configs()
 
     # validating s3 bgdelete worker config file after copying and updating to /etc/cortx
     self.logger.info("validate s3 bgdelete worker config file started")
-    self.validate_config_files(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+    self.validate_config_file(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               'yaml://')
     self.logger.info("validate s3 bgdelete worker config files completed")
@@ -451,7 +446,7 @@ class ConfigCmd(SetupCmd):
   def get_msgbus_partition_count(self):
     """get total consumers (* 2) which will act as partition count."""
     consumer_count = 0
-    search_values = self.search_confvalue("node", "services", "bg_consumer")
+    search_values = self.search_confvalue("node", "services", "s3bgworker")
     consumer_count = len(search_values)
     self.logger.info(f"consumer_count : {consumer_count}")
 
