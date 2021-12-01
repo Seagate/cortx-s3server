@@ -64,18 +64,36 @@ std::shared_ptr<S3BucketObjectCounter> S3DataUsageCache::get_bucket_counters(
   s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Entry", __func__);
 
   std::string key_in_cache = get_cache_key(bkt_md);
-  std::map<std::string, std::shared_ptr<S3BucketObjectCounter> >::iterator
-      cache_iterator = bucket_wise_cache.find(key_in_cache);
-  if (cache_iterator != bucket_wise_cache.end()) {
+  const bool f_new = (
+    bucket_wise_cache.end() == bucket_wise_cache.find(key_in_cache));
+
+  if (bucket_wise_cache.size() + f_new > max_cache_size) {
+    s3_log(S3_LOG_DEBUG, bkt_md->get_stripped_request_id(),
+           "Data usage cache is full");
+    if (!shrink()) {
+      s3_log(S3_LOG_DEBUG, bkt_md->get_stripped_request_id(),
+             "Failed to shrink the data usage cache");
+      return nullptr;
+    }
+  }
+
+  if (!f_new) {
+    std::shared_ptr<S3BucketObjectCounter> item(
+      bucket_wise_cache[key_in_cache]);
     s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(),
            "Found entry in Cache for %s", key_in_cache.c_str());
     s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
-    return cache_iterator->second;
+
+    inactive_items_list.erase(item->ptr_inactive);
+    return bucket_wise_cache[key_in_cache];
   } else {
     s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(),
            "Entry not found in Cache for %s", key_in_cache.c_str());
+    std::function<void(S3BucketObjectCounter*)> subscriber =
+      std::bind(&S3DataUsageCache::item_state_changed, this,
+                std::placeholders::_1);
     std::shared_ptr<S3BucketObjectCounter> bucket_counter(
-        new S3BucketObjectCounter(req, bkt_md));
+        new S3BucketObjectCounter(req, bkt_md, subscriber));
     std::pair<std::map<std::string,
                        std::shared_ptr<S3BucketObjectCounter> >::iterator,
               bool> return_value =
@@ -88,6 +106,35 @@ std::shared_ptr<S3BucketObjectCounter> S3DataUsageCache::get_bucket_counters(
   }
 }
 
+bool S3DataUsageCache::shrink() {
+  if (inactive_items_list.size() == 0) {
+    return false;
+  }
+
+  // The front item of the list is the LRU one.
+  S3BucketObjectCounter *item = inactive_items_list.front();
+  std::string cache_key = get_cache_key(item->bucket_metadata);
+
+  s3_log(S3_LOG_DEBUG, item->bucket_metadata->get_stripped_request_id(),
+         "Data usage for \"%s\" will be removed from the cache",
+         cache_key.c_str());
+  inactive_items_list.pop_front();
+  bucket_wise_cache.erase(cache_key);
+  return true;
+}
+
+void S3DataUsageCache::item_state_changed(S3BucketObjectCounter *item) {
+  if (item->state == S3BucketObjectCounterState::empty
+      || item->state == S3BucketObjectCounterState::failed) {
+    std::string cache_key = get_cache_key(item->bucket_metadata);
+    bucket_wise_cache.erase(cache_key);
+  }
+  else if (item->state == S3BucketObjectCounterState::inactive) {
+    item->ptr_inactive = inactive_items_list.insert(
+      inactive_items_list.end(), item);
+  }
+}
+
 void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
                                          std::shared_ptr<S3BucketMetadata> src,
                                          int64_t objects_count_increment,
@@ -97,9 +144,14 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
   s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Entry", __func__);
 
   std::shared_ptr<S3BucketObjectCounter> counter(get_bucket_counters(req, src));
-  counter->add_inc_object_count(objects_count_increment);
-  counter->add_inc_size(bytes_count_increment);
-  counter->save(on_success, on_failure);
+  if (counter) {
+    counter->add_inc_object_count(objects_count_increment);
+    counter->add_inc_size(bytes_count_increment);
+    counter->save(on_success, on_failure);
+  }
+  else {
+    on_failure();
+  }
 
   s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Exit", __func__);
 }
@@ -107,6 +159,7 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
 S3BucketObjectCounter::S3BucketObjectCounter(
     std::shared_ptr<RequestObject> req,
     std::shared_ptr<S3BucketMetadata> bkt_md,
+    std::function<void(S3BucketObjectCounter*)> subscriber,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api) {
@@ -116,6 +169,7 @@ S3BucketObjectCounter::S3BucketObjectCounter(
   request_id = bucket_metadata->get_request_id();
   bucket_name = bucket_metadata->get_bucket_name();
   key = bucket_name + "/" + generate_unique_id();
+  state_notify = subscriber;
   inc_object_count = 0;
   inc_total_size = 0;
   inc_degraded_count = 0;
@@ -138,6 +192,11 @@ S3BucketObjectCounter::S3BucketObjectCounter(
   }
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
+}
+
+void S3BucketObjectCounter::set_state(S3BucketObjectCounterState new_state) {
+  state = new_state;
+  state_notify(this);
 }
 
 void S3BucketObjectCounter::save(std::function<void(void)> on_success,
@@ -181,6 +240,7 @@ void S3BucketObjectCounter::load_successful() {
     this->handler_on_failed();
   }
 
+  set_state(S3BucketObjectCounterState::active);
   is_cache_created = true;
   save_bucket_counters();
 
@@ -193,6 +253,10 @@ void S3BucketObjectCounter::load_failed() {
   saved_object_count = 0;
   saved_total_size = 0;
   saved_degraded_count = 0;
+
+  // TODO: check if missing entry is possible here.
+  set_state(S3BucketObjectCounterState::active);
+
   is_cache_created = true;
   save_bucket_counters();
 
@@ -231,12 +295,16 @@ void S3BucketObjectCounter::save_counters_successful() {
   inc_degraded_count = 0;
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
+
+  set_state(S3BucketObjectCounterState::inactive);
+
   this->handler_on_success();
 }
 
 void S3BucketObjectCounter::save_metadata_failed() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
+  set_state(S3BucketObjectCounterState::inactive);
   this->handler_on_failed();
 }
 
