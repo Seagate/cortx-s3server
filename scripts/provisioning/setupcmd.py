@@ -646,6 +646,18 @@ class SetupCmd(object):
       shutil.copy(config_file, dest_config_file)
       self.logger.info("Config file copied successfully to /etc/cortx")
 
+  def make_sample_old_files(self, config_files: list):
+    """ Copy from /opt/seagate/cortx to make '.old' files in /etc/cortx/s3/tmp."""
+    # for given config files at /opt/seagate/cortx, make '.old' in /etc/cortx/s3/tmp
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      old_file_name = os.path.basename(config_file) + '.old'
+      old_config_file = os.path.join(self.s3_tmp_dir, old_file_name)
+      self.logger.info(f"Dest config file: {old_config_file}")
+      os.makedirs(os.path.dirname(old_config_file), exist_ok=True)
+      shutil.copy(config_file, old_config_file)
+      self.logger.info("Config file copied successfully to /etc/cortx")
+
   def modify_attribute(self, dn, attribute, value):
         # Open a connection
         ldap_conn = ldap.initialize("ldapi:///")

@@ -86,7 +86,12 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     cs_conf_file.save_config()
     logger.info(f'config file {str(configFile)} upgrade completed')
 
-def merge_configs(config_file_path: str, s3_tmp_dir, file_list):
+def merge_configs(config_file_path: str, s3_tmp_dir:str,
+                  configFile:str = "",
+                  oldSampleFile:str = "",
+                  newSampleFile:str = "",
+                  unsafeAttributesFile:str = "",
+                  filetype:str = ""):
 
     """
     - This function will merge all S3 config files during upgrade
@@ -95,7 +100,7 @@ def merge_configs(config_file_path: str, s3_tmp_dir, file_list):
     # Use existing s3-deployment-logger or setup new console logger
     setup_logger()
 
-    upgrade_config(file_list)
+    upgrade_config(configFile, oldSampleFile, newSampleFile, unsafeAttributesFile, filetype)
 
 def setup_logger():
     """

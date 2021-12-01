@@ -161,7 +161,6 @@ class ConfigCmd(SetupCmd):
           self.create_symbolic_link(src_path, dst_path)
           index += 1
 
-
       # Configure s3 openldap schema
       self.push_s3_ldap_schema()
 
@@ -184,33 +183,14 @@ class ConfigCmd(SetupCmd):
       self.logger.info("create background delete account started")
       self.create_bgdelete_account(ldap_endpoint_fqdn)
       self.logger.info("create background delete account completed")
-      self.logger.info("copying config files for upgrade started")
-      # Copy /opt/seagate/cortx/s3/conf/s3config.yaml.sample to
-      #      /etc/cortx/s3/tmp/s3config.yaml.sample.old
-      s3_config_sample_file = self.get_confkey('S3_CONFIG_SAMPLE_FILE')
-      s3_config_sample_file_old = os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old")
-      shutil.copy(s3_config_sample_file, s3_config_sample_file_old)
-      # Copy /opt/seagate/cortx/auth/resources/authserver.properties.sample to
-      #      /etc/cortx/s3/tmp/authserver.properties.sample.old
-      s3_auth_config_sample_file = self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE')
-      s3_auth_config_sample_file_old = os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old")
-      shutil.copy(s3_auth_config_sample_file, s3_auth_config_sample_file_old)
-      # Copy /opt/seagate/cortx/auth/resources/keystore.properties.sample to
-      #      /etc/cortx/s3/tmp/keystore.properties.sample.old
-      s3_keystore_config_sample_file = self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE')
-      s3_keystore_config_sample_file_old = os.path.join(self.s3_tmp_dir, "keystore.properties.sample.old")
-      shutil.copy(s3_keystore_config_sample_file, s3_keystore_config_sample_file_old)
-      # Copy /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample to
-      #      /etc/cortx/s3/tmp/config.yaml.sample.old
-      s3_bgdelete_config_sample_file = self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')
-      s3_bgdelete_config_sample_file_old = os.path.join(self.s3_tmp_dir, "config.yaml.sample.old")
-      shutil.copy(s3_bgdelete_config_sample_file, s3_bgdelete_config_sample_file_old)
-      # Copy /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample to
-      #      /etc/cortx/s3/tmp/s3_cluster.yaml.sample.old
-      s3_cluster_config_sample_file = self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')
-      s3_cluster_config_sample_file_old = os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old")
-      shutil.copy(s3_cluster_config_sample_file, s3_cluster_config_sample_file_old)
-      self.logger.info("copying config files for upgrade complete")
+      self.logger.info("making old config files for upgrade - started")
+      # TODO : Based on service, call only necesssay files.
+      self.make_sample_old_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')])
+      self.logger.info("making old config files for upgrade - complete")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
