@@ -48,6 +48,7 @@ def main():
   configCmd = subparsers.add_parser('config', help='setup config')
   configCmd.add_argument("--config", help='config URL', type=str, required=True)
   configCmd.add_argument("--services", help='services', type=str, required=False)
+  configCmd.add_argument("--skip_haproxy", help='skip haproxy config', action='store_true')
 
   initCmd = subparsers.add_parser('init', help='setup init')
   initCmd.add_argument("--config", help='config URL', type=str, required=True)

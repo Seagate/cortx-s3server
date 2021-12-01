@@ -134,6 +134,10 @@ class SetupCmd(object):
       return value
     return None
 
+  def search_confvalue(self, parent_key:str, key_to_search:str, value_to_search: str):
+    assert self.provisioner_confstore != None
+    return self.provisioner_confstore.search(parent_key, key_to_search, value_to_search)
+
   def read_endpoint_value(self):
     if self.endpoint is None:
       self.endpoint = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_ENDPOINT_KEY')
@@ -470,7 +474,46 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
-  def validate_config_files(self, configFile: str, SampleFile: str, filetype: str):
+  def validate_config_files(self, phase_name: str):
+    """Validate the sample file and config file keys.
+    Both files should have same keys.
+    if keys mismatch then there is some issue in the config file."""
+
+    self.logger.info(f'validating S3 config files for {phase_name}.')
+    upgrade_items = {
+    's3' : {
+          'configFile' : self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'fileType' : 'yaml://'
+      },
+      'auth' : {
+          'configFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'fileType' : 'properties://'
+      },
+      'keystore' : {
+          'configFile' : self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'fileType' : 'properties://'
+      },
+      'bgdelete' : {
+          'configFile' : self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'fileType' : 'yaml://'
+      },
+      'cluster' : {
+          'configFile' : self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'fileType' : 'yaml://'
+      }
+    }
+
+    for upgrade_item in upgrade_items:
+      self.validate_config_file(upgrade_items[upgrade_item]['configFile'],
+                              upgrade_items[upgrade_item]['SampleFile'],
+                              upgrade_items[upgrade_item]['fileType'])
+
+  def validate_config_file(self, configFile: str, SampleFile: str, filetype: str):
     """Validate the sample file and config file keys.
     Both files should have same keys.
     if keys mismatch then there is some issue in the config file."""
@@ -588,6 +631,17 @@ class SetupCmd(object):
         bgdelete_acc_input_params_dict[param] = value_for_key
 
     return bgdelete_acc_input_params_dict
+
+  def copy_config_files(self, config_files: list):
+    """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
+    # copy all the config files from the /opt/seagate/cortx to /etc/cortx
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
+      self.logger.info(f"Dest config file: {dest_config_file}")
+      os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
+      shutil.copy(config_file, dest_config_file)
+      self.logger.info("Config file copied successfully to /etc/cortx")
 
   def modify_attribute(self, dn, attribute, value):
         # Open a connection
