@@ -1675,6 +1675,8 @@ bool S3ObjectMetadata::check_bucket_replication_policy(
     std::string rule_status, new_rule_priority;
     std::string new_dest_bucket_name, new_delete_marker_rep_status;
     rule_object = rule_array[index];
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Checking if object matches with Rule[%u].\n", index);
     // If rule is in disabled state, replication state will not be added to
     // object
     if (!rule_object["Status"].isNull()) {
@@ -1695,18 +1697,22 @@ bool S3ObjectMetadata::check_bucket_replication_policy(
                                               new_rule_priority);
 
     } else {
-      s3_log(S3_LOG_DEBUG, request_id, "Filter does not matched.\n");
-      return false;
+      continue;
     }
   }
-  // Added this log for demo purpose.Can be remove later.
-  for (auto dest : destination_bucket_map) {
-    std::map<std::string, std::string> dest_map = dest.second;
+  if (destination_bucket_map.empty()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Filter does not matched.\n");
+    return false;
+  } else {
+    // Added this log for demo purpose.Can be remove later.
+    for (auto dest : destination_bucket_map) {
+      std::map<std::string, std::string> dest_map = dest.second;
 
-    s3_log(S3_LOG_INFO, stripped_request_id, " %s ::[%s, %s ]\n",
-           dest.first.c_str(),
-           dest_map["DeleteMarkerReplicationStatus"].c_str(),
-           dest_map["Priority"].c_str());
+      s3_log(S3_LOG_INFO, stripped_request_id, " %s ::[%s, %s ]\n",
+             dest.first.c_str(),
+             dest_map["DeleteMarkerReplicationStatus"].c_str(),
+             dest_map["Priority"].c_str());
+    }
   }
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
   return true;
