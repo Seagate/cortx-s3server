@@ -20,7 +20,6 @@
 
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import os.path
-import shutil
 import sys
 import logging
 
@@ -31,13 +30,12 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     Iterate over all parameters sample.new file
     for every parameter, check
     - if it is marked as 'unsafe' in attributes file, skip
-    - if it marked as 'safe' in the attributes file  
+    - if it marked as 'safe' in the attributes file
         - diff the value in config and sample.old - if it is changed, skip
         - if it is not changed,  we will overwrite the value in cfg file from sample.new
         - if it does not exist in cfg file add the value from sample.new file to cfg file
     - All the arrays in yaml are always overwritten
     """
-
     #If config file is not present then abort merging.
     if not os.path.isfile(configFile):
         logger.error(f'config file {configFile} does not exist')
@@ -161,4 +159,6 @@ def setup_logger():
         logger.addHandler(chandler)
 
 if __name__ == "__main__":
-    merge_configs()
+    config_file_path = "/etc/cortx"
+    s3_tmp_dir = os.path.join(config_file_path, "s3/tmp")
+    merge_configs(config_file_path, s3_tmp_dir)

@@ -58,7 +58,7 @@ class UpgradeCmd(SetupCmd):
       self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old")])
       # copy sample and unsafe attribute files to /etc/cortx for merge logic
-      self.copy_config_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')
+      self.copy_config_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
                               self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')])
       # IMP : for upgrade cmd, merge_configs() is imported from the merge.py
       # Upgrade config files
