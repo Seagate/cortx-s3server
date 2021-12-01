@@ -50,7 +50,6 @@ class CORTXS3Config(object):
         if os.path.isfile(os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")):
             # Load config.yaml file through confstore.
             bgdelete_conf_file = cfg_type + os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")
-
             if self.s3confstore is None:
                 self.s3confstore = S3CortxConfStore(config=bgdelete_conf_file, index= str(uuid.uuid1()))
         else:
