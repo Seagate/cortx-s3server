@@ -183,6 +183,14 @@ class ConfigCmd(SetupCmd):
       self.logger.info("create background delete account started")
       self.create_bgdelete_account(ldap_endpoint_fqdn)
       self.logger.info("create background delete account completed")
+      self.logger.info("making old config files for upgrade - started")
+      # TODO : Based on service, call only necesssay files.
+      self.make_sample_old_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')])
+      self.logger.info("making old config files for upgrade - complete")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 

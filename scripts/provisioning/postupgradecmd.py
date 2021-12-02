@@ -19,7 +19,9 @@
 #
 
 from setupcmd import SetupCmd, S3PROVError
-from merge import merge_configs
+# IMP : for preupgrade and postupgrade cmd,
+# merge_configs() is imported from the merge_pre_post.py
+from merge_pre_post import merge_configs
 import os
 import shutil
 
@@ -52,7 +54,6 @@ class PostUpgradeCmd(SetupCmd):
       self.delete_config_files()
       self.logger.info("Delete config file completed")
 
-      # merge_configs() is imported from the merge.py
       # Upgrade config files
       self.logger.info("merge configs started")
       config_file_path = "/etc/cortx"
