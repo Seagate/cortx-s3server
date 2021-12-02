@@ -26,7 +26,6 @@
 
 #define JSON_OBJECTS_COUNT "objects_count"
 #define JSON_BYTES_COUNT "bytes_count"
-#define JSON_DEGRADED_COUNT "degraded_count"
 
 extern struct s3_motr_idx_layout bucket_data_usage_index_layout;
 
@@ -143,11 +142,9 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
 
   std::shared_ptr<DataUsageItem> counter(get_item(req, src));
   if (counter) {
-    counter->add_inc_object_count(objects_count_increment);
-    counter->add_inc_size(bytes_count_increment);
-    counter->save(on_success, on_failure);
-  }
-  else {
+    counter->save(objects_count_increment, bytes_count_increment,
+                  on_success, on_failure);
+  } else {
     on_failure();
   }
 
@@ -170,7 +167,6 @@ DataUsageItem::DataUsageItem(
   state_notify = subscriber;
   inc_object_count = 0;
   inc_total_size = 0;
-  inc_degraded_count = 0;
   is_cache_created = false;
 
   if (motr_api) {
@@ -197,15 +193,22 @@ void DataUsageItem::set_state(DataUsageItemState new_state) {
   state_notify(this);
 }
 
-void DataUsageItem::save(std::function<void(void)> on_success,
-                                 std::function<void(void)> on_failed) {
+void DataUsageItem::save(int64_t objects_count_increment,
+                         int64_t bytes_count_increment,
+                         std::function<void(void)> on_success,
+                         std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   // object_list_index_layout should be set before using this method
   // assert(non_zero(bucket_data_usage_index_layout.oid));
+  s3_log(S3_LOG_INFO, request_id,
+         "%s Object count increment %ld; bytes count increment %ld",
+         __func__, objects_count_increment, bytes_count_increment);
 
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
+  inc_object_count = objects_count_increment;
+  inc_total_size = bytes_count_increment;
+  handler_on_success = on_success;
+  handler_on_failed = on_failed;
 
   if (!is_cache_created) {
     if (!motr_kv_reader) {
@@ -250,7 +253,6 @@ void DataUsageItem::load_failed() {
 
   saved_object_count = 0;
   saved_total_size = 0;
-  saved_degraded_count = 0;
 
   // TODO: check if missing entry is possible here.
   set_state(DataUsageItemState::active);
@@ -286,11 +288,9 @@ void DataUsageItem::save_counters_successful() {
   // this may be time efficient.
   saved_object_count += inc_object_count;
   saved_total_size += inc_total_size;
-  saved_degraded_count += inc_degraded_count;
 
   inc_object_count = 0;
   inc_total_size = 0;
-  inc_degraded_count = 0;
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 
@@ -314,8 +314,6 @@ std::string DataUsageItem::to_json() {
       Json::Value((Json::Value::UInt64)(saved_object_count + inc_object_count));
   root[JSON_BYTES_COUNT] =
       Json::Value((Json::Value::UInt64)(saved_total_size + inc_total_size));
-  root[JSON_DEGRADED_COUNT] = Json::Value(
-      (Json::Value::UInt64)(saved_degraded_count + inc_degraded_count));
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
@@ -334,37 +332,11 @@ int DataUsageItem::from_json(std::string content) {
 
   saved_object_count = newroot[JSON_OBJECTS_COUNT].asUInt64();
   saved_total_size = newroot[JSON_BYTES_COUNT].asUInt64();
-  saved_degraded_count = newroot[JSON_DEGRADED_COUNT].asUInt64();
 
   s3_log(S3_LOG_INFO, request_id,
-         "%s Load complete. saved_object_count = %lu, saved_total_size = %lu, "
-         "saved_degraded_count = %lu\n",
-         __func__, saved_object_count, saved_total_size, saved_degraded_count);
+         "%s Load complete. saved_object_count = %lu, saved_total_size = %lu\n",
+         __func__, saved_object_count, saved_total_size);
 
   s3_log(S3_LOG_DEBUG, request_id, "[%s] Exit\n", __func__);
   return 0;
-}
-
-void DataUsageItem::add_inc_object_count(int64_t obj_count) {
-  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
-  inc_object_count = obj_count;
-  s3_log(S3_LOG_INFO, request_id, "%s inc_object_count = %lu\n", __func__,
-         inc_object_count);
-  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
-}
-
-void DataUsageItem::add_inc_size(int64_t size) {
-  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
-  inc_total_size = size;
-  s3_log(S3_LOG_INFO, request_id, "%s inc_total_size = %lu\n", __func__,
-         inc_total_size);
-  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
-}
-
-void DataUsageItem::add_inc_degraded_count(int64_t degraded_count) {
-  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
-  inc_degraded_count = degraded_count;
-  s3_log(S3_LOG_INFO, request_id, "%s inc_degraded_count = %lu\n", __func__,
-         inc_degraded_count);
-  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }

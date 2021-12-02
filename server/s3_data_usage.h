@@ -88,10 +88,8 @@ class DataUsageItem {
 
   uint64_t saved_object_count;
   uint64_t saved_total_size;
-  uint64_t saved_degraded_count;
   int64_t inc_object_count;
   int64_t inc_total_size;
-  int64_t inc_degraded_count;
   bool is_cache_created;
 
  public:
@@ -109,11 +107,10 @@ class DataUsageItem {
   std::list<DataUsageItem *>::iterator ptr_inactive;
 
   void set_state(DataUsageItemState new_state);
-  void save(std::function<void(void)> on_success,
+  void save(int64_t objects_count_increment,
+            int64_t bytes_count_increment,
+            std::function<void(void)> on_success,
             std::function<void(void)> on_failed);
-  void add_inc_object_count(int64_t obj_count);
-  void add_inc_size(int64_t size);
-  void add_inc_degraded_count(int64_t degraded_count);
   void save_counters_successful();
   void save_metadata_failed();
   void load_successful();
