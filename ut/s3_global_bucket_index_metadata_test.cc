@@ -311,7 +311,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, ToJson) {
 TEST_F(S3GlobalBucketIndexMetadataTest, Save) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _, _)).Times(1);
+              put_keyval(_, bucket_name, _, _, _, _)).Times(1);
 
   global_bucket_idx_metadata_under_test_ptr->save(
       std::bind(&S3CallBack::on_success, &s3globalbucketindex_callbackobj),

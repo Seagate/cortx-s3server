@@ -361,8 +361,9 @@ TEST_F(S3DeleteObjectActionTest, CleanupOnMetadataDeletion) {
           false /* force_delete */))));
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
+  bool parallel = true;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, parallel)).Times(1);
   // EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
   //            delete_keyval(_, _, _, _)).Times(1);
   action_under_test->s3_del_obj_action_state =
@@ -384,8 +385,9 @@ TEST_F(S3DeleteObjectActionTest, MarkOIDSForDeletion) {
           false /* force_delete */))));
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
+  bool parallel = true;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, parallel)).Times(1);
   action_under_test->mark_oids_for_deletion();
 }
 

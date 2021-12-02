@@ -38,6 +38,7 @@ using ::testing::_;
 using ::testing::ReturnRef;
 using ::testing::AtLeast;
 using ::testing::DefaultValue;
+using ::testing::Matcher;
 
 #define CREATE_BUCKET_METADATA                                            \
   do {                                                                    \
@@ -158,7 +159,7 @@ class S3PutObjectActionTest : public testing::Test {
                         const std::map<std::string, std::string> &,
                         std::function<void(void)> on_success,
                         std::function<void(void)> on_failed,
-                        S3MotrKVSWriter::CallbackType) {
+                        S3MotrKVSWriter::CallbackType, bool parallel) {
     action_under_test->next();
   }
 };
@@ -869,7 +870,8 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _, _)).Times(1);
+              put_keyval(_, Matcher<const std::string &>(testing::_), _, _, _,
+                         _)).Times(1);
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(1)
@@ -901,7 +903,8 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _, _)).Times(1);
+              put_keyval(_, Matcher<const std::string &>(testing::_), _, _, _,
+                         _)).Times(1);
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(1)
@@ -1144,7 +1147,8 @@ TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _, _)).Times(1);
+              put_keyval(_, Matcher<const std::string &>(testing::_), _, _, _,
+                         _)).Times(1);
 
   action_under_test->clear_tasks();
   action_under_test->save_object_metadata_failed();
@@ -1237,8 +1241,9 @@ TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
 
   EXPECT_CALL(*(object_meta_factory->mock_object_extnd_metadata),
               get_part_count()).WillRepeatedly(Return(2));
+  bool parallel = true;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _))
+              put_keyval(_, _, _, _, _, parallel))
       .Times(1)
       .WillRepeatedly(Invoke(this, &S3PutObjectActionTest::dummy_put_keyval));
 
