@@ -98,9 +98,9 @@ class S3CortxConfStore:
       print("Invalid configfile path: {}".format(configfile))
       sys.exit(1)
 
-    if "consul" == urlparse(config_file).scheme:
+    if "consul" == urlparse(configfile).scheme:
       print("kv store is consul. Skipping validation")
-      sys.exit(0)
+      return
 
     if os.path.isfile(urlparse(configfile).path) != True:
       print("config file: {} does not exist".format(configfile))
