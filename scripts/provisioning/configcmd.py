@@ -141,6 +141,10 @@ class ConfigCmd(SetupCmd):
                               'yaml://')
     self.logger.info("validate s3 cluster config file completed")
 
+    self.logger.info("Backing up s3 cluster sample file to temp dir started")
+    self.make_sample_old_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')])
+    self.logger.info("Backing up s3 cluster sample file to temp dir complete")
+
   def process_s3server(self):
     """ Process mini provisioner for s3server."""
     # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
@@ -172,6 +176,10 @@ class ConfigCmd(SetupCmd):
     self.logger.info("create symbolic link of FID config files started")
     self.create_symbolic_link_fid()
     self.logger.info("create symbolic link of FID config files started")
+
+    self.logger.info("Backing up s3 config sample file to temp dir started")
+    self.make_sample_old_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE')])
+    self.logger.info("Backing up s3 config sample file to temp dir complete")
 
   def process_haproxy(self):
     """ Process mini provisioner for haproxy."""
@@ -221,6 +229,11 @@ class ConfigCmd(SetupCmd):
     # configure s3 schema
     self.push_s3_ldap_schema()
 
+    self.logger.info("Backing up auth server config sample file to temp dir started")
+    self.make_sample_old_files([self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                                self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE')])
+    self.logger.info("Backing up auth server config sample file to temp dir complete")
+
   def process_s3bgschedular(self):
     """ Process mini provisioner for s3bgschedular."""
     # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
@@ -251,6 +264,10 @@ class ConfigCmd(SetupCmd):
                         bgdeleteconfig.get_msgbus_topic(),
                         self.get_msgbus_partition_count())
       self.logger.info('Create topic completed')
+
+    self.logger.info("Backing up s3 bgdelete config sample file to temp dir started")
+    self.make_sample_old_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')])
+    self.logger.info("Backing up s3 bgdelete config sample file to temp dir complete")
 
   def process_s3bgworker(self):
     """ Process mini provisioner for s3bgworker."""
@@ -295,6 +312,10 @@ class ConfigCmd(SetupCmd):
     self.logger.info("create background delete account started")
     self.create_bgdelete_account(ldap_endpoint_fqdn)
     self.logger.info("create background delete account completed")
+
+    self.logger.info("Backing up s3 bgdelete config sample file to temp dir started")
+    self.make_sample_old_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')])
+    self.logger.info("Backing up s3 bgdelete config sample file to temp dir complete")
 
   def create_symbolic_link(self, src_path: str, dst_path: str):
     """create symbolic link."""
