@@ -149,6 +149,18 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
 
 void S3DeleteBucketAction::fetch_first_object_metadata_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  auto& kvps = motr_kv_reader->get_key_values();
+  size_t length = kvps.size();
+  for (auto& kv : kvps) {
+    auto object = std::make_shared<S3ObjectMetadata>(request, true);
+    if (object->from_json(kv.second.second) == 0) {
+      s3_log(S3_LOG_INFO, request_id,
+             "[NG_DBG] Bucket not empty.Key = %s, Value = %s\n",
+             kv.first.c_str(), kv.second.second.c_str());
+    } else {
+      s3_log(S3_LOG_INFO, "", "[NG_DBG] %s Json Parse fail", __func__);
+    }
+  }
   is_bucket_empty = false;
   set_s3_error("BucketNotEmpty");
   send_response_to_s3_client();
