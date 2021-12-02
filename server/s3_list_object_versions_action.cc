@@ -43,6 +43,7 @@ S3ListObjectVersionsAction::S3ListObjectVersionsAction(
       response_is_truncated(false),
       total_keys_visited(0),
       last_key(""),
+      last_object_checked(""),
       encoding_type(req->get_query_string_value("encoding-type")) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "S3 API: List Object Versions.\n");
@@ -85,6 +86,7 @@ void S3ListObjectVersionsAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   ACTION_TASK_ADD(S3ListObjectVersionsAction::validate_request, this);
   ACTION_TASK_ADD(S3ListObjectVersionsAction::get_next_versions, this);
+  ACTION_TASK_ADD(S3ListObjectVersionsAction::check_latest_versions, this);
   ACTION_TASK_ADD(S3ListObjectVersionsAction::send_response_to_s3_client, this);
 }
 
@@ -213,9 +215,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
   }
   retry_count = 0;
   s3_log(S3_LOG_DEBUG, request_id, "Found object versions list\n");
-  m0_uint128 object_version_list_index_oid =
-      bucket_metadata->get_objects_version_list_index_layout().oid;
-  bool json_error = false;
+  bool break_out = false;
   bool last_key_in_common_prefix = false;
   bool no_further_prefix_match = false;
   bool skip_remaining_common_prefixes = false;
@@ -246,13 +246,15 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
         response_is_truncated = true;
         s3_log(S3_LOG_DEBUG, request_id, "Next marker = %s\n",
                saved_last_key.c_str());
-        set_next_key_marker(saved_last_key);
+        add_marker_version(saved_last_key, "");
+        add_next_marker_version(kvps.begin()->first,
+                                kvps.begin()->second.second);
       }
     }
     // Reset state
     check_any_keys_after_prefix = false;
     fetch_successful = true;
-    send_response_to_s3_client();
+    next();
     return;
   }
 
@@ -262,6 +264,10 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
   }
 
   for (auto& kv : kvps) {
+    if (break_out) {
+      add_next_marker_version(kv.first, kv.second.second);
+      break;
+    }
     s3_log(S3_LOG_DEBUG, request_id, "Read object versions = %s\n",
            kv.first.c_str());
     s3_log(S3_LOG_DEBUG, request_id, "Read object versions value = %s\n",
@@ -319,34 +325,13 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       }
     }
 
-    auto object = object_metadata_factory->create_object_metadata_obj(request);
     size_t delimiter_pos = std::string::npos;
     if (request_prefix.empty() && request_delimiter.empty()) {
-      if (object->from_json(kv.second.second) != 0) {
-        json_error = true;
-        s3_log(S3_LOG_ERROR, request_id,
-               "Json Parsing failed. Index oid = "
-               "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-               object_version_list_index_oid.u_hi,
-               object_version_list_index_oid.u_lo, kv.first.c_str(),
-               kv.second.second.c_str());
-      } else {
-        add_object_version(object);
-      }
+      add_object_version(kv.first, kv.second.second);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (kv.first.find(request_prefix) == 0) {
-        if (object->from_json(kv.second.second) != 0) {
-          json_error = true;
-          s3_log(S3_LOG_ERROR, request_id,
-                 "Json Parsing failed. Index oid = "
-                 "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-                 object_version_list_index_oid.u_hi,
-                 object_version_list_index_oid.u_lo, kv.first.c_str(),
-                 kv.second.second.c_str());
-        } else {
-          add_object_version(object);
-        }
+        add_object_version(kv.first, kv.second.second);
       } else {
         // Prefix does not match.
         // Check if fetched key is lexicographically greater than prefix
@@ -365,17 +350,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
       delimiter_pos = kv.first.find(request_delimiter);
       if (delimiter_pos == std::string::npos) {
-        if (object->from_json(kv.second.second) != 0) {
-          json_error = true;
-          s3_log(S3_LOG_ERROR, request_id,
-                 "Json Parsing failed. Index oid = "
-                 "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-                 object_version_list_index_oid.u_hi,
-                 object_version_list_index_oid.u_lo, kv.first.c_str(),
-                 kv.second.second.c_str());
-        } else {
-          add_object_version(object);
-        }
+        add_object_version(kv.first, kv.second.second);
       } else {
         // Roll up
         // All keys under a common prefix are counted as a single key
@@ -420,17 +395,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
         delimiter_pos =
             kv.first.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
-          if (object->from_json(kv.second.second) != 0) {
-            json_error = true;
-            s3_log(S3_LOG_ERROR, request_id.c_str(),
-                   "Json Parsing failed. Index oid = "
-                   "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-                   object_version_list_index_oid.u_hi,
-                   object_version_list_index_oid.u_lo, kv.first.c_str(),
-                   kv.second.second.c_str());
-          } else {
-            add_object_version(object);
-          }
+          add_object_version(kv.first, kv.second.second);
         } else {
           // Roll up
           // All keys under a common prefix are counted as a single key
@@ -491,7 +456,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       // This is the last element returned or we reached limit requested, we
       // break.
       last_key = kv.first;
-      break;
+      break_out = true;
     }
   }  // end of For loop
 
@@ -532,14 +497,18 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
         // prefix. If yes, we need to return the common prefix as next marker.
         if (last_key_in_common_prefix) {
           last_key = last_common_prefix;
+          add_marker_version(last_common_prefix, "");
+        } else {
+          auto& version = versions_list.back();
+          add_marker_version(version->get_object_name(),
+                             version->get_obj_version_id());
         }
         s3_log(S3_LOG_DEBUG, request_id, "Next marker = %s\n",
                last_key.c_str());
-        set_next_key_marker(last_key);
       }
     }
     fetch_successful = true;
-    send_response_to_s3_client();
+    next();
   } else {
     get_next_versions();
   }
@@ -583,6 +552,59 @@ void S3ListObjectVersionsAction::get_next_versions_failed() {
   }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ListObjectVersionsAction::check_latest_versions() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  std::shared_ptr<S3ObjectMetadata> version_metadata = nullptr;
+  size_t version_list_offset_temp = 0;
+  for (auto&& version : versions_list) {
+    if (last_object_checked == "") {
+      version_metadata = version;
+      break;
+    } else if ((version_list_offset_temp <= version_list_offset) ||
+               (last_object_checked == version->get_object_name())) {
+      version_list_offset_temp++;
+      continue;
+    } else {
+      version_metadata = version;
+      break;
+    }
+  }
+  if (version_metadata != nullptr) {
+    version_list_offset = version_list_offset_temp;
+    last_object_checked = version_metadata->get_object_name();
+    const auto& object_list_idx_lo =
+        bucket_metadata->get_object_list_index_layout();
+    const auto& obj_version_list_idx_lo =
+        bucket_metadata->get_objects_version_list_index_layout();
+
+    if (zero(object_list_idx_lo.oid) || zero(obj_version_list_idx_lo.oid)) {
+      // Object list index and version list index missing.
+      get_next_versions_failed();
+    } else {
+      object_metadata = object_metadata_factory->create_object_metadata_obj(
+          request, bucket_name, version_metadata->get_object_name(),
+          object_list_idx_lo, obj_version_list_idx_lo);
+      object_metadata->load(
+          std::bind(&S3ListObjectVersionsAction::fetch_object_info_success,
+                    this),
+          std::bind(&S3ListObjectVersionsAction::get_next_versions_failed,
+                    this));
+    }
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ListObjectVersionsAction::fetch_object_info_success() {
+  // Compare the versions and set the latest flag
+  std::shared_ptr<S3ObjectMetadata> version_metadata= versions_list[version_list_offset];
+  if (object_metadata->get_obj_version_id() == version_metadata->get_obj_version_id()) {
+    version_metadata->mark_invalid();
+  }
+  check_latest_versions();
 }
 
 void S3ListObjectVersionsAction::send_response_to_s3_client() {
@@ -640,18 +662,46 @@ void S3ListObjectVersionsAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3ListObjectVersionsAction::set_next_key_marker(std::string next,
-                                                     bool url_encode) {
-  if (url_encode) {
-    next_key_marker = get_encoded_key_value(next);
+void S3ListObjectVersionsAction::add_marker_version(std::string key,
+                                                    std::string version_id) {
+  key_marker = key;
+  version_id_marker = version_id;
+}
+
+void S3ListObjectVersionsAction::add_next_marker_version(
+    std::string next_key, std::string next_value) {
+  m0_uint128 object_version_list_index_oid =
+      bucket_metadata->get_objects_version_list_index_layout().oid;
+  auto next_version =
+      object_metadata_factory->create_object_metadata_obj(request);
+  if (next_version->from_json(next_value) != 0) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Json Parsing failed. Index oid = "
+           "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
+           object_version_list_index_oid.u_hi,
+           object_version_list_index_oid.u_lo, next_key.c_str(),
+           next_value.c_str());
   } else {
-    next_key_marker = next;
+    next_key_marker = next_version->get_object_name();
+    next_version_id_marker = next_version->get_obj_version_id();
   }
 }
 
-void S3ListObjectVersionsAction::add_object_version(
-    std::shared_ptr<S3ObjectMetadata> object) {
-  versions_list.push_back(object);
+void S3ListObjectVersionsAction::add_object_version(std::string key,
+                                                    std::string value) {
+  m0_uint128 object_version_list_index_oid =
+      bucket_metadata->get_objects_version_list_index_layout().oid;
+  auto version = object_metadata_factory->create_object_metadata_obj(request);
+  if (version->from_json(value) != 0) {
+    json_error = true;
+    s3_log(S3_LOG_ERROR, request_id,
+           "Json Parsing failed. Index oid = "
+           "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
+           object_version_list_index_oid.u_hi,
+           object_version_list_index_oid.u_lo, key.c_str(), value.c_str());
+  } else {
+    versions_list.push_back(version);
+  }
 }
 
 void S3ListObjectVersionsAction::add_common_prefix(std::string common_prefix) {
@@ -670,16 +720,6 @@ std::string& S3ListObjectVersionsAction::get_response_xml() {
       "<ListVersionsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
   response_xml += S3CommonUtilities::format_xml_string(
       "IsTruncated", (response_is_truncated ? "true" : "false"));
-  if (response_is_truncated) {
-    response_xml +=
-        S3CommonUtilities::format_xml_string("KeyMarker", "");  // TODO-I
-    response_xml +=
-        S3CommonUtilities::format_xml_string("VersionIdMarker", "");  // TODO-I
-    response_xml +=
-        S3CommonUtilities::format_xml_string("NextKeyMarker", "");  // TODO-I
-    response_xml += S3CommonUtilities::format_xml_string("NextVersionIdMarker",
-                                                         "");  // TODO-I
-  }
 
   for (auto&& version : versions_list) {
     if (!version->is_delete_marker()) {
@@ -687,7 +727,7 @@ std::string& S3ListObjectVersionsAction::get_response_xml() {
       response_xml += S3CommonUtilities::format_xml_string(
           "ETag", version->get_md5(), true);
       response_xml +=
-          S3CommonUtilities::format_xml_string("IsLatest", "false");  // TODO-I
+          S3CommonUtilities::format_xml_string("IsLatest", (version->get_state() == S3ObjectMetadataState::invalid ? "true" : "false"));
       response_xml += S3CommonUtilities::format_xml_string(
           "Key", get_encoded_key_value(version->get_object_name()));
       response_xml += S3CommonUtilities::format_xml_string(
@@ -708,7 +748,7 @@ std::string& S3ListObjectVersionsAction::get_response_xml() {
     } else {
       response_xml += "<DeleteMarker>";
       response_xml +=
-          S3CommonUtilities::format_xml_string("IsLatest", "false");  // TODO-I
+          S3CommonUtilities::format_xml_string("IsLatest", (version->get_state() == S3ObjectMetadataState::invalid ? "true" : "false"));
       response_xml += S3CommonUtilities::format_xml_string(
           "Key", get_encoded_key_value(version->get_object_name()));
       response_xml += S3CommonUtilities::format_xml_string(
@@ -725,15 +765,6 @@ std::string& S3ListObjectVersionsAction::get_response_xml() {
     }
   }
 
-  response_xml +=
-      S3CommonUtilities::format_xml_string("Name", request->get_bucket_name());
-  response_xml +=
-      S3CommonUtilities::format_xml_string("Prefix", request_prefix.c_str());
-  response_xml += S3CommonUtilities::format_xml_string(
-      "Delimiter", request_delimiter);  // TODO-I
-  response_xml +=
-      S3CommonUtilities::format_xml_string("MaxKeys", std::to_string(max_keys));
-
   for (auto&& prefix : common_prefixes) {
     response_xml += "<CommonPrefixes>";
     std::string prefix_no_delimiter = prefix;
@@ -747,6 +778,26 @@ std::string& S3ListObjectVersionsAction::get_response_xml() {
     response_xml += "</CommonPrefixes>";
   }
 
+  response_xml +=
+      S3CommonUtilities::format_xml_string("Name", request->get_bucket_name());
+  response_xml +=
+      S3CommonUtilities::format_xml_string("Prefix", request_prefix.c_str());
+  if (!request_delimiter.empty()) {
+    response_xml +=
+        S3CommonUtilities::format_xml_string("Delimiter", request_delimiter);
+  }
+  response_xml +=
+      S3CommonUtilities::format_xml_string("MaxKeys", std::to_string(max_keys));
+  if (response_is_truncated) {
+    response_xml += S3CommonUtilities::format_xml_string(
+        "KeyMarker", get_encoded_key_value(key_marker));
+    response_xml += S3CommonUtilities::format_xml_string("VersionIdMarker",
+                                                         version_id_marker);
+    response_xml += S3CommonUtilities::format_xml_string(
+        "NextKeyMarker", get_encoded_key_value(next_key_marker));
+    response_xml += S3CommonUtilities::format_xml_string(
+        "NextVersionIdMarker", next_version_id_marker);
+  }
   if (encoding_type == "url") {
     response_xml += S3CommonUtilities::format_xml_string("EncodingType", "url");
   }

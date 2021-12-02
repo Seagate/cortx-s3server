@@ -40,13 +40,19 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   size_t max_record_count;
   bool fetch_successful;
   size_t key_Count;
+  bool json_error = false;
   short retry_count = 0;
   bool response_is_truncated;
   std::string saved_last_key;
   // Identify total keys visited/touched in object versions listing
   size_t total_keys_visited;
   std::string last_key;  // last key during each iteration
+  std::string last_object_checked;
+  size_t version_list_offset = 0;
+  std::string key_marker;
+  std::string version_id_marker;
   std::string next_key_marker;
+  std::string next_version_id_marker;
   // Request Input params
   std::string bucket_name;
   std::string request_prefix;
@@ -58,10 +64,12 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   std::vector<std::shared_ptr<S3ObjectMetadata>> versions_list;
   std::set<std::string> common_prefixes;
   std::string response_xml;
+  std::shared_ptr<S3ObjectMetadata> object_metadata;
 
-  void set_next_key_marker(std::string next, bool url_encode = true);
-  void add_object_version(std::shared_ptr<S3ObjectMetadata> object);
-  void add_common_prefix(std::string);
+  void add_marker_version(std::string key, std::string version_id);
+  void add_next_marker_version(std::string next_key, std::string next_value);
+  void add_object_version(std::string key, std::string value);
+  void add_common_prefix(std::string common_prefix);
   bool is_prefix_in_common_prefix(std::string& prefix);
   std::string& get_response_xml();
   std::string get_encoded_key_value(const std::string& key_value);
@@ -82,6 +90,8 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   void get_next_versions();
   void get_next_versions_successful();
   void get_next_versions_failed();
+  void check_latest_versions();
+  void fetch_object_info_success();
   void send_response_to_s3_client();
 };
 
