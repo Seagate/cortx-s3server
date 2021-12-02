@@ -177,6 +177,16 @@ class XMLResponseFormatter extends AbstractResponseFormatter {
       return success(operation);
     }
 
+    @Override public ServerResponse formatAttachUserPolicyResponse(
+        String operation) {
+      return success(operation);
+    }
+
+    @Override public ServerResponse formatDetachUserPolicyResponse(
+        String operation) {
+      return success(operation);
+    }
+
     @Override public ServerResponse formatErrorResponse(
         HttpResponseStatus httpResponseStatus, String code, String message) {
       Document doc;

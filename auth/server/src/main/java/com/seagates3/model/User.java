@@ -20,6 +20,9 @@
 
 package com.seagates3.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class User {
 
     public enum UserType {
@@ -55,6 +58,8 @@ public class User {
      String pwdResetRequired = "false";
     private
      String arn;
+    private
+     List<String> policyIds;
 
     /**
      * TODO - Remove RoleName. User Type is sufficient to identify a role user
@@ -171,4 +176,15 @@ public class User {
 
    public
     void setArn(String arn) { this.arn = arn; }
+
+   public
+    List<String> getPolicyIds() {
+      if (policyIds == null) {
+        policyIds = new ArrayList<String>();
+      }
+      return policyIds;
+    }
+
+   public
+    void setPolicyIds(List<String> policyIds) { this.policyIds = policyIds; }
 }

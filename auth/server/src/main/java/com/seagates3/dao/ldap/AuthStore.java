@@ -24,4 +24,12 @@ interface AuthStore {
  public
   void delete (String keyToRemove, Object key,
                String prefix) throws DataAccessException;
+
+ public
+  void attach(Map<String, Object> dataMap,
+              String prefix) throws DataAccessException;
+
+ public
+  void detach(Map<String, Object> dataMap,
+              String prefix) throws DataAccessException;
 }

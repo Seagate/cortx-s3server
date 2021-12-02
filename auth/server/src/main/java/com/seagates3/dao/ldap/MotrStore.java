@@ -30,4 +30,14 @@ class MotrStore implements AuthStore {
                                 String prefix) throws DataAccessException {
     // TODO Auto-generated method stub
   }
+
+  @Override public void attach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
+    // TODO Add motr store implementation for attach policy
+  }
+
+  @Override public void detach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
+    // TODO Add motr store implementation for attach policy
+  }
 }

@@ -24,6 +24,10 @@ class LdapStore implements AuthStore {
  private
   final String METHOD_DELETE = "delete";
  private
+  final String METHOD_ATTACH = "attach";
+ private
+  final String METHOD_DETACH = "detach";
+ private
   final String CLASS_PACKAGE = "com.seagates3.dao.ldap.";
  private
   final String CLASS_SUFFIX = "LdapStore";
@@ -133,6 +137,60 @@ class LdapStore implements AuthStore {
            InvocationTargetException | InstantiationException e) {
       LOGGER.error("Exception occurred while deleting " + prefix + e);
       throw new DataAccessException("failed while deleting " + prefix + e);
+    }
+  }
+
+  @Override public void attach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
+    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
+    LOGGER.debug("calling method - " + METHOD_ATTACH + " of class - " +
+                 className);
+    Map.Entry<String, Object> entry = dataMap.entrySet().iterator().next();
+    try {
+      Class < ? > storeClass = Class.forName(className);
+      Object instance = storeClass.newInstance();
+      Method method = storeClass.getMethod(METHOD_ATTACH, Object.class);
+      method.invoke(instance, entry.getValue());
+    }
+    catch (ClassNotFoundException e) {
+      LOGGER.error("Failed to attach - " + prefix);
+      throw new DataAccessException("failed to attach.\n" + e);
+    }
+    catch (NoSuchMethodException | SecurityException e) {
+      LOGGER.error("Exception while calling attach method");
+      throw new DataAccessException("failed to call attach method\n" + e);
+    }
+    catch (IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException | InstantiationException e) {
+      LOGGER.error("Failed to attach - " + prefix);
+      throw new DataAccessException("failed to attach- " + prefix + e);
+    }
+  }
+
+  @Override public void detach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
+    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
+    LOGGER.debug("calling method - " + METHOD_DETACH + " of class - " +
+                 className);
+    Map.Entry<String, Object> entry = dataMap.entrySet().iterator().next();
+    try {
+      Class < ? > storeClass = Class.forName(className);
+      Object instance = storeClass.newInstance();
+      Method method = storeClass.getMethod(METHOD_DETACH, Object.class);
+      method.invoke(instance, entry.getValue());
+    }
+    catch (ClassNotFoundException e) {
+      LOGGER.error("Failed to detach - " + prefix);
+      throw new DataAccessException("failed to detach.\n" + e);
+    }
+    catch (NoSuchMethodException | SecurityException e) {
+      LOGGER.error("Exception while calling detach method");
+      throw new DataAccessException("failed to call detach method\n" + e);
+    }
+    catch (IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException | InstantiationException e) {
+      LOGGER.error("Failed to detach - " + prefix);
+      throw new DataAccessException("failed to detach- " + prefix + e);
     }
   }
 }
