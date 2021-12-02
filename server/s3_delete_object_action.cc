@@ -23,7 +23,6 @@
 #include "s3_iem.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_common_utilities.h"
-#include "s3_uri_to_motr_oid.h"
 
 extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
@@ -45,8 +44,6 @@ S3DeleteObjectAction::S3DeleteObjectAction(
 
   action_uses_cleanup = true;
   s3_del_obj_action_state = S3DeleteObjectActionState::empty;
-  layout_id = -1;
-  new_object_oid = {0ULL, 0ULL};
 
   if (motr_api) {
     s3_motr_api = motr_api;
@@ -66,8 +63,6 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
-  S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
-                 &new_object_oid);
   setup_steps();
 }
 
@@ -151,11 +146,11 @@ void S3DeleteObjectAction::delete_handler() {
   if (bucket_versioning == "Enabled" &&
       !request->has_query_param_key("versionId")) {
     create_delete_marker();
+    next();
   } else {
     populate_probable_dead_oid_list();
   }
 
-  next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -172,41 +167,10 @@ void S3DeleteObjectAction::metadata_handler() {
     delete_metadata();
   }
 
-  next();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3DeleteObjectAction::_set_layout_id(int layout_id) {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  assert(layout_id > 0 && layout_id < 15);
-  this->layout_id = layout_id;
-
-  motr_write_payload_size =
-      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::create_delete_marker() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  if (!motr_writer) {
-    motr_writer = motr_writer_factory->create_motr_writer(request);
-  }
-
-  _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
-      dummy_size));
-
-  motr_writer->create_object(
-      std::bind(&S3DeleteObjectAction::create_object_successful, this),
-      std::bind(&S3DeleteObjectAction::create_object_failed, this),
-      new_object_oid, layout_id);
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3DeleteObjectAction::create_object_failed() {}
-
-void S3DeleteObjectAction::create_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // create metadata
@@ -214,23 +178,12 @@ void S3DeleteObjectAction::create_object_successful() {
       request, bucket_metadata->get_object_list_index_layout(),
       bucket_metadata->get_objects_version_list_index_layout());
 
-  new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
-
-  s3_log(S3_LOG_DEBUG, request_id, "Add delete marker2\n");
   // Generate a version id for the new object.
   delete_marker_metadata->regenerate_version_id();
-  delete_marker_metadata->set_oid(motr_writer->get_oid());
-  delete_marker_metadata->set_layout_id(layout_id);
-  delete_marker_metadata->set_pvid(motr_writer->get_ppvid());
-  delete_marker_metadata->set_delete_marker();
+  delete_marker_metadata->reset_date_time_to_current();
 
   // update null version
   // delete_marker_metadata->set_null_ref(object_metadata->get_null_ref());
-
-  delete_marker_metadata->reset_date_time_to_current();
-  delete_marker_metadata->set_content_length("0");
-  delete_marker_metadata->set_content_type(request->get_content_type());
-  delete_marker_metadata->set_md5(motr_writer->get_content_md5());
 
   s3_log(S3_LOG_DEBUG, request_id, "Add delete marker4\n");
   for (auto it : request->get_in_headers_copy()) {
@@ -241,6 +194,7 @@ void S3DeleteObjectAction::create_object_successful() {
       delete_marker_metadata->add_user_defined_attribute(it.first, it.second);
     }
   }
+  delete_marker_metadata->set_delete_marker();
 
   s3_log(S3_LOG_DEBUG, request_id, "%s \n",
          delete_marker_metadata->to_json().c_str());
