@@ -42,6 +42,8 @@ enum class S3PostCompleteActionState {
   probableEntryRecordSaved,      // Added entry to probable delete index
   abortedSinceValidationFailed,  // multipart(mp) aborted due to different part
                                  // validation failures, mp entry is deleted.
+  savebktcountersSuccess,        // Bucket counters saving
+  savebktcountersFailed,         // Bucket counters saving
   metadataSaved,                 // metadata saved for new object
   metadataSaveFailed,            // metadata save failed for new object
   completed,                     // All stages done completely
@@ -151,6 +153,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   void save_bucket_counters();
   void save_bucket_counters_success();
   void save_bucket_counters_failed();
+  void revert_bucket_counters();
   void delete_multipart_metadata();
   void delete_multipart_metadata_success();
   void delete_multipart_metadata_failed();

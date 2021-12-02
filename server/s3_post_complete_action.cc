@@ -129,8 +129,8 @@ void S3PostCompleteAction::setup_steps() {
   ACTION_TASK_ADD(S3PostCompleteAction::get_next_parts_info, this);
   ACTION_TASK_ADD(
       S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list, this);
-  ACTION_TASK_ADD(S3PostCompleteAction::save_metadata, this);
   ACTION_TASK_ADD(S3PostCompleteAction::save_bucket_counters, this);
+  ACTION_TASK_ADD(S3PostCompleteAction::save_metadata, this);
   ACTION_TASK_ADD(S3PostCompleteAction::delete_multipart_metadata, this);
   ACTION_TASK_ADD(S3PostCompleteAction::delete_part_list_index, this);
   ACTION_TASK_ADD(S3PostCompleteAction::send_response_to_s3_client, this);
@@ -897,6 +897,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list_failed() {
 
 void S3PostCompleteAction::save_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
   if (is_abort_multipart()) {
     next();
   } else {
@@ -973,18 +974,53 @@ void S3PostCompleteAction::save_bucket_counters() {
 void S3PostCompleteAction::save_bucket_counters_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-  s3_post_complete_action_state = S3PostCompleteActionState::metadataSaved;
+  s3_post_complete_action_state =
+      S3PostCompleteActionState::savebktcountersSuccess;
   next();
 }
 
 void S3PostCompleteAction::save_bucket_counters_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_post_complete_action_state = S3PostCompleteActionState::metadataSaveFailed;
+  s3_post_complete_action_state =
+      S3PostCompleteActionState::savebktcountersFailed;
   s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
   set_s3_error("InternalError");
   // Clean up will be done after response.
   // we would want to remove the object from motr also
   send_response_to_s3_client();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3PostCompleteAction::revert_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    // Overwrite Case.
+    inc_object_count = 0;
+    inc_obj_size = -(new_object_metadata->get_content_length() -
+                     object_metadata->get_content_length());
+
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s new object size = %lu \n",
+           __func__, new_object_metadata->get_content_length());
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s old object size = %lu \n",
+           __func__, object_metadata->get_content_length());
+
+  } else {
+    // Normal put request
+    inc_object_count = -1;
+    inc_obj_size = -(new_object_metadata->get_content_length());
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s object size = %lu \n",
+           __func__, new_object_metadata->get_content_length());
+  }
+
+  // Failure cb should call bg services.
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3PostCompleteAction::next, this),
+      std::bind(&S3PostCompleteAction::next, this));
+
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
@@ -1217,9 +1253,15 @@ void S3PostCompleteAction::startcleanup() {
             S3PostCompleteActionState::metadataSaved ||
         s3_post_complete_action_state ==
             S3PostCompleteActionState::metadataSaveFailed ||
+        s3_post_complete_action_state ==
+            S3PostCompleteActionState::savebktcountersFailed ||
         s3_post_complete_action_state == S3PostCompleteActionState::completed) {
       ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record,
                       this);
+      if (s3_post_complete_action_state ==
+          S3PostCompleteActionState::metadataSaveFailed) {
+        ACTION_TASK_ADD(S3PostCompleteAction::revert_bucket_counters, this);
+      }
     } else {
       // Should never be here.
       assert(false);
