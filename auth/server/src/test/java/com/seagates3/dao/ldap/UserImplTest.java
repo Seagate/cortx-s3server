@@ -59,9 +59,9 @@ import com.seagates3.model.User;
 
     private
      final String[] FIND_ATTRS = {
-         "s3userid",     "path",        "arn",
-         "rolename",     "objectclass", "createtimestamp",
-         "userPassword", "pwdReset",    "profileCreateDate"};
+         "s3userid",          "path",            "arn",          "rolename",
+         "objectclass",       "createtimestamp", "userPassword", "pwdReset",
+         "profileCreateDate", "policyId"};
     private
      final String[] FIND_ALL_ATTRS = {"s3userid",        "cn", "path",
                                       "createtimestamp", "arn"};

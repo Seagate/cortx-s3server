@@ -92,4 +92,14 @@ class FileStore implements AuthStore {
           "Exception occurred while saving data to file");
     }
   }
+
+  @Override public void attach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
+    // TODO Add file store implementation for attach policy
+  }
+
+  @Override public void detach(Map<String, Object> dataMap,
+                               String prefix) throws DataAccessException {
+    // TODO Add file store implementation for detach policy
+  }
 }
