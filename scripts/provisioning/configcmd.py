@@ -84,6 +84,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+    # TBD validate services names 
     self.logger.info("validations completed")
 
     self.logger.info("common config started")
@@ -93,9 +94,11 @@ class ConfigCmd(SetupCmd):
     try:
       # if there are no services mentioned then configured all services.
       if self.services == None or self.services == "":
+        # TBD move services names to s3_prov_config.yaml
         self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
         self.logger.info(f"service = {self.services}")
       self.services = self.services.split(",")
+      # Do not change sequence of the services as it is mentioned as per dependencies.
       if "haproxy" in self.services:
         self.logger.info("haproxy config started")
         self.process_haproxy()
@@ -159,22 +162,19 @@ class ConfigCmd(SetupCmd):
       self.create_symbolic_link(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 self.get_confkey("S3_CONF_SYMLINK"))
 
-      # validating s3 config file after copying and updating to /etc/cortx
-      self.logger.info("validate s3 config file started")
-      self.validate_config_file(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-                                 self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-                                 'yaml://')
-      self.logger.info("validate s3 config files completed")
+    # validating s3 config file after copying and updating to /etc/cortx
+    self.logger.info("validate s3 config file started")
+    self.validate_config_file(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                'yaml://')
+    self.logger.info("validate s3 config files completed")
 
-      self.logger.info("create symbolic link of FID config files started")
-      self.create_symbolic_link_fid()
-      self.logger.info("create symbolic link of FID config files started")
+    self.logger.info("create symbolic link of FID config files started")
+    self.create_symbolic_link_fid()
+    self.logger.info("create symbolic link of FID config files started")
 
   def process_haproxy(self):
     """ Process mini provisioner for haproxy."""
-    # TBD
-    # Can we move the log rotate releated steps from s3_start to here???
-
     # configure haproxy
     self.configure_haproxy()
 
@@ -219,7 +219,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info('create auth jks password completed')
 
     # configure s3 schema
-    self.configure_s3_schema()
+    self.push_s3_ldap_schema()
 
   def process_s3bgschedular(self):
     """ Process mini provisioner for s3bgschedular."""

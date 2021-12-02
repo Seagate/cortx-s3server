@@ -289,14 +289,14 @@ defaults
 #----------------------------------------------------------------------
 # FrontEnd S3 Configuration
 #----------------------------------------------------------------------
-frontend s3-main
+frontend s3-main-frontend
     # s3 server port
 '''
     backend_s3main_text = '''
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorithm
 #----------------------------------------------------------------------
-backend s3-main
+backend s3-main-backend
     balance static-rr                                     #Balance algorithm
     http-response set-header Server SeagateS3
     # Check the S3 server application is up and healthy - 200 status code
@@ -338,7 +338,7 @@ backend s3-auth
          "   bind 0.0.0.0:%s ssl crt %s\n"
          "\n"
          "   option forwardfor\n"
-         "   default_backend s3-main\n"
+         "   default_backend s3-main-backend\n"
          "\n"
          "   # s3 bgdelete server port\n"
          "   bind 0.0.0.0:%s\n"
@@ -428,13 +428,13 @@ backend s3-auth
 #----------------------------------------------------------------------
 # FrontEnd S3 Configuration
 #----------------------------------------------------------------------
-frontend s3-main
+frontend s3-main-frontend
     # s3 server port
 '''
     backend_s3main_text = '''
 
     option forwardfor
-    default_backend s3-main
+    default_backend s3-main-backend
 
     # s3 auth server port
     bind 0.0.0.0:9080
@@ -447,7 +447,7 @@ frontend s3-main
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorithm
 #----------------------------------------------------------------------
-backend s3-main
+backend s3-main-backend
     balance static-rr                                     #Balance algorithm
     http-response set-header Server SeagateS3
     # Check the S3 server application is up and healthy - 200 status code
