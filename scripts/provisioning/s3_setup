@@ -76,7 +76,7 @@ def main():
   postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
 
   upgradeCmd = subparsers.add_parser('upgrade', help='setup upgrade')
-  upgradeCmd.add_argument("--config", help='config URL', type=str, required=False)
+  upgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
   upgradeCmd.add_argument("--services", help='services', type=str, required=False)
   upgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
 
@@ -135,8 +135,11 @@ def main():
       PostUpgradeCmd(args.config, args.services).process()
       logger.info('post-upgrade successful.')
     elif args.command == 'upgrade':
-      logger.info('upgrade done.')
-
+      from upgradecmd import UpgradeCmd
+      logger.info('upgrade started.')
+      # Uncomment following call once Upgrade is supported.
+      # UpgradeCmd(args.config, args.services, args.commit).process()
+      logger.info('upgrade successful.')
   except Exception as e:
     logger.error(f"{str(e)}")
     logger.error(f"{traceback.format_exc()}")
