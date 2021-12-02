@@ -35,7 +35,7 @@ class S3CortxConfStore:
     self.default_index = index
 
     if config is not None:
-      # self.validate_configfile(config)
+      self.validate_configfile(config)
       self.load_config(self.default_index, self.config_file)
 
   @staticmethod
@@ -97,6 +97,10 @@ class S3CortxConfStore:
     if not configfile.strip():
       print("Invalid configfile path: {}".format(configfile))
       sys.exit(1)
+
+    if "consul" == urlparse(config_file).scheme:
+      print("kv store is consul. Skipping validation")
+      sys.exit(0)
 
     if os.path.isfile(urlparse(configfile).path) != True:
       print("config file: {} does not exist".format(configfile))
