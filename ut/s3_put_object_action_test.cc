@@ -78,7 +78,6 @@ class S3PutObjectActionTest : public testing::Test {
     old_layout_id = 2;
     index_layout = {{0x11ffff, 0x1ffff}};
     zero_oid = {0ULL, 0ULL};
-    versioning_Status = "Enabled";
 
     layout_id =
         S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
@@ -150,7 +149,7 @@ class S3PutObjectActionTest : public testing::Test {
   std::string MockObjectTagsStr;
   std::string MockRequestId;
   int call_count_one;
-  std::string bucket_name, object_name, versioning_Status;
+  std::string bucket_name, object_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -1220,120 +1219,118 @@ TEST_F(S3PutObjectActionTest, ValidateMissingContentLength) {
                action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PutObjectActionTest, SaveObjectMetadataWithVersioningEnabled) {
+TEST_F(S3PutObjectActionTest, AddOidToProbableDeadListVersioningEnabled) {
   CREATE_OBJECT_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
-      versioning_Status);
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_bucket_versioning_status())
-      .WillOnce(ReturnRef(versioning_Status));
-
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(
-      index_layout);
-
+  action_under_test->versioning_status = "Enabled";
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+  action_under_test->old_object_oid = old_object_oid;
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test->old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
   action_under_test->new_object_metadata =
       object_meta_factory->mock_object_metadata;
-  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
-
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-
-  EXPECT_CALL(*ptr_mock_request, get_data_length_str()).Times(1).WillOnce(
-      Return("1024"));
-  EXPECT_CALL(*ptr_mock_request, get_header_value("content-md5"))
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .Times(1)
-      .WillOnce(Return(""));
+      .WillRepeatedly(Return("objname"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              reset_date_time_to_current()).Times(AtLeast(1));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              set_content_length(Eq("1024"))).Times(AtLeast(1));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_content_md5())
-      .Times(AtLeast(1))
-      .WillOnce(Return("abcd1234abcd"));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_tags(_))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, get_header_value("Content-Type"))
+              get_version_key_in_index())
       .Times(1)
-      .WillOnce(Return(""));
-  std::map<std::string, std::string> input_headers;
-  input_headers["x-amz-meta-item-1"] = "1024";
-  input_headers["x-amz-meta-item-2"] = "s3.seagate.com";
+      .WillOnce(Return("objname/v1"));
 
-  EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
-      ReturnRef(input_headers));
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              add_user_defined_attribute(Eq("x-amz-meta-item-1"), Eq("1024")))
-      .Times(AtLeast(1));
-  EXPECT_CALL(
-      *(object_meta_factory->mock_object_metadata),
-      add_user_defined_attribute(Eq("x-amz-meta-item-2"), Eq("s3.seagate.com")))
-      .Times(AtLeast(1));
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), save(_, _))
-      .Times(AtLeast(1));
-
-  action_under_test->save_metadata();
-}
-
-TEST_F(S3PutObjectActionTest, VersionEntryToJsonWhenVersioningEnabled) {
-  CREATE_OBJECT_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
-      versioning_Status);
-  object_meta_factory->mock_object_metadata->version_entry_to_json();
-}
-
-TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenVersioningEnabled) {
-  CREATE_OBJECT_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
-      versioning_Status);
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillOnce(Return(S3ObjectMetadataState::present));
-
-  struct m0_uint128 old_oid = {0x1ffff, 0x1ffff};
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
-      .Times(1)
-      .WillOnce(Return(old_oid));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
-      .Times(1)
-      .WillOnce(Return(layout_id));
-
-  action_under_test->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         S3PutObjectActionTest::func_callback_one, this);
-
-  struct m0_uint128 oid_before_regen = action_under_test->new_object_oid;
-  action_under_test->fetch_object_info_success();
-
-  EXPECT_EQ(1, call_count_one);
-  EXPECT_OID_NE(zero_oid, action_under_test->old_object_oid);
-  EXPECT_OID_NE(oid_before_regen, action_under_test->new_object_oid);
-}
-
-TEST_F(S3PutObjectActionTest, CreateObjectFirstAttemptWithVersioningEnabled) {
-  CREATE_OBJECT_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
-      versioning_Status);
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              create_object(_, _, _, _)).Times(1);
-  action_under_test->create_object();
-  EXPECT_TRUE(action_under_test->motr_writer != nullptr);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _)).Times(1);
+  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
+      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      "mock_pvid", index_layout.oid, index_layout.oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->new_probable_del_rec.reset(prob_rec);
+  action_under_test->layout_id = 2;
+  action_under_test->add_object_oid_to_probable_dead_oid_list();
 }
 
-TEST_F(S3PutObjectActionTest, CreateObjectSecondAttemptWithVersioningEnabled) {
+TEST_F(S3PutObjectActionTest, AddOidToProbableDeadListVersioningDisabled) {
   CREATE_OBJECT_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_bucket_versioning(
-      versioning_Status);
-  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(2).WillRepeatedly(
-      Return(1024));
+  action_under_test->versioning_status = "Unversioned";
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              create_object(_, _, _, _)).Times(2);
-  action_under_test->create_object();
-  action_under_test->tried_count = 1;
-  action_under_test->create_object();
-  EXPECT_TRUE(action_under_test->motr_writer != nullptr);
+  action_under_test->old_object_oid = old_object_oid;
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test->old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .Times(2)
+      .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index())
+      .Times(2)
+      .WillRepeatedly(Return("objname/v1"));
+  EXPECT_OID_NE(zero_oid, action_under_test->old_object_oid);
+  EXPECT_EQ("Unversioned", action_under_test->versioning_status);
+  EXPECT_TRUE(action_under_test->old_object_oid.u_hi ||
+              action_under_test->old_object_oid.u_lo);
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(1024));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _)).Times(1);
+  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
+      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      "mock_pvid", index_layout.oid, index_layout.oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->new_probable_del_rec.reset(prob_rec);
+  MockS3ProbableDeleteRecord *prob_rec2 = new MockS3ProbableDeleteRecord(
+      "oid_str", {0ULL, 0ULL}, "abc_obj", oid, old_layout_id, "mock_pvid",
+      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
+      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->old_probable_del_rec.reset(prob_rec2);
+  action_under_test->number_of_parts = 0;
+
+  action_under_test->old_layout_id = 2;
+  action_under_test->layout_id = 2;
+  action_under_test->add_object_oid_to_probable_dead_oid_list();
+}
+
+TEST_F(S3PutObjectActionTest, MarkOldOidForDelValidation) {
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+  action_under_test->old_object_oid = old_object_oid;
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test->old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+  size_t number_of_tasks_ver_enabled;
+  size_t number_of_tasks_ver_disabled;
+
+  action_under_test->versioning_status = "Unversioned";
+  action_under_test->clear_tasks();
+  action_under_test->s3_put_action_state = S3PutObjectActionState::completed;
+  action_under_test->startcleanup();
+  number_of_tasks_ver_disabled = action_under_test->number_of_tasks();
+
+  action_under_test->versioning_status = "Enabled";
+  action_under_test->clear_tasks();
+  action_under_test->s3_put_action_state = S3PutObjectActionState::completed;
+  action_under_test->startcleanup();
+  number_of_tasks_ver_enabled = action_under_test->number_of_tasks();
+
+  EXPECT_EQ(number_of_tasks_ver_disabled, number_of_tasks_ver_enabled + 2);
 }

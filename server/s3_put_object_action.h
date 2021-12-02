@@ -205,13 +205,10 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest, SendFailedResponse);
   FRIEND_TEST(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout);
   FRIEND_TEST(S3PutObjectActionTest, DelayedDeleteOldObject);
-  FRIEND_TEST(S3PutObjectActionTest, SaveObjectMetadataWithVersioningEnabled);
-  FRIEND_TEST(S3PutObjectActionTest, VersionEntryToJsonWhenVersioningEnabled);
-  FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenVersioningEnabled);
+  FRIEND_TEST(S3PutObjectActionTest, AddOidToProbableDeadListVersioningEnabled);
   FRIEND_TEST(S3PutObjectActionTest,
-              CreateObjectFirstAttemptWithVersioningEnabled);
-  FRIEND_TEST(S3PutObjectActionTest,
-              CreateObjectSecondAttemptWithVersioningEnabled);
+              AddOidToProbableDeadListVersioningDisabled);
+  FRIEND_TEST(S3PutObjectActionTest, MarkOldOidForDelValidation);
 };
 
 #endif

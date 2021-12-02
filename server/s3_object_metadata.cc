@@ -123,10 +123,6 @@ static void str_set_default(std::string& sref, const char* sz) {
   }
 }
 
-void S3ObjectMetadata::set_bucket_versioning_status(
-    const std::string& versioning_status) {
-  bucket_versioning_status = versioning_status;
-}
 void S3ObjectMetadata::initialize(bool ismultipart,
                                   const std::string& uploadid) {
   is_multipart = ismultipart;

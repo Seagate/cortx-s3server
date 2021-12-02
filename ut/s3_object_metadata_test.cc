@@ -935,3 +935,11 @@ TEST_F(S3ObjectExtendedMetadataTest,
               extended_metadata_obj_under_test->get_json_str(part_frag_ctx));
   }
 }
+
+TEST_F(S3ObjectMetadataTest, ValidateVesionEntryToJson) {
+  std::string json_str = metadata_obj_under_test->version_entry_to_json();
+  Json::Value newroot;
+  Json::Reader reader;
+  bool parsingSuccessful = reader.parse(json_str, newroot);
+  EXPECT_TRUE(parsingSuccessful);
+}

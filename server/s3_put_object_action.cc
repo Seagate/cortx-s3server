@@ -756,8 +756,6 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::map<std::string, std::string> probable_oid_list;
   assert(!new_oid_str.empty());
-  std::string versioning_status =
-      bucket_metadata->get_bucket_versioning_status();
   // store old object oid
   if (("Unversioned" == versioning_status) &&
       (old_object_oid.u_hi || old_object_oid.u_lo)) {
@@ -916,8 +914,6 @@ void S3PutObjectAction::startcleanup() {
   // Clear task list and setup cleanup task list
   clear_tasks();
   cleanup_started = true;
-  std::string versioning_status =
-      bucket_metadata->get_bucket_versioning_status();
 
   // Success conditions
   if (s3_put_action_state == S3PutObjectActionState::completed) {
@@ -933,7 +929,9 @@ void S3PutObjectAction::startcleanup() {
     ACTION_TASK_ADD(S3PutObjectAction::remove_new_oid_probable_record, this);
     if (old_object_oid.u_hi || old_object_oid.u_lo) {
       // Object overwrite case, old object exists, delete it.
-      ACTION_TASK_ADD(S3PutObjectAction::delete_old_object, this);
+      if ("Unversioned" == versioning_status) {
+        ACTION_TASK_ADD(S3PutObjectAction::delete_old_object, this);
+      }
       // If delete object is successful, attempt to delete old probable record
     }
   } else if (s3_put_action_state == S3PutObjectActionState::newObjOidCreated ||
