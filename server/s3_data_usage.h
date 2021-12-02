@@ -29,14 +29,14 @@
 #include "s3_motr_kvs_reader.h"
 #include "s3_motr_kvs_writer.h"
 
-enum class S3BucketObjectCounterState {
+enum class DataUsageItemState {
   empty,
   inactive,
   active,
   failed
 };
 
-class S3BucketObjectCounter;
+class DataUsageItem;
 
 class S3DataUsageCache {
  public:
@@ -58,21 +58,20 @@ class S3DataUsageCache {
  private:
   static std::unique_ptr<S3DataUsageCache> singleton;
 
-  std::map<std::string, std::shared_ptr<S3BucketObjectCounter> >
-      bucket_wise_cache;
-  std::list<S3BucketObjectCounter*> inactive_items_list;
+  std::map<std::string, std::shared_ptr<DataUsageItem> > items;
+  std::list<DataUsageItem*> inactive_items;
   size_t max_cache_size;
 
   S3DataUsageCache() {}
 
-  std::shared_ptr<S3BucketObjectCounter> get_bucket_counters(
+  std::shared_ptr<DataUsageItem> get_item(
       std::shared_ptr<RequestObject> req,
       std::shared_ptr<S3BucketMetadata> bkt_md);
   bool shrink();
-  void item_state_changed(S3BucketObjectCounter *item);
+  void item_state_changed(DataUsageItem *item);
 };
 
-class S3BucketObjectCounter {
+class DataUsageItem {
  private:
   std::string key;
   std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
@@ -85,7 +84,7 @@ class S3BucketObjectCounter {
   // Used to report to caller.
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
-  std::function<void(S3BucketObjectCounter*)> state_notify;
+  std::function<void(DataUsageItem*)> state_notify;
 
   uint64_t saved_object_count;
   uint64_t saved_total_size;
@@ -96,20 +95,20 @@ class S3BucketObjectCounter {
   bool is_cache_created;
 
  public:
-  S3BucketObjectCounter(
+  DataUsageItem(
       std::shared_ptr<RequestObject> req,
       std::shared_ptr<S3BucketMetadata> bkt_md,
-      std::function<void(S3BucketObjectCounter*)> subscriber,
+      std::function<void(DataUsageItem*)> subscriber,
       std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr,
       std::shared_ptr<MotrAPI> motr_api = nullptr);
   std::string request_id;
   std::string bucket_name;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  S3BucketObjectCounterState state;
-  std::list<S3BucketObjectCounter *>::iterator ptr_inactive;
+  DataUsageItemState state;
+  std::list<DataUsageItem *>::iterator ptr_inactive;
 
-  void set_state(S3BucketObjectCounterState new_state);
+  void set_state(DataUsageItemState new_state);
   void save(std::function<void(void)> on_success,
             std::function<void(void)> on_failed);
   void add_inc_object_count(int64_t obj_count);

@@ -42,7 +42,7 @@ extern "C" {
 
 struct s3_motr_idx_layout global_bucket_list_index_layout;
 struct s3_motr_idx_layout bucket_metadata_list_index_layout;
-struct s3_motr_idx_layout bucket_object_count_index_layout;
+struct s3_motr_idx_layout bucket_data_usage_index_layout;
 struct s3_motr_idx_layout global_instance_list_index_layout;
 struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 

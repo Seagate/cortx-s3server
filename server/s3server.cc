@@ -98,7 +98,7 @@ struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 // index will have s3server instance information
 struct s3_motr_idx_layout global_instance_list_index_layout;
 // index will have s3server instance information
-struct s3_motr_idx_layout bucket_object_count_index_layout;
+struct s3_motr_idx_layout bucket_data_usage_index_layout;
 // objects listed in this index are probable delete candidates and not absolute.
 struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
@@ -1096,9 +1096,9 @@ int main(int argc, char **argv) {
          global_instance_list_index_layout.pver.f_key,
          global_instance_list_index_layout.layout_type);
 
-  // bucket_object_count_index_layout - will hold accountid/bucket_name as key,
+  // bucket_data_usage_index_layout - will hold accountid/bucket_name as key,
   // bucket medata as value.
-  rc = create_global_index(bucket_object_count_index_layout,
+  rc = create_global_index(bucket_data_usage_index_layout,
                            BUCKET_OBJECT_COUNT_INDEX_OID_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -1110,11 +1110,11 @@ int main(int argc, char **argv) {
   s3_log(S3_LOG_DEBUG, nullptr,
          "Bucket object count index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
          "layout_type: 0x%x",
-         bucket_object_count_index_layout.oid.u_hi,
-         bucket_object_count_index_layout.oid.u_lo,
-         bucket_object_count_index_layout.pver.f_container,
-         bucket_object_count_index_layout.pver.f_key,
-         bucket_object_count_index_layout.layout_type);
+         bucket_data_usage_index_layout.oid.u_hi,
+         bucket_data_usage_index_layout.oid.u_lo,
+         bucket_data_usage_index_layout.pver.f_container,
+         bucket_data_usage_index_layout.pver.f_key,
+         bucket_data_usage_index_layout.layout_type);
 
   extern struct m0_config motr_conf;
 
