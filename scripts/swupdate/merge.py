@@ -105,7 +105,7 @@ def setup_logger():
     - else it will log to console
     """
     global logger
-    logger = logging.getLogger("s3-deployment-logger")
+    logger = logging.getLogger("s3-deployment-logger") + "[" + str(socket.gethostname()) + "]"
     if logger.hasHandlers():
         logger.info("Logger has valid handler")
     else:
@@ -121,4 +121,5 @@ def setup_logger():
         logger.addHandler(chandler)
 
 if __name__ == "__main__":
-    merge_configs()
+    print("merge_configs without parameters is not supported, please implement cli wrapper and parser")
+    #merge_configs()
