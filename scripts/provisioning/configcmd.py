@@ -174,7 +174,7 @@ class ConfigCmd(SetupCmd):
         self.logger.info('Create topic started')
         self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
                           bgdeleteconfig.get_msgbus_topic(),
-                          self.get_msgbus_partition_count_Ex())
+                          self.get_msgbus_partition_count())
         self.logger.info('Create topic completed')
 
       # create background delete account
