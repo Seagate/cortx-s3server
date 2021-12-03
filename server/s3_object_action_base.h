@@ -60,6 +60,7 @@ class S3ObjectAction : public S3Action {
   std::string additional_bucket_name;
   std::string additional_object_name;
   std::string versioning_status = "Unversioned";
+
   struct s3_motr_idx_layout obj_list_idx_lo = {};
   struct s3_motr_idx_layout obj_version_list_idx_lo = {};
 

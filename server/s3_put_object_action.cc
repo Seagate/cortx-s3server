@@ -756,6 +756,7 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::map<std::string, std::string> probable_oid_list;
   assert(!new_oid_str.empty());
+
   // store old object oid
   if (("Unversioned" == versioning_status) &&
       (old_object_oid.u_hi || old_object_oid.u_lo)) {
