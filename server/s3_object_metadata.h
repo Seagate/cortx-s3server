@@ -115,7 +115,6 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string user_id;
   std::string bucket_name;
   std::string object_name;
-  std::string bucket_versioning_status{"Unversioned"};
 
   // Used in validation
   std::string requested_bucket_name;
@@ -249,6 +248,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_content_length_str();
   virtual void set_content_type(std::string content_type);
   virtual std::string get_content_type();
+
   virtual void set_md5(std::string md5);
   virtual std::string get_md5();
 
