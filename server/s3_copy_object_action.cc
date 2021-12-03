@@ -503,8 +503,8 @@ void S3CopyObjectAction::revert_dest_bucket_counters() {
         -(total_data_to_stream - object_metadata->get_content_length());
   } else {
     // Normal put request
-    inc_object_count = 1;
-    inc_obj_size = -total_data_to_stream;
+    inc_object_count = -1;
+    inc_obj_size = -(total_data_to_stream);
   }
 
   s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
