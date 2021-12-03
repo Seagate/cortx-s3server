@@ -105,7 +105,7 @@ def setup_logger():
     - else it will log to console
     """
     global logger
-    logger = logging.getLogger("s3-deployment-logger") + "[" + str(socket.gethostname()) + "]"
+    logger = logging.getLogger("s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]")
     if logger.hasHandlers():
         logger.info("Logger has valid handler")
     else:
