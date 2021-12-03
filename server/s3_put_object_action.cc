@@ -642,12 +642,12 @@ void S3PutObjectAction::revert_bucket_counters() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     // Overwrite Case.
     inc_object_count = 0;
-    inc_obj_size =
-        request->get_content_length() - object_metadata->get_content_length();
+    inc_obj_size = -(request->get_content_length() -
+                     object_metadata->get_content_length());
   } else {
     // Normal put request
-    inc_object_count = 1;
-    inc_obj_size = request->get_content_length();
+    inc_object_count = -1;
+    inc_obj_size = -(request->get_content_length());
   }
 
   s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
