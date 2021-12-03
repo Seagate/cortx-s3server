@@ -409,34 +409,9 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (delete_marker_metadata) {
     // delete marker metadata responce
-    std::string delete_marker_responce =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-    delete_marker_responce +=
-        "<DeleteResult "
-        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Deleted><Key>" +
-        delete_marker_metadata->get_bucket_name() +
-        "</Key><DeleteMarker>true</DeleteMarker><VersionId>" +
-        "<DeleteMarkerVersionId>" +
-        delete_marker_metadata->get_obj_version_id() +
-        "</DeleteMarkerVersionId>" + delete_marker_metadata->get_object_name() +
-        "</VersionId></Deleted></DeleteResult>";
-    s3_log(S3_LOG_DEBUG, stripped_request_id, "Responce xml: %s\n",
-           delete_marker_responce.c_str());
-    request->set_bytes_sent(delete_marker_responce.length());
-    request->send_response(S3HttpSuccess200, delete_marker_responce);
-    /*
-    Responce
-    <?xml version="1.0" encoding="UTF-8"?>
-    <DeleteResult
-      xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-      <Deleted>
-        <Key>new5</Key>
-        <DeleteMarker>true</DeleteMarker>
-        <DeleteMarkerVersionId>ft0aPtoQ_oiUtNi7eFAIUoRYcq_WzlVn</DeleteMarkerVersionId>
-      </Deleted>
-    </DeleteResult>
-    */
-
+    request->set_out_header_value("x-amz-version-id", delete_marker_metadata->get_obj_version_id());
+    request->set_out_header_value("x-amz-delete-marker", "true");
+    request->send_response(S3HttpSuccess204);
   } else {
     assert(zero(obj_list_idx_lo.oid) ||
            object_metadata->get_state() == S3ObjectMetadataState::missing ||
