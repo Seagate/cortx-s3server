@@ -69,8 +69,8 @@ void S3CopyObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3CopyObjectAction::check_source_bucket_authorization, this);
   ACTION_TASK_ADD(S3CopyObjectAction::create_one_or_more_objects, this);
   ACTION_TASK_ADD(S3CopyObjectAction::copy_one_or_more_objects, this);
-  ACTION_TASK_ADD(S3CopyObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3CopyObjectAction::save_dest_bucket_counters, this);
+  ACTION_TASK_ADD(S3CopyObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3CopyObjectAction::send_response_to_s3_client, this);
 }
 
@@ -423,7 +423,7 @@ void S3CopyObjectAction::save_metadata() {
   check_shutdown_signal_for_next_task(false);
   new_object_metadata->save(
       std::bind(&S3CopyObjectAction::save_object_metadata_success, this),
-      std::bind(&S3CopyObjectAction::save_object_metadata_failed, this));
+      std::bind(&S3CopyObjectAction::revert_dest_bucket_counters, this));
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -458,12 +458,11 @@ void S3CopyObjectAction::save_dest_bucket_counters() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     // Overwrite Case.
     inc_object_count = 0;
-    inc_obj_size = new_object_metadata->get_content_length() -
-                   object_metadata->get_content_length();
+    inc_obj_size = total_data_to_stream - object_metadata->get_content_length();
   } else {
     // Normal put request
     inc_object_count = 1;
-    inc_obj_size = new_object_metadata->get_content_length();
+    inc_obj_size = total_data_to_stream;
   }
 
   S3DataUsageCache::update_data_usage(
@@ -477,18 +476,45 @@ void S3CopyObjectAction::save_dest_bucket_counters() {
 void S3CopyObjectAction::save_bucket_counters_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-  s3_put_action_state = S3PutObjectActionState::metadataSaved;
+  s3_put_action_state = S3PutObjectActionState::savebktcountersSuccess;
   next();
 }
 
 void S3CopyObjectAction::save_bucket_counters_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_put_action_state = S3PutObjectActionState::metadataSaveFailed;
+  s3_put_action_state = S3PutObjectActionState::savebktcountersFailed;
   s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
   set_s3_error("InternalError");
   // Clean up will be done after response.
   // we would want to remove the object from motr also
   send_response_to_s3_client();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3CopyObjectAction::revert_dest_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    // Overwrite Case.
+    inc_object_count = 0;
+    inc_obj_size =
+        -(total_data_to_stream - object_metadata->get_content_length());
+  } else {
+    // Normal put request
+    inc_object_count = 1;
+    inc_obj_size = -total_data_to_stream;
+  }
+
+  s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
+         inc_obj_size);
+
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3CopyObjectAction::save_object_metadata_failed, this),
+      std::bind(&S3CopyObjectAction::save_object_metadata_failed, this));
+
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 

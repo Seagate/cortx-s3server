@@ -947,20 +947,12 @@ void S3PostCompleteAction::save_bucket_counters() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     // Overwrite Case.
     inc_object_count = 0;
-    inc_obj_size = new_object_metadata->get_content_length() -
-                   object_metadata->get_content_length();
-
-    s3_log(S3_LOG_INFO, stripped_request_id, "%s new object size = %lu \n",
-           __func__, new_object_metadata->get_content_length());
-    s3_log(S3_LOG_INFO, stripped_request_id, "%s old object size = %lu \n",
-           __func__, object_metadata->get_content_length());
+    inc_obj_size = object_size - object_metadata->get_content_length();
 
   } else {
     // Normal put request
     inc_object_count = 1;
-    inc_obj_size = new_object_metadata->get_content_length();
-    s3_log(S3_LOG_INFO, stripped_request_id, "%s object size = %lu \n",
-           __func__, new_object_metadata->get_content_length());
+    inc_obj_size = object_size;
   }
 
   S3DataUsageCache::update_data_usage(
@@ -999,21 +991,16 @@ void S3PostCompleteAction::revert_bucket_counters() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     // Overwrite Case.
     inc_object_count = 0;
-    inc_obj_size = -(new_object_metadata->get_content_length() -
-                     object_metadata->get_content_length());
-
-    s3_log(S3_LOG_INFO, stripped_request_id, "%s new object size = %lu \n",
-           __func__, new_object_metadata->get_content_length());
-    s3_log(S3_LOG_INFO, stripped_request_id, "%s old object size = %lu \n",
-           __func__, object_metadata->get_content_length());
+    inc_obj_size = object_size - object_metadata->get_content_length();
 
   } else {
     // Normal put request
-    inc_object_count = -1;
-    inc_obj_size = -(new_object_metadata->get_content_length());
-    s3_log(S3_LOG_INFO, stripped_request_id, "%s object size = %lu \n",
-           __func__, new_object_metadata->get_content_length());
+    inc_object_count = 1;
+    inc_obj_size = object_size;
   }
+
+  s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
+         inc_obj_size);
 
   // Failure cb should call bg services.
   S3BucketCapacityCache::update_bucket_capacity(
