@@ -18,10 +18,9 @@
  *
  */
 
-#include "s3_data_usage.h"
-
 #include <json/json.h>
 
+#include "s3_data_usage.h"
 #include "s3_log.h"
 
 #define JSON_OBJECTS_COUNT "objects_count"
@@ -80,24 +79,25 @@ std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
     s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(),
            "Found entry in Cache for %s", key_in_cache.c_str());
     s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
-
-    inactive_items.erase(item->ptr_inactive);
     return items[key_in_cache];
-  } else {
-    s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(),
-           "Entry not found in Cache for %s", key_in_cache.c_str());
-    std::function<void(DataUsageItem *)> subscriber = std::bind(
-        &S3DataUsageCache::item_state_changed, this, std::placeholders::_1);
-    std::shared_ptr<DataUsageItem> bucket_counter(
-        new DataUsageItem(req, bkt_md, subscriber));
-    std::pair<std::map<std::string, std::shared_ptr<DataUsageItem> >::iterator,
-              bool> return_value =
-        items.insert(std::pair<std::string, std::shared_ptr<DataUsageItem> >(
-            key_in_cache, std::move(bucket_counter)));
-
-    s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
-    return return_value.first->second;
   }
+
+  s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(),
+         "Entry not found in Cache for %s", key_in_cache.c_str());
+  auto subscriber = std::bind(&S3DataUsageCache::item_state_changed, this,
+                              std::placeholders::_1, std::placeholders::_2,
+                              std::placeholders::_3);
+  std::shared_ptr<DataUsageItem> item(
+      new DataUsageItem(req, bkt_md, subscriber));
+  // Do not check the retcode (bool): no chance for a collision,
+  // because the inserted key is new.
+  std::pair<std::map<std::string, std::shared_ptr<DataUsageItem> >::iterator,
+            bool> return_value =
+      items.insert(std::pair<std::string, std::shared_ptr<DataUsageItem> >(
+          key_in_cache, std::move(item)));
+
+  s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
+  return return_value.first->second;
 }
 
 bool S3DataUsageCache::shrink() {
@@ -117,13 +117,17 @@ bool S3DataUsageCache::shrink() {
   return true;
 }
 
-void S3DataUsageCache::item_state_changed(DataUsageItem *item) {
-  if (item->state == DataUsageItemState::empty ||
-      item->state == DataUsageItemState::failed) {
+void S3DataUsageCache::item_state_changed(DataUsageItem *item,
+                                          DataUsageItemState prev_state,
+                                          DataUsageItemState new_state) {
+  if (prev_state == DataUsageItemState::inactive) {
+    inactive_items.erase(item->ptr_inactive);
+  }
+  if (new_state == DataUsageItemState::inactive) {
+    item->ptr_inactive = inactive_items.insert(inactive_items.end(), item);
+  } else if (new_state == DataUsageItemState::failed) {
     std::string cache_key = get_cache_key(item->bucket_metadata);
     items.erase(cache_key);
-  } else if (item->state == DataUsageItemState::inactive) {
-    item->ptr_inactive = inactive_items.insert(inactive_items.end(), item);
   }
 }
 
@@ -135,10 +139,10 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
                                          std::function<void()> on_failure) {
   s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Entry", __func__);
 
-  std::shared_ptr<DataUsageItem> counter(get_item(req, src));
-  if (counter) {
-    counter->save(objects_count_increment, bytes_count_increment, on_success,
-                  on_failure);
+  std::shared_ptr<DataUsageItem> item(get_item(req, src));
+  if (item) {
+    item->save(objects_count_increment, bytes_count_increment, on_success,
+               on_failure);
   } else {
     on_failure();
   }
@@ -148,8 +152,7 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
 
 DataUsageItem::DataUsageItem(
     std::shared_ptr<RequestObject> req,
-    std::shared_ptr<S3BucketMetadata> bkt_md,
-    std::function<void(DataUsageItem *)> subscriber,
+    std::shared_ptr<S3BucketMetadata> bkt_md, DataUsageStateNotifyCb subscriber,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api) {
@@ -186,8 +189,11 @@ DataUsageItem::DataUsageItem(
 }
 
 void DataUsageItem::set_state(DataUsageItemState new_state) {
-  state = new_state;
-  state_notify(this);
+  if (new_state != state) {
+    DataUsageItemState old_state = state;
+    state = new_state;
+    state_notify(this, old_state, new_state);
+  }
 }
 
 void DataUsageItem::save(int64_t objects_count_increment,
@@ -202,18 +208,42 @@ void DataUsageItem::save(int64_t objects_count_increment,
          "%s Object count increment %ld; bytes count increment %ld", __func__,
          objects_count_increment, bytes_count_increment);
 
-  current_objects_increment = objects_count_increment;
-  current_bytes_increment = bytes_count_increment;
-  handler_on_success = on_success;
-  handler_on_failure = on_failure;
+  pending_objects_increment += objects_count_increment;
+  pending_bytes_increment += bytes_count_increment;
+  pending_callbacks.push_back(
+      std::make_shared<struct IncCallbackPair>(on_success, on_failure));
 
-  if (state == DataUsageItemState::empty) {
+  // It's assumed that item in the failed state will be deleted,
+  // but it won't hurt to have it here in the condition.
+  if (state == DataUsageItemState::empty ||
+      state == DataUsageItemState::failed) {
     do_kvs_read();
-  } else {
+  } else if (state == DataUsageItemState::inactive) {
     do_kvs_write();
   }
+  // If the item is active, the write will be done
+  // after the current one is complete.
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
+}
+
+void DataUsageItem::run_successful_callbacks() {
+  for (auto cb : current_callbacks) {
+    cb->success();
+  }
+  current_callbacks.clear();
+}
+
+void DataUsageItem::run_failure_callbacks() {
+  for (auto cb : current_callbacks) {
+    cb->failure();
+  }
+  current_callbacks.clear();
+}
+
+void DataUsageItem::fail_all() {
+  current_callbacks.splice(current_callbacks.end(), pending_callbacks);
+  run_failure_callbacks();
 }
 
 void DataUsageItem::kvs_read_success() {
@@ -226,11 +256,11 @@ void DataUsageItem::kvs_read_success() {
            bucket_data_usage_index_layout.oid.u_hi,
            bucket_data_usage_index_layout.oid.u_lo, key.c_str(),
            motr_kv_reader->get_value().c_str());
-
-    this->handler_on_failure();
+    fail_all();
+    set_state(DataUsageItemState::failed);
+    return;
   }
 
-  set_state(DataUsageItemState::active);
   do_kvs_write();
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
@@ -238,15 +268,7 @@ void DataUsageItem::kvs_read_success() {
 
 void DataUsageItem::kvs_read_failure() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
-
-  objects_count = 0;
-  bytes_written = 0;
-
-  // TODO: check if missing entry is possible here.
-  set_state(DataUsageItemState::active);
-
-  do_kvs_write();
-
+  fail_all();
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
@@ -254,19 +276,41 @@ void DataUsageItem::do_kvs_read() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   if (!motr_kv_reader) {
-      motr_kv_reader =
-          motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
-    }
+    motr_kv_reader =
+        motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  }
 
-    motr_kv_reader->get_keyval(bucket_data_usage_index_layout, key,
-                               std::bind(&DataUsageItem::kvs_read_success, this),
-                               std::bind(&DataUsageItem::kvs_read_failure, this));
+  motr_kv_reader->get_keyval(bucket_data_usage_index_layout, key,
+                             std::bind(&DataUsageItem::kvs_read_success, this),
+                             std::bind(&DataUsageItem::kvs_read_failure, this));
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
 void DataUsageItem::do_kvs_write() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+
+  if (pending_callbacks.size() == 0) {
+    set_state(DataUsageItemState::inactive);
+    return;
+  }
+
+  current_objects_increment = pending_objects_increment;
+  pending_objects_increment = 0;
+  current_bytes_increment = pending_bytes_increment;
+  pending_bytes_increment = 0;
+  current_callbacks.swap(pending_callbacks);
+
+  // Annihilation check:
+  // If agregated value of pending increments is zero,
+  // there is no need for PUT KVS operation,
+  // thus success callbacks could be called immediately (if there are any).
+  if (current_objects_increment == 0 && current_bytes_increment == 0) {
+    run_successful_callbacks();
+    set_state(DataUsageItemState::inactive);
+    return;
+  }
+  set_state(DataUsageItemState::active);
 
   if (!motr_kv_writer) {
     motr_kv_writer =
@@ -290,22 +334,19 @@ void DataUsageItem::kvs_write_success() {
   // this may be time efficient.
   objects_count += current_objects_increment;
   bytes_written += current_bytes_increment;
+  run_successful_callbacks();
 
-  current_objects_increment = 0;
-  current_bytes_increment = 0;
+  do_kvs_write();
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
-
-  set_state(DataUsageItemState::inactive);
-
-  this->handler_on_success();
 }
 
 void DataUsageItem::kvs_write_failure() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
-  set_state(DataUsageItemState::inactive);
-  this->handler_on_failure();
+  run_failure_callbacks();
+  // Try to proceed other requests.
+  do_kvs_write();
 }
 
 std::string DataUsageItem::to_json() {
