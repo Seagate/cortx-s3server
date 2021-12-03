@@ -24,6 +24,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <queue>
 
 #include "s3_factory.h"
 #include "s3_motr_kvs_reader.h"
@@ -68,49 +69,60 @@ class S3DataUsageCache {
       std::shared_ptr<RequestObject> req,
       std::shared_ptr<S3BucketMetadata> bkt_md);
   bool shrink();
-  void item_state_changed(DataUsageItem *item);
+  void item_state_changed(DataUsageItem* item);
 };
 
 class DataUsageItem {
  private:
   std::string key;
   std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
-  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kv_writer_factory;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<RequestObject> request;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
 
+  struct IncCallbacks {
+    std::string request_id;
+    std::function<void()> success;
+    std::function<void()> fail;
+  };
+
+  int64_t objects_count;
+  int64_t bytes_written;
+
+  int64_t current_objects_increment;
+  int64_t current_bytes_increment;
+  std::queue<struct IncCallbacks> current_callbacks;
+
+  int64_t pending_objects_increment;
+  int64_t pending_bytes_increment;
+  std::queue<struct IncCallbacks> pending_callbacks;
+
   // Used to report to caller.
   std::function<void()> handler_on_success;
-  std::function<void()> handler_on_failed;
+  std::function<void()> handler_on_failure;
   std::function<void(DataUsageItem*)> state_notify;
 
-  uint64_t saved_object_count;
-  uint64_t saved_total_size;
-  int64_t inc_object_count;
-  int64_t inc_total_size;
-  bool is_cache_created;
-
  public:
-  DataUsageItem(
-      std::shared_ptr<RequestObject> req,
-      std::shared_ptr<S3BucketMetadata> bkt_md,
-      std::function<void(DataUsageItem*)> subscriber,
-      std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory = nullptr,
-      std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr,
-      std::shared_ptr<MotrAPI> motr_api = nullptr);
+  DataUsageItem(std::shared_ptr<RequestObject> req,
+                std::shared_ptr<S3BucketMetadata> bkt_md,
+                std::function<void(DataUsageItem*)> subscriber,
+                std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
+                    nullptr,
+                std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
+                    nullptr,
+                std::shared_ptr<MotrAPI> motr_api = nullptr);
   std::string request_id;
   std::string bucket_name;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   DataUsageItemState state;
-  std::list<DataUsageItem *>::iterator ptr_inactive;
+  std::list<DataUsageItem*>::iterator ptr_inactive;
 
   void set_state(DataUsageItemState new_state);
-  void save(int64_t objects_count_increment,
-            int64_t bytes_count_increment,
+  void save(int64_t objects_count_increment, int64_t bytes_count_increment,
             std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
+            std::function<void(void)> on_failure);
   void save_counters_successful();
   void save_metadata_failed();
   void load_successful();

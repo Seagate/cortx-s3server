@@ -31,7 +31,7 @@ extern struct s3_motr_idx_layout bucket_data_usage_index_layout;
 
 std::unique_ptr<S3DataUsageCache> S3DataUsageCache::singleton;
 
-S3DataUsageCache* S3DataUsageCache::get_instance() {
+S3DataUsageCache *S3DataUsageCache::get_instance() {
   if (!singleton) {
     singleton.reset(new S3DataUsageCache());
   }
@@ -86,17 +86,14 @@ std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
   } else {
     s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(),
            "Entry not found in Cache for %s", key_in_cache.c_str());
-    std::function<void(DataUsageItem*)> subscriber =
-      std::bind(&S3DataUsageCache::item_state_changed, this,
-                std::placeholders::_1);
+    std::function<void(DataUsageItem *)> subscriber = std::bind(
+        &S3DataUsageCache::item_state_changed, this, std::placeholders::_1);
     std::shared_ptr<DataUsageItem> bucket_counter(
-      new DataUsageItem(req, bkt_md, subscriber));
-    std::pair<std::map<std::string,
-                       std::shared_ptr<DataUsageItem> >::iterator,
+        new DataUsageItem(req, bkt_md, subscriber));
+    std::pair<std::map<std::string, std::shared_ptr<DataUsageItem> >::iterator,
               bool> return_value =
-        items.insert(
-            std::pair<std::string, std::shared_ptr<DataUsageItem> >(
-                key_in_cache, std::move(bucket_counter)));
+        items.insert(std::pair<std::string, std::shared_ptr<DataUsageItem> >(
+            key_in_cache, std::move(bucket_counter)));
 
     s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
     return return_value.first->second;
@@ -121,14 +118,12 @@ bool S3DataUsageCache::shrink() {
 }
 
 void S3DataUsageCache::item_state_changed(DataUsageItem *item) {
-  if (item->state == DataUsageItemState::empty
-      || item->state == DataUsageItemState::failed) {
+  if (item->state == DataUsageItemState::empty ||
+      item->state == DataUsageItemState::failed) {
     std::string cache_key = get_cache_key(item->bucket_metadata);
     items.erase(cache_key);
-  }
-  else if (item->state == DataUsageItemState::inactive) {
-    item->ptr_inactive = inactive_items.insert(
-      inactive_items.end(), item);
+  } else if (item->state == DataUsageItemState::inactive) {
+    item->ptr_inactive = inactive_items.insert(inactive_items.end(), item);
   }
 }
 
@@ -142,8 +137,8 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
 
   std::shared_ptr<DataUsageItem> counter(get_item(req, src));
   if (counter) {
-    counter->save(objects_count_increment, bytes_count_increment,
-                  on_success, on_failure);
+    counter->save(objects_count_increment, bytes_count_increment, on_success,
+                  on_failure);
   } else {
     on_failure();
   }
@@ -154,7 +149,7 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
 DataUsageItem::DataUsageItem(
     std::shared_ptr<RequestObject> req,
     std::shared_ptr<S3BucketMetadata> bkt_md,
-    std::function<void(DataUsageItem*)> subscriber,
+    std::function<void(DataUsageItem *)> subscriber,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api) {
@@ -165,9 +160,11 @@ DataUsageItem::DataUsageItem(
   bucket_name = bucket_metadata->get_bucket_name();
   key = bucket_name + "/" + generate_unique_id();
   state_notify = subscriber;
-  inc_object_count = 0;
-  inc_total_size = 0;
-  is_cache_created = false;
+  state = DataUsageItemState::empty;
+  current_objects_increment = 0;
+  current_bytes_increment = 0;
+  pending_objects_increment = 0;
+  pending_bytes_increment = 0;
 
   if (motr_api) {
     s3_motr_api = std::move(motr_api);
@@ -180,9 +177,9 @@ DataUsageItem::DataUsageItem(
     motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
   if (kv_writer_factory) {
-    mote_kv_writer_factory = std::move(kv_writer_factory);
+    motr_kv_writer_factory = std::move(kv_writer_factory);
   } else {
-    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+    motr_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
@@ -196,30 +193,29 @@ void DataUsageItem::set_state(DataUsageItemState new_state) {
 void DataUsageItem::save(int64_t objects_count_increment,
                          int64_t bytes_count_increment,
                          std::function<void(void)> on_success,
-                         std::function<void(void)> on_failed) {
+                         std::function<void(void)> on_failure) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   // object_list_index_layout should be set before using this method
   // assert(non_zero(bucket_data_usage_index_layout.oid));
   s3_log(S3_LOG_INFO, request_id,
-         "%s Object count increment %ld; bytes count increment %ld",
-         __func__, objects_count_increment, bytes_count_increment);
+         "%s Object count increment %ld; bytes count increment %ld", __func__,
+         objects_count_increment, bytes_count_increment);
 
-  inc_object_count = objects_count_increment;
-  inc_total_size = bytes_count_increment;
+  current_objects_increment = objects_count_increment;
+  current_bytes_increment = bytes_count_increment;
   handler_on_success = on_success;
-  handler_on_failed = on_failed;
+  handler_on_failure = on_failure;
 
-  if (!is_cache_created) {
+  if (state == DataUsageItemState::empty) {
     if (!motr_kv_reader) {
       motr_kv_reader =
           motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
     }
 
-    motr_kv_reader->get_keyval(
-        bucket_data_usage_index_layout, key,
-        std::bind(&DataUsageItem::load_successful, this),
-        std::bind(&DataUsageItem::load_failed, this));
+    motr_kv_reader->get_keyval(bucket_data_usage_index_layout, key,
+                               std::bind(&DataUsageItem::load_successful, this),
+                               std::bind(&DataUsageItem::load_failed, this));
   } else {
     save_bucket_counters();
   }
@@ -238,11 +234,10 @@ void DataUsageItem::load_successful() {
            bucket_data_usage_index_layout.oid.u_lo, key.c_str(),
            motr_kv_reader->get_value().c_str());
 
-    this->handler_on_failed();
+    this->handler_on_failure();
   }
 
   set_state(DataUsageItemState::active);
-  is_cache_created = true;
   save_bucket_counters();
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
@@ -251,13 +246,12 @@ void DataUsageItem::load_successful() {
 void DataUsageItem::load_failed() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
-  saved_object_count = 0;
-  saved_total_size = 0;
+  objects_count = 0;
+  bytes_written = 0;
 
   // TODO: check if missing entry is possible here.
   set_state(DataUsageItemState::active);
 
-  is_cache_created = true;
   save_bucket_counters();
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
@@ -268,7 +262,7 @@ void DataUsageItem::save_bucket_counters() {
 
   if (!motr_kv_writer) {
     motr_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+        motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
 
   motr_kv_writer->put_keyval(
@@ -286,11 +280,11 @@ void DataUsageItem::save_counters_successful() {
   // getkeyval everytime. We only do it once
   // then we maintain things in memory.
   // this may be time efficient.
-  saved_object_count += inc_object_count;
-  saved_total_size += inc_total_size;
+  objects_count += current_objects_increment;
+  bytes_written += current_bytes_increment;
 
-  inc_object_count = 0;
-  inc_total_size = 0;
+  current_objects_increment = 0;
+  current_bytes_increment = 0;
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 
@@ -303,17 +297,17 @@ void DataUsageItem::save_metadata_failed() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
   set_state(DataUsageItemState::inactive);
-  this->handler_on_failed();
+  this->handler_on_failure();
 }
 
 std::string DataUsageItem::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
 
   Json::Value root;
-  root[JSON_OBJECTS_COUNT] =
-      Json::Value((Json::Value::UInt64)(saved_object_count + inc_object_count));
-  root[JSON_BYTES_COUNT] =
-      Json::Value((Json::Value::UInt64)(saved_total_size + inc_total_size));
+  root[JSON_OBJECTS_COUNT] = Json::Value(
+      (Json::Value::UInt64)(objects_count + current_objects_increment));
+  root[JSON_BYTES_COUNT] = Json::Value(
+      (Json::Value::UInt64)(bytes_written + current_bytes_increment));
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
@@ -330,12 +324,12 @@ int DataUsageItem::from_json(std::string content) {
     return -1;
   }
 
-  saved_object_count = newroot[JSON_OBJECTS_COUNT].asUInt64();
-  saved_total_size = newroot[JSON_BYTES_COUNT].asUInt64();
+  objects_count = newroot[JSON_OBJECTS_COUNT].asUInt64();
+  bytes_written = newroot[JSON_BYTES_COUNT].asUInt64();
 
   s3_log(S3_LOG_INFO, request_id,
-         "%s Load complete. saved_object_count = %lu, saved_total_size = %lu\n",
-         __func__, saved_object_count, saved_total_size);
+         "%s Load complete. objects_count = %lu, bytes_written = %lu\n",
+         __func__, objects_count, bytes_written);
 
   s3_log(S3_LOG_DEBUG, request_id, "[%s] Exit\n", __func__);
   return 0;
