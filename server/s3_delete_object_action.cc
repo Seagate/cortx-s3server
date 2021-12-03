@@ -81,13 +81,11 @@ void S3DeleteObjectAction::setup_steps() {
 
   /*
   delete handler
-    probable delete
-    create delete marker
-    probable delete specific version
+    probable delete   // if bucket is suspended
+    create delete marker //if bucket is enabled
   object_metadata_handler
-    save delete_marker
-    delete_metadata
-    delete specific version
+    save delete_marker  // if bucket is suspended
+    delete_metadata //if bucket is enabled
   send_responce_to_client
   */
   ACTION_TASK_ADD(S3DeleteObjectAction::delete_handler, this);
@@ -182,8 +180,7 @@ void S3DeleteObjectAction::create_delete_marker() {
   delete_marker_metadata->regenerate_version_id();
   delete_marker_metadata->reset_date_time_to_current();
 
-  // update null version
-  // delete_marker_metadata->set_null_ref(object_metadata->get_null_ref());
+  // TODO: update null version
 
   s3_log(S3_LOG_DEBUG, request_id, "Add delete marker4\n");
   for (auto it : request->get_in_headers_copy()) {
@@ -196,8 +193,6 @@ void S3DeleteObjectAction::create_delete_marker() {
   }
   delete_marker_metadata->set_delete_marker();
 
-  s3_log(S3_LOG_DEBUG, request_id, "%s \n",
-         delete_marker_metadata->to_json().c_str());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -481,6 +476,10 @@ void S3DeleteObjectAction::startcleanup() {
       ACTION_TASK_ADD(S3DeleteObjectAction::remove_probable_record, this);
       // Start running the cleanup task list
       start();
+    } else if (s3_del_obj_action_state ==
+               S3DeleteObjectActionState::addDeleteMarkerFailed) {
+      // TODO: Perform cleanup
+      done();
     } else if (s3_del_obj_action_state ==
                S3DeleteObjectActionState::deleteMarkerAdded) {
       // Nothing to clean up
