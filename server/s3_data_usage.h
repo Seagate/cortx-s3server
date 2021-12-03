@@ -123,11 +123,12 @@ class DataUsageItem {
   void save(int64_t objects_count_increment, int64_t bytes_count_increment,
             std::function<void(void)> on_success,
             std::function<void(void)> on_failure);
-  void save_counters_successful();
-  void save_metadata_failed();
-  void load_successful();
-  void load_failed();
-  void save_bucket_counters();
+  void do_kvs_read();
+  void kvs_read_success();
+  void kvs_read_failure();
+  void do_kvs_write();
+  void kvs_write_success();
+  void kvs_write_failure();
   std::string to_json();
   int from_json(std::string content);
 };

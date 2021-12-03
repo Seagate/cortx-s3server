@@ -208,22 +208,15 @@ void DataUsageItem::save(int64_t objects_count_increment,
   handler_on_failure = on_failure;
 
   if (state == DataUsageItemState::empty) {
-    if (!motr_kv_reader) {
-      motr_kv_reader =
-          motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
-    }
-
-    motr_kv_reader->get_keyval(bucket_data_usage_index_layout, key,
-                               std::bind(&DataUsageItem::load_successful, this),
-                               std::bind(&DataUsageItem::load_failed, this));
+    do_kvs_read();
   } else {
-    save_bucket_counters();
+    do_kvs_write();
   }
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
-void DataUsageItem::load_successful() {
+void DataUsageItem::kvs_read_success() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   if (this->from_json(motr_kv_reader->get_value()) != 0) {
@@ -238,12 +231,12 @@ void DataUsageItem::load_successful() {
   }
 
   set_state(DataUsageItemState::active);
-  save_bucket_counters();
+  do_kvs_write();
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
-void DataUsageItem::load_failed() {
+void DataUsageItem::kvs_read_failure() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   objects_count = 0;
@@ -252,12 +245,27 @@ void DataUsageItem::load_failed() {
   // TODO: check if missing entry is possible here.
   set_state(DataUsageItemState::active);
 
-  save_bucket_counters();
+  do_kvs_write();
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
-void DataUsageItem::save_bucket_counters() {
+void DataUsageItem::do_kvs_read() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+
+  if (!motr_kv_reader) {
+      motr_kv_reader =
+          motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+    }
+
+    motr_kv_reader->get_keyval(bucket_data_usage_index_layout, key,
+                               std::bind(&DataUsageItem::kvs_read_success, this),
+                               std::bind(&DataUsageItem::kvs_read_failure, this));
+
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
+}
+
+void DataUsageItem::do_kvs_write() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   if (!motr_kv_writer) {
@@ -267,13 +275,13 @@ void DataUsageItem::save_bucket_counters() {
 
   motr_kv_writer->put_keyval(
       bucket_data_usage_index_layout, key, this->to_json(),
-      std::bind(&DataUsageItem::save_counters_successful, this),
-      std::bind(&DataUsageItem::save_metadata_failed, this));
+      std::bind(&DataUsageItem::kvs_write_success, this),
+      std::bind(&DataUsageItem::kvs_write_failure, this));
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
-void DataUsageItem::save_counters_successful() {
+void DataUsageItem::kvs_write_success() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   // This is so that we dont have to call
@@ -293,7 +301,7 @@ void DataUsageItem::save_counters_successful() {
   this->handler_on_success();
 }
 
-void DataUsageItem::save_metadata_failed() {
+void DataUsageItem::kvs_write_failure() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
   set_state(DataUsageItemState::inactive);
