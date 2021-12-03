@@ -252,8 +252,8 @@ class ConfigCmd(SetupCmd):
           consul_url= f'{consul_protocol}'+ f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
       except S3PROVError:
           # endpoint entry is not found in confstore hence fetch endpoint url from default value.
-          consul_url=self.get_confvalue_with_defaults("DEFAULT_CONFIG>CONFIG>CONFSTORE_CONSUL_ENDPOINTS")
-          self.logger.info(f'consul entry (http://<consul-fqdn>:<port>) is missing for protocol type: http from confstore, hence using default value as {consul_url}')
+          consul_url=self.get_confvalue_with_defaults("DEFAULT_CONFIG>CONFSTORE_CONSUL_ENDPOINTS")
+          self.logger.info(f'consul endpoint url entry (http://<consul-fqdn>:<port>) is missing for protocol type: http from confstore, hence using default value as {consul_url}')
 
       self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
       consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
