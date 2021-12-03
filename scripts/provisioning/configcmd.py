@@ -84,20 +84,12 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
-    # TBD validate services names 
     self.logger.info("validations completed")
 
-    self.logger.info("common config started")
-    self.process_common()
-    self.logger.info("common config completed")
-
     try:
-      # if there are no services mentioned then configured all services.
-      if self.services == None or self.services == "":
-        # TBD move services names to s3_prov_config.yaml
-        self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
-        self.logger.info(f"service = {self.services}")
-      self.services = self.services.split(",")
+      self.logger.info("common config started")
+      self.process_common()
+      self.logger.info("common config completed")
       # Do not change sequence of the services as it is mentioned as per dependencies.
       if "haproxy" in self.services:
         self.logger.info("haproxy config started")
@@ -156,15 +148,6 @@ class ConfigCmd(SetupCmd):
 
     # update s3 config file
     self.update_s3_server_configs()
-
-    if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
-      # Copy log rotation config files from install directory to cron directory.
-      self.logger.info("copy log rotate config started")
-      self.copy_logrotate_files()
-      self.logger.info("copy log rotate config completed")
-      # create symbolic link for this config file to be used by log rotation
-      self.create_symbolic_link(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
-                                self.get_confkey("S3_CONF_SYMLINK"))
 
     # validating s3 config file after copying and updating to /etc/cortx
     self.logger.info("validate s3 config file started")
@@ -281,6 +264,10 @@ class ConfigCmd(SetupCmd):
                       self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'))
     self.logger.info("copy bgdelete config file completed")
 
+    # update s3 bgdelete scheduler config as its a floating pod.
+    # it should has access to updated scheduler config on every node
+    # Note: update_s3_bgdelete_scheduler_configs() can be removed once we move to consul
+    self.update_s3_bgdelete_scheduler_configs()
     # update s3 bgdelete worker config
     self.update_s3_bgdelete_worker_configs()
 

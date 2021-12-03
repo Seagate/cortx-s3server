@@ -61,6 +61,7 @@ class SetupCmd(object):
 
   def __init__(self,config: str, services: str):
     """Constructor."""
+    self.services = services
     self.endpoint = None
     self._url = None
     self._provisioner_confstore = None
@@ -70,7 +71,14 @@ class SetupCmd(object):
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
 
-    self.services = services
+    # validate supported services
+    lookup_service = ["haproxy", "s3server", "authserver", "s3bgschedular", "s3bgworker"]
+    if self.services is None:
+      self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+    self.services = self.services.split(",")
+    for service in self.services:
+      if service not in lookup_service:
+        raise Exception(f'ERROR: {service} service is not supported.')
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
@@ -231,14 +239,13 @@ class SetupCmd(object):
     self.logger.info(f'Validations running from {self._preqs_conf_file}')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
-    if ("K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
-        if services:
+    if services:
           for service in services:
-            pid = os.popen('pidof '+service).read()
-            if pid is None:
-              raise Exception('Validation failed for service %s' % (service))
-        if rpms:
-          PkgV().validate('rpms', rpms)
+        pid = os.popen('pidof '+service).read()
+        if pid is None:
+          raise Exception('Validation failed for service %s' % (service))
+    if rpms:
+      PkgV().validate('rpms', rpms)
     if files:
       PathV().validate('exists', files)
 
@@ -268,15 +275,6 @@ class SetupCmd(object):
     value = self.get_confvalue(key)
     if not value:
       raise Exception(f'Empty value for key : {key}')
-    else:
-      if ("K8" !=  str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
-        address_token = ["hostname", "public_fqdn", "private_fqdn"]
-      else :
-        address_token = []
-      for token in address_token:
-        if key.find(token) != -1:
-          NetworkV().validate('connectivity',[value])
-          break
 
   def extract_yardstick_list(self, phase_name: str):
     """Extract keylist to be used as yardstick for validating keys of each phase."""
