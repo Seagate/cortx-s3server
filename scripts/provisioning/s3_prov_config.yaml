@@ -58,7 +58,7 @@ CONFIG:
 
   CONFSTORE_S3_INTERNAL_ENDPOINTS: "cortx>s3>internal>endpoints" #M (Usedby : s3_deployment, bgproducer)
 
-  CONFSTORE_CONSUL_ENDPOINTs: "cortx>external>consul>endpoints" #M (Usedby : s3_deployment)
+  CONFSTORE_CONSUL_ENDPOINTS: "cortx>external>consul>endpoints" #M (Usedby : s3_deployment)
   
   CONFSTORE_CLUSTER_ID_KEY: "node>machine-id>cluster_id" #M (Usedby: all)
   CONFSTORE_HOSTNAME_KEY: "node>machine-id>hostname" #M (Usedby: s3_deployment)
