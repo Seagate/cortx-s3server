@@ -47,10 +47,11 @@ void S3DataUsageCache::set_max_cache_size(size_t max_size) {
   s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
 }
 
-std::string get_cache_key(std::shared_ptr<S3BucketMetadata> bkt_md) {
+std::string S3DataUsageCache::generate_cache_key(
+    std::shared_ptr<S3BucketMetadata> bkt_md) {
   s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
-  return bkt_md->get_bucket_name();
+  return bkt_md->get_bucket_owner_account_id();
 }
 
 std::string generate_unique_id() {
@@ -64,7 +65,7 @@ std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
     std::shared_ptr<S3BucketMetadata> bkt_md) {
   s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Entry", __func__);
 
-  std::string key_in_cache = get_cache_key(bkt_md);
+  std::string key_in_cache = generate_cache_key(bkt_md);
   const bool f_new = (items.end() == items.find(key_in_cache));
 
   if (items.size() + f_new > max_cache_size) {
@@ -91,7 +92,7 @@ std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
                               std::placeholders::_1, std::placeholders::_2,
                               std::placeholders::_3);
   std::shared_ptr<DataUsageItem> item(
-      new DataUsageItem(req, bkt_md, subscriber));
+      new DataUsageItem(req, key_in_cache, subscriber));
   items.emplace(key_in_cache, std::move(item));
 
   s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
@@ -109,7 +110,7 @@ bool S3DataUsageCache::shrink() {
 
   // The front item of the list is the LRU one.
   DataUsageItem *item = inactive_items.front();
-  std::string cache_key = get_cache_key(item->bucket_metadata);
+  const std::string cache_key = item->cache_key;
 
   s3_log(S3_LOG_INFO, "",
          "%s Data usage for \"%s\" will be removed from the cache as inactive",
@@ -130,7 +131,7 @@ void S3DataUsageCache::item_state_changed(DataUsageItem *item,
   if (new_state == DataUsageItemState::inactive) {
     item->ptr_inactive = inactive_items.insert(inactive_items.end(), item);
   } else if (new_state == DataUsageItemState::failed) {
-    std::string cache_key = get_cache_key(item->bucket_metadata);
+    const std::string cache_key = item->cache_key;
     s3_log(S3_LOG_INFO, "",
            "%s Data usage for \"%s\" will be removed from the cache as failed",
            __func__, cache_key.c_str());
@@ -159,17 +160,16 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
 }
 
 DataUsageItem::DataUsageItem(
-    std::shared_ptr<RequestObject> req,
-    std::shared_ptr<S3BucketMetadata> bkt_md, DataUsageStateNotifyCb subscriber,
+    std::shared_ptr<RequestObject> req, std::string key_in_cache,
+    DataUsageStateNotifyCb subscriber,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   request = std::move(req);
-  bucket_metadata = std::move(bkt_md);
-  request_id = bucket_metadata->get_request_id();
-  bucket_name = bucket_metadata->get_bucket_name();
-  motr_key = bucket_name + "/" + generate_unique_id();
+  request_id = req->get_request_id();
+  cache_key = key_in_cache;
+  motr_key = cache_key + "/" + generate_unique_id();
   state_notify = subscriber;
   state = DataUsageItemState::empty;
   current_objects_increment = 0;
