@@ -24,6 +24,7 @@ from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import os.path
 import shutil
 import sys
+import socket
 import logging
 
 def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
