@@ -161,7 +161,7 @@ DataUsageItem::DataUsageItem(
   bucket_metadata = std::move(bkt_md);
   request_id = bucket_metadata->get_request_id();
   bucket_name = bucket_metadata->get_bucket_name();
-  key = bucket_name + "/" + generate_unique_id();
+  motr_key = bucket_name + "/" + generate_unique_id();
   state_notify = subscriber;
   state = DataUsageItemState::empty;
   current_objects_increment = 0;
@@ -254,7 +254,7 @@ void DataUsageItem::kvs_read_success() {
            "Json Parsing failed. Index oid = "
            "%" SCNx64 ":%" SCNx64 ", Key = %s, Value = %s\n",
            bucket_data_usage_index_layout.oid.u_hi,
-           bucket_data_usage_index_layout.oid.u_lo, key.c_str(),
+           bucket_data_usage_index_layout.oid.u_lo, motr_key.c_str(),
            motr_kv_reader->get_value().c_str());
     fail_all();
     set_state(DataUsageItemState::failed);
@@ -280,7 +280,7 @@ void DataUsageItem::do_kvs_read() {
         motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   }
 
-  motr_kv_reader->get_keyval(bucket_data_usage_index_layout, key,
+  motr_kv_reader->get_keyval(bucket_data_usage_index_layout, motr_key,
                              std::bind(&DataUsageItem::kvs_read_success, this),
                              std::bind(&DataUsageItem::kvs_read_failure, this));
 
@@ -318,7 +318,7 @@ void DataUsageItem::do_kvs_write() {
   }
 
   motr_kv_writer->put_keyval(
-      bucket_data_usage_index_layout, key, this->to_json(),
+      bucket_data_usage_index_layout, motr_key, this->to_json(),
       std::bind(&DataUsageItem::kvs_write_success, this),
       std::bind(&DataUsageItem::kvs_write_failure, this));
 

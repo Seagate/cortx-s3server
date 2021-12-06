@@ -74,7 +74,7 @@ class S3DataUsageCache {
 
 class DataUsageItem {
  private:
-  std::string key;
+  std::string motr_key;
   std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> motr_kv_writer_factory;
   std::shared_ptr<MotrAPI> s3_motr_api;
