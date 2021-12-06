@@ -92,15 +92,10 @@ std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
                               std::placeholders::_3);
   std::shared_ptr<DataUsageItem> item(
       new DataUsageItem(req, bkt_md, subscriber));
-  // Do not check the retcode (bool): no chance for a collision,
-  // because the inserted key is new.
-  std::pair<std::map<std::string, std::shared_ptr<DataUsageItem> >::iterator,
-            bool> return_value =
-      items.insert(std::pair<std::string, std::shared_ptr<DataUsageItem> >(
-          key_in_cache, std::move(item)));
+  items.emplace(key_in_cache, std::move(item));
 
   s3_log(S3_LOG_INFO, bkt_md->get_stripped_request_id(), "%s Exit", __func__);
-  return return_value.first->second;
+  return items[key_in_cache];
 }
 
 bool S3DataUsageCache::shrink() {
