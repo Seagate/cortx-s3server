@@ -122,7 +122,8 @@ class DataUsageItem {
  public:
   using DataUsageStateNotifyCb = std::function<
       void(DataUsageItem *, DataUsageItemState, DataUsageItemState)>;
-  DataUsageItem(std::shared_ptr<RequestObject> req, std::string key_in_cache,
+  DataUsageItem(std::shared_ptr<RequestObject> req,
+                const std::string &key_in_cache,
                 DataUsageStateNotifyCb subscriber);
   void save(int64_t objects_count_increment, int64_t bytes_count_increment,
             std::function<void()> on_success, std::function<void()> on_failure);

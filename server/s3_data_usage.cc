@@ -160,12 +160,12 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
 }
 
 DataUsageItem::DataUsageItem(std::shared_ptr<RequestObject> req,
-                             std::string key_in_cache,
+                             const std::string &key_in_cache,
                              DataUsageStateNotifyCb subscriber) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   request = std::move(req);
   request_id = req->get_request_id();
-  cache_key = key_in_cache;
+  cache_key = std::move(key_in_cache);
   motr_key = cache_key + "/" + generate_unique_id();
   state_notify = subscriber;
   state = DataUsageItemState::empty;
@@ -371,7 +371,7 @@ int DataUsageItem::from_json(std::string content) {
   bytes_written = newroot[JSON_BYTES_COUNT].asUInt64();
 
   s3_log(S3_LOG_INFO, request_id,
-         "%s Load complete. objects_count = %lu, bytes_written = %lu\n",
+         "%s Load complete. objects_count = %ld, bytes_written = %ld\n",
          __func__, objects_count, bytes_written);
 
   s3_log(S3_LOG_DEBUG, request_id, "[%s] Exit\n", __func__);
