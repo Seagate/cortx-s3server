@@ -31,9 +31,12 @@ extern struct s3_motr_idx_layout bucket_data_usage_index_layout;
 std::unique_ptr<S3DataUsageCache> S3DataUsageCache::singleton;
 
 S3DataUsageCache *S3DataUsageCache::get_instance() {
+  s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
   if (!singleton) {
+    s3_log(S3_LOG_INFO, "", "%s Create a new DataUsageCache", __func__);
     singleton.reset(new S3DataUsageCache());
   }
+  s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
   return singleton.get();
 }
 
@@ -101,7 +104,11 @@ std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
 }
 
 bool S3DataUsageCache::shrink() {
+  s3_log(S3_LOG_INFO, "", "%s Entry", __func__);
   if (inactive_items.size() == 0) {
+    s3_log(S3_LOG_INFO, "", "%s Cannot shrink cache: all items are active",
+           __func__);
+    s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
     return false;
   }
 
@@ -109,17 +116,19 @@ bool S3DataUsageCache::shrink() {
   DataUsageItem *item = inactive_items.front();
   std::string cache_key = get_cache_key(item->bucket_metadata);
 
-  s3_log(S3_LOG_DEBUG, item->bucket_metadata->get_stripped_request_id(),
-         "Data usage for \"%s\" will be removed from the cache",
-         cache_key.c_str());
+  s3_log(S3_LOG_INFO, "",
+         "%s Data usage for \"%s\" will be removed from the cache as inactive",
+         __func__, cache_key.c_str());
   inactive_items.pop_front();
   items.erase(cache_key);
+  s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
   return true;
 }
 
 void S3DataUsageCache::item_state_changed(DataUsageItem *item,
                                           DataUsageItemState prev_state,
                                           DataUsageItemState new_state) {
+  s3_log(S3_LOG_INFO, "", "%s Entry", __func__);
   if (prev_state == DataUsageItemState::inactive) {
     inactive_items.erase(item->ptr_inactive);
   }
@@ -127,8 +136,12 @@ void S3DataUsageCache::item_state_changed(DataUsageItem *item,
     item->ptr_inactive = inactive_items.insert(inactive_items.end(), item);
   } else if (new_state == DataUsageItemState::failed) {
     std::string cache_key = get_cache_key(item->bucket_metadata);
+    s3_log(S3_LOG_INFO, "",
+           "%s Data usage for \"%s\" will be removed from the cache as failed",
+           __func__, cache_key.c_str());
     items.erase(cache_key);
   }
+  s3_log(S3_LOG_INFO, "", "%s Exit\n", __func__);
 }
 
 void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
@@ -189,11 +202,13 @@ DataUsageItem::DataUsageItem(
 }
 
 void DataUsageItem::set_state(DataUsageItemState new_state) {
+  s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
   if (new_state != state) {
     DataUsageItemState old_state = state;
     state = new_state;
     state_notify(this, old_state, new_state);
   }
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
 void DataUsageItem::save(int64_t objects_count_increment,
@@ -220,30 +235,37 @@ void DataUsageItem::save(int64_t objects_count_increment,
     do_kvs_read();
   } else if (state == DataUsageItemState::inactive) {
     do_kvs_write();
+  } else {
+    s3_log(S3_LOG_INFO, request_id, "%s The increment is queued for writing",
+           __func__);
   }
-  // If the item is active, the write will be done
-  // after the current one is complete.
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
 void DataUsageItem::run_successful_callbacks() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   for (auto cb : current_callbacks) {
     cb->success();
   }
   current_callbacks.clear();
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
 void DataUsageItem::run_failure_callbacks() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   for (auto cb : current_callbacks) {
     cb->failure();
   }
   current_callbacks.clear();
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
 void DataUsageItem::fail_all() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   current_callbacks.splice(current_callbacks.end(), pending_callbacks);
   run_failure_callbacks();
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
 void DataUsageItem::kvs_read_success() {
