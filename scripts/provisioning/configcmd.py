@@ -117,9 +117,9 @@ class ConfigCmd(SetupCmd):
   def process_common(self):
     """ Prcoess mini provsioner steps common to all the services."""
     self.logger.info("copy cluster config files started")
-    self.copy_config_files(self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
+    self.copy_config_files([self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
                     self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE'))
+                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')])
     self.logger.info("copy cluster config files completed")
 
     self.logger.info("cluster config update started")
@@ -141,9 +141,9 @@ class ConfigCmd(SetupCmd):
     """ Process mini provisioner for s3server."""
     # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
     self.logger.info("copy s3 config files started")
-    self.copy_config_files(self.get_confkey('S3_CONFIG_FILE'),
+    self.copy_config_files([self.get_confkey('S3_CONFIG_FILE'),
                     self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'))
+                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE')])
     self.logger.info("copy s3 config files completed")
 
     # update s3 config file
@@ -173,12 +173,12 @@ class ConfigCmd(SetupCmd):
     """ Process mini provisioner for authserver."""
     # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
     self.logger.info("copy authserver config files started")
-    self.copy_config_files(self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
+    self.copy_config_files([self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
                     self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
                     self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE'),
                     self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
                     self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'))
+                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE')])
     self.logger.info("copy authserver config files completed")
 
     # copy s3 authserver resources to base dir of config files (/etc/cortx)
@@ -224,9 +224,9 @@ class ConfigCmd(SetupCmd):
     if os.path.exists(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)):
       self.logger.info("Skipping copy of bgdelete config file as it is already present in /etc/cortx")
     else:
-      self.copy_config_files(self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
+      self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
                       self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
-                      self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'))
+                      self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE')])
     self.logger.info("copy bgdelete config file completed")
 
     # update s3 bgdelete scheduler config
@@ -259,9 +259,9 @@ class ConfigCmd(SetupCmd):
     if os.path.exists(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)):
       self.logger.info("Skipping copy of bgdelete config file as it is already present in /etc/cortx")
     else:
-      self.copy_config_files(self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
+      self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
                       self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
-                      self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'))
+                      self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE')])
     self.logger.info("copy bgdelete config file completed")
 
     # update s3 bgdelete scheduler config as its a floating pod.
@@ -489,7 +489,7 @@ class ConfigCmd(SetupCmd):
   def get_msgbus_partition_count(self):
     """get total consumers (* 2) which will act as partition count."""
     consumer_count = 0
-    search_values = self.search_confvalue("node", "services", "s3bgworker")
+    search_values = self.search_confvalue("node", "services", "bg_consumer")
     consumer_count = len(search_values)
     self.logger.info(f"consumer_count : {consumer_count}")
 
