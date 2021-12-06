@@ -244,13 +244,17 @@ class ConfigCmd(SetupCmd):
       ldap_lock = False
       self.logger.info('checking for concurrent execution scenario for s3 ldap scheam push using consul kv lock.')
       openldap_key=self.get_confkey("S3_CONSUL_OPENLDAP_KEY")
-      # TODO : update protocol and port
-      consul_endpoint_url=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "fqdn", "tcp")
-      consul_endpoint_port=8500
-      consul_protocol='consul://'
-      # consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTs", "port", "tcp")
-      # consul url will be : consul://consul-server.default.svc.cluster.local:8500
-      consul_url= f'{consul_protocol}'+ f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
+      try:
+          consul_endpoint_url=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTS", "fqdn", "http")
+          consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTS", "port", "http")
+          consul_protocol='consul://'
+          # consul url will be : consul://consul-server.default.svc.cluster.local:8500
+          consul_url= f'{consul_protocol}'+ f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
+      except S3PROVError:
+          # endpoint entry is not found in confstore hence fetch endpoint url from default value.
+          consul_url=self.get_confvalue_with_defaults("DEFAULT_CONFIG>CONFSTORE_CONSUL_ENDPOINTS")
+          self.logger.info(f'consul endpoint url entry (http://<consul-fqdn>:<port>) is missing for protocol type: http from confstore, hence using default value as {consul_url}')
+
       self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
       consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
       while(True):
