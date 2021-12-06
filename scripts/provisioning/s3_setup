@@ -26,11 +26,10 @@ import logging
 import os
 import socket
 from logging import handlers
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 #Logger details
 s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-s3deployment_log_file = "/var/log/seagate/s3/s3deployment/s3deployment.log"
-s3deployment_log_directory = "/var/log/seagate/s3/s3deployment/"
 s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 def main():
@@ -40,18 +39,20 @@ def main():
 
   postinstallCmd = subparsers.add_parser('post_install', help='setup post_install')
   postinstallCmd.add_argument("--config", help='config URL', type=str)
+  postinstallCmd.add_argument("--services", help='services', type=str, required=False)
+
+  prepareCmd = subparsers.add_parser('prepare', help='setup prepare')
+  prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
+  prepareCmd.add_argument("--services", help='Services', type=str, required=False)
 
   configCmd = subparsers.add_parser('config', help='setup config')
   configCmd.add_argument("--config", help='config URL', type=str, required=True)
-  configCmd.add_argument("--only_ldap", help='Configure only openldap', action='store_true')
-  configCmd.add_argument("--only_haproxy", help='Configure only haproxy', action='store_true')
+  configCmd.add_argument("--services", help='services', type=str, required=False)
+  configCmd.add_argument("--skip_haproxy", help='skip haproxy config', action='store_true')
 
   initCmd = subparsers.add_parser('init', help='setup init')
   initCmd.add_argument("--config", help='config URL', type=str, required=True)
-
-  cleanupCmd = subparsers.add_parser('cleanup', help='setup cleanup')
-  cleanupCmd.add_argument("--config", help='config URL', type=str, required=True)
-  cleanupCmd.add_argument("--pre_factory", help='Revert to factory state', action='store_true')
+  initCmd.add_argument("--services", help='services', type=str, required=False)
 
   testCmd = subparsers.add_parser('test', help='setup test')
   testCmd.add_argument("--config", help='config URL', type=str, required=True)
@@ -59,46 +60,51 @@ def main():
 
   resetCmd = subparsers.add_parser('reset', help='setup reset')
   resetCmd.add_argument("--config", help='config URL', type=str, required=True)
+  resetCmd.add_argument("--services", help='services', type=str, required=False)
 
-  prepareCmd = subparsers.add_parser('prepare', help='setup prepare')
-  prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
+  cleanupCmd = subparsers.add_parser('cleanup', help='setup cleanup')
+  cleanupCmd.add_argument("--config", help='config URL', type=str, required=True)
+  cleanupCmd.add_argument("--pre_factory", help='Revert to factory state', action='store_true')
+  cleanupCmd.add_argument("--services", help='services', type=str, required=False)
 
   preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
+  preupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+  preupgradeCmd.add_argument("--services", help='services', type=str, required=False)
 
   postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
+  postupgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+  postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
+
+  upgradeCmd = subparsers.add_parser('upgrade', help='setup upgrade')
+  upgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+  upgradeCmd.add_argument("--services", help='services', type=str, required=False)
+  upgradeCmd.add_argument("--commit", help='commit', type=str, required=False)
 
   args = parser.parse_args()
 
-  create_logger_directory()
-  logger = create_logger()
+  logger_dir_path = create_logger_directory(args.config)
+  logger = create_logger(logger_dir_path)
 
   try:
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
       logger.info('post_install started.')
-      PostInstallCmd(args.config).process()
+      PostInstallCmd(args.config, args.services).process()
       logger.info('post_install successful.')
-    elif args.command == 'cleanup':
-      from cleanupcmd import CleanupCmd
-      logger.info('cleanup started.')
-      CleanupCmd(None).process(args.pre_factory)
-      logger.info('cleanup successful.')
+    elif args.command == 'prepare':
+      from preparecmd import PrepareCmd
+      logger.info('prepare started.')
+      PrepareCmd(args.config, args.services).process()
+      logger.info('prepare successful.')
     elif args.command == 'config':
       from configcmd import ConfigCmd
       logger.info('config started.')
-      configure_only_haproxy = False
-      configure_only_openldap = False
-      if args.only_ldap == True:
-        configure_only_openldap = True
-      elif args.only_haproxy == True:
-        configure_only_haproxy = True
-      ConfigCmd(args.config).process(configure_only_openldap,
-                                configure_only_haproxy)
+      ConfigCmd(args.config, args.services).process(args.skip_haproxy)
       logger.info('config successful.')
     elif args.command == 'init':
       from initcmd import InitCmd
       logger.info('init started.')
-      InitCmd(args.config).process()
+      InitCmd(args.config, args.services).process()
       logger.info('init successful.') 
     elif args.command == 'test':
       from testcmd import TestCmd
@@ -111,23 +117,29 @@ def main():
     elif args.command == 'reset':
       from resetcmd import ResetCmd
       logger.info('reset started.')
-      ResetCmd(None).process()
+      ResetCmd(args.config, args.services).process()
       logger.info('reset successful.')
-    elif args.command == 'prepare':
-      from preparecmd import PrepareCmd
-      logger.info('prepare started.')
-      PrepareCmd(args.config).process()
-      logger.info('prepare successful.')
+    elif args.command == 'cleanup':
+      from cleanupcmd import CleanupCmd
+      logger.info('cleanup started.')
+      CleanupCmd(args.config, args.services).process(args.pre_factory)
+      logger.info('cleanup successful.')
     elif args.command == 'preupgrade':
       from preupgradecmd import PreUpgradeCmd
       logger.info('pre-upgrade started.')
-      PreUpgradeCmd(None).process()
+      PreUpgradeCmd(args.config, args.services).process()
       logger.info('pre-upgrade successful.')
     elif args.command == 'postupgrade':
       from postupgradecmd import PostUpgradeCmd
       logger.info('post-upgrade started.')
-      PostUpgradeCmd(None).process()
+      PostUpgradeCmd(args.config, args.services).process()
       logger.info('post-upgrade successful.')
+    elif args.command == 'upgrade':
+      from upgradecmd import UpgradeCmd
+      logger.info('upgrade started.')
+      # Uncomment following call once Upgrade is supported.
+      # UpgradeCmd(args.config, args.services, args.commit).process()
+      logger.info('upgrade successful.')
 
   except Exception as e:
     logger.error(f"{str(e)}")
@@ -136,11 +148,13 @@ def main():
 
   return 0
 
-def create_logger():
+def create_logger(log_dir_path):
     """Create logger, file handler, console handler and formatter."""
     # create logger with "S3 deployment logger"
     logger = logging.getLogger(s3deployment_logger_name)
     logger.setLevel(logging.DEBUG)
+
+    s3deployment_log_file = os.path.join(log_dir_path, "s3deployment.log")
     #with maxBytes to 5242880, will allow base file s3deployment.log to rotate after every 5MB.
     #with a backupCount of 5, will get s3deployment.log, s3deployment.log.1, s3deployment.log.2, up to s3deployment.log.5.
     #The file being written to is always s3deployment.log.
@@ -166,18 +180,22 @@ def create_logger():
 
     return logger
 
-def create_logger_directory():
-    """Create log directory if not exsists."""
-    _logger_directory = os.path.join(s3deployment_log_directory)
-    if not os.path.isdir(_logger_directory):
-        try:
-            os.mkdir(_logger_directory)
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                pass
-            else:
-                raise Exception("Deployment Logger Could not be created")
+def create_logger_directory(config_file):
+    """Create log directory if not exists."""
+    # Get the machine id from confstore
+    s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
+    s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
 
+    s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
+    s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment")
+
+    try:
+        os.makedirs(s3deployment_log_directory, exist_ok=True)
+    except BaseException:
+        raise Exception(f"{s3deployment_log_directory} Could not be created")
+
+    #returning log_dir_path to be used by s3_deployment_log_file in create_logger function
+    return s3deployment_log_directory
 
 if __name__ == '__main__':
   sys.exit(main())

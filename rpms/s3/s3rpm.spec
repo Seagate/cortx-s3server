@@ -107,28 +107,6 @@ BuildRequires: python-keyring python-futures
 Requires: cortx-motr
 Requires: cortx-py-utils
 %endif
-Requires: libxml2
-Requires: libyaml
-#Supported openssl versions -- CentOS 7 its 1.0.2k, RHEL8 its 1.1.1
-Requires: openssl
-Requires: yaml-cpp
-Requires: gflags
-Requires: glog
-Requires: pkgconfig
-Requires: log4cxx_cortx log4cxx_cortx-devel
-# Required by S3 background delete based on python
-Requires: python36
-Requires: python36-ldap
-Requires: python%{py_short_ver}-yaml
-Requires: python%{py_short_ver}-pika
-%if 0%{?el7}
-Requires: python-keyring python-futures
-%endif
-
-# Java used by Auth server
-Requires: java-1.8.0-openjdk-headless
-Requires: PyYAML
-Requires: hiredis
 
 %description
 S3 server provides S3 REST API interface support for Motr object storage.
@@ -139,7 +117,20 @@ S3 server provides S3 REST API interface support for Motr object storage.
 ################################
 # pre install/upgrade section
 ################################
+
+
 %pre
+
+# check all required pre-requsites rpms are present or not
+echo "Checking Pre-requisites rpms are present or not"
+for third_party_rpm in %{_third_party_rpms}
+do
+  if ! rpm -qa | grep $third_party_rpm; then
+   echo "RPM [$third_party_rpm] is not present."
+   exit 1
+  fi
+done
+
 if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section started"
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section completed"
@@ -272,12 +263,10 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %dir /opt/seagate/cortx/s3/nodejs
 %dir /opt/seagate/cortx/s3/resources
 %dir /opt/seagate/cortx/s3/install/haproxy
+%dir /opt/seagate/cortx/s3/install/logrotate
 %dir /var/log/seagate/
 %dir /var/log/seagate/auth
 %dir /var/log/seagate/s3
-/etc/cron.hourly/s3logfilerollover.sh
-/etc/cron.hourly/s3m0tracelogfilerollover.sh
-/etc/cron.hourly/s3addblogfilerollover.sh
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
 /lib/systemd/system/s3backgroundproducer.service
@@ -327,6 +316,11 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_pthreads.pc
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_core.pc
 /opt/seagate/cortx/s3/libevent/pkgconfig/libevent_extra.pc
+/opt/seagate/cortx/s3/install/logrotate/s3auditlog
+/opt/seagate/cortx/s3/install/logrotate/s3logfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3m0tracelogfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollover.sh
+/opt/seagate/cortx/s3/install/logrotate/s3supportbundlefilerollover.sh
 /opt/seagate/cortx/s3/install/haproxy/503.http
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver7.cfg
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver8.cfg
@@ -364,16 +358,19 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/install/ldap/s3slapdindex.ldif
 /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf
 /opt/seagate/cortx/s3/install/ldap/cfg_ldap.ldif
-/opt/seagate/cortx/s3/install/ldap/cn={1}s3user.ldif
+/opt/seagate/cortx/s3/install/ldap/cn=s3user.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-admin-access.ldif
+/opt/seagate/cortx/s3/install/ldap/s3-iam-admin-access.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-admin.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-constraints.ldif
 /opt/seagate/cortx/s3/install/ldap/ldap-init.ldif
+/opt/seagate/cortx/s3/install/ldap/s3-ldap-init.ldif
 /opt/seagate/cortx/s3/install/ldap/olcDatabase={2}mdb.ldif
 /opt/seagate/cortx/s3/install/ldap/ppolicy-default.ldif
 /opt/seagate/cortx/s3/install/ldap/ppolicymodule.ldif
 /opt/seagate/cortx/s3/install/ldap/ppolicyoverlay.ldif
 /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh
+/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh
 /opt/seagate/cortx/s3/resources/s3_error_messages.json
 /opt/seagate/cortx/s3/resources/s3_audit_log_schema.json
 /opt/seagate/cortx/s3/s3startsystem.sh
@@ -416,10 +413,14 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/bin/preparecmd.py
 /opt/seagate/cortx/s3/bin/preupgradecmd.py
 /opt/seagate/cortx/s3/bin/postupgradecmd.py
+/opt/seagate/cortx/s3/bin/upgradecmd.py
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
 /opt/seagate/cortx/s3/bin/merge.py
+/opt/seagate/cortx/s3/bin/merge_pre_post.py
 /opt/seagate/cortx/s3/bin/s3_haproxy_config.py
+/opt/seagate/cortx/s3/bin/third-party-rpms.txt
+/opt/seagate/cortx/s3/bin/starthaproxy.sh
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_start
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
@@ -429,8 +430,6 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.main
-/etc/logrotate.d/s3auditlog
-/etc/logrotate.d/openldap
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
 %{_bindir}/s3cipher

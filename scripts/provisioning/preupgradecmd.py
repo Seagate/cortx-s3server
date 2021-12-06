@@ -28,16 +28,18 @@ class PreUpgradeCmd(SetupCmd):
   """Pre Upgrade Setup Cmd."""
   name = "preupgrade"
 
-  def __init__(self, config: str):
+
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(PreUpgradeCmd, self).__init__(config)
+      super(PreUpgradeCmd, self).__init__(config, services)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name}")
+
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
@@ -53,12 +55,12 @@ class PreUpgradeCmd(SetupCmd):
   def backup_sample_file(self):
     """function to backup .sample config file to .old"""
     sampleconfigfiles = {
-      "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
-      "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
-      "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
-      "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
-      "/opt/seagate/cortx/auth/resources/authserver.properties.sample"
-    }
+      self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx"),
+      self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx"),
+      self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx"),
+      self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx"),
+      self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx")
+      }
 
     # make S3 temp dir if does not exist 
     Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)

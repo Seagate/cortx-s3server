@@ -318,6 +318,10 @@ void S3PutChunkUploadObjectAction::validate_put_chunk_request() {
         S3PutChunkUploadObjectActionState::validationFailed;
     set_s3_error("MetadataTooLarge");
     send_response_to_s3_client();
+  } else if (request->is_header_present("Content-Length") &&
+             request->get_content_length() > MAXIMUM_ALLOWED_PUT_SIZE) {
+    set_s3_error("EntityTooLarge");
+    send_response_to_s3_client();
   } else {
     next();
   }

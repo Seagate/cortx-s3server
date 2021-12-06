@@ -650,7 +650,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_content_length())
-      .WillRepeatedly(Return(MAXIMUM_ALLOWED_PART_SIZE + 1));
+      .WillRepeatedly(Return(MAXIMUM_ALLOWED_PUT_SIZE + 1));
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
                          S3PostCompleteActionTest::func_callback_one, this);

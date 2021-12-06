@@ -34,18 +34,21 @@ class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""
   name = "reset"
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(ResetCmd, self).__init__(config)
-      self.get_ldap_root_credentials()
+      super(ResetCmd, self).__init__(config, services)
+      self.read_ldap_root_credentials()
       self.get_iam_admin_credentials()
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
+    # disabling reset phase for K8s branch
+    if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+      return
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.validate_config_files(self.name)
@@ -89,38 +92,38 @@ class ResetCmd(SetupCmd):
 
   def CleanupLogs(self):
     """Cleanup all the log directories and files."""
-    # Backgrounddelete -> /var/log/seagate/s3/s3backgrounddelete/
-    #Audit -> /var/log/seagate/s3/audit
-    # s3 -> /var/log/seagate/s3/
-    #Auth -> /var/log/seagate/auth/
-    #S3 Motr -> /var/log/seagate/motr/s3server-*
-    #HAproxy -> /var/log/haproxy.log
-    #HAproxy -> /var/log/haproxy-status.log
-    #Slapd -> /var/log/slapd.log
+    # Backgrounddelete -> /var/log/cortx/s3/s3backgrounddelete/
+    #Audit -> /var/log/cortx/s3/audit
+    # s3 -> /var/log/cortx/s3/
+    #Auth -> /var/log/cortx/auth/
+    #S3 Motr -> /var/log/cortx/motr/s3server-*
+    #HAproxy -> /var/log/cortx/haproxy.log
+    #HAproxy -> /var/log/cortx/haproxy-status.log
+    #Slapd -> /var/log/cortx/slapd.log
     #S3 Crash dumps -> /var/log/crash/core-s3server.*.gz
 
-    logDirs = ["/var/log/seagate/s3",
-                  "/var/log/seagate/auth"]
+    logDirs = ["/var/log/cortx/s3",
+                  "/var/log/cortx/auth"]
     # Skipping s3deployment.log file directory as we dont need to remove it as part of log cleanup
-    skipDirs = ["/var/log/seagate/s3/s3deployment"]
+    skipDirs = ["/var/log/cortx/s3/s3deployment"]
 
     for logDir in logDirs:
       self.DeleteDirContents(logDir, skipDirs)
 
-    logFiles = ["/var/log/haproxy.log",
-                "/var/log/haproxy-status.log"]
+    logFiles = ["/var/log/cortx/haproxy.log",
+                "/var/log/cortx/haproxy-status.log"]
     for logFile in logFiles:
       self.DeleteFile(logFile)
 
     # logRegexPath represents key->path and value->regex
-    logRegexPath =  { '/var/log/seagate/motr':'s3server-*',
+    logRegexPath =  { '/var/log/cortx/motr':'s3server-*',
                       '/var/log/crash':'core-s3server.*.gz'}
     for path in logRegexPath:
       self.DeleteFileOrDirWithRegex(path, logRegexPath[path])
 
     # truncate slapd logs
     self.logger.info("truncate slapd log file started")
-    slapd_log="/var/log/slapd.log"
+    slapd_log="/var/log/cortx/slapd.log"
     if os.path.isfile(slapd_log):
       fslapd = open(slapd_log, "w")
       fslapd.truncate()
