@@ -72,13 +72,10 @@ class S3DataUsageCache {
 };
 
 class DataUsageItem {
+  std::shared_ptr<RequestObject> request;
   std::string request_id;
   std::string motr_key;
   std::string cache_key;
-  std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
-  std::shared_ptr<S3MotrKVSWriterFactory> motr_kv_writer_factory;
-  std::shared_ptr<MotrAPI> s3_motr_api;
-  std::shared_ptr<RequestObject> request;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
 
@@ -126,12 +123,7 @@ class DataUsageItem {
   using DataUsageStateNotifyCb = std::function<
       void(DataUsageItem *, DataUsageItemState, DataUsageItemState)>;
   DataUsageItem(std::shared_ptr<RequestObject> req, std::string key_in_cache,
-                DataUsageStateNotifyCb subscriber,
-                std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
-                    nullptr,
-                std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
-                    nullptr,
-                std::shared_ptr<MotrAPI> motr_api = nullptr);
+                DataUsageStateNotifyCb subscriber);
   void save(int64_t objects_count_increment, int64_t bytes_count_increment,
             std::function<void()> on_success, std::function<void()> on_failure);
 

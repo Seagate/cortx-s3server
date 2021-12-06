@@ -159,12 +159,9 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
   s3_log(S3_LOG_INFO, src->get_stripped_request_id(), "%s Exit", __func__);
 }
 
-DataUsageItem::DataUsageItem(
-    std::shared_ptr<RequestObject> req, std::string key_in_cache,
-    DataUsageStateNotifyCb subscriber,
-    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
-    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
-    std::shared_ptr<MotrAPI> motr_api) {
+DataUsageItem::DataUsageItem(std::shared_ptr<RequestObject> req,
+                             std::string key_in_cache,
+                             DataUsageStateNotifyCb subscriber) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   request = std::move(req);
   request_id = req->get_request_id();
@@ -176,22 +173,6 @@ DataUsageItem::DataUsageItem(
   current_bytes_increment = 0;
   pending_objects_increment = 0;
   pending_bytes_increment = 0;
-
-  if (motr_api) {
-    s3_motr_api = std::move(motr_api);
-  } else {
-    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
-  }
-  if (kv_reader_factory) {
-    motr_kv_reader_factory = std::move(kv_reader_factory);
-  } else {
-    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
-  }
-  if (kv_writer_factory) {
-    motr_kv_writer_factory = std::move(kv_writer_factory);
-  } else {
-    motr_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
-  }
 
   s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
@@ -292,11 +273,9 @@ void DataUsageItem::kvs_read_failure() {
 void DataUsageItem::do_kvs_read() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
-  if (!motr_kv_reader) {
-    motr_kv_reader =
-        motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
-  }
-
+  std::unique_ptr<S3MotrKVSReaderFactory> reader_factory(
+      new S3MotrKVSReaderFactory());
+  motr_kv_reader = reader_factory->create_motr_kvs_reader(request, nullptr);
   motr_kv_reader->get_keyval(bucket_data_usage_index_layout, motr_key,
                              std::bind(&DataUsageItem::kvs_read_success, this),
                              std::bind(&DataUsageItem::kvs_read_failure, this));
@@ -329,11 +308,9 @@ void DataUsageItem::do_kvs_write() {
   }
   set_state(DataUsageItemState::active);
 
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-
+  std::unique_ptr<S3MotrKVSWriterFactory> writer_factory(
+      new S3MotrKVSWriterFactory());
+  motr_kv_writer = writer_factory->create_motr_kvs_writer(request, nullptr);
   motr_kv_writer->put_keyval(
       bucket_data_usage_index_layout, motr_key, this->to_json(),
       std::bind(&DataUsageItem::kvs_write_success, this),
