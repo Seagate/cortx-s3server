@@ -409,7 +409,8 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (delete_marker_metadata) {
     // delete marker metadata responce
-    request->set_out_header_value("x-amz-version-id", delete_marker_metadata->get_obj_version_id());
+    request->set_out_header_value("x-amz-version-id",
+                                  delete_marker_metadata->get_obj_version_id());
     request->set_out_header_value("x-amz-delete-marker", "true");
     request->send_response(S3HttpSuccess204);
   } else {
