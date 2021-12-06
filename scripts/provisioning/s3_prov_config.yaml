@@ -58,7 +58,7 @@ CONFIG:
 
   CONFSTORE_S3_INTERNAL_ENDPOINTS: "cortx>s3>internal>endpoints" #M (Usedby : s3_deployment, bgproducer)
 
-  CONFSTORE_CONSUL_ENDPOINTs: "cortx>external>consul>endpoints" #M (Usedby : s3_deployment)
+  CONFSTORE_CONSUL_ENDPOINTS: "cortx>external>consul>endpoints" #M (Usedby : s3_deployment)
   
   CONFSTORE_CLUSTER_ID_KEY: "node>machine-id>cluster_id" #M (Usedby: all)
   CONFSTORE_HOSTNAME_KEY: "node>machine-id>hostname" #M (Usedby: s3_deployment)
@@ -129,6 +129,8 @@ DEFAULT_CONFIG:
 
   CONFSTORE_PUBLIC_FQDN_KEY: "srvnode-1.data.public" #M (VM specific)
   CONFSTORE_PRIVATE_FQDN_KEY: "srvnode-1.data.private" #M (VM specific)
+
+  CONFSTORE_CONSUL_ENDPOINTS: "consul://consul-server.default.svc.cluster.local:8500" #M (Default param)
 
 DEFAULT_INIT:
 

@@ -65,12 +65,14 @@ class UpgradeCmd(SetupCmd):
       self.copy_config_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
                               self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')])
       # Upgrade config files
+      self.logger.info(f"merge config for cluster started")
       merge_configs(
         os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml"),
         os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old"),
         os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml.sample"),
         os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml"),
         'yaml://')
+      self.logger.info(f"merge config for cluster complete")
       # Validating config files after upgrade
       self.validate_config_file(
              os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml"),
@@ -83,12 +85,14 @@ class UpgradeCmd(SetupCmd):
       if 's3server' in self.services:
         self.copy_config_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE')])
+        self.logger.info(f"merge config for s3server started")
         merge_configs(
           os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml"),
           os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old"),
           os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml.sample"),
           os.path.join(self.base_config_file_path, "s3/conf/s3config_unsafe_attributes.yaml"),
           'yaml://')
+        self.logger.info(f"merge config for s3server complete")
         self.validate_config_file(
                os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml"),
                os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml.sample"),
@@ -99,18 +103,22 @@ class UpgradeCmd(SetupCmd):
                                 self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
                                 self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE')])
+        self.logger.info(f"merge config for keystore started")
         merge_configs(
           os.path.join(self.base_config_file_path, "auth/resources/keystore.properties"),
           os.path.join(self.s3_tmp_dir, "keystore.properties.sample.old"),
           os.path.join(self.base_config_file_path, "auth/resources/keystore.properties.sample"),
           os.path.join(self.base_config_file_path, "auth/resources/keystore_unsafe_attributes.properties"),
           'properties://')
+        self.logger.info(f"merge config for keystore complete")
+        self.logger.info(f"merge config for authserver started")
         merge_configs(
           os.path.join(self.base_config_file_path, "auth/resources/authserver.properties"),
           os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old"),
           os.path.join(self.base_config_file_path, "auth/resources/authserver.properties.sample"),
           os.path.join(self.base_config_file_path, "auth/resources/authserver_unsafe_attributes.properties"),
           'properties://')
+        self.logger.info(f"merge config for authserver complete")
         self.validate_config_file(
                os.path.join(self.base_config_file_path, "auth/resources/keystore.properties"),
                os.path.join(self.base_config_file_path, "auth/resources/keystore.properties.sample"),
@@ -124,12 +132,14 @@ class UpgradeCmd(SetupCmd):
       if 's3bgschedular' in self.services or 's3bgworker' in self.services:
         self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE')])
+        self.logger.info(f"merge config for background service started")
         merge_configs(
           os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
           os.path.join(self.s3_tmp_dir, "config.yaml.sample.old"),
           os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
           os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml"),
           'yaml://')
+        self.logger.info(f"merge config for background service complete")
         self.validate_config_file(
                os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml"),
                os.path.join(self.base_config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
