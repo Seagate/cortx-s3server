@@ -502,24 +502,8 @@ class ConfigCmd(SetupCmd):
     """Configure haproxy service."""
     self.logger.info('haproxy configuration started')
     try:
-
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
-
-      if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
-        # update the haproxy log rotate config file in /etc/logrotate.d/haproxy
-        self.find_and_replace("/etc/logrotate.d/haproxy", "/var/log/cortx", self.base_log_file_path)
-        self.find_and_replace("/etc/rsyslog.d/haproxy.conf", "/var/log/cortx", self.base_log_file_path)
-
-        # reload haproxy service
-        try:
-          self.logger.info("Reloading haproxy service...")
-          service_list = ["haproxy"]
-          self.reload_services(service_list)
-        except Exception as e:
-          self.logger.error(f'Failed to reload haproxy service, error: {e}')
-          raise e
-        self.logger.info("Reloaded haproxy service...")
       self.logger.info("Successfully configured haproxy on the node.")
     except Exception as e:
       self.logger.error(f'Failed to configure haproxy for s3server, error: {e}')

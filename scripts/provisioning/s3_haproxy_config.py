@@ -185,6 +185,22 @@ class S3HaproxyConfig:
       self.configure_haproxy_k8()
     else : 
       self.configure_haproxy_legacy()
+      # ToDO
+      # This code needs to be enable for mono lithic vm deployment
+
+      # update the haproxy log rotate config file in /etc/logrotate.d/haproxy
+      #self.find_and_replace("/etc/logrotate.d/haproxy", "/var/log/cortx", self.base_log_file_path)
+      #self.find_and_replace("/etc/rsyslog.d/haproxy.conf", "/var/log/cortx", self.base_log_file_path)
+
+      # reload haproxy service
+      #try:
+      #  self.logger.info("Reloading haproxy service...")
+      #  service_list = ["haproxy"]
+      #  self.reload_services(service_list)
+      #except Exception as e:
+      #  self.logger.error(f'Failed to reload haproxy service, error: {e}')
+      #  raise e
+      #self.logger.info("Reloaded haproxy service...")
 
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")

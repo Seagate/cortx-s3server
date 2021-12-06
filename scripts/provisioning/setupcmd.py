@@ -75,13 +75,33 @@ class SetupCmd(object):
     lookup_service = ["haproxy", "s3server", "authserver", "s3bgschedular", "s3bgworker"]
     if self.services is None:
       self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    services_map = {
+                "io": "s3server,haproxy",
+                "auth": "authserver",
+                "bg_producer": "s3bgschedular",
+                "bg_consumer": "s3bgworker"}
+    for service in services_map:
+        if-1 != self.services.find(service):
+            self.services = self.services.replace(service, services_map[service])
+    ######### End
+
     self.services = self.services.split(",")
+
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    if "openldap" in services:
+        services.remove("openldap")
+    ######### End
+
     for service in self.services:
       if service not in lookup_service:
         raise Exception(f'ERROR: {service} service is not supported.')
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-    self.logger = logging.getLogger(s3deployment_logger_name)
+    self.logger = logging.getLogger(s3deployment_loggerself.services_name)
 
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
