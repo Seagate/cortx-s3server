@@ -901,11 +901,9 @@ void S3PutObjectAction::send_response_to_s3_client() {
 
     request->set_out_header_value("ETag", e_tag);
 
-    std::string versioning_status =
-        bucket_metadata->get_bucket_versioning_status();
-    if ("Unversioned" != versioning_status) {
-      std::string ver_id = "\"" + object_metadata->get_obj_version_id() + "\"";
-      request->set_out_header_value("VersionId", ver_id);
+    if ("Unversioned" != bucket_metadata->get_bucket_versioning_status()) {
+      request->set_out_header_value("x-amz-version-id",
+                                    object_metadata->get_obj_version_id());
     }
 
     request->send_response(S3HttpSuccess200);
