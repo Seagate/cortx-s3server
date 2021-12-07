@@ -63,7 +63,7 @@ using ::testing::DefaultValue;
     action_under_test->fetch_object_info();                               \
   } while (0)
 
-#define CREATE_BUCKET_METADATA_VER                            \
+#define SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS             \
   do {                                                        \
     CREATE_BUCKET_METADATA;                                   \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), \
@@ -199,7 +199,7 @@ TEST_F(S3PutObjectActionTest, FetchBucketInfo) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthPositiveCase) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_object_name())
       .WillOnce(ReturnRef(object_name));
 
@@ -224,7 +224,7 @@ TEST_F(S3PutObjectActionTest, ValidatePUTContentLengthAs5GB) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidatePUTContentLengthGreaterThan5GB) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_object_name())
       .WillOnce(ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
@@ -238,7 +238,7 @@ TEST_F(S3PutObjectActionTest, ValidatePUTContentLengthGreaterThan5GB) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   std::string too_long_obj_name(
       "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexv"
       "piaqufqsxozqzsxxtmmlnukpfnpvtepdxvxqmnwnsceaujybilbqwwhhofxhlbvqeqbcbbag"
@@ -266,7 +266,7 @@ TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(AtLeast(1)).WillOnce(
       ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, get_header_size()).WillOnce(Return(9000));
@@ -276,7 +276,7 @@ TEST_F(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(AtLeast(1)).WillOnce(
       ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, get_user_metadata_size())
@@ -302,7 +302,7 @@ TEST_F(S3PutObjectActionTest, ValidateRequestTags) {
 }
 
 TEST_F(S3PutObjectActionTest, VaidateEmptyTags) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] = "";
   EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return(""));
@@ -317,7 +317,7 @@ TEST_F(S3PutObjectActionTest, VaidateEmptyTags) {
 }
 
 TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase1) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] = "key1=";
   EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return("key1="));
@@ -332,7 +332,7 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase1) {
 }
 
 TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase2) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] = "key1=value1&=value2";
   EXPECT_CALL(*ptr_mock_request, get_header_value(_))
@@ -350,7 +350,7 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase2) {
 // Count of tags exceding limit.
 
 TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase3) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] =
       "key1=value1&key2=value2&key3=value3&key4=value4&key5=value5&key6=value6&"
@@ -369,7 +369,7 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase3) {
 }
 
 TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase4) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] = "Key=seag`ate&Value=marketing";
   EXPECT_CALL(*ptr_mock_request, get_header_value(_))
@@ -420,7 +420,7 @@ TEST_F(S3PutObjectActionTest, VaidateSpecialCharTagsCase2) {
 }
 
 TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
@@ -437,7 +437,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent) {
 }
 
 TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailed) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
@@ -454,7 +454,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailed) {
 }
 
 TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailedTolaunch) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
@@ -607,7 +607,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTestWhileShutdown) {
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionExceededRetry) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(1)
@@ -639,7 +639,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionRetry) {
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
@@ -659,7 +659,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedToLaunchTest) {
-  CREATE_BUCKET_METADATA_VER;
+  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
@@ -982,7 +982,6 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
 
 // We have all the data: Freezed
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldWriteStateAllData) {
-  // CREATE_OBJECT_METADATA_VER;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
 
@@ -1228,7 +1227,11 @@ TEST_F(S3PutObjectActionTest, SendErrorResponse) {
 }
 
 TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_BUCKET_METADATA;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_bucket_versioning_status())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(versioning_status));
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   // Simulate success
@@ -1238,7 +1241,7 @@ TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
   // expectations for remove_new_oid_probable_record()
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
+              delete_keyval(_, _, _, _)).Times(AtLeast(1));
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_content_md5())
       .Times(AtLeast(1))

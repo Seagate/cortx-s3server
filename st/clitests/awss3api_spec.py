@@ -1642,6 +1642,7 @@ AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("seagatebuc
   .execute_test().command_is_successful()
 AwsTest('Aws can put object on versioning enabled bucket').put_object("seagatebucket", "1kfile", 1024)\
   .execute_test().command_is_successful()
+#TODO: version id validation
 
 # **************** Delete multiple objects *****************************************************
 AwsTest('Aws can delete multiple objects when all objects exist in bucket, quiet_mode: false')\

@@ -760,8 +760,8 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   // store old object oid
   std::string versioning_status =
       bucket_metadata->get_bucket_versioning_status();
-  bool delete_object = ((old_object_oid.u_hi || old_object_oid.u_lo) &&
-                        ("Unversioned" == versioning_status));
+  bool delete_object = (old_object_oid.u_hi || old_object_oid.u_lo) &&
+                       ("Unversioned" == versioning_status);
   if (delete_object) {
     assert(!old_oid_str.empty());
     if (number_of_parts != 0) {
@@ -901,6 +901,13 @@ void S3PutObjectAction::send_response_to_s3_client() {
 
     request->set_out_header_value("ETag", e_tag);
 
+    std::string versioning_status =
+        bucket_metadata->get_bucket_versioning_status();
+    if ("Unversioned" != versioning_status) {
+      std::string ver_id = "\"" + object_metadata->get_obj_version_id() + "\"";
+      request->set_out_header_value("VersionId", ver_id);
+    }
+
     request->send_response(S3HttpSuccess200);
   }
 
@@ -921,8 +928,8 @@ void S3PutObjectAction::startcleanup() {
 
   std::string versioning_status =
       bucket_metadata->get_bucket_versioning_status();
-  bool delete_object = ((old_object_oid.u_hi || old_object_oid.u_lo) &&
-                        ("Unversioned" == versioning_status));
+  bool delete_object = (old_object_oid.u_hi || old_object_oid.u_lo) &&
+                       ("Unversioned" == versioning_status);
   // Success conditions
   if (s3_put_action_state == S3PutObjectActionState::completed) {
     s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
