@@ -40,8 +40,7 @@ class DataUsageItem;
 
 class S3DataUsageCache {
   static std::unique_ptr<S3DataUsageCache> singleton;
-  static std::string generate_cache_key(
-      std::shared_ptr<S3BucketMetadata> bkt_md);
+  static std::string generate_cache_key(std::shared_ptr<RequestObject> req);
 
   std::map<std::string, std::shared_ptr<DataUsageItem> > items;
   // The list of items that are not running any Motr command now.
@@ -49,10 +48,8 @@ class S3DataUsageCache {
   size_t max_cache_size;
 
   S3DataUsageCache() {}
-  std::shared_ptr<DataUsageItem> get_item(
-      std::shared_ptr<RequestObject> req,
-      std::shared_ptr<S3BucketMetadata> bkt_md);
-  bool shrink();
+  std::shared_ptr<DataUsageItem> get_item(std::shared_ptr<RequestObject> req);
+  bool shrink(const std::string &request_id);
   void item_state_changed(DataUsageItem *item, DataUsageItemState prev_state,
                           DataUsageItemState new_state);
 
