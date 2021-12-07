@@ -52,6 +52,8 @@ enum class S3PartCopyActionState {
   completed,                // All stages done completely
 };
 
+class S3ObjectDataCopier;
+
 class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   S3PartCopyActionState s3_put_action_state;
   struct m0_uint128 old_object_oid;
@@ -63,11 +65,21 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata = NULL;
   std::shared_ptr<S3MotrWiter> motr_writer = NULL;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer = nullptr;
+  std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
+  std::unique_ptr<S3ObjectDataCopier> object_data_copier;
+  std::shared_ptr<S3ObjectDataCopier> fragment_data_copier;
+  std::vector<std::shared_ptr<S3ObjectDataCopier>> fragment_data_copier_list;
 
   size_t total_data_to_stream;
   S3Timer create_object_timer;
   S3Timer write_content_timer;
   int part_number;
+  bool response_started = false;
+  int total_parts_fragment_to_be_copied = 0;
+  int parts_fragment_copied_or_failed = 0;
+  int max_parallel_copy = 0;
+  int parts_frg_copy_in_flight_copied_or_failed = 0;
+  int parts_frg_copy_in_flight = 0;
   std::string upload_id;
   unsigned motr_write_payload_size;
 
@@ -119,13 +131,16 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3MotrWriterFactory> motr_s3_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3MotrWriterFactory> motrwriter_s3_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
   void setup_steps();
   // void start();
   void fetch_bucket_info_success();
-  void fetch_bucket_info_failed();
-  void fetch_object_info_failed();
+  // void fetch_bucket_info_failed();
+  // void fetch_object_info_failed();
   void fetch_multipart_metadata();
   void fetch_multipart_failed();
   void fetch_part_info();
@@ -141,12 +156,15 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
-  //void initiate_data_streaming();
+  void initiate_data_streaming();
+  bool copy_object_cb();
+  void start_response();
   void copy_part_object();
   void copy_object();
   void copy_object_success();
   void copy_object_failed();
   void copy_fragments();
+  void copy_each_part_fragment(int index);
   void copy_part_fragment_success(int index);
   void copy_part_fragment_failed(int index);
   void consume_incoming_content();
@@ -162,7 +180,7 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void set_authorization_meta();
 
   // Rollback tasks
-  void startcleanup() override;
+  // void startcleanup() override;
   void mark_new_oid_for_deletion();
   void mark_old_oid_for_deletion();
   void remove_old_oid_probable_record();

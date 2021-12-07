@@ -21,6 +21,8 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 #include "s3_option.h"
+#include "s3_common.h"
+#include "s3_multiobject_copy_action.h"
 #include "s3_perf_logger.h"
 #include "s3_perf_metrics.h"
 #include "s3_stats.h"
@@ -28,7 +30,6 @@
 #include "s3_common_utilities.h"
 #include "s3_uri_to_motr_oid.h"
 #include "s3_common_utilities.h"
-#include "s3_multiobject_copy_action.h"
 
 extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
@@ -38,9 +39,14 @@ S3MultiObjectCopyAction::S3MultiObjectCopyAction(
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3MotrWriterFactory> motr_s3_writer_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    std::shared_ptr<S3MotrWriterFactory> motrwriter_s3_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory)
-    : S3ObjectAction(std::move(req), nullptr, nullptr, true,
-                     std::move(auth_factory)),
+    : S3PutObjectActionBase(std::move(req), std::move(bucket_meta_factory),
+                            std::move(object_meta_factory), std::move(motr_api),
+                            std::move(motrwriter_s3_factory),
+                            std::move(kv_writer_factory)),
       total_data_to_stream(0),
       auth_failed(false),
       write_failed(false),
@@ -113,7 +119,8 @@ void S3MultiObjectCopyAction::setup_steps() {
   ACTION_TASK_ADD(S3MultiObjectCopyAction::check_part_details, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::fetch_multipart_metadata, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::fetch_part_info, this);
-  ACTION_TASK_ADD(S3MultiObjectCopyAction::check_source_bucket_authorization, this);
+  ACTION_TASK_ADD(S3MultiObjectCopyAction::check_source_bucket_authorization,
+                  this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::create_part_object, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::copy_part_object, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::save_metadata, this);
@@ -205,40 +212,6 @@ void S3MultiObjectCopyAction::fetch_bucket_info_success() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3MultiObjectCopyAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "Entering\n");
-  auto omds = object_metadata->get_state();
-  if (omds == S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-    next();
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
-    if (omds == S3ObjectMetadataState::failed_to_launch) {
-      set_s3_error("ServiceUnavailable");
-    } else {
-      set_s3_error("InternalError");
-    }
-    send_response_to_s3_client();
-  }
-  s3_log(S3_LOG_DEBUG, stripped_request_id, "Exiting\n");
-}
-
-void S3MultiObjectCopyAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_ERROR, request_id, "Bucket does not exists\n");
-  s3_put_action_state = S3PartCopyActionState::validationFailed;
-  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    set_s3_error("NoSuchBucket");
-  } else if (bucket_metadata->get_state() ==
-             S3BucketMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Bucket metadata load operation failed due to pre launch failure\n");
-    set_s3_error("ServiceUnavailable");
-  } else {
-    set_s3_error("InternalError");
-  }
-  send_response_to_s3_client();
-}
-
 void S3MultiObjectCopyAction::fetch_multipart_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string multipart_key_name =
@@ -274,10 +247,12 @@ void S3MultiObjectCopyAction::check_source_bucket_authorization() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   auth_client->check_authorization(
-      std::bind(&S3MultiObjectCopyAction::check_source_bucket_authorization_success,
-                this),
-      std::bind(&S3MultiObjectCopyAction::check_source_bucket_authorization_failed,
-                this));
+      std::bind(
+          &S3MultiObjectCopyAction::check_source_bucket_authorization_success,
+          this),
+      std::bind(
+          &S3MultiObjectCopyAction::check_source_bucket_authorization_failed,
+          this));
 }
 
 void S3MultiObjectCopyAction::check_source_bucket_authorization_success() {
@@ -289,7 +264,7 @@ void S3MultiObjectCopyAction::check_source_bucket_authorization_success() {
 void S3MultiObjectCopyAction::check_source_bucket_authorization_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  s3_put_action_state = S3PutObjectActionState::validationFailed;
+  s3_put_action_state = S3PartCopyActionState::validationFailed;
   std::string error_code = auth_client->get_error_code();
 
   set_s3_error(error_code);
@@ -424,6 +399,34 @@ void S3MultiObjectCopyAction::create_part_object_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+bool S3MultiObjectCopyAction::copy_object_cb() {
+  if (check_shutdown_and_rollback() || !request->client_connected()) {
+    return true;
+  }
+  if (response_started) {
+    request->send_reply_body(xml_spaces, sizeof(xml_spaces) - 1);
+  }
+  return false;
+}
+
+const char xml_decl[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+const char xml_comment_begin[] = "<!--   \n";
+const char xml_comment_end[] = "\n   -->\n";
+
+void S3MultiObjectCopyAction::start_response() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  request->set_out_header_value("Content-Type", "application/xml");
+  request->set_out_header_value("Connection", "close");
+
+  request->send_reply_start(S3HttpSuccess200);
+  request->send_reply_body(xml_decl, sizeof(xml_decl) - 1);
+  request->send_reply_body(xml_comment_begin, sizeof(xml_comment_begin) - 1);
+
+  response_started = true;
+  request->set_response_started_by_action(true);
+}
+
 // Copy source object(s) to destination object
 void S3MultiObjectCopyAction::copy_part_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -462,7 +465,7 @@ void S3MultiObjectCopyAction::copy_object() {
         std::bind(&S3MultiObjectCopyAction::copy_object_failed, this));
     f_success = true;
   }
-  catch (const std::exception& ex) {
+  catch (const std::exception &ex) {
     s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
   }
   catch (...) {
@@ -484,7 +487,7 @@ void S3MultiObjectCopyAction::copy_object() {
 void S3MultiObjectCopyAction::copy_object_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  s3_put_action_state = S3PutObjectActionState::writeComplete;
+  s3_put_action_state = S3PartCopyActionState::writeComplete;
   object_data_copier.reset();
   next();
 
@@ -494,7 +497,7 @@ void S3MultiObjectCopyAction::copy_object_success() {
 void S3MultiObjectCopyAction::copy_object_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  s3_put_action_state = S3PutObjectActionState::writeFailed;
+  s3_put_action_state = S3PartCopyActionState::writeFailed;
   set_s3_error(object_data_copier->get_s3_error());
 
   object_data_copier.reset();
@@ -541,7 +544,7 @@ void S3MultiObjectCopyAction::copy_each_part_fragment(int index) {
                   std::placeholders::_1));
     f_success = true;
   }
-  catch (const std::exception& ex) {
+  catch (const std::exception &ex) {
     s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
   }
   catch (...) {
@@ -578,7 +581,7 @@ void S3MultiObjectCopyAction::copy_part_fragment_success(int index) {
   // Success callback, so reduce in flight copy operation count
   parts_frg_copy_in_flight = parts_frg_copy_in_flight - 1;
 
-  if (s3_put_action_state == S3PutObjectActionState::writeFailed) {
+  if (s3_put_action_state == S3PartCopyActionState::writeFailed) {
     // This part/fragment got copied, however some another part/fragment
     // failed to copy, client is send error only when
     // all the in flight copy request is done
@@ -593,12 +596,12 @@ void S3MultiObjectCopyAction::copy_part_fragment_success(int index) {
   }
   // Dont save metadata or invoke another copy operation if at all
   // any of the previous copy operation of the part/fragment failed
-  if (s3_put_action_state != S3PutObjectActionState::writeFailed) {
+  if (s3_put_action_state != S3PartCopyActionState::writeFailed) {
     if (total_parts_fragment_to_be_copied ==
         ++parts_fragment_copied_or_failed) {
       // This happens to be the last part/fragment which is sucessful
       // so finally save metadata
-      s3_put_action_state = S3PutObjectActionState::writeComplete;
+      s3_put_action_state = S3PartCopyActionState::writeComplete;
       next();
     } else if (parts_frg_copy_in_flight_copied_or_failed <
                total_parts_fragment_to_be_copied) {
@@ -618,7 +621,7 @@ void S3MultiObjectCopyAction::copy_part_fragment_success(int index) {
 void S3MultiObjectCopyAction::copy_part_fragment_failed(int index) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  s3_put_action_state = S3PutObjectActionState::writeFailed;
+  s3_put_action_state = S3PartCopyActionState::writeFailed;
   set_s3_error(fragment_data_copier_list[index]->get_s3_error());
   s3_log(S3_LOG_INFO, stripped_request_id,
          "Copy failed for target fragment [index = %d part_number = %d OID="
@@ -978,7 +981,8 @@ void S3MultiObjectCopyAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3MultiObjectCopyAction::add_object_oid_to_probable_dead_oid_list_failed() {
+void
+S3MultiObjectCopyAction::add_object_oid_to_probable_dead_oid_list_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_action_state = S3PartCopyActionState::probableEntryRecordFailed;
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
@@ -1006,7 +1010,7 @@ void S3MultiObjectCopyAction::send_response_to_s3_client() {
     // Send response with 'Service Unavailable' code.
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
-    std::string& response_xml = error.to_xml();
+    std::string &response_xml = error.to_xml();
 
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
@@ -1040,7 +1044,7 @@ void S3MultiObjectCopyAction::send_response_to_s3_client() {
     set_s3_error("InternalError");
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
-    std::string& response_xml = error.to_xml();
+    std::string &response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
@@ -1062,63 +1066,6 @@ void S3MultiObjectCopyAction::set_authorization_meta() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3MultiObjectCopyAction::startcleanup() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  // TODO: Perf - all/some of below tasks can be done in parallel
-  // Any of the following steps fail, backgrounddelete will be able to perform
-  // cleanups.
-  // Clear task list and setup cleanup task list
-  clear_tasks();
-  cleanup_started = true;
-  // Success conditions
-  if (s3_put_action_state == S3PartCopyActionState::completed ||
-      s3_put_action_state == S3PartCopyActionState::metadataSaved) {
-    s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
-      // mark old OID for deletion in overwrite case, this optimizes
-      // backgrounddelete decisions.
-      ACTION_TASK_ADD(S3MultiObjectCopyAction::mark_old_oid_for_deletion, this);
-    }
-    // remove new oid from probable delete list.
-    ACTION_TASK_ADD(S3MultiObjectCopyAction::remove_new_oid_probable_record,
-                    this);
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
-      // Object overwrite case, old object exists, delete it.
-      ACTION_TASK_ADD(S3MultiObjectCopyAction::delete_old_object, this);
-      // If delete object is successful, attempt to delete old probable record
-    }
-  } else if (s3_put_action_state == S3PartCopyActionState::newObjOidCreated ||
-             s3_put_action_state == S3PartCopyActionState::writeFailed ||
-             s3_put_action_state == S3PartCopyActionState::md5ValidationFailed ||
-             s3_put_action_state == S3PartCopyActionState::metadataSaveFailed) {
-    // PUT is assumed to be failed with a need to rollback
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Cleanup new Object: s3_put_action_state[%d]\n",
-           s3_put_action_state);
-    // Mark new OID for deletion, this optimizes backgrounddelete decisionss.
-    ACTION_TASK_ADD(S3MultiObjectCopyAction::mark_new_oid_for_deletion, this);
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
-      // remove old oid from probable delete list.
-      ACTION_TASK_ADD(S3MultiObjectCopyAction::remove_old_oid_probable_record,
-                      this);
-    }
-    ACTION_TASK_ADD(S3MultiObjectCopyAction::delete_new_object, this);
-    // If delete object is successful, attempt to delete new probable record
-  } else {
-    s3_log(S3_LOG_DEBUG, request_id,
-           "No Cleanup required: s3_put_action_state[%d]\n",
-           s3_put_action_state);
-    assert(s3_put_action_state == S3PartCopyActionState::empty ||
-           s3_put_action_state == S3PartCopyActionState::validationFailed ||
-           s3_put_action_state ==
-               S3PartCopyActionState::probableEntryRecordFailed ||
-           s3_put_action_state ==
-               S3PartCopyActionState::newObjOidCreationFailed);
-    // Nothing to undo
-  }
-  // Start running the cleanup task list
-  start();
-}
 void S3MultiObjectCopyAction::mark_new_oid_for_deletion() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!new_oid_str.empty());
@@ -1174,10 +1121,10 @@ void S3MultiObjectCopyAction::remove_old_oid_probable_record() {
     motr_kv_writer =
         motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
-                                old_oid_rec_key,
-                                std::bind(&S3MultiObjectCopyAction::next, this),
-                                std::bind(&S3MultiObjectCopyAction::next, this));
+  motr_kv_writer->delete_keyval(
+      global_probable_dead_object_list_index_layout, old_oid_rec_key,
+      std::bind(&S3MultiObjectCopyAction::next, this),
+      std::bind(&S3MultiObjectCopyAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -1189,10 +1136,10 @@ void S3MultiObjectCopyAction::remove_new_oid_probable_record() {
     motr_kv_writer =
         motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
-                                new_oid_str,
-                                std::bind(&S3MultiObjectCopyAction::next, this),
-                                std::bind(&S3MultiObjectCopyAction::next, this));
+  motr_kv_writer->delete_keyval(
+      global_probable_dead_object_list_index_layout, new_oid_str,
+      std::bind(&S3MultiObjectCopyAction::next, this),
+      std::bind(&S3MultiObjectCopyAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -1228,7 +1175,7 @@ void S3MultiObjectCopyAction::delete_new_object() {
   motr_writer->set_oid(new_object_oid);
   motr_writer->delete_object(
       std::bind(&S3MultiObjectCopyAction::remove_new_oid_probable_record, this),
-      std::bind(&S3MultiObjectCopyAction::next, this), new_object_oid, layout_id,
-      object_multipart_metadata->get_pvid());
+      std::bind(&S3MultiObjectCopyAction::next, this), new_object_oid,
+      layout_id, object_multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
