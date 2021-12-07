@@ -99,7 +99,7 @@ def main():
     elif args.command == 'config':
       from configcmd import ConfigCmd
       logger.info('config started.')
-      ConfigCmd(args.config, args.services).process(args.skip_haproxy)
+      ConfigCmd(args.config, args.services).process()
       logger.info('config successful.')
     elif args.command == 'init':
       from initcmd import InitCmd
@@ -137,10 +137,9 @@ def main():
     elif args.command == 'upgrade':
       from upgradecmd import UpgradeCmd
       logger.info('upgrade started.')
-      # Uncomment following call once Upgrade is supported.
+      # Uncomment following call to enable upgrade.
       # UpgradeCmd(args.config, args.services, args.commit).process()
       logger.info('upgrade successful.')
-
   except Exception as e:
     logger.error(f"{str(e)}")
     logger.error(f"{traceback.format_exc()}")

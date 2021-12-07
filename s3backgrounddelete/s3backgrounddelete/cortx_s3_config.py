@@ -391,16 +391,6 @@ class CORTXS3Config(object):
                 "Could not parse bucket_metadata index_id from config file " +
                 self._conf_file)
 
-    def get_s3_instance_count(self):
-        """Return secret_key from config file or KeyError."""
-        try:
-          s3_instance_count = self.s3confstore.get_config('cortx_s3>s3_instance_count')
-          return int(s3_instance_count)
-        except:
-            raise KeyError(
-                "Could not find s3_instance_count from config file " +
-                self._conf_file)
-
     def get_s3_recovery_access_key(self):
         """Return access_key from cipher or config file or KeyError."""
         if self.recovery_access_key:
