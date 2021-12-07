@@ -758,8 +758,11 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   assert(!new_oid_str.empty());
 
   // store old object oid
-  if (("Unversioned" == versioning_status) &&
-      (old_object_oid.u_hi || old_object_oid.u_lo)) {
+  std::string versioning_status =
+      bucket_metadata->get_bucket_versioning_status();
+  bool delete_object = ((old_object_oid.u_hi || old_object_oid.u_lo) &&
+                        ("Unversioned" == versioning_status));
+  if (delete_object) {
     assert(!old_oid_str.empty());
     if (number_of_parts != 0) {
       // This object was uploaded previously in multipart fashion
@@ -916,23 +919,23 @@ void S3PutObjectAction::startcleanup() {
   clear_tasks();
   cleanup_started = true;
 
+  std::string versioning_status =
+      bucket_metadata->get_bucket_versioning_status();
+  bool delete_object = ((old_object_oid.u_hi || old_object_oid.u_lo) &&
+                        ("Unversioned" == versioning_status));
   // Success conditions
   if (s3_put_action_state == S3PutObjectActionState::completed) {
     s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    if (delete_object) {
       // mark old OID for deletion in overwrite case, this optimizes
       // backgrounddelete decisions.
-      if ("Unversioned" == versioning_status) {
-        ACTION_TASK_ADD(S3PutObjectAction::mark_old_oid_for_deletion, this);
-      }
+      ACTION_TASK_ADD(S3PutObjectAction::mark_old_oid_for_deletion, this);
     }
     // remove new oid from probable delete list.
     ACTION_TASK_ADD(S3PutObjectAction::remove_new_oid_probable_record, this);
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    if (delete_object) {
       // Object overwrite case, old object exists, delete it.
-      if ("Unversioned" == versioning_status) {
-        ACTION_TASK_ADD(S3PutObjectAction::delete_old_object, this);
-      }
+      ACTION_TASK_ADD(S3PutObjectAction::delete_old_object, this);
       // If delete object is successful, attempt to delete old probable record
     }
   } else if (s3_put_action_state == S3PutObjectActionState::newObjOidCreated ||

@@ -70,7 +70,6 @@ void S3ObjectAction::fetch_bucket_info() {
 void S3ObjectAction::fetch_bucket_info_success() {
   request->get_audit_info().set_bucket_owner_canonical_id(
       bucket_metadata->get_owner_canonical_id());
-  versioning_status = bucket_metadata->get_bucket_versioning_status();
   fetch_object_info();
 }
 

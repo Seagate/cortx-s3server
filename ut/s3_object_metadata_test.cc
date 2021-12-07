@@ -936,7 +936,7 @@ TEST_F(S3ObjectExtendedMetadataTest,
   }
 }
 
-TEST_F(S3ObjectMetadataTest, ValidateVesionEntryToJson) {
+TEST_F(S3ObjectMetadataTest, ValidateVersionEntryToJson) {
   std::string json_str = metadata_obj_under_test->version_entry_to_json();
   Json::Value newroot;
   Json::Reader reader;
