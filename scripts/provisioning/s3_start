@@ -150,7 +150,6 @@ def main():
       # os.system("sed -i -e \"s,scheduler_schedule_interval:.*,scheduler_schedule_interval:\ 120,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # os.system("sed -i -e \"s,leak_processing_delay_in_mins:.*,leak_processing_delay_in_mins:\ 2,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # Start S3 Background Producer
-
       logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh {base_config_path} yaml://")
       logger.info(f"Starting S3 Background delete Producer...")
       os.system(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh {base_config_path} yaml://")

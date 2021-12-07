@@ -24,6 +24,7 @@ import shutil
 import glob
 import socket
 import ldap
+import uuid
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -61,6 +62,7 @@ class SetupCmd(object):
 
   def __init__(self,config: str, services: str):
     """Constructor."""
+    self.services = services
     self.endpoint = None
     self._url = None
     self._provisioner_confstore = None
@@ -70,7 +72,34 @@ class SetupCmd(object):
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
 
-    self.services = services
+    # validate supported services
+    lookup_service = ["haproxy", "s3server", "authserver", "s3bgschedular", "s3bgworker"]
+    if self.services is None:
+      self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    services_map = {
+                "io": "s3server,haproxy",
+                "auth": "authserver",
+                "bg_producer": "s3bgschedular",
+                "bg_consumer": "s3bgworker"}
+    for service in services_map:
+        if-1 != self.services.find(service):
+            self.services = self.services.replace(service, services_map[service])
+    ######### End
+
+    self.services = self.services.split(",")
+
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    if "openldap" in  self.services:
+         self.services.remove("openldap")
+    ######### End
+
+    for service in self.services:
+      if service not in lookup_service:
+        raise Exception(f'ERROR: {service} service is not supported.')
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
@@ -196,7 +225,7 @@ class SetupCmd(object):
         raise S3PROVError('password cannot be None.')
 
       key = 'cluster_config>rootdn_user'
-      opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'write_rootdn_idx')
+      opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', str(uuid.uuid1()))
       opfileconfstore.set_config(f'{key}', f'{self.ldap_root_user}', True)
 
       key = 'cluster_config>rootdn_pass'
@@ -231,14 +260,13 @@ class SetupCmd(object):
     self.logger.info(f'Validations running from {self._preqs_conf_file}')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
-    if ("K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
-        if services:
-          for service in services:
-            pid = os.popen('pidof '+service).read()
-            if pid is None:
-              raise Exception('Validation failed for service %s' % (service))
-        if rpms:
-          PkgV().validate('rpms', rpms)
+    if services:
+      for service in services:
+        pid = os.popen('pidof '+service).read()
+        if pid is None:
+          raise Exception('Validation failed for service %s' % (service))
+    if rpms:
+      PkgV().validate('rpms', rpms)
     if files:
       PathV().validate('exists', files)
 
@@ -268,15 +296,6 @@ class SetupCmd(object):
     value = self.get_confvalue(key)
     if not value:
       raise Exception(f'Empty value for key : {key}')
-    else:
-      if ("K8" !=  str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
-        address_token = ["hostname", "public_fqdn", "private_fqdn"]
-      else :
-        address_token = []
-      for token in address_token:
-        if key.find(token) != -1:
-          NetworkV().validate('connectivity',[value])
-          break
 
   def extract_yardstick_list(self, phase_name: str):
     """Extract keylist to be used as yardstick for validating keys of each phase."""
@@ -605,7 +624,7 @@ class SetupCmd(object):
     key = 'cluster_config>rootdn_user'
 
     s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
-    opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'read_rootdn_idx')
+    opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', str(uuid.uuid1()))
     self.ldap_root_user = opfileconfstore.get_config(f'{key}')
 
     key = 'cluster_config>rootdn_pass'
