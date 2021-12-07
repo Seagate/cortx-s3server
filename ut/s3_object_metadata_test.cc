@@ -626,6 +626,34 @@ TEST_F(S3ObjectMetadataTest, RemoveVersionMetadataFailed) {
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
 }
 
+TEST_F(S3ObjectMetadataTest, GetDeleteMarkerDefaultValue) {
+  EXPECT_FALSE(metadata_obj_under_test->get_delete_marker());
+}
+
+TEST_F(S3ObjectMetadataTest, SetDeleteMarkerToTue) {
+  metadata_obj_under_test->set_delete_marker();
+  EXPECT_TRUE(metadata_obj_under_test->get_delete_marker());
+}
+
+TEST_F(S3ObjectMetadataTest, CheckDefaultDeleteMarkerInFromJson) {
+  std::string json_str = metadata_obj_under_test->to_json();
+  Json::Value newroot;
+  Json::Reader reader;
+  bool parsingSuccessful = reader.parse(json_str, newroot);
+  EXPECT_TRUE(parsingSuccessful);
+  EXPECT_FALSE(newroot["System-Defined"].isMember("x-amz-delete-marker"));
+}
+
+TEST_F(S3ObjectMetadataTest, CheckDeleteMarkerInFromJson) {
+  metadata_obj_under_test->set_delete_marker();
+  std::string json_str = metadata_obj_under_test->to_json();
+  Json::Value newroot;
+  Json::Reader reader;
+  bool parsingSuccessful = reader.parse(json_str, newroot);
+  EXPECT_TRUE(parsingSuccessful);
+  EXPECT_TRUE(newroot["System-Defined"].isMember("x-amz-delete-marker"));
+}
+
 TEST_F(S3ObjectMetadataTest, ToJson) {
   std::string json_str = metadata_obj_under_test->to_json();
   Json::Value newroot;
