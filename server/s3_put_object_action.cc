@@ -758,10 +758,9 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   assert(!new_oid_str.empty());
 
   // store old object oid
-  std::string versioning_status =
-      bucket_metadata->get_bucket_versioning_status();
-  bool delete_object = (old_object_oid.u_hi || old_object_oid.u_lo) &&
-                       ("Unversioned" == versioning_status);
+  bool delete_object =
+      (old_object_oid.u_hi || old_object_oid.u_lo) &&
+      ("Unversioned" == bucket_metadata->get_bucket_versioning_status());
   if (delete_object) {
     assert(!old_oid_str.empty());
     if (number_of_parts != 0) {
