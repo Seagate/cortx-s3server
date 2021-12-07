@@ -137,8 +137,8 @@ def main():
     elif args.command == 'upgrade':
       from upgradecmd import UpgradeCmd
       logger.info('upgrade started.')
-      # comment following call to disable upgrade.
-      UpgradeCmd(args.config, args.services, args.commit).process()
+      # Uncomment following call to enable upgrade.
+      # UpgradeCmd(args.config, args.services, args.commit).process()
       logger.info('upgrade successful.')
   except Exception as e:
     logger.error(f"{str(e)}")
