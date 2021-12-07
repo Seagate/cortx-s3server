@@ -65,7 +65,7 @@ S3MultiObjectCopyAction::S3MultiObjectCopyAction(
          part_number, upload_id.c_str());
 
   action_uses_cleanup = true;
-  s3_put_action_state = S3PartCopyActionState::empty;
+  s3_part_copy_action_state = S3PartCopyActionState::empty;
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   layout_id = -1;  // Will be set during create object
@@ -132,7 +132,7 @@ void S3MultiObjectCopyAction::validate_multipart_request() {
   if (!request->is_chunked() && !request->is_header_present("Content-Length")) {
     // For non-chunked upload, the Header 'Content-Length' is missing
     s3_log(S3_LOG_INFO, stripped_request_id, "Missing Content-Length header");
-    s3_put_action_state = S3PartCopyActionState::validationFailed;
+    s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
     set_s3_error("MissingContentLength");
     send_response_to_s3_client();
   } else {
@@ -145,16 +145,16 @@ void S3MultiObjectCopyAction::check_part_details() {
   // "Part numbers can be any number from 1 to 10,000, inclusive."
   // https://docs.aws.amazon.com/en_us/AmazonS3/latest/API/API_UploadPart.html
   if (part_number < MINIMUM_PART_NUMBER || part_number > MAXIMUM_PART_NUMBER) {
-    s3_put_action_state = S3PartCopyActionState::validationFailed;
+    s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
     set_s3_error("InvalidPart");
     send_response_to_s3_client();
   } else if (request->get_header_size() > MAX_HEADER_SIZE ||
              request->get_user_metadata_size() > MAX_USER_METADATA_SIZE) {
-    s3_put_action_state = S3PartCopyActionState::validationFailed;
+    s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
     set_s3_error("MetadataTooLarge");
     send_response_to_s3_client();
   } else if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
-    s3_put_action_state = S3PartCopyActionState::validationFailed;
+    s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
     set_s3_error("KeyTooLongError");
     send_response_to_s3_client();
   } else if (request->get_content_length() > MAXIMUM_ALLOWED_PUT_SIZE) {
@@ -231,7 +231,7 @@ void S3MultiObjectCopyAction::fetch_multipart_metadata() {
 
 void S3MultiObjectCopyAction::fetch_multipart_failed() {
   // Log error
-  s3_put_action_state = S3PartCopyActionState::validationFailed;
+  s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
   s3_log(S3_LOG_ERROR, request_id,
          "Failed to retrieve multipart upload metadata\n");
   if (object_multipart_metadata->get_state() ==
@@ -264,7 +264,7 @@ void S3MultiObjectCopyAction::check_source_bucket_authorization_success() {
 void S3MultiObjectCopyAction::check_source_bucket_authorization_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  s3_put_action_state = S3PartCopyActionState::validationFailed;
+  s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
   std::string error_code = auth_client->get_error_code();
 
   set_s3_error(error_code);
@@ -306,12 +306,12 @@ void S3MultiObjectCopyAction::fetch_part_info_success() {
              S3PartMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Part metadata load operation failed due to pre launch failure\n");
-    s3_put_action_state = S3PartCopyActionState::validationFailed;
+    s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
-    s3_put_action_state = S3PartCopyActionState::validationFailed;
+    s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
@@ -323,7 +323,7 @@ void S3MultiObjectCopyAction::fetch_part_info_failed() {
   if (part_metadata->get_state() == S3PartMetadataState::missing) {
     next();
   } else {
-    s3_put_action_state = S3PartCopyActionState::validationFailed;
+    s3_part_copy_action_state = S3PartCopyActionState::validationFailed;
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
@@ -360,7 +360,7 @@ void S3MultiObjectCopyAction::create_part_object() {
 
 void S3MultiObjectCopyAction::create_part_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_put_action_state = S3PartCopyActionState::newObjOidCreated;
+  s3_part_copy_action_state = S3PartCopyActionState::newObjOidCreated;
 
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_layout(), upload_id,
@@ -385,7 +385,7 @@ void S3MultiObjectCopyAction::create_part_object_failed() {
   LOG_PERF("create_object_failed_ms", request_id.c_str(), mss);
   s3_stats_timing("create_object_failed", mss);
 
-  s3_put_action_state = S3PartCopyActionState::newObjOidCreationFailed;
+  s3_part_copy_action_state = S3PartCopyActionState::newObjOidCreationFailed;
 
   if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
@@ -487,7 +487,7 @@ void S3MultiObjectCopyAction::copy_object() {
 void S3MultiObjectCopyAction::copy_object_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  s3_put_action_state = S3PartCopyActionState::writeComplete;
+  s3_part_copy_action_state = S3PartCopyActionState::writeComplete;
   object_data_copier.reset();
   next();
 
@@ -497,7 +497,7 @@ void S3MultiObjectCopyAction::copy_object_success() {
 void S3MultiObjectCopyAction::copy_object_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  s3_put_action_state = S3PartCopyActionState::writeFailed;
+  s3_part_copy_action_state = S3PartCopyActionState::writeFailed;
   set_s3_error(object_data_copier->get_s3_error());
 
   object_data_copier.reset();
@@ -581,7 +581,7 @@ void S3MultiObjectCopyAction::copy_part_fragment_success(int index) {
   // Success callback, so reduce in flight copy operation count
   parts_frg_copy_in_flight = parts_frg_copy_in_flight - 1;
 
-  if (s3_put_action_state == S3PartCopyActionState::writeFailed) {
+  if (s3_part_copy_action_state == S3PartCopyActionState::writeFailed) {
     // This part/fragment got copied, however some another part/fragment
     // failed to copy, client is send error only when
     // all the in flight copy request is done
@@ -596,12 +596,12 @@ void S3MultiObjectCopyAction::copy_part_fragment_success(int index) {
   }
   // Dont save metadata or invoke another copy operation if at all
   // any of the previous copy operation of the part/fragment failed
-  if (s3_put_action_state != S3PartCopyActionState::writeFailed) {
+  if (s3_part_copy_action_state != S3PartCopyActionState::writeFailed) {
     if (total_parts_fragment_to_be_copied ==
         ++parts_fragment_copied_or_failed) {
       // This happens to be the last part/fragment which is sucessful
       // so finally save metadata
-      s3_put_action_state = S3PartCopyActionState::writeComplete;
+      s3_part_copy_action_state = S3PartCopyActionState::writeComplete;
       next();
     } else if (parts_frg_copy_in_flight_copied_or_failed <
                total_parts_fragment_to_be_copied) {
@@ -621,7 +621,7 @@ void S3MultiObjectCopyAction::copy_part_fragment_success(int index) {
 void S3MultiObjectCopyAction::copy_part_fragment_failed(int index) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  s3_put_action_state = S3PartCopyActionState::writeFailed;
+  s3_part_copy_action_state = S3PartCopyActionState::writeFailed;
   set_s3_error(fragment_data_copier_list[index]->get_s3_error());
   s3_log(S3_LOG_INFO, stripped_request_id,
          "Copy failed for target fragment [index = %d part_number = %d OID="
@@ -792,7 +792,7 @@ void S3MultiObjectCopyAction::write_object_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Write successful\n");
   if (request->is_chunked()) {
     if (auth_failed) {
-      s3_put_action_state = S3PartCopyActionState::writeFailed;
+      s3_part_copy_action_state = S3PartCopyActionState::writeFailed;
       set_s3_error("SignatureDoesNotMatch");
       send_response_to_s3_client();
       return;
@@ -809,7 +809,7 @@ void S3MultiObjectCopyAction::write_object_successful() {
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
     motr_write_completed = true;
-    s3_put_action_state = S3PartCopyActionState::writeComplete;
+    s3_part_copy_action_state = S3PartCopyActionState::writeComplete;
     if (request->is_chunked()) {
       if (auth_completed) {
         next();
@@ -831,7 +831,7 @@ void S3MultiObjectCopyAction::write_object_failed() {
 
   motr_write_in_progress = false;
   motr_write_completed = true;
-  s3_put_action_state = S3PartCopyActionState::writeFailed;
+  s3_part_copy_action_state = S3PartCopyActionState::writeFailed;
 
   if (is_first_write_part_request) {
     // Used for motr unit checksum computation, for part's first write
@@ -867,7 +867,7 @@ void S3MultiObjectCopyAction::save_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string s_md5_got = request->get_header_value("content-md5");
   if (!s_md5_got.empty() && !motr_writer->content_md5_matches(s_md5_got)) {
-    s3_put_action_state = S3PartCopyActionState::metadataSaveFailed;
+    s3_part_copy_action_state = S3PartCopyActionState::metadataSaveFailed;
     s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
     set_s3_error("BadDigest");
     send_response_to_s3_client();
@@ -897,13 +897,13 @@ void S3MultiObjectCopyAction::save_metadata() {
 
 void S3MultiObjectCopyAction::save_object_metadata_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_put_action_state = S3PartCopyActionState::metadataSaved;
+  s3_part_copy_action_state = S3PartCopyActionState::metadataSaved;
   next();
 }
 
 void S3MultiObjectCopyAction::save_metadata_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_put_action_state = S3PartCopyActionState::metadataSaveFailed;
+  s3_part_copy_action_state = S3PartCopyActionState::metadataSaveFailed;
   if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save of Part metadata failed due to pre launch failure\n");
@@ -984,7 +984,7 @@ void S3MultiObjectCopyAction::add_object_oid_to_probable_dead_oid_list() {
 void
 S3MultiObjectCopyAction::add_object_oid_to_probable_dead_oid_list_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_put_action_state = S3PartCopyActionState::probableEntryRecordFailed;
+  s3_part_copy_action_state = S3PartCopyActionState::probableEntryRecordFailed;
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
@@ -1169,7 +1169,7 @@ void S3MultiObjectCopyAction::delete_old_object() {
 void S3MultiObjectCopyAction::delete_new_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // If PUT failed, then clean new object.
-  assert(s3_put_action_state != S3PartCopyActionState::completed);
+  assert(s3_part_copy_action_state != S3PartCopyActionState::completed);
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
 
   motr_writer->set_oid(new_object_oid);
