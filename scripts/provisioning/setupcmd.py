@@ -81,7 +81,7 @@ class SetupCmd(object):
       self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
 
     self.bg_delete_service = "s3bgworker"
-    if -1 != self.services.find("bg_consumer"):
+    if -1 != self.services.find("bg_"):
       self.bg_delete_service = "bg_consumer"
     # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
     ######### start
