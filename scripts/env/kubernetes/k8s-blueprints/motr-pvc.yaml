@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdb
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdb
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdc
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdd
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sde
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sde
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdf
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdf
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdg
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdg
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdh
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdh
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdi
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdj
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdj
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdk
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdk
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdl
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdl
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: motr-sdm
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: motr-sdm
+---

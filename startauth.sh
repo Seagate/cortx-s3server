@@ -18,7 +18,15 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+if [ $# -ne 1 ]
+then
+  echo "Invalid number of arguments passed to the script"
+  echo "Usage: startauth.sh <base config path>"
+  exit 1
+fi
 
 cd $(dirname $0)
 
-java -jar AuthServer-1.0-0.jar
+base_config_path=$1
+echo "Base config path is $base_config_path"
+java -jar AuthServer-1.0-0.jar $1

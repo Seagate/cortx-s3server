@@ -17,52 +17,15 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+# IMP : for upgrade cmd,
+# merge_configs() is imported from the merge.py
 
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import os.path
 import shutil
 import sys
+import socket
 import logging
-
-s3_tmp_dir = __import__('setupcmd').SetupCmd.s3_tmp_dir
-
-g_upgrade_items = {
-  's3' : {
-        'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
-        'oldSampleFile' : os.path.join(s3_tmp_dir, "s3config.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml",
-        'fileType' : 'yaml://'
-    },
-    'auth' : {
-        'configFile' : "/opt/seagate/cortx/auth/resources/authserver.properties",
-        'oldSampleFile' : os.path.join(s3_tmp_dir, "authserver.properties.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/auth/resources/authserver.properties.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties",
-        'fileType' : 'properties://'
-    },
-    'keystore' : {
-        'configFile' : "/opt/seagate/cortx/auth/resources/keystore.properties",
-        'oldSampleFile' : os.path.join(s3_tmp_dir,"keystore.properties.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties",
-        'fileType' : 'properties://'
-    },
-    'bgdelete' : {
-        'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-        'oldSampleFile' : os.path.join(s3_tmp_dir, "config.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml",
-        'fileType' : 'yaml://'
-    },
-    'cluster' : {
-        'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
-        'oldSampleFile' : os.path.join(s3_tmp_dir, "s3_cluster.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml",
-        'fileType' : 'yaml://'
-    }
-}
 
 def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
     """
@@ -126,7 +89,8 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     cs_conf_file.save_config()
     logger.info(f'config file {str(configFile)} upgrade completed')
 
-def merge_configs():
+def merge_configs(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
+
     """
     - This function will merge all S3 config files during upgrade
     - This function should be used outside this file to call configs upgrade
@@ -134,12 +98,7 @@ def merge_configs():
     # Use existing s3-deployment-logger or setup new console logger
     setup_logger()
 
-    for upgrade_item in g_upgrade_items:
-        upgrade_config(g_upgrade_items[upgrade_item]['configFile'],
-            g_upgrade_items[upgrade_item]['oldSampleFile'],
-            g_upgrade_items[upgrade_item]['newSampleFile'],
-            g_upgrade_items[upgrade_item]['unsafeAttributesFile'],
-            g_upgrade_items[upgrade_item]['fileType'])
+    upgrade_config(configFile, oldSampleFile, newSampleFile, unsafeAttributesFile, filetype)
 
 def setup_logger():
     """
@@ -147,7 +106,7 @@ def setup_logger():
     - else it will log to console
     """
     global logger
-    logger = logging.getLogger("s3-deployment-logger")
+    logger = logging.getLogger("s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]")
     if logger.hasHandlers():
         logger.info("Logger has valid handler")
     else:
@@ -163,4 +122,5 @@ def setup_logger():
         logger.addHandler(chandler)
 
 if __name__ == "__main__":
-    merge_configs()
+    print("merge_configs without parameters is not supported, please implement cli wrapper and parser")
+    #merge_configs()

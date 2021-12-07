@@ -70,7 +70,7 @@ SSL:
 BOTO:
     ENABLE_LOGGER: False
     LOG_LEVEL: DEBUG
-    LOG_FILE_PATH: /var/log/seagate/auth/boto.log
+    LOG_FILE_PATH: /var/log/cortx/auth/boto.log
 '''
 
 

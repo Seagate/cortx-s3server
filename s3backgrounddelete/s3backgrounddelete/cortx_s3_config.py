@@ -41,12 +41,19 @@ class CORTXS3Config(object):
     _conf_file = None
     s3confstore = None
 
-    def __init__(self):
+    def __init__(self,base_cfg_path:str = "/etc/cortx",cfg_type:str = "yaml://"):
         """Initialise logger and configuration."""
         self.logger = logging.getLogger(__name__ + "CORTXS3Config")
         self.s3bdg_access_key = None
         self.s3bgd_secret_key = None
-        self._load_and_fetch_config()
+        self.logger.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
+        if os.path.isfile(os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")):
+            # Load config.yaml file through confstore.
+            bgdelete_conf_file = cfg_type + os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")
+            if self.s3confstore is None:
+                self.s3confstore = S3CortxConfStore(config=bgdelete_conf_file, index= str(uuid.uuid1()))
+        else:
+            self._load_and_fetch_config()
         self.cache_credentials()
 
     @staticmethod
@@ -107,10 +114,21 @@ class CORTXS3Config(object):
         except:
             raise KeyError("Could not parse version from config file " + self._conf_file)
 
-    def get_logger_directory(self):
+    def get_processor_logger_directory(self):
         """Return logger directory path for background delete from config file or KeyError."""
         try:
-          log_directory = self.s3confstore.get_config('logconfig>logger_directory')
+          log_directory = self.s3confstore.get_config('logconfig>processor_logger_directory')
+          return log_directory
+        except:
+            raise KeyError(
+                "Could not parse logger directory path from config file " +
+                self._conf_file)
+
+
+    def get_scheduler_logger_directory(self):
+        """Return logger directory path for background delete from config file or KeyError."""
+        try:
+          log_directory = self.s3confstore.get_config('logconfig>scheduler_logger_directory')
           return log_directory
         except:
             raise KeyError(
