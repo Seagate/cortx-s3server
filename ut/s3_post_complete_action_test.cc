@@ -767,11 +767,51 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
   action_under_test_ptr->obj_metadata_updated = true;
-  action_under_test_ptr->old_object_oid = {0x0, 0x0};
+  action_under_test_ptr->old_object_oid = {0x1ffff, 0x1ffff};
   action_under_test_ptr->old_oid_str = "abcd";
   action_under_test_ptr->new_oid_str = "abcd";
+  action_under_test_ptr->new_object_oid = oid;
+  action_under_test_ptr->layout_id = 9;
+  action_under_test_ptr->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  action_under_test_ptr->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test_ptr->new_object_metadata->set_extended_object_metadata(
+      object_meta_factory->mock_object_extnd_metadata);
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .WillRepeatedly(Return(std::string("abcd")));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(9));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index())
+      .WillRepeatedly(Return(std::string("abcd/18133434")));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_obj_version_key())
+      .WillRepeatedly(Return(std::string("18133434")));
+  object_meta_factory->mock_object_metadata->set_pvid_str(
+      action_under_test_ptr->new_oid_str);
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_extnd_metadata),
+              get_part_count()).WillRepeatedly(Return(2));
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _))
+      .Times(1)
+      .WillRepeatedly(
+           Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));
   action_under_test_ptr->send_response_to_s3_client();
 }
 
@@ -867,22 +907,38 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObjectSuccess) {
 
 TEST_F(S3PostCompleteActionTest, RemoveOldExtMetadataSuccess) {
   CREATE_WRITER_OBJ;
-
-  action_under_test_ptr->old_oid_str = {0x0};
-  action_under_test_ptr->new_oid_str = {0x0};
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(0);
+  CREATE_METADATA_OBJ;
+  action_under_test_ptr->old_oid_str = "oid_old";
+  action_under_test_ptr->new_oid_str = "oid_new";
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .WillRepeatedly(Return(std::string("abcd")));
 
   action_under_test_ptr->remove_old_ext_metadata_successful();
 }
 
 TEST_F(S3PostCompleteActionTest, RemoveNewExtMetadataSuccess) {
   CREATE_WRITER_OBJ;
+  std::string version_key_in_index = "abcd/v1";
+  action_under_test_ptr->new_object_oid = oid;
+  action_under_test_ptr->layout_id = 9;
+  action_under_test_ptr->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
 
-  action_under_test_ptr->old_oid_str = {0x0};
-  action_under_test_ptr->new_oid_str = {0x0};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .WillRepeatedly(Return(std::string("abcd")));
+  struct m0_uint128 object_list_indx_oid = {0x11ffff, 0x1ffff};
+  struct m0_uint128 objects_version_list_index_oid = {0x1ff1ff, 0x1ffff};
+  struct m0_uint128 oid = {0x1ffff, 0x1ffff};
+  std::string oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test_ptr->old_oid_str = "oid_old";
+  action_under_test_ptr->new_oid_str = "oid_new";
+  action_under_test_ptr->new_parts_probable_del_rec_list.push_back(std::move(
+      std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
+          object_list_indx_oid, objects_version_list_index_oid,
+          version_key_in_index, false /* force_delete */))));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(0);
+              delete_keyval(_, _, _, _)).Times(1);
 
   action_under_test_ptr->remove_new_ext_metadata_successful();
 }
