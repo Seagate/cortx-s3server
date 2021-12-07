@@ -24,7 +24,6 @@ import time
 import errno
 import shutil
 import math
-import urllib
 import fcntl
 import glob
 import uuid
@@ -335,32 +334,6 @@ class ConfigCmd(SetupCmd):
       self.create_symbolic_link(src_path, dst_path)
       index += 1
 
-  def get_endpoint(self, confstore_key, expected_token,  endpoint_type):
-    """1.Fetch confstore value from given key i.e. confstore_key
-       2.Parse endpoint string based on expected endpoint type i.e. endpoint_type
-       3.Return specific value as mentioned as per parameter i.e. expected_token.
-         this expected_token must has value from ['scheme', 'fqdn', 'port']
-       Examples:
-      fetch_ldap_host = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "fqdn", "ldap")
-      fetch_ldap_port = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "port", "ldap")
-    """
-    confstore_key_value = self.get_confvalue_with_defaults(confstore_key)
-    # Checking if the value is a string or not.
-    if isinstance(confstore_key_value, str):
-      confstore_key_value = literal_eval(confstore_key_value)
-
-    # Checking if valid token name is expected or not.
-    allowed_token_list = ['scheme', 'fqdn', 'port']
-    if not expected_token in allowed_token_list:
-      raise S3PROVError(f"Incorrect token string {expected_token} received for {confstore_key} for specified endpoint type : {endpoint_type}")
-
-    endpoint = self.get_endpoint_for_scheme(confstore_key_value, endpoint_type)
-    if endpoint is None:
-      raise S3PROVError(f"{confstore_key} does not have any specified endpoint type : {endpoint_type}")
-    if expected_token not in endpoint:
-      raise S3PROVError(f"{confstore_key} does not specify endpoint fqdn {endpoint} for endpoint type {endpoint_type}")
-    return endpoint[expected_token]
-
   def push_s3_ldap_schema(self):
       """ Push s3 ldap schema with below checks,
           1. While pushing schema, global lock created in consul kv store as <index, key, value>.
@@ -374,26 +347,14 @@ class ConfigCmd(SetupCmd):
       ldap_lock = False
       self.logger.info('checking for concurrent execution scenario for s3 ldap scheam push using consul kv lock.')
       openldap_key=self.get_confkey("S3_CONSUL_OPENLDAP_KEY")
-      try:
-          consul_endpoint_url=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTS", "fqdn", "http")
-          consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTS", "port", "http")
-          consul_protocol='consul://'
-          # consul url will be : consul://consul-server.default.svc.cluster.local:8500
-          consul_url= f'{consul_protocol}'+ f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
-      except S3PROVError:
-          # endpoint entry is not found in confstore hence fetch endpoint url from default value.
-          consul_url=self.get_confvalue_with_defaults("DEFAULT_CONFIG>CONFSTORE_CONSUL_ENDPOINTS")
-          self.logger.info(f'consul endpoint url entry (http://<consul-fqdn>:<port>) is missing for protocol type: http from confstore, hence using default value as {consul_url}')
 
-      self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
-      consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
       while(True):
           try:
-              opendldap_val = consul_confstore.get_config(f'{openldap_key}')
+              opendldap_val = self.consul_confstore.get_config(f'{openldap_key}')
               self.logger.info(f'openldap lock value is:{opendldap_val}')
               if opendldap_val is None:
                   self.logger.info(f'Setting confstore value for key :{openldap_key} and value as :{self.machine_id}')
-                  consul_confstore.set_config(f'{openldap_key}', f'{self.machine_id}', True)
+                  self.consul_confstore.set_config(f'{openldap_key}', f'{self.machine_id}', True)
                   self.logger.info('Updated confstore with latest value')
                   time.sleep(5)
                   continue
@@ -415,8 +376,8 @@ class ConfigCmd(SetupCmd):
         self.configure_s3_schema()
         self.logger.info('Pushed s3 ldap schema successfully....!!')
         self.logger.info(f'Deleting consule key :{openldap_key}')
-        consul_confstore.delete_key(f'{openldap_key}', True)
-        self.logger.info(f'deleted openldap key-value from consul using consul endpoint URL as:{consul_url}')
+        self.consul_confstore.delete_key(f'{openldap_key}', True)
+        self.logger.info(f'deleted openldap key-value from consul')
 
   def configure_s3_schema(self):
     self.logger.info('openldap s3 configuration started')
@@ -489,7 +450,7 @@ class ConfigCmd(SetupCmd):
   def get_msgbus_partition_count(self):
     """get total consumers (* 2) which will act as partition count."""
     consumer_count = 0
-    search_values = self.search_confvalue("node", "services", "bg_consumer")
+    search_values = self.search_confvalue("node", "services", self.bg_delete_service)
     consumer_count = len(search_values)
     self.logger.info(f"consumer_count : {consumer_count}")
 
@@ -588,29 +549,6 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_MAX_START_TIMEOUT", "S3_MOTR_CONFIG>S3_MOTR_INIT_MAX_TIMEOUT")
     self.logger.info("Update s3 server config file completed")
 
-  def parse_endpoint(self, endpoint_str):
-    """Parse endpoint string and return dictionary with components:
-         * scheme,
-         * fqdn,
-         * and optionally port, if present in the string.
-
-       Examples:
-
-       'https://s3.seagate.com:443' -> {'scheme': 'https', 'fqdn': 's3.seagate.com', 'port': '443'}
-       'https://s3.seagate.com'     -> {'scheme': 'https', 'fqdn': 's3.seagate.com'}
-       'http://s3.seagate.com:80'   -> {'scheme': 'http', 'fqdn': 's3.seagate.com', 'port': '80'}
-       'http://127.0.0.1:80'        -> {'scheme': 'http', 'fqdn': '127.0.0.1', 'port': '80'}
-    """
-    try:
-      result1 = urllib.parse.urlparse(endpoint_str)
-      result2 = result1.netloc.split(':')
-      result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
-      if len(result2) > 1:
-        result['port'] = result2[1]
-    except Exception as e:
-      raise S3PROVError(f'Failed to parse endpoing {endpoint_str}.  Exception: {e}')
-    return result
-
   def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
     if isinstance(value_to_update, str):
       value_to_update = literal_eval(value_to_update)
@@ -661,18 +599,6 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_LDAPADMIN_USER_KEY", "ldapLoginDN", self.update_auth_ldap_login_dn)
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY", "ldapLoginPW")
     self.logger.info("Update s3 authserver config file completed")
-
-  def get_endpoint_for_scheme(self, value_to_update, scheme):
-    """Scan list of endpoints, and return parsed endpoint for a given scheme."""
-    if not isinstance(value_to_update, str):
-      lst=value_to_update
-    else:
-      lst=[value_to_update]
-    for endpoint_str in lst:
-      endpoint = self.parse_endpoint(endpoint_str)
-      if endpoint['scheme'] == scheme:
-        return endpoint
-    return None
 
   def update_auth_ldap_host (self, value_to_update, additional_param):
     if type(value_to_update) is str:
