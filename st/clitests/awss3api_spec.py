@@ -17,7 +17,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+import json
 import os
+import re
 import yaml
 import hashlib
 import shutil
@@ -1637,13 +1639,6 @@ AwsTest('Aws can upload 1kfileH').put_object("seagatebuckettag", "1kfileH", 1000
 # **************** Create file with the above created objects **********************************
 object_list_file = create_object_list_file("obj_list_file_all_exist_not_quiet_mode.json", ["1kfileF", "1kfileG", "1kfileH"], "false")
 
-#******** PutObject with Bucket versioning enabled ********
-AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("seagatebucket", "Enabled")\
-  .execute_test().command_is_successful()
-AwsTest('Aws can put object on versioning enabled bucket').put_object("seagatebucket", "1kfile", 1024)\
-  .execute_test().command_is_successful()
-#TODO: version id validation
-
 # **************** Delete multiple objects *****************************************************
 AwsTest('Aws can delete multiple objects when all objects exist in bucket, quiet_mode: false')\
     .delete_multiple_objects("seagatebuckettag", object_list_file)\
@@ -1702,6 +1697,26 @@ result=AwsTest('Aws cannot complete multipart upload with wrong ETag').complete_
 
 #******* Delete bucket **********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test().command_is_successful()
+
+
+################################################################################
+
+#******** PutObject with Bucket versioning enabled ********
+
+AwsTest('Aws can create bucket').create_bucket("versionedbucket").execute_test().command_is_successful()
+AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("versionedbucket", "Enabled").execute_test().command_is_successful()
+result=AwsTest('Aws can put a versioned bucket').\
+    put_object("versionedbucket", "1kfile", 1024, output="json").\
+    execute_test().\
+    command_is_successful()
+put_response = json.loads(result.status.stdout)
+version_id = put_response.get("VersionId")
+assert version_id, "No version ID was returned in PutObject response"
+assert re.match(r"[0-9A-Za-z]+", version_id)
+AwsTest('Aws can delete the versioned object').delete_object("versionedbucket", "1kfile").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("versionedbucket").execute_test().command_is_successful()
+
+################################################################################
 
 #************ Authorize copy-object ********************
 
