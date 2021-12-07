@@ -902,7 +902,7 @@ void S3PutObjectAction::send_response_to_s3_client() {
 
     if ("Unversioned" != bucket_metadata->get_bucket_versioning_status()) {
       request->set_out_header_value("x-amz-version-id",
-                                    object_metadata->get_obj_version_id());
+                                    new_object_metadata->get_obj_version_id());
     }
 
     request->send_response(S3HttpSuccess200);
