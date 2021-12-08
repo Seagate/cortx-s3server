@@ -83,7 +83,8 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD2(remove_version_metadata,
                void(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
+  MOCK_METHOD0(regenerate_version_id, void());
+  MOCK_METHOD0(set_delete_marker, void());
 };
 
 #endif
-

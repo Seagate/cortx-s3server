@@ -138,6 +138,8 @@ class S3DeleteObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3DeleteObjectActionTest, MarkOIDSForDeletion);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectsDelayedEnabled);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectsDelayedDisabled);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteHandlerInEnabledState);
+  FRIEND_TEST(S3DeleteObjectActionTest, MetadataHandlerInEnabledState);
 };
 
 #endif

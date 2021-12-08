@@ -153,7 +153,6 @@ void S3DeleteObjectAction::delete_handler() {
 }
 
 void S3DeleteObjectAction::metadata_handler() {
-  // TODO: divide request if versionID is available
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   std::string bucket_versioning =
@@ -454,7 +453,7 @@ void S3DeleteObjectAction::startcleanup() {
       start();
     } else if (s3_del_obj_action_state ==
                S3DeleteObjectActionState::addDeleteMarkerFailed) {
-      // TODO: Perform cleanup
+      // TODO: Perform cleanup, need change in background delete
       done();
     } else if (s3_del_obj_action_state ==
                S3DeleteObjectActionState::deleteMarkerAdded) {
