@@ -138,6 +138,8 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest, ConstructorTest);
   FRIEND_TEST(S3PutObjectActionTest, ValidateRequestTags);
   FRIEND_TEST(S3PutObjectActionTest, VaidateEmptyTags);
+  FRIEND_TEST(S3PutObjectActionTest, ValidatePUTContentLengthAs5GB);
+  FRIEND_TEST(S3PutObjectActionTest, ValidatePUTContentLengthGreaterThan5GB);
   FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase1);
   FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase2);
   FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase3);
