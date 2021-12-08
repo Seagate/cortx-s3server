@@ -49,16 +49,16 @@ class UpgradeCmd(SetupCmd):
       # check for old files before merge logic
       self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "s3_cluster.yaml.sample.old")])
-      if 'haproxy' in self.services:
+      if "haproxy" in self.services:
         pass
-      if 's3server' in self.services:
+      if "s3server" in self.services:
         self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "s3config.yaml.sample.old")])
-      if 'authserver' in self.services:
+      if "authserver" in self.services:
         self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "keystore.properties.sample.old"),
              os.path.join(self.s3_tmp_dir, "authserver.properties.sample.old")])
-      if 's3bgschedular' in self.services or 's3bgworker' in self.services:
+      if "bgscheduler" in self.services or "bgworker" in self.services:
         self.old_file_check(
             [os.path.join(self.s3_tmp_dir, "config.yaml.sample.old")])
       # copy sample and unsafe attribute files to /etc/cortx for merge logic
@@ -80,9 +80,9 @@ class UpgradeCmd(SetupCmd):
              'yaml://')
       # after calling merge logic, make '.old' files
       self.make_sample_old_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')])
-      if 'haproxy' in self.services:
+      if "haproxy" in self.services:
         pass
-      if 's3server' in self.services:
+      if "s3server" in self.services:
         self.copy_config_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE')])
         self.logger.info(f"merge config for s3server started")
@@ -98,7 +98,7 @@ class UpgradeCmd(SetupCmd):
                os.path.join(self.base_config_file_path, "s3/conf/s3config.yaml.sample"),
                'yaml://')
         self.make_sample_old_files([self.get_confkey('S3_CONFIG_SAMPLE_FILE')])
-      if 'authserver' in self.services:
+      if "authserver" in self.services:
         self.copy_config_files([self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
                                 self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
@@ -129,7 +129,7 @@ class UpgradeCmd(SetupCmd):
                'properties://')
         self.make_sample_old_files([self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
                                     self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE')])
-      if 's3bgschedular' in self.services or 's3bgworker' in self.services:
+      if "bgscheduler" in self.services or "bgworker" in self.services:
         self.copy_config_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
                                 self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE')])
         self.logger.info(f"merge config for background service started")
