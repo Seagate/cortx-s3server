@@ -1260,7 +1260,7 @@ int main(int argc, char **argv) {
           g_option_instance->get_bucket_metadata_cache_refresh_sec()));
 
   S3DataUsageCache::get_instance()->set_max_cache_size(
-    g_option_instance->get_bucket_metadata_cache_max_size());
+      g_option_instance->get_data_usage_accounts_cache_max_size());
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()
