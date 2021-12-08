@@ -86,7 +86,23 @@ def main():
     create_logger_directory(s3_single_entry_log_directory)
     logger = create_logger(s3_single_entry_log_file, s3_single_entry_logger_name, s3_single_entry_log_format)
 
-    if args.service == 's3server':
+    # Service mapping
+    service = args.service
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    services_map = {
+                "s3server": "s3server",
+                "s3authserver": "authserver",
+                "s3bgproducer": "bgscheduler",
+                "s3bgconsumer": "bgworker",
+                "haproxy": "haproxy"}
+    logger.info(f"Input Service: {service}")
+    if service in services_map:
+        service = services_map[service]
+    logger.info(f"Mapped Service: {service}")
+    ######### end
+
+    if service == "s3server":
       if not args.index:
         raise Exception("provide instance id")
 
@@ -130,7 +146,7 @@ def main():
 
       # Print last few line of S3 server log file
       os.system(f"tail -f {s3_log_file_path}")
-    elif args.service == 's3authserver':
+    elif service == "authserver":
       # Start S3 Auth Server
       logger.info(f"sh /opt/seagate/cortx/auth/startauth.sh {base_config_path}")
       logger.info(f"Starting S3 Auth Server...")
@@ -145,7 +161,7 @@ def main():
 
       # Print last few line of S3 authserver log  file
       os.system(f"tail -f {s3_auth_server_log_file_path}")
-    elif args.service == 's3bgproducer':
+    elif service == "bgscheduler":
       # Uncomment below two lines if you want return bgdelete schedule timings.
       # os.system("sed -i -e \"s,scheduler_schedule_interval:.*,scheduler_schedule_interval:\ 120,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # os.system("sed -i -e \"s,leak_processing_delay_in_mins:.*,leak_processing_delay_in_mins:\ 2,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
@@ -161,7 +177,7 @@ def main():
       # Print last few line of S3 bgdelete producer log  file
       os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
 
-    elif args.service == 's3bgconsumer':
+    elif service == "bgworker":
       # Start the Background Consumer
       logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path} yaml://")
       logger.info(f"Starting S3 Background delete Consumer...")
@@ -174,7 +190,7 @@ def main():
       # Print last few line of S3 bgdelete consumer log  file
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
 
-    elif args.service == 'haproxy':
+    elif service == "haproxy":
       haproxy_log_path = os.path.join(base_logdir_path, 's3', machine_id, 'haproxy/haproxy.log')
       logger.info(f"haproxy_log_path: {haproxy_log_path}")
       # create haproxy log directory path if does not exist
@@ -199,7 +215,7 @@ def main():
       # Print last few line of S3 HAProxy log  file
       os.system(f"tail -f {haproxy_log_path}")
     else:
-      logger.error(f"Invalid argument {args.service}")
+      logger.error(f"Service {service} is not supported")
 
 
   except Exception as e:
