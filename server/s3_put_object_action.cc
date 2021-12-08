@@ -923,10 +923,9 @@ void S3PutObjectAction::startcleanup() {
   clear_tasks();
   cleanup_started = true;
 
-  std::string versioning_status =
-      bucket_metadata->get_bucket_versioning_status();
-  bool delete_object = (old_object_oid.u_hi || old_object_oid.u_lo) &&
-                       ("Unversioned" == versioning_status);
+  bool delete_object =
+      (old_object_oid.u_hi || old_object_oid.u_lo) &&
+      ("Unversioned" == bucket_metadata->get_bucket_versioning_status());
   // Success conditions
   if (s3_put_action_state == S3PutObjectActionState::completed) {
     s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
