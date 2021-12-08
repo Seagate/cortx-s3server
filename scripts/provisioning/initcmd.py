@@ -75,14 +75,14 @@ class InitCmd(SetupCmd):
                               'properties://')
       self.logger.info("validate auth config files completed")
 
-    if "s3bgschedular" in self.services:
+    if "bgscheduler" in self.services:
       self.logger.info("validate s3 bgdelete scheduler config file started")
       self.validate_config_file(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 'yaml://')
     self.logger.info("validate s3 bgdelete scheduler config files completed")
 
-    if "s3bgworker" in self.services:
+    if "bgworker" in self.services:
       self.logger.info("validate s3 bgdelete worker config file started")
       self.validate_config_file(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),

@@ -102,11 +102,11 @@ class ConfigCmd(SetupCmd):
         self.logger.info("authserver config started")
         self.process_authserver()
         self.logger.info("authserver config completed")
-      if "s3bgschedular" in self.services:
+      if "bgscheduler" in self.services:
         self.logger.info("s3bgschedular config started")
         self.process_s3bgschedular()
         self.logger.info("s3bgschedular config completed")
-      if "s3bgworker" in self.services:
+      if "bgworker" in self.services:
         self.logger.info("s3bgworker config started")
         self.process_s3bgworker()
         self.logger.info("s3bgworker config completed")
