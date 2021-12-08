@@ -129,6 +129,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_HEAD_OBJECT_ACTION_ID,
   /* S3HeadServiceAction: */
   S3_ADDB_S3_HEAD_SERVICE_ACTION_ID,
+  /* S3MultiObjectCopyAction: */
+  S3_ADDB_S3_MULTI_OBJECT_COPY_ACTION_ID,
   /* S3PostCompleteAction: */
   S3_ADDB_S3_POST_COMPLETE_ACTION_ID,
   /* S3PostMultipartObjectAction: */
