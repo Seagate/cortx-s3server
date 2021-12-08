@@ -252,22 +252,23 @@ class AwsTest(S3PyCliTest):
                       + " --upload-id " + upload_id )
         return self
 
-    def put_object(self, bucket_name, filename, filesize=None, canned_acl=None, debug_flag=None, key_name=None):
+    def put_object(self, bucket_name, filename, filesize=None, canned_acl=None, debug_flag=None, key_name=None, output=None):
         self.bucket_name = bucket_name
         self.filename = filename
-        if(key_name is not None):
-            cmd = "aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + key_name
-        else:
-            cmd = "aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + filename
 
-        if(filesize is not None):
+        args = ["--key", key_name if key_name else filename]
+        if filesize is not None:
            self.filesize = filesize
-           cmd = cmd + " --body "+ self.filename
-        if(canned_acl is not None):
+           args.extend(("--body", filename))
+        if canned_acl is not None:
            self.canned_acl = canned_acl
-           cmd = cmd + " --acl " + canned_acl
-        if(debug_flag is not None):
-           cmd = cmd + " --debug"
+           args.extend(("--acl", canned_acl))
+        if debug_flag is not None:
+            args.append("--debug")
+        if output:
+            args.extend(("--output", output))
+
+        cmd = f"aws s3api put-object --bucket {bucket_name} {' '.join(args)}"
         self.with_cli(cmd)
         return self
 
