@@ -900,7 +900,7 @@ void S3PutObjectAction::send_response_to_s3_client() {
 
     request->set_out_header_value("ETag", e_tag);
 
-    if ("Unversioned" != bucket_metadata->get_bucket_versioning_status()) {
+    if ("Enabled" == bucket_metadata->get_bucket_versioning_status()) {
       request->set_out_header_value("x-amz-version-id",
                                     new_object_metadata->get_obj_version_id());
     }
