@@ -805,23 +805,7 @@ std::string S3ObjectMetadata::to_json() {
 // Streaming to json
 std::string S3ObjectMetadata::version_entry_to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
-  Json::Value root;
-  // Processing version entry currently only needs minimal information
-  // In future when real S3 versioning is supported, this method will not be
-  // required and we can simply use to_json.
-
-  // root["Object-Name"] = object_name;
-  root["motr_oid"] = motr_oid_str;
-  root["layout_id"] = layout_id;
-  root["PVID"] = pvid_str;
-
-  S3DateTime current_time;
-  current_time.init_current_time();
-  root["create_timestamp"] = current_time.get_isoformat_string();
-
-  Json::FastWriter fastWriter;
-  return fastWriter.write(root);
-  ;
+  return to_json();
 }
 
 /*
