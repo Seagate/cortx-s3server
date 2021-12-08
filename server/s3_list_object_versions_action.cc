@@ -73,9 +73,8 @@ S3ListObjectVersionsAction::S3ListObjectVersionsAction(
   include_marker_in_result = true;
   // When we skip keys with same common prefix, we need a way to indicate
   // a state in which we'll make use of existing key fetch logic just to see if
-  // any more keys are available in bucket, after the keys with common prefix.
-  // This is required to return correct truncation flag in list versions
-  // response
+  // any more keys are available in bucket after the keys with common prefix.
+  // This is required to return correct truncation flag in the response.
   check_any_keys_after_prefix = false;
   setup_steps();
 }
@@ -108,6 +107,7 @@ void S3ListObjectVersionsAction::fetch_bucket_info_failed() {
 void S3ListObjectVersionsAction::validate_request() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
+  // Fetch input parameters
   bucket_name = request->get_bucket_name();
   s3_log(S3_LOG_DEBUG, request_id, "bucket name = %s\n", bucket_name.c_str());
   request_prefix = request->get_query_string_value("prefix");
@@ -119,7 +119,7 @@ void S3ListObjectVersionsAction::validate_request() {
   s3_log(S3_LOG_DEBUG, request_id, "request_key_marker = %s\n",
          request_key_marker.c_str());
 
-  last_key = request_key_marker;  // as requested by user
+  last_key = request_key_marker;  // As requested by user
   std::string max_k = request->get_query_string_value("max-keys");
   if (max_k.empty()) {
     max_keys = 1000;
@@ -138,16 +138,17 @@ void S3ListObjectVersionsAction::validate_request() {
 
 void S3ListObjectVersionsAction::get_next_versions() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  // If client is disconnected (say, due to read timeout,
-  // when the list object versions takes substantial time), destroy action class
+  // If client is disconnected (say, due to read timeout, when
+  // the list object versions takes substantial time), destroy action class.
   if (!request->client_connected()) {
     s3_log(S3_LOG_INFO, stripped_request_id,
            "s3 client is disconnected. Terminating list object versions "
            "request\n");
-    S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
+    S3_RESET_SHUTDOWN_SIGNAL;  // For shutdown testcases
     done();
     return;
   }
+
   const auto& object_version_list_index_layout =
       bucket_metadata->get_objects_version_list_index_layout();
 
@@ -155,7 +156,8 @@ void S3ListObjectVersionsAction::get_next_versions() {
     motr_kv_reader = s3_motr_kvs_reader_factory->create_motr_kvs_reader(
         request, s3_motr_api);
   }
-
+  // If keyval read operation failed due rpc message size threshold,
+  // try with lesser size.
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::failed_e2big) {
     if (retry_count > MAX_RETRY_COUNT) {
       max_record_count = 1;
@@ -169,7 +171,7 @@ void S3ListObjectVersionsAction::get_next_versions() {
          max_record_count);
 
   if (max_keys == 0) {
-    // as requested max_keys is 0
+    // As requested max_keys is 0
     // Go ahead and respond.
     fetch_successful = true;
     send_response_to_s3_client();
@@ -201,7 +203,7 @@ void S3ListObjectVersionsAction::get_next_versions() {
     }
   }
 
-  // for shutdown testcases, check FI and set shutdown signal
+  // For shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "list_object_versions_get_next_versions_shutdown_fail");
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -222,11 +224,12 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
   std::string last_common_prefix = "";
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
+
+  // Check if this is the call to identify any more keys left
+  // in bucket, after skipping keys belonging to same common prefix.
+  // In this state, we don't check/process each key.
+  // We simply return response to client.
   if (check_any_keys_after_prefix) {
-    // Check if this is the call to identify any more keys left
-    // in bucket, after skipping keys belonging to same common prefix.
-    // In this state, we don't check/process each key.
-    // We simply return response to client.
     if (length != 0) {
       // There exist keys after last common prefix.
       if (!request_prefix.empty()) {
@@ -234,7 +237,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
         // atleast one key with same prefix. If no, it indicates no keys.
         const std::string& first_key = kvps.begin()->first;
         if (first_key.find(request_prefix) == std::string::npos) {
-          // There exists no key matching the prefix. Set 'length' 0
+          // There exists no key matching the prefix, set 'length' to 0
           length = 0;
         }
       }
@@ -268,12 +271,12 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       add_next_marker_version(kv.first, kv.second.second);
       break;
     }
-    s3_log(S3_LOG_DEBUG, request_id, "Read object versions = %s\n",
+    s3_log(S3_LOG_DEBUG, request_id, "Read object version = %s\n",
            kv.first.c_str());
-    s3_log(S3_LOG_DEBUG, request_id, "Read object versions value = %s\n",
+    s3_log(S3_LOG_DEBUG, request_id, "Read object version value = %s\n",
            kv.second.second.c_str());
     // Check if the current key cannot be rolled into the last common prefix.
-    // If can't be rolled into last common prefix, reset
+    // If can't be rolled into last common prefix then reset
     // 'last_key_in_common_prefix'
     if (last_key_in_common_prefix) {
       // Filter by prefix, if prefix specified
@@ -285,9 +288,9 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
           // Check if fetched key is lexicographically greater than prefix
           if (kv.first > request_prefix) {
             // No further prefix match will occur (as items in Motr storage are
-            // arranaged in lexical order)
+            // arranaged in lexical order).
             no_further_prefix_match = true;
-            // Set length to zero to indicate truncation is false
+            // Set length to zero to set truncation to false
             length = 0;
             s3_log(S3_LOG_INFO, stripped_request_id,
                    "No further prefix match. Skipping further object versions "
@@ -381,6 +384,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
         if (skip_remaining_common_prefixes) {
           // Skip remaining common prefixes
           // For this, set last key for the next key enumeration and break
+          // Motr will skip returning the keys with the common prefix.
           last_key = common_prefix + "\xff";
           s3_log(S3_LOG_DEBUG, request_id,
                  "Skipping further common prefixes, set next key = [%s]\n",
@@ -389,7 +393,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
         }
       }
     } else {
-      // both prefix and delimiter are not empty
+      // Both prefix and delimiter are not empty
       bool prefix_match = (kv.first.find(request_prefix) == 0) ? true : false;
       if (prefix_match) {
         delimiter_pos =
@@ -426,6 +430,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
           if (skip_remaining_common_prefixes) {
             // Skip remaining common prefixes
             // For this, set last key for the next key enumeration and break
+            // Motr will skip returning the keys with the common prefix.
             last_key = common_prefix + "\xff";
             s3_log(S3_LOG_DEBUG, request_id,
                    "Skipping further common prefixes, set next key = [%s]\n",
@@ -440,7 +445,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
           // No further prefix match will occur (as items in Motr storage are
           // arranaged in lexical order)
           no_further_prefix_match = true;
-          // Set length to zero to indicate truncation is false
+          // Set length to zero to set truncation to false
           length = 0;
           s3_log(S3_LOG_INFO, stripped_request_id,
                  "No further prefix match. Skipping further object versions "
@@ -458,7 +463,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       last_key = kv.first;
       break_out = true;
     }
-  }  // end of For loop
+  }  // End of for loop
 
   if (json_error) {
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
@@ -473,13 +478,12 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
     // Go ahead and respond.
     if (key_Count == max_keys && length != 0) {
       // When we hit the max keys condition and previously we skipped common
-      // prefix keys
-      // (i.e. skip_remaining_common_prefixes = true), we can't rely on
-      // 'length' variable for truncation flag.
+      // prefix keys (i.e. skip_remaining_common_prefixes = true),
+      // we can't rely on 'length' variable for truncation flag.
       // In such case, we don't know if there are any more keys left after
       // skipping the common prefix. In such situation, we have to explictly
       // identify if there are any further keys left in a bucket to mark
-      // the truncation flag in the object list versions response.
+      // the truncation flag in the response.
       if (skip_remaining_common_prefixes) {
         // Check with Motr if there are any keys to be seen.
         // If there are still some keys, we would set truncation flag, else no.
@@ -518,7 +522,7 @@ void S3ListObjectVersionsAction::get_next_versions_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No versions found in listing\n");
-    // reset state
+    // Reset state
     check_any_keys_after_prefix = false;
     fetch_successful = true;  // With no entries.
   } else if (motr_kv_reader->get_state() ==
@@ -558,8 +562,9 @@ void S3ListObjectVersionsAction::check_latest_versions() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::shared_ptr<S3ObjectMetadata> version_metadata = nullptr;
   size_t version_list_offset_temp = 0;
+  // Run through version_list, check and set "latest" flag.
   for (auto&& version : versions_list) {
-    if (last_object_checked == "") {
+    if (last_object_checked.empty()) {
       version_metadata = version;
       break;
     } else if ((version_list_offset_temp <= version_list_offset) ||
@@ -583,6 +588,7 @@ void S3ListObjectVersionsAction::check_latest_versions() {
       // Object list index and version list index missing.
       get_next_versions_failed();
     } else {
+      // Read object metadata from object index.
       object_metadata = object_metadata_factory->create_object_metadata_obj(
           request, bucket_name, version_metadata->get_object_name(),
           object_list_idx_lo, obj_version_list_idx_lo);
@@ -600,9 +606,11 @@ void S3ListObjectVersionsAction::check_latest_versions() {
 
 void S3ListObjectVersionsAction::fetch_object_info_success() {
   // Compare the versions and set the latest flag
-  std::shared_ptr<S3ObjectMetadata> version_metadata= versions_list[version_list_offset];
-  if (object_metadata->get_obj_version_id() == version_metadata->get_obj_version_id()) {
-    version_metadata->mark_invalid();
+  std::shared_ptr<S3ObjectMetadata> version_metadata =
+      versions_list[version_list_offset];
+  if (object_metadata->get_obj_version_id() ==
+      version_metadata->get_obj_version_id()) {
+    version_metadata->set_latest(true);
   }
   check_latest_versions();
 }
@@ -714,20 +722,20 @@ bool S3ListObjectVersionsAction::is_prefix_in_common_prefix(
 }
 
 std::string& S3ListObjectVersionsAction::get_response_xml() {
-  // clang-format off
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   response_xml +=
       "<ListVersionsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
   response_xml += S3CommonUtilities::format_xml_string(
       "IsTruncated", (response_is_truncated ? "true" : "false"));
 
+  // Run through versions_list, add to response as version or delete marker.
   for (auto&& version : versions_list) {
     if (!version->is_delete_marker()) {
       response_xml += "<Version>";
       response_xml += S3CommonUtilities::format_xml_string(
           "ETag", version->get_md5(), true);
-      response_xml +=
-          S3CommonUtilities::format_xml_string("IsLatest", (version->get_state() == S3ObjectMetadataState::invalid ? "true" : "false"));
+      response_xml += S3CommonUtilities::format_xml_string(
+          "IsLatest", (version->is_latest() ? "true" : "false"));
       response_xml += S3CommonUtilities::format_xml_string(
           "Key", get_encoded_key_value(version->get_object_name()));
       response_xml += S3CommonUtilities::format_xml_string(
@@ -747,8 +755,10 @@ std::string& S3ListObjectVersionsAction::get_response_xml() {
       response_xml += "</Version>";
     } else {
       response_xml += "<DeleteMarker>";
-      response_xml +=
-          S3CommonUtilities::format_xml_string("IsLatest", (version->get_state() == S3ObjectMetadataState::invalid ? "true" : "false"));
+      response_xml += S3CommonUtilities::format_xml_string(
+          "IsLatest",
+          (version->get_state() == S3ObjectMetadataState::invalid ? "true"
+                                                                  : "false"));
       response_xml += S3CommonUtilities::format_xml_string(
           "Key", get_encoded_key_value(version->get_object_name()));
       response_xml += S3CommonUtilities::format_xml_string(
@@ -803,7 +813,6 @@ std::string& S3ListObjectVersionsAction::get_response_xml() {
   }
 
   response_xml += "</ListVersionsResult>";
-  // clang-format on
   return response_xml;
 }
 

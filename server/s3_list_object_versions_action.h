@@ -53,7 +53,7 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   std::string version_id_marker;
   std::string next_key_marker;
   std::string next_version_id_marker;
-  // Request Input params
+  // Request Input parameters
   std::string bucket_name;
   std::string request_prefix;
   std::string request_delimiter;
@@ -61,11 +61,13 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   size_t max_keys;
   std::string encoding_type;
 
+  // Response data
   std::vector<std::shared_ptr<S3ObjectMetadata>> versions_list;
   std::set<std::string> common_prefixes;
   std::string response_xml;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
 
+  // Internal functions
   void add_marker_version(std::string key, std::string version_id);
   void add_next_marker_version(std::string next_key, std::string next_value);
   void add_object_version(std::string key, std::string value);
@@ -85,7 +87,6 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   virtual ~S3ListObjectVersionsAction();
   void setup_steps();
   void fetch_bucket_info_failed();
-  // Derived class can override S3 request validation logic
   void validate_request();
   void get_next_versions();
   void get_next_versions_successful();
@@ -93,6 +94,24 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   void check_latest_versions();
   void fetch_object_info_success();
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3ListObjectVersionsTest, Constructor);
+  FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfo);
+  FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedMissing);
+  FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedToLaunch);
+  FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedInternalError);
+  FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestInvalidArgument);
+  FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsZeroMaxkeys);
+  FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsZeroOid);
+  FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersions);
+  FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsFailed);
+  FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsSuccessful);
+  FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsSuccessfulJsonError);
+  FRIEND_TEST(S3ListObjectVersionsTest, SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3ListObjectVersionsTest, SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3ListObjectVersionsTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3ListObjectVersionsTest, SendResponseToClientInternalError);
 };
 
 #endif
