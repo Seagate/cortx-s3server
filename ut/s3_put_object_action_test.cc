@@ -63,15 +63,6 @@ using ::testing::DefaultValue;
     action_under_test->fetch_object_info();                               \
   } while (0)
 
-#define SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS             \
-  do {                                                        \
-    CREATE_BUCKET_METADATA;                                   \
-    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), \
-                get_bucket_versioning_status())               \
-        .Times(AtLeast(1))                                    \
-        .WillOnce(ReturnRef(versioning_status));              \
-  } while (0)
-
 #define CREATE_OBJECT_METADATA_VER                                        \
   do {                                                                    \
     CREATE_BUCKET_METADATA;                                               \
@@ -199,7 +190,6 @@ TEST_F(S3PutObjectActionTest, FetchBucketInfo) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthPositiveCase) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_object_name())
       .WillOnce(ReturnRef(object_name));
 
@@ -224,7 +214,6 @@ TEST_F(S3PutObjectActionTest, ValidatePUTContentLengthAs5GB) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidatePUTContentLengthGreaterThan5GB) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_object_name())
       .WillOnce(ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
@@ -238,7 +227,6 @@ TEST_F(S3PutObjectActionTest, ValidatePUTContentLengthGreaterThan5GB) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   std::string too_long_obj_name(
       "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexv"
       "piaqufqsxozqzsxxtmmlnukpfnpvtepdxvxqmnwnsceaujybilbqwwhhofxhlbvqeqbcbbag"
@@ -266,7 +254,6 @@ TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(AtLeast(1)).WillOnce(
       ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, get_header_size()).WillOnce(Return(9000));
@@ -276,7 +263,6 @@ TEST_F(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(AtLeast(1)).WillOnce(
       ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, get_user_metadata_size())
@@ -302,7 +288,6 @@ TEST_F(S3PutObjectActionTest, ValidateRequestTags) {
 }
 
 TEST_F(S3PutObjectActionTest, VaidateEmptyTags) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] = "";
   EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return(""));
@@ -317,7 +302,6 @@ TEST_F(S3PutObjectActionTest, VaidateEmptyTags) {
 }
 
 TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase1) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] = "key1=";
   EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return("key1="));
@@ -332,7 +316,6 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase1) {
 }
 
 TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase2) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] = "key1=value1&=value2";
   EXPECT_CALL(*ptr_mock_request, get_header_value(_))
@@ -350,7 +333,6 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase2) {
 // Count of tags exceding limit.
 
 TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase3) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] =
       "key1=value1&key2=value2&key3=value3&key4=value4&key5=value5&key6=value6&"
@@ -369,7 +351,6 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase3) {
 }
 
 TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase4) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   request_header_map.clear();
   request_header_map["x-amz-tagging"] = "Key=seag`ate&Value=marketing";
   EXPECT_CALL(*ptr_mock_request, get_header_value(_))
@@ -420,8 +401,7 @@ TEST_F(S3PutObjectActionTest, VaidateSpecialCharTagsCase2) {
 }
 
 TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
-
+  CREATE_BUCKET_METADATA;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
 
@@ -437,7 +417,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent) {
 }
 
 TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailed) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
+  CREATE_BUCKET_METADATA;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
@@ -454,7 +434,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailed) {
 }
 
 TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailedTolaunch) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
+  CREATE_BUCKET_METADATA;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
@@ -547,7 +527,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedNotFoundShouldUseURL2OID) {
 }
 
 TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedInvalidStateReportsError) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
@@ -594,7 +574,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectSecondAttempt) {
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedTestWhileShutdown) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -607,7 +587,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTestWhileShutdown) {
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionExceededRetry) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
+  CREATE_OBJECT_METADATA;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(1)
@@ -639,7 +619,6 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionRetry) {
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
@@ -659,7 +638,6 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedToLaunchTest) {
-  SET_BUCKET_VERSIONING_STATUS_EXPECTATIONS;
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
@@ -869,7 +847,7 @@ TEST_F(S3PutObjectActionTest, DelayedDeleteOldObject) {
 }
 
 TEST_F(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   ptr_mock_request->s3_client_read_error = "RequestTimeout";
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
@@ -894,7 +872,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectShouldWriteContentAndMarkProgress) {
 }
 
 TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
 
@@ -927,7 +905,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
 }
 
 TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
 
@@ -961,7 +939,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
 }
 
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -1161,7 +1139,7 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
 }
 
 TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(
       index_layout);
   action_under_test->new_object_metadata =
@@ -1197,7 +1175,7 @@ TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
 }
 
 TEST_F(S3PutObjectActionTest, SendResponseWhenShuttingDown) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   int retry_after_period = S3Option::get_instance()->get_s3_retry_after_sec();
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
@@ -1216,7 +1194,7 @@ TEST_F(S3PutObjectActionTest, SendResponseWhenShuttingDown) {
 }
 
 TEST_F(S3PutObjectActionTest, SendErrorResponse) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   action_under_test->set_s3_error("InternalError");
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -1255,7 +1233,7 @@ TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
 }
 
 TEST_F(S3PutObjectActionTest, SendFailedResponse) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   action_under_test->set_s3_error("InternalError");
   action_under_test->s3_put_action_state =
       S3PutObjectActionState::validationFailed;
@@ -1268,7 +1246,7 @@ TEST_F(S3PutObjectActionTest, SendFailedResponse) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateMissingContentLength) {
-  CREATE_OBJECT_METADATA_VER;
+  CREATE_OBJECT_METADATA;
   EXPECT_CALL(*ptr_mock_request, get_object_name())
       .WillOnce(ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
