@@ -1701,77 +1701,112 @@ AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test(
 
 ################################################################################
 
-#******** PutObject with Bucket versioning enabled ********
-
-AwsTest('Aws can create bucket').create_bucket("versionedbucket").execute_test().command_is_successful()
-AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("versionedbucket", "Enabled").execute_test().command_is_successful()
-result=AwsTest('Aws can put a versioned bucket').\
-    put_object("versionedbucket", "1kfile", 1024, output="json").\
-    execute_test().\
-    command_is_successful()
-put_response = json.loads(result.status.stdout)
-version_id = put_response.get("VersionId")
-assert version_id, "No version ID was returned in PutObject response"
-assert re.match(r"[0-9A-Za-z]+", version_id)
-AwsTest('Aws can delete the versioned object').delete_object("versionedbucket", "1kfile").execute_test().command_is_successful()
-AwsTest('Aws can delete bucket').delete_bucket("versionedbucket").execute_test().command_is_successful()
+#******** Bucket Versioning ********
 
 #******** Create Bucket ********
-AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+bucket = "versionedbucket"
+AwsTest('Aws can create a bucket')\
+    .create_bucket(bucket)\
+    .execute_test()\
+    .command_is_successful()
 
 #******** Get Bucket Versioning default status ********
-AwsTest('Aws can get bucket versioning default status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_be_empty()
+AwsTest('Aws can get bucket versioning default status')\
+    .get_bucket_versioning(bucket)\
+    .execute_test()\
+    .command_response_should_be_empty()
 
 #******** Enable Versioning on Bucket ********
-AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("seagatebucket", "Enabled").execute_test().command_is_successful()
+AwsTest('Aws can enable versioning on bucket')\
+    .put_bucket_versioning(bucket, "Enabled")\
+    .execute_test()\
+    .command_is_successful()
 
 #******** Get Bucket Versioning Enabled status ********
-AwsTest('Aws can get bucket versioning Enabled status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_have("Enabled")
+AwsTest('Aws can get bucket versioning Enabled status')\
+    .get_bucket_versioning(bucket)\
+    .execute_test()\
+    .command_response_should_have("Enabled")
 
-#******** Suspend Versioning on Bucket ********
-AwsTest('Aws can suspend versioning on bucket').put_bucket_versioning("seagatebucket", "Suspended").execute_test().command_is_successful()
-
-#******** Get Bucket Versioning Suspended status ********
-AwsTest('Aws can get bucket versioning Suspended status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_have("Suspended")
-
-#************Negative case to get versioning status of non-existant bucket*******
-AwsTest('Aws can not get versioning status of non-existant bucket').get_bucket_versioning("seagate1")\
-.execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+#************ Negative case to get versioning status of non-existant bucket *******
+AwsTest('Aws can not get versioning status of non-existant bucket')\
+    .get_bucket_versioning("non-existant-bucket")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("NoSuchBucket")
 
 #********** Negative case to check versioning status cannot be changed back to unversioned ***********
-
 AwsTest('Aws can not change the versioning status back to unversioned')\
-    .put_bucket_versioning("seagatebucket", "Unversioned")\
-    .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedXML")
+    .put_bucket_versioning(bucket, "Unversioned")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("MalformedXML")
 
-#************Negative case to enable versioning on non-existant bucket*******
-AwsTest('Aws can not enable versioning on non-existant bucket').put_bucket_versioning("seagate1", "Enabled")\
-    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+#************ Negative case to enable versioning on non-existant bucket *******
+AwsTest('Aws can not enable versioning on non-existant bucket')\
+    .put_bucket_versioning("non-existant-bucket", "Enabled")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("NoSuchBucket")
 
-#******** GetObject with Bucket versioning enabled ********
-AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("seagatebucket", "Enabled")\
-    .execute_test().command_is_successful()
+#************ Put to a versioned bucket *******
+file = "1kfile"
+result = AwsTest('Aws can put to a versioned bucket')\
+    .put_object(bucket, file, 1024, output="json")\
+    .execute_test()\
+    .command_is_successful()
+version_id = json.loads(result.status.stdout).get("VersionId")
+assert version_id, "No version ID was returned in PutObject response"
+assert re.match(r"[0-9A-Za-z]+", version_id)
 
-result = AwsTest('Aws can put object').put_object("seagatebucket", "1kfile", 1024)\
-    .execute_test().command_is_successful()
+#************ Get with version IDs *******
+AwsTest('Aws can get object without specifing versionId')\
+    .get_object(bucket, file).execute_test()\
+    .command_is_successful()\
+    .command_response_should_have(version_id)
 
-versionId = result.status.stdout.split('\t')[1]
+AwsTest('Aws can get object with specific versionId')\
+    .get_object(bucket, file, version_id=version_id)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_have(version_id)
 
-result = AwsTest('Aws can get object with specific versionId').get_object("seagatebucket", "1kfile", version_id=versionId)\
-    .execute_test().command_is_successful().command_response_should_have(versionId)
+AwsTest('Aws can not get object with wrong versionId')\
+    .get_object(bucket, file, version_id="wrong-id")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("InvalidArgument")\
+    .command_error_should_have("Invalid version id specified")
 
-result = AwsTest('Aws can get object without specifing versionId').get_object("seagatebucket", "1kfile")\
-    .execute_test().command_is_successful().command_response_should_have(versionId)
+AwsTest('Aws can not get object with empty versionId')\
+    .get_object(bucket, file, version_id="empty")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("InvalidArgument")\
+    .command_error_should_have("Version id cannot be the empty string")
 
-result = AwsTest('Aws can not get object with wrong versionId').get_object("seagatebucket", "1kfile", version_id="wrong-id")\
-    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument").command_error_should_have("Invalid version id specified")
+#******** Suspend Versioning on Bucket ********
+AwsTest('Aws can suspend versioning on bucket')\
+    .put_bucket_versioning(bucket, "Suspended")\
+    .execute_test()\
+    .command_is_successful()
 
-result = AwsTest('Aws can not get object with empty versionId').get_object("seagatebucket", "1kfile", version_id="empty")\
-    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument").command_error_should_have("Version id cannot be the empty string")
+#******** Get Bucket Versioning Suspended status ********
+AwsTest('Aws can get bucket versioning Suspended status')\
+    .get_bucket_versioning(bucket)\
+    .execute_test()\
+    .command_response_should_have("Suspended")
 
-#******** Delete Bucket ********
-AwsTest('Aws can delete bucket').delete_bucket("seagatebucket")\
-    .execute_test().command_is_successful()
+#******** Test Cleanup ********
+AwsTest('Aws can delete the object')\
+    .delete_object(bucket, file)\
+    .execute_test()\
+    .command_is_successful()
+
+AwsTest('Aws can delete the bucket')\
+    .delete_bucket(bucket)\
+    .execute_test()\
+    .command_is_successful()
 
 
 ################################################################################
