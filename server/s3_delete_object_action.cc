@@ -77,8 +77,8 @@ void S3DeleteObjectAction::setup_steps() {
   // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
   ACTION_TASK_ADD(S3DeleteObjectAction::populate_probable_dead_oid_list, this);
-  ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::save_bucket_counters, this);
+  ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
   // ...
 }
@@ -313,7 +313,7 @@ void S3DeleteObjectAction::save_bucket_counters() {
 void S3DeleteObjectAction::save_bucket_counters_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-  s3_del_obj_action_state = S3DeleteObjectActionState::metadataDeleted;
+  s3_del_obj_action_state = S3DeleteObjectActionState::savebktcountersSuccess;
   next();
 }
 
@@ -321,9 +321,27 @@ void S3DeleteObjectAction::save_bucket_counters_success() {
 // Currently just logging error and moving ahead.
 void S3DeleteObjectAction::save_bucket_counters_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_del_obj_action_state = S3DeleteObjectActionState::metadataDeleted;
+  s3_del_obj_action_state = S3DeleteObjectActionState::savebktcountersFailed;
   s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
-  next();
+  set_s3_error("InternalError");
+  send_response_to_s3_client();
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3DeleteObjectAction::revert_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  inc_object_count = 1;
+  inc_obj_size = (object_metadata->get_content_length());
+
+  // failure case bg handling required.
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3DeleteObjectAction::next, this),
+      std::bind(&S3DeleteObjectAction::next, this));
+
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
@@ -376,9 +394,15 @@ void S3DeleteObjectAction::startcleanup() {
       // Start running the cleanup task list
       start();
     } else if (s3_del_obj_action_state ==
-               S3DeleteObjectActionState::metadataDeleteFailed) {
+                   S3DeleteObjectActionState::metadataDeleteFailed ||
+               s3_del_obj_action_state ==
+                   S3DeleteObjectActionState::savebktcountersFailed) {
       // Failed to delete metadata, so object is still live, remove probable rec
       ACTION_TASK_ADD(S3DeleteObjectAction::remove_probable_record, this);
+      if (s3_del_obj_action_state ==
+          S3DeleteObjectActionState::metadataDeleteFailed) {
+        ACTION_TASK_ADD(S3DeleteObjectAction::revert_bucket_counters, this);
+      }
       // Start running the cleanup task list
       start();
     } else {

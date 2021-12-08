@@ -43,13 +43,13 @@ enum class S3PutChunkUploadObjectActionState {
   newObjOidCreationFailed,  // New object create failed
   probableEntryRecordFailed,
   dataSignatureCheckFailed,
-  writeComplete,       // data write to object completed successfully
-  writeFailed,         // data write to object failed
-  savebktcountersSuccess,   // Bucket counters saving
-  savebktcountersFailed,    // Bucket counters saving
-  metadataSaved,       // metadata saved for new object
-  metadataSaveFailed,  // metadata saved for new object
-  completed,           // All stages done completely
+  writeComplete,           // data write to object completed successfully
+  writeFailed,             // data write to object failed
+  savebktcountersSuccess,  // Bucket counters saving
+  savebktcountersFailed,   // Bucket counters saving
+  metadataSaved,           // metadata saved for new object
+  metadataSaveFailed,      // metadata saved for new object
+  completed,               // All stages done completely
 };
 
 class S3PutChunkUploadObjectAction : public S3ObjectAction {
