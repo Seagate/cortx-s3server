@@ -362,8 +362,30 @@ void S3DeleteMultipleObjectsAction::save_bucket_counters() {
 
   S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
-      std::bind(&S3DeleteMultipleObjectsAction::delete_extended_metadata, this),
+      std::bind(&S3DeleteMultipleObjectsAction::delete_objects_metadata, this),
       std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters_failed,
+                this));
+
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
+}
+
+void S3DeleteMultipleObjectsAction::revert_bucket_counters() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  int64_t inc_object_count = 0;
+  int64_t inc_obj_size = 0;
+
+  for (auto& object_metadata : objects_metadata) {
+    if (object_metadata->get_state() != S3ObjectMetadataState::invalid) {
+      inc_object_count += 1;
+      inc_obj_size += (object_metadata->get_content_length());
+    }
+  }
+
+  S3BucketCapacityCache::update_bucket_capacity(
+      request, bucket_metadata, inc_object_count, inc_obj_size,
+      std::bind(&S3DeleteMultipleObjectsAction::delete_objects_metadata_failed,
+                this),
+      std::bind(&S3DeleteMultipleObjectsAction::delete_objects_metadata_failed,
                 this));
 
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
@@ -490,7 +512,7 @@ void S3DeleteMultipleObjectsAction::add_object_oid_to_probable_dead_oid_list() {
   }
   motr_kv_writer->put_keyval(
       global_probable_dead_object_list_index_layout, delete_list,
-      std::bind(&S3DeleteMultipleObjectsAction::delete_objects_metadata, this),
+      std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters, this),
       std::bind(&S3DeleteMultipleObjectsAction::
                      add_object_oid_to_probable_dead_oid_list_failed,
                 this));
@@ -522,9 +544,8 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
   }
   motr_kv_writer->delete_keyval(
       object_list_index_layout, keys,
-      std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters, this),
-      std::bind(&S3DeleteMultipleObjectsAction::delete_objects_metadata_failed,
-                this));
+      std::bind(&S3DeleteMultipleObjectsAction::delete_extended_metadata, this),
+      std::bind(&S3DeleteMultipleObjectsAction::revert_bucket_counters, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

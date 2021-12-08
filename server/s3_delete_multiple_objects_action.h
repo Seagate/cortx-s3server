@@ -103,6 +103,7 @@ class S3DeleteMultipleObjectsAction : public S3BucketAction {
   void fetch_objects_extended_info_failed();
   void save_bucket_counters();
   void save_bucket_counters_failed();
+  void revert_bucket_counters();
 
   void delete_objects_metadata();
   void delete_objects_metadata_failed();
