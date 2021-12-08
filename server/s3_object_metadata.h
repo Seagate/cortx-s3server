@@ -439,6 +439,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   FRIEND_TEST(S3MultipartObjectMetadataTest, FromJson);
   FRIEND_TEST(S3ObjectMetadataTest, GetEncodedBucketAcl);
   FRIEND_TEST(S3DeleteObjectActionTest, CleanupOnMetadataDeletion);
+  FRIEND_TEST(S3ObjectMetadataTest, ValidateVersionEntryToJson);
 };
 
 // Fragment or the part detail structure

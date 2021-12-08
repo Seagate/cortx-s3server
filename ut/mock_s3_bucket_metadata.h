@@ -68,6 +68,7 @@ class MockS3BucketMetadata : public S3BucketMetadata {
   MOCK_CONST_METHOD0(get_extended_metadata_index_layout,
                      const struct s3_motr_idx_layout&());
   MOCK_METHOD(void, set_bucket_versioning, (const std::string&), (override));
+  MOCK_METHOD(const std::string&, get_bucket_versioning_status, (), (const));
 };
 
 #endif

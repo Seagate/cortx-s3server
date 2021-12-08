@@ -758,7 +758,10 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   assert(!new_oid_str.empty());
 
   // store old object oid
-  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+  bool delete_object =
+      (old_object_oid.u_hi || old_object_oid.u_lo) &&
+      ("Unversioned" == bucket_metadata->get_bucket_versioning_status());
+  if (delete_object) {
     assert(!old_oid_str.empty());
     if (number_of_parts != 0) {
       // This object was uploaded previously in multipart fashion
@@ -897,6 +900,11 @@ void S3PutObjectAction::send_response_to_s3_client() {
 
     request->set_out_header_value("ETag", e_tag);
 
+    if ("Enabled" == bucket_metadata->get_bucket_versioning_status()) {
+      request->set_out_header_value("x-amz-version-id",
+                                    new_object_metadata->get_obj_version_id());
+    }
+
     request->send_response(S3HttpSuccess200);
   }
 
@@ -915,17 +923,20 @@ void S3PutObjectAction::startcleanup() {
   clear_tasks();
   cleanup_started = true;
 
+  bool delete_object =
+      (old_object_oid.u_hi || old_object_oid.u_lo) &&
+      ("Unversioned" == bucket_metadata->get_bucket_versioning_status());
   // Success conditions
   if (s3_put_action_state == S3PutObjectActionState::completed) {
     s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    if (delete_object) {
       // mark old OID for deletion in overwrite case, this optimizes
       // backgrounddelete decisions.
       ACTION_TASK_ADD(S3PutObjectAction::mark_old_oid_for_deletion, this);
     }
     // remove new oid from probable delete list.
     ACTION_TASK_ADD(S3PutObjectAction::remove_new_oid_probable_record, this);
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    if (delete_object) {
       // Object overwrite case, old object exists, delete it.
       ACTION_TASK_ADD(S3PutObjectAction::delete_old_object, this);
       // If delete object is successful, attempt to delete old probable record
