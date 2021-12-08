@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Policy;
 
 public
 class FileStore implements AuthStore {
@@ -102,4 +103,10 @@ class FileStore implements AuthStore {
                                String prefix) throws DataAccessException {
     // TODO Add file store implementation for detach policy
   }
+
+@Override
+public List<Policy> findByIds(Map<String, Object> dataMap, String prefix) throws DataAccessException {
+	// TODO Auto-generated method stub
+	return null;
+}
 }

@@ -20,6 +20,8 @@
 
 package com.seagates3.dao;
 import java.util.List;
+import java.util.Map;
+
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Policy;
@@ -50,4 +52,6 @@ public interface PolicyDAO {
      List<Policy> findAll(Account account) throws DataAccessException;
     public
      void delete (Policy policy) throws DataAccessException;
+    public
+    	List<Policy> findByIds(Map<String, Object> dataMap) throws DataAccessException;
 }

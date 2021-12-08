@@ -1,5 +1,7 @@
 package com.seagates3.controller;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -110,6 +112,37 @@ class UserPolicyController extends AbstractController {
 
     return serverResponse;
   }
+ 
+ public
+ ServerResponse list() throws DataAccessException {
+   String pathPrefix = requestBody.get("PathPrefix");
+   String userName = requestBody.get("UserName");
+   
+   LOGGER.info("List policies for user: " + userName);
+   ServerResponse serverResponse = null;
+
+   try {
+     User user = userDAO.find(requestor.getAccount().getName(), userName);
+     checkIfUserExists(user, userName);
+     Map<String, Object> dataMap = new HashMap<String, Object>();
+     if(pathPrefix != null) {
+    	 dataMap.put("pathPrefix", pathPrefix);
+     }
+     dataMap.put("accountName", user.getAccountName());
+     dataMap.put("policyIds", user.getPolicyIds());
+     List<Policy> policies = policyDAO.findByIds(dataMap);
+     serverResponse =
+         userPolicyResponseGenerator.generateAttachedUserPolicyListResponse(policies);
+   }
+   catch (DataAccessException ex) {
+     serverResponse = userPolicyResponseGenerator.internalServerError();
+   }
+   catch (GuardClauseException grdClsEx) {
+     serverResponse = grdClsEx.getServerResponse();
+   }
+
+   return serverResponse;
+ }
 
  private
   void checkIfUserExists(User user,

@@ -32,4 +32,7 @@ interface AuthStore {
  public
   void detach(Map<String, Object> dataMap,
               String prefix) throws DataAccessException;
+ public
+ List<Policy> findByIds(Map<String, Object> dataMap,
+             String prefix) throws DataAccessException;
 }
