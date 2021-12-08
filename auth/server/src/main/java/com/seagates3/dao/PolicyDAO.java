@@ -53,5 +53,6 @@ public interface PolicyDAO {
     public
      void delete (Policy policy) throws DataAccessException;
     public
-    	List<Policy> findByIds(Map<String, Object> dataMap) throws DataAccessException;
+     List<Policy> findByIds(
+         Map<String, Object> dataMap) throws DataAccessException;
 }

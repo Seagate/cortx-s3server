@@ -244,100 +244,107 @@ class PolicyLdapStore {
       throw new DataAccessException("Failed to delete the policy.\n" + ex);
     }
   }
- 
+
  public
- List<Policy> findByIds(Map<String, Object> dataMap) throws DataAccessException {
-	 String accountName = dataMap.get("accountName") != null ? (String)dataMap.get("accountName") : "";
-	 List<String> policyIds = dataMap.get("policyIds") != null ? (List<String>)dataMap.get("policyIds"): null;
-	 
-   String[] attrs = {
-       LDAPUtils.POLICY_ID,                 LDAPUtils.PATH,
-       LDAPUtils.POLICY_CREATE_DATE,        LDAPUtils.POLICY_UPDATE_DATE,
-       LDAPUtils.DEFAULT_VERSION_ID,        LDAPUtils.POLICY_DOC,
-       LDAPUtils.POLICY_NAME,               LDAPUtils.IS_POLICY_ATTACHABLE,
-       LDAPUtils.POLICY_ARN,                LDAPUtils.POLICY_ATTACHMENT_COUNT,
-       LDAPUtils.POLICY_PERMISSION_BOUNDARY};
-   //String ldapBase = LDAPUtils.BASE_DN;
-   
-   String ldapBase = String.format(
-	        "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-	        LDAPUtils.POLICY_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
-	        LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
-	        LDAPUtils.BASE_DN);
-   String filter = "(" + LDAPUtils.OBJECT_CLASS + "=" + LDAPUtils.POLICY_OBJECT_CLASS + ")";
-   String policyIdFilter = "";
-   if(policyIds != null && !policyIds.isEmpty()) {
-	   for(String policyId: policyIds) {
-		   policyIdFilter += "(policyId=" + policyId + ")"; 
-	   }
-	   if(policyIds.size() > 1) {
-		   policyIdFilter = "(|" + policyIdFilter + ")";
-	   }
-   }
-   String optionalFilter = "";
-   if(dataMap.get("pathPrefix") != null) {
-	   optionalFilter = "(" + LDAPUtils.PATH + "=" + (String)dataMap.get("pathPrefix") + ")"; 
-   }
-   if(policyIdFilter.length() > 0) {
-	   filter = "(&" + filter + policyIdFilter + optionalFilter + ")";
-   }
-   LDAPSearchResults ldapResults;
-   LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
-   try {
-     ldapResults =
-         LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB, filter, attrs);
-   }
-   catch (LDAPException ex) {
-     LOGGER.error("Failed to find the policies: ");
-     throw new DataAccessException("Failed to find the policies.\n" + ex);
-   }
-   List<Policy> resultList = new ArrayList<>();
-   if (ldapResults != null) {
-     while (ldapResults.hasMore()) {
+  List<Policy> findByIds(Map<String, Object> dataMap)
+      throws DataAccessException {
+    String accountName = dataMap.get("accountName") != null
+                             ? (String)dataMap.get("accountName")
+                             : "";
+    List<String> policyIds = dataMap.get("policyIds") != null
+                                 ? (List<String>)dataMap.get("policyIds")
+                                 : null;
 
-       try {
-         Policy policy = new Policy();
-         LDAPEntry entry = ldapResults.next();
-         policy.setPolicyId(
-             entry.getAttribute(LDAPUtils.POLICY_ID).getStringValue());
-         policy.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
-         policy.setDefaultVersionId(
-             entry.getAttribute(LDAPUtils.DEFAULT_VERSION_ID)
-                 .getStringValue());
-         policy.setPolicyDoc(
-             entry.getAttribute(LDAPUtils.POLICY_DOC).getStringValue());
-         policy.setName(
-             entry.getAttribute(LDAPUtils.POLICY_NAME).getStringValue());
-         policy.setARN(
-             entry.getAttribute(LDAPUtils.POLICY_ARN).getStringValue());
-         policy.setAttachmentCount(Integer.parseInt(
-             entry.getAttribute(LDAPUtils.POLICY_ATTACHMENT_COUNT)
-                 .getStringValue()));
-         policy.setIsPolicyAttachable(
-             entry.getAttribute(LDAPUtils.IS_POLICY_ATTACHABLE)
-                 .getStringValue());
-         policy.setPermissionsBoundaryUsageCount(Integer.parseInt(
-             entry.getAttribute(LDAPUtils.POLICY_PERMISSION_BOUNDARY)
-                 .getStringValue()));
+    String[] attrs = {
+        LDAPUtils.POLICY_ID,                 LDAPUtils.PATH,
+        LDAPUtils.POLICY_CREATE_DATE,        LDAPUtils.POLICY_UPDATE_DATE,
+        LDAPUtils.DEFAULT_VERSION_ID,        LDAPUtils.POLICY_DOC,
+        LDAPUtils.POLICY_NAME,               LDAPUtils.IS_POLICY_ATTACHABLE,
+        LDAPUtils.POLICY_ARN,                LDAPUtils.POLICY_ATTACHMENT_COUNT,
+        LDAPUtils.POLICY_PERMISSION_BOUNDARY};
+    // String ldapBase = LDAPUtils.BASE_DN;
 
-         String createTimeStamp =
-             entry.getAttribute(LDAPUtils.POLICY_CREATE_DATE).getStringValue();
-         String createTime = DateUtil.toServerResponseFormat(createTimeStamp);
-         policy.setCreateDate(createTime);
+    String ldapBase = String.format(
+        "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+        LDAPUtils.POLICY_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
+        LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+        LDAPUtils.BASE_DN);
+    String filter = "(" + LDAPUtils.OBJECT_CLASS + "=" +
+                    LDAPUtils.POLICY_OBJECT_CLASS + ")";
+    String policyIdFilter = "";
+    if (policyIds != null && !policyIds.isEmpty()) {
+      for (String policyId : policyIds) {
+        policyIdFilter += "(policyId=" + policyId + ")";
+      }
+      if (policyIds.size() > 1) {
+        policyIdFilter = "(|" + policyIdFilter + ")";
+      }
+    }
+    String optionalFilter = "";
+    if (dataMap.get("pathPrefix") != null) {
+      optionalFilter =
+          "(" + LDAPUtils.PATH + "=" + (String)dataMap.get("pathPrefix") + ")";
+    }
+    if (policyIdFilter.length() > 0) {
+      filter = "(&" + filter + policyIdFilter + optionalFilter + ")";
+    }
+    LDAPSearchResults ldapResults;
+    LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
+    try {
+      ldapResults =
+          LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB, filter, attrs);
+    }
+    catch (LDAPException ex) {
+      LOGGER.error("Failed to find the policies: ");
+      throw new DataAccessException("Failed to find the policies.\n" + ex);
+    }
+    List<Policy> resultList = new ArrayList<>();
+    if (ldapResults != null) {
+      while (ldapResults.hasMore()) {
 
-         String modifyTimeStamp =
-             entry.getAttribute(LDAPUtils.POLICY_UPDATE_DATE).getStringValue();
-         String modifiedTime =
-             DateUtil.toServerResponseFormat(modifyTimeStamp);
-         policy.setUpdateDate(modifiedTime);
-         resultList.add(policy);
-       }
-       catch (LDAPException ex) {
-         LOGGER.error("Failed to find policies");
-         throw new DataAccessException("Failed to find policies. \n" + ex);
-       }
-     }
-   }
-   return resultList;
- }
+        try {
+          Policy policy = new Policy();
+          LDAPEntry entry = ldapResults.next();
+          policy.setPolicyId(
+              entry.getAttribute(LDAPUtils.POLICY_ID).getStringValue());
+          policy.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
+          policy.setDefaultVersionId(
+              entry.getAttribute(LDAPUtils.DEFAULT_VERSION_ID)
+                  .getStringValue());
+          policy.setPolicyDoc(
+              entry.getAttribute(LDAPUtils.POLICY_DOC).getStringValue());
+          policy.setName(
+              entry.getAttribute(LDAPUtils.POLICY_NAME).getStringValue());
+          policy.setARN(
+              entry.getAttribute(LDAPUtils.POLICY_ARN).getStringValue());
+          policy.setAttachmentCount(Integer.parseInt(
+              entry.getAttribute(LDAPUtils.POLICY_ATTACHMENT_COUNT)
+                  .getStringValue()));
+          policy.setIsPolicyAttachable(
+              entry.getAttribute(LDAPUtils.IS_POLICY_ATTACHABLE)
+                  .getStringValue());
+          policy.setPermissionsBoundaryUsageCount(Integer.parseInt(
+              entry.getAttribute(LDAPUtils.POLICY_PERMISSION_BOUNDARY)
+                  .getStringValue()));
+
+          String createTimeStamp =
+              entry.getAttribute(LDAPUtils.POLICY_CREATE_DATE).getStringValue();
+          String createTime = DateUtil.toServerResponseFormat(createTimeStamp);
+          policy.setCreateDate(createTime);
+
+          String modifyTimeStamp =
+              entry.getAttribute(LDAPUtils.POLICY_UPDATE_DATE).getStringValue();
+          String modifiedTime =
+              DateUtil.toServerResponseFormat(modifyTimeStamp);
+          policy.setUpdateDate(modifiedTime);
+          resultList.add(policy);
+        }
+        catch (LDAPException ex) {
+          LOGGER.error("Failed to find policies");
+          throw new DataAccessException("Failed to find policies. \n" + ex);
+        }
+      }
+    }
+    return resultList;
+  }
 }

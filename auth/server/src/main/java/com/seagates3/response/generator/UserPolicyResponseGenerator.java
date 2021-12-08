@@ -61,20 +61,20 @@ class UserPolicyResponseGenerator extends AbstractResponseGenerator {
     return formatResponse(HttpResponseStatus.NOT_FOUND, "NoSuchEntity",
                           errorMessage);
   }
- 
+
  public
- ServerResponse generateAttachedUserPolicyListResponse(List<Policy> policyList) {
-   ArrayList<LinkedHashMap<String, String>> policyMembers =
-       new ArrayList<>();
-   LinkedHashMap responseElements;
-   for (Policy policy : policyList) {
-     responseElements = new LinkedHashMap();
-     responseElements.put("PolicyName", policy.getName());
-     responseElements.put("PolicyArn", policy.getARN());
-     policyMembers.add(responseElements);
-   }
-   return new XMLResponseFormatter().formatListResponse(
-       "ListAttachedUserPolicies", "AttachedPolicies", policyMembers, false,
-       AuthServerConfig.getReqId());
- }
+  ServerResponse generateAttachedUserPolicyListResponse(
+      List<Policy> policyList) {
+    ArrayList<LinkedHashMap<String, String>> policyMembers = new ArrayList<>();
+    LinkedHashMap responseElements;
+    for (Policy policy : policyList) {
+      responseElements = new LinkedHashMap();
+      responseElements.put("PolicyName", policy.getName());
+      responseElements.put("PolicyArn", policy.getARN());
+      policyMembers.add(responseElements);
+    }
+    return new XMLResponseFormatter().formatListResponse(
+        "ListAttachedUserPolicies", "AttachedPolicies", policyMembers, false,
+        AuthServerConfig.getReqId());
+  }
 }

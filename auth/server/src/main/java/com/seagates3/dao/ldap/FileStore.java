@@ -104,9 +104,9 @@ class FileStore implements AuthStore {
     // TODO Add file store implementation for detach policy
   }
 
-@Override
-public List<Policy> findByIds(Map<String, Object> dataMap, String prefix) throws DataAccessException {
-	// TODO Auto-generated method stub
-	return null;
-}
+  @Override public List<Policy> findByIds(
+      Map<String, Object> dataMap, String prefix) throws DataAccessException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

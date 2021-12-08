@@ -29,7 +29,7 @@ class LdapStore implements AuthStore {
  private
   final String METHOD_DETACH = "detach";
  private
- final String METHOD_FINDBYIDS = "findByIds";
+  final String METHOD_FINDBYIDS = "findByIds";
  private
   final String CLASS_PACKAGE = "com.seagates3.dao.ldap.";
  private
@@ -196,31 +196,31 @@ class LdapStore implements AuthStore {
       throw new DataAccessException("failed to detach- " + prefix + e);
     }
   }
-  
-  @Override
-  public List<Policy> findByIds(Map<String, Object> dataMap, String prefix) throws DataAccessException {
-      String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
-      LOGGER.debug("calling method - " + METHOD_FINDBYIDS + " of class - " +
-                   className);
-      try {
-        Class < ? > storeClass = Class.forName(className);
-        Object instance = storeClass.newInstance();
-        Method method = storeClass.getMethod(METHOD_FINDBYIDS, Map.class);
-        return (List<Policy>)method.invoke(instance, dataMap);
-      }
-      catch (ClassNotFoundException e) {
-        LOGGER.error("Exception occurred " + e);
-        throw new DataAccessException("failed in findByIds " + prefix + e);
-      }
-      catch (NoSuchMethodException | SecurityException e) {
-        LOGGER.error("Exception occurred " + e);
-        throw new DataAccessException("failed in findByIds " + prefix + e);
-      }
-      catch (IllegalAccessException | IllegalArgumentException |
-             InvocationTargetException | InstantiationException e) {
-        LOGGER.error("Exception occurred " + e);
-        throw new DataAccessException("failed in findByIds " + prefix + e);
-      }
+
+  @Override public List<Policy> findByIds(
+      Map<String, Object> dataMap, String prefix) throws DataAccessException {
+    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
+    LOGGER.debug("calling method - " + METHOD_FINDBYIDS + " of class - " +
+                 className);
+    try {
+      Class < ? > storeClass = Class.forName(className);
+      Object instance = storeClass.newInstance();
+      Method method = storeClass.getMethod(METHOD_FINDBYIDS, Map.class);
+      return (List<Policy>)method.invoke(instance, dataMap);
     }
+    catch (ClassNotFoundException e) {
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in findByIds " + prefix + e);
+    }
+    catch (NoSuchMethodException | SecurityException e) {
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in findByIds " + prefix + e);
+    }
+    catch (IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException | InstantiationException e) {
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in findByIds " + prefix + e);
+    }
+  }
 }
 
