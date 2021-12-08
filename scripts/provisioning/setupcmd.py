@@ -76,11 +76,11 @@ class SetupCmd(object):
     self.consul_confstore = None
 
     # validate supported services
-    lookup_service = ["haproxy", "s3server", "authserver", "s3bgschedular", "s3bgworker"]
+    lookup_service = ["haproxy", "s3server", "authserver", "bgscheduler", "bgworker"]
     if self.services is None:
       self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
 
-    self.bg_delete_service = "s3bgworker"
+    self.bg_delete_service = "bgworker"
     if -1 != self.services.find("bg_"):
       self.bg_delete_service = "bg_consumer"
     # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
@@ -88,8 +88,8 @@ class SetupCmd(object):
     services_map = {
                 "io": "s3server,haproxy",
                 "auth": "authserver",
-                "bg_producer": "s3bgschedular",
-                "bg_consumer": "s3bgworker"}
+                "bg_producer": "bgscheduler",
+                "bg_consumer": "bgworker"}
     for service in services_map:
         if -1 != self.services.find(service):
           if (service == "auth") and (-1 != services.find("authserver")):

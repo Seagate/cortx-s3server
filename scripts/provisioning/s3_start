@@ -91,8 +91,8 @@ def main():
     services_map = {
                 "s3server": "s3server",
                 "s3authserver": "authserver",
-                "s3bgproducer": "s3bgschedular",
-                "s3bgconsumer": "s3bgworker",
+                "s3bgproducer": "bgscheduler",
+                "s3bgconsumer": "bgworker",
                 "haproxy": "haproxy"}
     logger.info(f"Input Service: {service}")
     if service in services_map:
