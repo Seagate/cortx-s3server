@@ -183,7 +183,6 @@ TEST_F(S3PutBucketVersioningActionTest,
   EXPECT_EQ(1, call_count_one);
 }
 
-#if 0
 TEST_F(S3PutBucketVersioningActionTest, ValidateRequestXmlWithSuspendedState)
 {
 
@@ -211,7 +210,6 @@ TEST_F(S3PutBucketVersioningActionTest, ValidateRequestXmlWithSuspendedState)
   action_under_test_ptr->validate_request_xml_versioning_status();
   EXPECT_EQ(1, call_count_one);
 }
-#endif
 
 TEST_F(S3PutBucketVersioningActionTest, ValidateInvalidRequestXmlTags) {
 
