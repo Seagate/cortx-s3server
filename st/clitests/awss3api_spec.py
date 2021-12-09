@@ -1878,6 +1878,7 @@ AwsTest('Aws can not head object if versionId is a delete marker')\
 #     .put_bucket_versioning(bucket, "Suspended")\
 #     .execute_test()\
 #     .command_is_successful()
+<<<<<<< HEAD
 
 #******** Get Bucket Versioning Suspended status ********
 # XXX: Temporarily disabled until suspension is supported
@@ -2328,12 +2329,23 @@ AwsTest('Aws can suspend versioning on bucket')\
     .put_bucket_versioning(bucket, "Suspended")\
     .execute_test()\
     .command_is_successful()
+=======
+>>>>>>> c6e78489 ([versioning] [EOS-26658] Preventing bucket to go in suspended state [temporary] (#1643))
 
 #******** Get Bucket Versioning Suspended status ********
-AwsTest('Aws can get bucket versioning Suspended status')\
-    .get_bucket_versioning(bucket)\
-    .execute_test()\
-    .command_response_should_have("Suspended")
+# XXX: Temporarily disabled until suspension is supported
+# AwsTest('Aws can get bucket versioning Suspended status')\
+#     .get_bucket_versioning(bucket)\
+#     .execute_test()\
+#     .command_response_should_have("Suspended")
+
+#******** Suspend Versioning on Bucket ********
+# XXX: Temporary until suspension is supported
+AwsTest('Can not suspend versioning on bucket')\
+    .put_bucket_versioning(bucket, "Suspended")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("OperationNotSupported")
 
 #******** Test Cleanup ********
 AwsTest('Aws can delete the object')\
