@@ -22,6 +22,8 @@ class LdapStore implements AuthStore {
  private
   final String METHOD_FINDALL = "findAll";
  private
+  final String METHOD_FINDALLBYPARAMETERS = "findAllByParameters";
+ private
   final String METHOD_DELETE = "delete";
  private
   final String METHOD_ATTACH = "attach";
@@ -193,5 +195,35 @@ class LdapStore implements AuthStore {
       throw new DataAccessException("failed to detach- " + prefix + e);
     }
   }
+
+@Override
+public List findAllByParameters(String strToFind, Object obj, Map<String, Object> parameters, String prefix) throws DataAccessException {
+	
+    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
+    LOGGER.debug("calling method - " + METHOD_FINDALLBYPARAMETERS + " of class - " +
+                 className);
+    try {
+      Class < ? > storeClass = Class.forName(className);
+      Object instance = storeClass.newInstance();
+      Method method = storeClass.getMethod(METHOD_FINDALLBYPARAMETERS, Object.class, Object.class);
+      return (List)method.invoke(instance, obj, parameters);
+    }
+    catch (ClassNotFoundException e) {
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in "+ METHOD_FINDALLBYPARAMETERS + " " + prefix + " " + e);
+    }
+    catch (NoSuchMethodException | SecurityException e) {
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in "+ METHOD_FINDALLBYPARAMETERS + " " + prefix + " " + e);
+    }
+    catch (IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException | InstantiationException e) {
+      LOGGER.error("Exception occurred " + e);
+      throw new DataAccessException("failed in "+ METHOD_FINDALLBYPARAMETERS + " " + prefix + " " + e);
+    }
+  
+}
+
+
 }
 

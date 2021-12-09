@@ -102,4 +102,12 @@ class PolicyImpl implements PolicyDAO {
     }
     return null;
   }
+
+@Override
+public List<Policy> findAllByParameters(Account account, Map<String, Object> parameters) throws DataAccessException {
+	AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
+    String key = PolicyUtil.getKey("", account.getId());
+    return storeInstance.findAllByParameters(key, account, parameters, POLICY_PREFIX);
+}
 }

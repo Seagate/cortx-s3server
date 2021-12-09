@@ -37,6 +37,8 @@ import java.util.Map;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
 import java.util.List;
 
 public class PolicyController extends AbstractController {
@@ -160,8 +162,21 @@ public class PolicyController extends AbstractController {
      */
     @Override public ServerResponse list() {
       List<Policy> policyList = null;
+      Map<String, Object> parameters = new HashMap<>();
+      if (requestBody.containsKey("OnlyAttached")) {
+    	  parameters.put("OnlyAttached", requestBody.get("OnlyAttached"));
+      }
+      if (requestBody.containsKey("PathPrefix")) {
+    	  parameters.put("PathPrefix", requestBody.get("PathPrefix"));
+      }
+ 
       try {
-        policyList = policyDAO.findAll(requestor.getAccount());
+    	     if(!parameters.isEmpty()) {
+    	    	 policyList = policyDAO.findAllByParameters(requestor.getAccount(), parameters);
+    	      }
+    	     else {
+    	    	 policyList = policyDAO.findAll(requestor.getAccount());
+    	     }
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to list policies for account - " +
