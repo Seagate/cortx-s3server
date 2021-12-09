@@ -288,17 +288,16 @@ class PolicyLdapStore {
     LDAPSearchResults ldapResults = null;
     if (policyIdFilter.length() > 0) {
       filter = "(&" + filter + policyIdFilter + optionalFilter + ")";
-    
-    
-	    LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
-	    try {
-	      ldapResults =
-	          LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB, filter, attrs);
-	    }
-	    catch (LDAPException ex) {
-	      LOGGER.error("Failed to find the policies: ");
-	      throw new DataAccessException("Failed to find the policies.\n" + ex);
-	    }
+
+      LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
+      try {
+        ldapResults =
+            LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB, filter, attrs);
+      }
+      catch (LDAPException ex) {
+        LOGGER.error("Failed to find the policies: ");
+        throw new DataAccessException("Failed to find the policies.\n" + ex);
+      }
     }
     List<Policy> resultList = new ArrayList<>();
     if (ldapResults != null) {
