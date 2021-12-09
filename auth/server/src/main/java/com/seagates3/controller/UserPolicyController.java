@@ -188,7 +188,7 @@ class UserPolicyController extends AbstractController {
       LOGGER.error("Policy [" + policyARN + "] is not attached to the user [" +
                    userName + "].");
       throw new GuardClauseException(
-          userPolicyResponseGenerator.userPolicyAlreadyAttached());
+          userPolicyResponseGenerator.detachNonAttachedPolicy());
     }
   }
 
