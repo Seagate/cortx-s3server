@@ -40,17 +40,7 @@ def get_arn_from_policy_object(raw_aws_cli_output):
             continue
     return arn
 
-def get_policy_list_count(raw_aws_cli_output):
-    raw_lines = raw_aws_cli_output.split('\n')
-    count = 0
-    for _, item in enumerate(raw_lines):
-        if (item.startswith("POLICIES")):
-            count = count + 1
-        else:
-            continue
-    return count
-
-def get_attached_user_policy_list_count(raw_aws_cli_output, result_prefix):
+def get_policy_list_count(raw_aws_cli_output, result_prefix):
     raw_lines = raw_aws_cli_output.split('\n')
     count = 0
     for _, item in enumerate(raw_lines):
@@ -117,7 +107,7 @@ def policy_tests():
 
     #list-policies
     result = AwsIamTest('List Policies').list_policies().execute_test()
-    total_policies = get_policy_list_count(result.status.stdout)
+    total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
     if(total_policies != 2):
         print('List Policies Test failed')
         quit()
@@ -244,27 +234,27 @@ def user_policy_tests():
 
 	#list user attached policies
     result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser").execute_test()
-    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    total_policies = get_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
     if(total_policies != 2):
-        print('List Policies Test failed')
+        print('List Attached User Policies Test failed')
         quit()
     result.command_response_should_have("iampolicy")
 
     #list user attached policies with path prefix filter
     result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser", \
         path_prefix="/listpolicy/").execute_test()
-    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    total_policies = get_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
     if(total_policies != 1):
-        print('List Policies Test failed')
+        print('List Attached User Policies with path prefix filter Test failed')
         quit()
     result.command_response_should_have("iampolicy2")
 
 	#list user policies for user not having any policies attached
     result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser2") \
         .execute_test()
-    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    total_policies = get_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
     if(total_policies != 0):
-        print('List Policies Test failed')
+        print('List Attached User Policies for user not having any policies attached Test failed')
         quit()
 
     #list user policies for wrong username
@@ -291,9 +281,9 @@ def user_policy_tests():
 
 	#list user policies after detaching the policies
     result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser").execute_test()
-    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    total_policies = get_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
     if(total_policies != 0):
-        print('List Policies Test failed')
+        print('List Attached User Policies after detaching the policies Test failed')
         quit()
 
     #delete-policy
@@ -322,19 +312,19 @@ def user_policy_tests():
 
     #list user attached policies
     result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser2").execute_test()
-    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    total_policies = get_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
     if(total_policies != 20):
-        print('List Policies Test failed')
+        print('List Attached User Policies Test failed')
         quit()
 
     for policy_arn in non_attached_policy_arns:
         result.command_response_should_not_have(policy_arn)
-        AwsIamTest('Delete Policy').delete_policy(policy_arn).execute_test().command_is_successful()
+        AwsIamTest(f'Delete Policy {policy_arn}').delete_policy(policy_arn).execute_test().command_is_successful()
 
     for policy_arn in policy_arns:
-        AwsIamTest('Detach User Policy').detach_user_policy("testUser2", policy_arn).execute_test() \
+        AwsIamTest(f'Detach User Policy {policy_arn}').detach_user_policy("testUser2", policy_arn).execute_test() \
                 .command_is_successful()
-        AwsIamTest('Delete Policy').delete_policy(policy_arn).execute_test().command_is_successful()
+        AwsIamTest(f'Delete Policy {policy_arn}').delete_policy(policy_arn).execute_test().command_is_successful()
 
     #delete-user
     result = AwsIamTest('Delete User').delete_user("testUser").execute_test().command_is_successful()
