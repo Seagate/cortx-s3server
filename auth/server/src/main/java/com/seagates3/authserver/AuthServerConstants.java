@@ -26,7 +26,7 @@ class AuthServerConstants {
   final static String INSTALL_DIR = "/opt/seagate/cortx/auth";
 
  public
-  static String RESOURCE_DIR = "/opt/seagate/cortx/auth/resources";
+  static String RESOURCE_DIR = "C:\\Users\\934748\\projects\\cortx\\s3_fork_dev_repo";
 
  public
   final static int MAX_AND_DEFAULT_ROOT_USER_DURATION = 3600;

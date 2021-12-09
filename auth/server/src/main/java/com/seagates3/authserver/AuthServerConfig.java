@@ -135,62 +135,41 @@ public class AuthServerConfig {
      * @param authServerConfig Server configuration parameters.
      * @throws GeneralSecurityException
      */
-    public static void loadCredentials() throws GeneralSecurityException, Exception {
-       logger = LoggerFactory.getLogger(AuthServerConfig.class.getName());
-       logger.debug("Loading Openldap credentials");
-       String ldapCipherKey = null;
-
-       String encryptedPasswd = authServerConfig.getProperty("ldapLoginPW");
-       String ldap_const_key = authServerConfig.getProperty("ldap_const_key");
-
-       // 1. Generate cipher key for openldap and aes util.
-       try {
-         ldapCipherKey = KeyGenUtil.generateKeyByS3CipherUtil(ldap_const_key);
-
-         String keyForAESUtil = KeyGenUtil.generateKeyByS3CipherUtil(
-             authServerConfig.getProperty("aesConstKey"));
-         authServerConfig.put("aesKey", keyForAESUtil);
-       }
-       catch (IOException e) {
-         logger.error(e.getMessage() +
-                      " Error occured in S3 cipher while generating key.");
-         System.exit(1);
-       }
-       finally { logger.debug("Finished generating the key."); }
-
-       BufferedReader reader2 = null;
-       // 2. Decrypt openldap password using cipher Key.
-       try {
-         String decryptCmd = "s3cipher decrypt --data=" + encryptedPasswd +
-                             " --key=" + ldapCipherKey;
-         Process s3CipherDecrypt = Runtime.getRuntime().exec(decryptCmd);
-
-         int exitCode = s3CipherDecrypt.waitFor();
-         if (exitCode != 0) {
-           logger.error("S3 Cipher util failed to decrypt openldap password");
-           throw new IOException("S3 cipher util exited with error.");
-         }
-         reader2 = new BufferedReader(
-             new InputStreamReader(s3CipherDecrypt.getInputStream()));
-         String output = reader2.readLine();
-         if (output == null || output.isEmpty()) {
-           throw new IOException(
-               "S3 cipher returned empty stream while decrypting openldap " +
-               "password.");
-         } else {
-           ldapPasswd = output;
-         }
-       }
-       catch (Exception e) {
-         logger.error(
-             e.getMessage() +
-             " Error occured in S3 cipher while decrypting openldap password.");
-         System.exit(1);
-       }
-       finally {
-         if (reader2 != null) reader2.close();
-       }
-    }
+	public static void loadCredentials() throws GeneralSecurityException, Exception {
+		/*
+		 * logger = LoggerFactory.getLogger(AuthServerConfig.class.getName());
+		 * logger.debug("Loading Openldap credentials"); String ldapCipherKey = null;
+		 * 
+		 * String encryptedPasswd = authServerConfig.getProperty("ldapLoginPW"); String
+		 * ldap_const_key = authServerConfig.getProperty("ldap_const_key");
+		 * 
+		 * // 1. Generate cipher key for openldap and aes util. try { ldapCipherKey =
+		 * KeyGenUtil.generateKeyByS3CipherUtil(ldap_const_key);
+		 * 
+		 * String keyForAESUtil = KeyGenUtil.generateKeyByS3CipherUtil(
+		 * authServerConfig.getProperty("aesConstKey")); authServerConfig.put("aesKey",
+		 * keyForAESUtil); } catch (IOException e) { logger.error(e.getMessage() +
+		 * " Error occured in S3 cipher while generating key."); System.exit(1); }
+		 * finally { logger.debug("Finished generating the key."); }
+		 * 
+		 * BufferedReader reader2 = null; // 2. Decrypt openldap password using cipher
+		 * Key. try { String decryptCmd = "s3cipher decrypt --data=" + encryptedPasswd +
+		 * " --key=" + ldapCipherKey; Process s3CipherDecrypt =
+		 * Runtime.getRuntime().exec(decryptCmd);
+		 * 
+		 * int exitCode = s3CipherDecrypt.waitFor(); if (exitCode != 0) {
+		 * logger.error("S3 Cipher util failed to decrypt openldap password"); throw new
+		 * IOException("S3 cipher util exited with error."); } reader2 = new
+		 * BufferedReader( new InputStreamReader(s3CipherDecrypt.getInputStream()));
+		 * String output = reader2.readLine(); if (output == null || output.isEmpty()) {
+		 * throw new IOException(
+		 * "S3 cipher returned empty stream while decrypting openldap " + "password.");
+		 * } else { ldapPasswd = output; } } catch (Exception e) { logger.error(
+		 * e.getMessage() +
+		 * " Error occured in S3 cipher while decrypting openldap password.");
+		 * System.exit(1); } finally { if (reader2 != null) reader2.close(); }
+		 */
+		ldapPasswd = "ldapadmin";}
 
     /**
      * @return the process id
