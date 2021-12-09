@@ -262,7 +262,6 @@ class PolicyLdapStore {
         LDAPUtils.POLICY_NAME,               LDAPUtils.IS_POLICY_ATTACHABLE,
         LDAPUtils.POLICY_ARN,                LDAPUtils.POLICY_ATTACHMENT_COUNT,
         LDAPUtils.POLICY_PERMISSION_BOUNDARY};
-    // String ldapBase = LDAPUtils.BASE_DN;
 
     String ldapBase = String.format(
         "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
