@@ -196,34 +196,5 @@ class LdapStore implements AuthStore {
     }
   }
 
-@Override
-public List findAllByParameters(String strToFind, Object obj, Map<String, Object> parameters, String prefix) throws DataAccessException {
-	
-    String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
-    LOGGER.debug("calling method - " + METHOD_FINDALLBYPARAMETERS + " of class - " +
-                 className);
-    try {
-      Class < ? > storeClass = Class.forName(className);
-      Object instance = storeClass.newInstance();
-      Method method = storeClass.getMethod(METHOD_FINDALLBYPARAMETERS, Object.class, Object.class);
-      return (List)method.invoke(instance, obj, parameters);
-    }
-    catch (ClassNotFoundException e) {
-      LOGGER.error("Exception occurred " + e);
-      throw new DataAccessException("failed in "+ METHOD_FINDALLBYPARAMETERS + " " + prefix + " " + e);
-    }
-    catch (NoSuchMethodException | SecurityException e) {
-      LOGGER.error("Exception occurred " + e);
-      throw new DataAccessException("failed in "+ METHOD_FINDALLBYPARAMETERS + " " + prefix + " " + e);
-    }
-    catch (IllegalAccessException | IllegalArgumentException |
-           InvocationTargetException | InstantiationException e) {
-      LOGGER.error("Exception occurred " + e);
-      throw new DataAccessException("failed in "+ METHOD_FINDALLBYPARAMETERS + " " + prefix + " " + e);
-    }
-  
-}
-
-
 }
 

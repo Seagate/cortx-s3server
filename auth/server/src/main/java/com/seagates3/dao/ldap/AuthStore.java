@@ -33,7 +33,4 @@ interface AuthStore {
   void detach(Map<String, Object> dataMap,
               String prefix) throws DataAccessException;
 
-public List<Policy> findAllByParameters(String keyToFind, Object key, Map<String, Object> parameters,
-		String prefix) throws DataAccessException;
-
 }

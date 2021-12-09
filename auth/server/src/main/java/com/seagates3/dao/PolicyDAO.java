@@ -52,6 +52,4 @@ public interface PolicyDAO {
      List<Policy> findAll(Account account, Map<String, Object> parameters) throws DataAccessException;
     public
      void delete (Policy policy) throws DataAccessException;
-
-	public List<Policy> findAllByParameters(Account account, Map<String, Object> parameters) throws DataAccessException;
 }

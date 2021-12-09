@@ -41,10 +41,4 @@ class MotrStore implements AuthStore {
     // TODO Add motr store implementation for attach policy
   }
 
-@Override
-public List<Policy> findAllByParameters(String keyToFind, Object key, Map<String, Object> parameters, String prefix)
-		throws DataAccessException {
-	// TODO Auto-generated method stub
-	return null;
-}
 }
