@@ -18,6 +18,8 @@
  *
  */
 
+#pragma once
+
 #ifndef __S3_SERVER_S3_MULTIOBJECT_COPY_ACTION_H__
 #define __S3_SERVER_S3_MULTIOBJECT_COPY_ACTION_H__
 
@@ -52,19 +54,6 @@ enum class S3CopyPartActionState {
   completed,                // All stages done completely
 };
 
-const uint64_t MaxCopyObjectSourceSize = 5368709120UL;  // 5GB
-
-const char InvalidRequestSourceObjectSizeGreaterThan5GB[] =
-    "The specified copy source is larger than the maximum allowable size for a "
-    "copy source: 5368709120";
-const char InvalidRequestSourceAndDestinationSame[] =
-    "This copy request is illegal because it is trying to copy an object to "
-    "itself without changing the object's metadata, storage class, website "
-    "redirect location or encryption attributes.";
-
-const char DirectiveValueReplace[] = "REPLACE";
-const char DirectiveValueCOPY[] = "COPY";
-
 class S3ObjectDataCopier;
 
 class S3MultiObjectCopyAction : public S3PutObjectActionBase {
@@ -74,15 +63,37 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   std::unique_ptr<S3ObjectDataCopier> object_data_copier;
   std::shared_ptr<S3ObjectDataCopier> fragment_data_copier;
   std::vector<std::shared_ptr<S3ObjectDataCopier>> fragment_data_copier_list;
+  std::shared_ptr<S3PartMetadata> part_metadata = NULL;
+  std::shared_ptr<S3ObjectMetadata> object_multipart_metadata = NULL;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kv_writer_factory;
+  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+
+  std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
+  std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
 
   bool response_started = false;
+  bool auth_in_progress = false;
+  bool auth_failed = false;
+  bool auth_completed = false;
+    
+  bool motr_write_in_progress = false;
+  bool motr_write_completed = false;  // full object write
+  bool write_failed = false;
+
   int total_parts_fragment_to_be_copied = 0;
   int parts_fragment_copied_or_failed = 0;
   int max_parallel_copy = 0;
   int parts_frg_copy_in_flight_copied_or_failed = 0;
   int parts_frg_copy_in_flight = 0;
-
+  int part_number;
+  std::string upload_id;
+  unsigned motr_write_payload_size;
   bool if_source_and_destination_same();
+  S3Timer s3_timer;
+
+  int get_part_number() {
+    return atoi((request->get_query_string_value("partNumber")).c_str());
+  }
 
   void set_authorization_meta();
   void check_source_bucket_authorization();
@@ -96,13 +107,15 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   S3MultiObjectCopyAction(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<MotrAPI> motr_api = nullptr,
+      std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory = nullptr,
+      std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3MotrWriterFactory> motrwriter_s3_factory = nullptr,
-      std::shared_ptr<S3MotrReaderFactory> motrreader_s3_factory = nullptr,
-      std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
+      std::shared_ptr<S3MotrWriterFactory> motr_s3_writer_factory = nullptr,
+      std::shared_ptr<S3MotrReaderFactory> motr_s3_reader_factory = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr,
+      std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
- private:
   void setup_steps();
 
   std::string get_response_xml();
@@ -117,7 +130,7 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void create_part_object();
   void create_part_object_successful();
   void create_part_object_failed();
-  void copy_one_or_more_objects();
+  void initiate_copy_object();
   void copy_object();
   bool copy_object_cb();
   void copy_object_success();
@@ -129,6 +142,7 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void save_fragment_metadata_successful();
   void save_fragment_metadata_failed();
   void save_metadata();
+  void save_metadata_failed();
   void save_object_metadata_success();
   void save_object_metadata_failed();
   void start_response();
@@ -138,7 +152,7 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void add_object_oid_to_probable_dead_oid_list_failed();
 
   // Rollback tasks
-  void startcleanup() override;
+  void startcleanup();
   void mark_new_oid_for_deletion();
   void mark_old_oid_for_deletion();
   void remove_old_oid_probable_record();
