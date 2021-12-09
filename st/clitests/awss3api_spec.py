@@ -1702,11 +1702,28 @@ AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test(
 ################################################################################
 
 #******** Bucket Versioning ********
+bucket = "versionedbucket"
+file = "1kfile"
 
 #******** Create Bucket ********
-bucket = "versionedbucket"
 AwsTest('Aws can create a bucket')\
     .create_bucket(bucket)\
+    .execute_test()\
+    .command_is_successful()
+
+#******** Can't enable Versioning when an object exists ********
+# XXX: Temporary until null versions are explicitly supported
+AwsTest('Aws can put to a bucket')\
+    .put_object(bucket, file, 1024)\
+    .execute_test()\
+    .command_is_successful()
+AwsTest('Can not enable versioning on bucket with existing objects')\
+    .put_bucket_versioning(bucket, "Enabled")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("OperationNotSupported")
+AwsTest('Aws can delete the object')\
+    .delete_object(bucket, file)\
     .execute_test()\
     .command_is_successful()
 
@@ -1750,7 +1767,6 @@ AwsTest('Aws can not enable versioning on non-existant bucket')\
     .command_error_should_have("NoSuchBucket")
 
 #************ Put to a versioned bucket *******
-file = "1kfile"
 result = AwsTest('Aws can put to a versioned bucket')\
     .put_object(bucket, file, 1024, output="json")\
     .execute_test()\
@@ -1806,7 +1822,6 @@ AwsTest('Can not suspend versioning on bucket')\
     .execute_test(negative_case=True)\
     .command_should_fail()\
     .command_error_should_have("OperationNotSupported")
-
 
 #******** Test Cleanup ********
 AwsTest('Aws can delete the object')\
