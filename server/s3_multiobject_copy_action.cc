@@ -132,11 +132,12 @@ void S3MultiObjectCopyAction::setup_steps() {
   ACTION_TASK_ADD(S3MultiObjectCopyAction::validate_copyobject_request, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::check_part_details, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::fetch_multipart_metadata, this);
+  ACTION_TASK_ADD(S3MultiObjectCopyAction::fetch_part_info, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::set_source_bucket_authorization_metadata,
                   this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::check_source_bucket_authorization, this);
-  ACTION_TASK_ADD(S3MultiObjectCopyAction::create_one_or_more_objects, this);
-  ACTION_TASK_ADD(S3MultiObjectCopyAction::copy_one_or_more_objects, this);
+  ACTION_TASK_ADD(S3MultiObjectCopyAction::create_target_object, this);
+  ACTION_TASK_ADD(S3MultiObjectCopyAction::initiate_copy_object, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::save_metadata, this);
   ACTION_TASK_ADD(S3MultiObjectCopyAction::send_response_to_s3_client, this);
 }
@@ -321,20 +322,19 @@ bool S3MultiObjectCopyAction::copy_object_cb() {
   return false;
 }
 
-void S3MultiObjectCopyAction::create_one_or_more_objects() {
+void S3MultiObjectCopyAction::create_target_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  // if (additional_object_metadata->get_number_of_fragments() == 0) {
-  //   create_object();
-  // } else {
-  //   // Incase of fragments or multipart upload
-  //   // each part copy needs seperate object creation
-  //   create_objects();
-  // }
-  create_part_object();
+  if (additional_object_metadata->get_number_of_fragments() == 0) {
+    create_object();
+  } else {
+    // Incase of fragments or multipart upload
+    // each part copy needs separate object creation
+    create_objects();
+  }
   s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
 }
 
-void S3MultiObjectCopyAction::create_part_object() {
+void S3MultiObjectCopyAction::create_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_timer.start();
   motr_writer = motr_writer_factory->create_motr_writer(
@@ -344,8 +344,8 @@ void S3MultiObjectCopyAction::create_part_object() {
   motr_writer->set_layout_id(layout_id);
 
   motr_writer->create_object(
-      std::bind(&S3MultiObjectCopyAction::create_part_object_successful, this),
-      std::bind(&S3MultiObjectCopyAction::create_part_object_failed, this),
+      std::bind(&S3MultiObjectCopyAction::create_object_successful, this),
+      std::bind(&S3MultiObjectCopyAction::create_object_failed, this),
       new_object_oid, layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
@@ -354,7 +354,7 @@ void S3MultiObjectCopyAction::create_part_object() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3MultiObjectCopyAction::create_part_object_successful() {
+void S3MultiObjectCopyAction::create_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_copy_part_action_state = S3CopyPartActionState::newObjOidCreated;
 
@@ -370,7 +370,7 @@ void S3MultiObjectCopyAction::create_part_object_successful() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3MultiObjectCopyAction::create_part_object_failed() {
+void S3MultiObjectCopyAction::create_object_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -393,6 +393,161 @@ void S3MultiObjectCopyAction::create_part_object_failed() {
   }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3MultiObjectCopyAction::create_objects() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
+  if (additional_object_metadata->get_number_of_parts() == 0) {
+    // FNO + base object itself as fragment
+    total_objects = additional_object_metadata->get_number_of_fragments() + 1;
+    // TODO -- Handle fragmented objects
+  } else {
+    // Object is multipart (may be fragmented) then total object =
+    // fragments(FNO)
+    total_objects = additional_object_metadata->get_number_of_fragments();
+    is_multipart = true;
+  }
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Total fragements/parts to be copied : (%d)\n", total_objects);
+  extended_obj = additional_object_metadata->get_extended_object_metadata();
+  const std::map<int, std::vector<struct s3_part_frag_context>>& ext_entries =
+      extended_obj->get_raw_extended_entries();
+  if (!is_multipart) {
+    // Handle for non multipart during fault tolerance
+    // TODO
+  } else {
+    for (int i = 0; i < total_objects; i++) {
+      if (!is_multipart) {
+        // Handle for non multipart during fault tolerance
+        // TODO
+      } else {
+        // multipart (may be fragmented) object
+        // For now, ext_entry_index is always 0,
+        // assuming multipart is not fragmented.
+        int ext_entry_index = 0;
+
+        const struct s3_part_frag_context& frag_info =
+            (ext_entries.at(i + 1)).at(ext_entry_index);
+        part_fragment_context_list.push_back(frag_info);
+      }
+    }
+  }
+  create_parts_fragments(0);
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+}
+
+void S3MultiObjectCopyAction::create_parts_fragments(int index) {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  motr_writer = motr_writer_factory->create_motr_writer(request);
+  motr_writer_list.push_back(motr_writer);
+  new_ext_oid = {0ULL, 0ULL};
+  S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
+                 &new_ext_oid);
+
+  _set_layout_id(part_fragment_context_list[index].layout_id);
+
+  motr_writer->create_object(
+      std::bind(&S3MultiObjectCopyAction::create_part_fragment_successful, this),
+      std::bind(&S3MultiObjectCopyAction::create_part_fragment_failed, this),
+      new_ext_oid, part_fragment_context_list[index].layout_id);
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_object_action_create_object_shutdown_fail");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3MultiObjectCopyAction::create_part_fragment_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // TODO -- set status for each index
+  s3_copy_part_action_state = S3CopyPartActionState::newObjOidCreated;
+
+  // New Object or overwrite, create new metadata and release old.
+  if (new_object_metadata == nullptr) {
+    new_object_metadata = object_metadata_factory->create_object_metadata_obj(
+        request, bucket_metadata->get_object_list_index_layout(),
+        bucket_metadata->get_objects_version_list_index_layout());
+    new_object_metadata->regenerate_version_id();
+    new_object_metadata->set_oid(new_object_oid);
+    // Create extended metadata object and add parts/fragements to it.
+    const std::shared_ptr<S3ObjectExtendedMetadata>& ext_object_metadata =
+        new_object_metadata->get_extended_object_metadata();
+    if (!ext_object_metadata) {
+      std::shared_ptr<S3ObjectExtendedMetadata> new_ext_object_metadata =
+          object_metadata_factory->create_object_ext_metadata_obj(
+              request, object_metadata->get_bucket_name(),
+              object_metadata->get_object_name(),
+              new_object_metadata->get_obj_version_key(), 0, 0,
+              bucket_metadata->get_extended_metadata_index_layout());
+
+      new_object_metadata->set_extended_object_metadata(
+          new_ext_object_metadata);
+      s3_log(S3_LOG_DEBUG, stripped_request_id,
+             "Created extended object metadata to store object parts");
+    }
+    // new_object_metadata->set_oid(motr_writer->get_oid());
+    // new_object_metadata->set_layout_id(layout_id);
+    // new_object_metadata->set_pvid(motr_writer->get_ppvid());
+  }
+
+  const std::shared_ptr<S3ObjectExtendedMetadata>& new_object_ext_metadata =
+      new_object_metadata->get_extended_object_metadata();
+
+  new_ext_oid_str = S3M0Uint128Helper::to_string(new_ext_oid);
+
+  if (new_object_ext_metadata) {
+    struct s3_part_frag_context new_part_frag_ctx = {};
+    new_part_frag_ctx.motr_OID = motr_writer->get_oid();
+    memcpy(&new_part_frag_ctx.PVID, motr_writer->get_ppvid(),
+           sizeof(struct m0_fid));
+    new_part_frag_ctx.versionID = new_object_metadata->get_obj_version_key();
+    new_part_frag_ctx.item_size = part_fragment_context_list[index].item_size;
+
+    // Get max part size of all parts
+    if (max_part_size == 0) {
+      max_part_size = new_part_frag_ctx.item_size;
+    } else {
+      if (new_part_frag_ctx.item_size > max_part_size) {
+        max_part_size = new_part_frag_ctx.item_size;
+      }
+    }
+    new_part_frag_ctx.layout_id = part_fragment_context_list[index].layout_id;
+    new_part_frag_ctx.part_number =
+        part_fragment_context_list[index].part_number;
+    new_part_frag_ctx.is_multipart =
+        part_fragment_context_list[index].is_multipart;
+    // TODO - remove part_number, as its in part_frag_ctx ?
+    new_object_ext_metadata->add_extended_entry(new_part_frag_ctx, 1,
+                                                new_part_frag_ctx.part_number);
+    object_metadata->set_number_of_fragments(
+        new_object_ext_metadata->get_fragment_count());
+    object_metadata->set_number_of_parts(
+        new_object_ext_metadata->get_part_count());
+    new_part_frag_ctx_list.push_back(new_part_frag_ctx);
+    add_parts_fragment_oid_to_probable_dead_oid_list(new_object_metadata,
+                                                     new_part_frag_ctx);
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3MultiObjectCopyAction::create_part_fragment_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    return;
+  }
+  s3_copy_part_action_state = S3CopyPartActionState::newObjOidCreationFailed;
+
+  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
+    // Any other error report failure.
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // Copy source object(s) to destination object(s)

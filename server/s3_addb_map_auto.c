@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 234;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 235;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -149,11 +149,12 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3HeadServiceAction::send_response_to_s3_client",
     "S3MultiObjectCopyAction::check_part_details",
     "S3MultiObjectCopyAction::check_source_bucket_authorization",
-    "S3MultiObjectCopyAction::copy_one_or_more_objects",
-    "S3MultiObjectCopyAction::create_one_or_more_objects",
+    "S3MultiObjectCopyAction::create_target_object",
     "S3MultiObjectCopyAction::delete_new_object",
     "S3MultiObjectCopyAction::delete_old_object",
     "S3MultiObjectCopyAction::fetch_multipart_metadata",
+    "S3MultiObjectCopyAction::fetch_part_info",
+    "S3MultiObjectCopyAction::initiate_copy_object",
     "S3MultiObjectCopyAction::mark_new_oid_for_deletion",
     "S3MultiObjectCopyAction::mark_old_oid_for_deletion",
     "S3MultiObjectCopyAction::remove_new_oid_probable_record",

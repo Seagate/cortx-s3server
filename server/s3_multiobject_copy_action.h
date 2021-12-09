@@ -126,10 +126,14 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void fetch_part_info();
   void fetch_part_info_success();
   void fetch_part_info_failed();
-  void create_one_or_more_objects();
-  void create_part_object();
-  void create_part_object_successful();
-  void create_part_object_failed();
+  void create_target_object();
+  void create_objects();
+  void create_parts_fragments(int index);
+  void create_part_fragment_successful();
+  void create_part_fragment_failed();
+  void create_object();
+  void create_object_successful();
+  void create_object_failed();
   void initiate_copy_object();
   void copy_object();
   bool copy_object_cb();
