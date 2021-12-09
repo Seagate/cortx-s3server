@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 229;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 230;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -191,6 +191,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutBucketTaggingAction::validate_request",
     "S3PutBucketTaggingAction::validate_request_xml_tags",
     "S3PutBucketTaggingActionTest::func_callback_one",
+    "S3PutBucketVersioningAction::can_update_versioning_status",
     "S3PutBucketVersioningAction::save_versioning_status_to_bucket_metadata",
     "S3PutBucketVersioningAction::send_response_to_s3_client",
     "S3PutBucketVersioningAction::validate_request",
