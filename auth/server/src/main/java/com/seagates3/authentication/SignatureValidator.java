@@ -67,7 +67,6 @@ public class SignatureValidator {
           if (awsSign != null) {
             isRequestorAuthenticated = awsSign.authenticate(
                                          clientRequestToken, requestor);
-            isRequestorAuthenticated = true;
           }
         }
         catch (InvalidTokenException e) {
