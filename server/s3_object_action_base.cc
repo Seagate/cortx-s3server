@@ -93,6 +93,10 @@ void S3ObjectAction::fetch_object_info() {
   if (zero(obj_list_idx_lo.oid) || zero(obj_version_list_idx_lo.oid)) {
     // Object list index and version list index missing.
     fetch_object_info_failed();
+  } else if (request->has_query_param_key("versionId") &&
+             (request->get_query_string_value("versionId").empty())) {
+    // VersionId can not be empty
+    fetch_object_info_failed();
   } else {
     object_metadata = object_metadata_factory->create_object_metadata_obj(
         request, obj_list_idx_lo, obj_version_list_idx_lo);

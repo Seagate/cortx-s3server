@@ -105,6 +105,9 @@ class S3GetObjectAction : public S3ObjectAction {
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3GetObjectActionTest,
               ValidateObjectWhenMissingObjectReportNoSuckKey);
+  FRIEND_TEST(S3GetObjectActionTest, FetchObjectInfoFailedEmptyVersionId);
+  FRIEND_TEST(S3GetObjectActionTest, FetchObjectInfoFailedInvalidVersionId);
+  FRIEND_TEST(S3GetObjectActionTest, FetchObjectInfoFailedKeyNotPresent);
   FRIEND_TEST(S3GetObjectActionTest,
               ValidateObjectWhenObjInfoFetchFailedReportError);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse1);

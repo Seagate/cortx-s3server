@@ -59,6 +59,8 @@ class S3GetMultipartPartActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name_test));
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name_test));
+    EXPECT_CALL(*ptr_mock_request, has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(

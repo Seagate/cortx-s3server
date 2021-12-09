@@ -105,6 +105,8 @@ class S3GetBucketActionV2Test : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*request_mock, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*request_mock, has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
 
     s3_motr_api_mock = std::make_shared<MockS3Motr>();
     bucket_meta_factory =

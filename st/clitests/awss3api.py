@@ -360,15 +360,21 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def get_object(self, bucket_name, object_name, outfile=None, debug_flag=None, start_range=None, end_range=None):
+    def get_object(self, bucket_name, object_name, version_id=None, outfile=None, debug_flag=None, start_range=None, end_range=None):
         self.bucket_name = bucket_name
         self.object_name = object_name
         if outfile is None:
             outfile = object_name
+        cmd = "aws s3api get-object --bucket " + bucket_name + " --key " + object_name
+        if version_id is not None:
+            if version_id == "empty":
+                cmd += " --version-id \"\""
+            else:
+                cmd += " --version-id " + version_id
         if start_range is not None and end_range is not None:
-            cmd = "aws s3api get-object --bucket " + bucket_name + " --key " + object_name + " " + "--range bytes=" + start_range + "-" + end_range + " " + outfile
+            cmd += " --range bytes=" + start_range + "-" + end_range + " " + outfile
         else:
-            cmd = "aws s3api get-object --bucket " + bucket_name + " --key " + object_name + " " + outfile
+            cmd += " " + outfile
         self.with_cli(cmd)
         if debug_flag is not None:
            self.command += " --debug"

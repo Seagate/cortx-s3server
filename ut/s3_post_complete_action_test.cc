@@ -126,6 +126,8 @@ class S3PostCompleteActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*request_mock, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*request_mock, has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
     EXPECT_CALL(*s3_motr_api_mock, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 

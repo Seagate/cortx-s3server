@@ -58,6 +58,8 @@ class S3GetObjectAclActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*request_mock, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*request_mock, has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
 
     index_layout = {{0x11ffff, 0x1ffff}};
     object_meta_factory =
