@@ -149,22 +149,40 @@ class PolicyLdapStore {
   }
 
  public
-  List<Policy> findAll(Object accountObj) throws DataAccessException {
+  List<Policy> findAll(Object accountObj, Object parametersObj) throws DataAccessException {
     Account account = (Account)accountObj;
+    Map<String, Object> parameters = (Map<String, Object>)parametersObj;
+    String optionalFilter = "";
     String[] attrs = {
         LDAPUtils.POLICY_ID,                 LDAPUtils.PATH,
         LDAPUtils.POLICY_CREATE_DATE,        LDAPUtils.POLICY_UPDATE_DATE,
-        LDAPUtils.DEFAULT_VERSION_ID,        LDAPUtils.POLICY_DOC,
-        LDAPUtils.POLICY_NAME,               LDAPUtils.IS_POLICY_ATTACHABLE,
-        LDAPUtils.POLICY_ARN,                LDAPUtils.POLICY_ATTACHMENT_COUNT,
-        LDAPUtils.POLICY_PERMISSION_BOUNDARY};
+        LDAPUtils.DEFAULT_VERSION_ID,        LDAPUtils.POLICY_NAME,
+        LDAPUtils.IS_POLICY_ATTACHABLE,      LDAPUtils.POLICY_ARN,
+        LDAPUtils.POLICY_ATTACHMENT_COUNT,   LDAPUtils.POLICY_PERMISSION_BOUNDARY
+        };
     String ldapBase = String.format(
         "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
         LDAPUtils.POLICY_OU, LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
         LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
         LDAPUtils.BASE_DN);
-    String filter = String.format("(%s=%s)", LDAPUtils.OBJECT_CLASS,
-                                  LDAPUtils.POLICY_OBJECT_CLASS);
+
+    String filter = "(" + LDAPUtils.OBJECT_CLASS + "=" + LDAPUtils.POLICY_OBJECT_CLASS + ")";
+    if(!parameters.isEmpty()) {
+        if(parameters.get("PathPrefix") != null) {
+      	   optionalFilter += "(" + LDAPUtils.PATH + "=" + (String)parameters.get("PathPrefix") + ")"; 
+         }
+        if(parameters.get("OnlyAttached") != null) {
+      	   String onlyAttachedValue = (String)parameters.get("OnlyAttached");
+      	   if(onlyAttachedValue.equals("true")) {
+      		   optionalFilter += "(!(" + LDAPUtils.POLICY_ATTACHMENT_COUNT + "=0"+"))"; 
+      	   }
+         }
+        if(parameters.get("PolicyName") != null) {
+       	   optionalFilter += "(" + LDAPUtils.POLICY_NAME + "=" + (String)parameters.get("PolicyName") + ")"; 
+          }
+    }
+    filter = "(&" + filter + optionalFilter + ")";
+    
     LDAPSearchResults ldapResults;
     LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
     try {
@@ -189,8 +207,6 @@ class PolicyLdapStore {
           policy.setDefaultVersionId(
               entry.getAttribute(LDAPUtils.DEFAULT_VERSION_ID)
                   .getStringValue());
-          policy.setPolicyDoc(
-              entry.getAttribute(LDAPUtils.POLICY_DOC).getStringValue());
           policy.setName(
               entry.getAttribute(LDAPUtils.POLICY_NAME).getStringValue());
           policy.setARN(

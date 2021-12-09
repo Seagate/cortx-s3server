@@ -169,14 +169,8 @@ public class PolicyController extends AbstractController {
       if (requestBody.containsKey("PathPrefix")) {
     	  parameters.put("PathPrefix", requestBody.get("PathPrefix"));
       }
- 
       try {
-    	     if(!parameters.isEmpty()) {
-    	    	 policyList = policyDAO.findAllByParameters(requestor.getAccount(), parameters);
-    	      }
-    	     else {
-    	    	 policyList = policyDAO.findAll(requestor.getAccount());
-    	     }
+ 	     policyList = policyDAO.findAll(requestor.getAccount(), parameters);
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to list policies for account - " +
