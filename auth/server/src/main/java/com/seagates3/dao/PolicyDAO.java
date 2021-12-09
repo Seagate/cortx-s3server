@@ -49,7 +49,9 @@ public interface PolicyDAO {
     public
      Policy findByArn(String arn, Account account) throws DataAccessException;
     public
-     List<Policy> findAll(Account account, Map<String, Object> parameters) throws DataAccessException;
+     List<Policy> findAll(
+         Account account,
+         Map<String, Object> parameters) throws DataAccessException;
     public
      void delete (Policy policy) throws DataAccessException;
 }

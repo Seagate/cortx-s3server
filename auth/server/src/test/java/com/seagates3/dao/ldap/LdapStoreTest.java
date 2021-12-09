@@ -121,7 +121,7 @@ import com.seagates3.util.DateUtil;
   }
 
   @Test public void testFindAll() throws Exception {
-	Map<String, Object> parameters = new HashMap<>();
+    Map<String, Object> parameters = new HashMap<>();
     PowerMockito.mockStatic(DateUtil.class);
     PowerMockito.when(DateUtil.toServerResponseFormat(Mockito.anyString()))
         .thenReturn("");

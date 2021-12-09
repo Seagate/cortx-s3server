@@ -66,7 +66,8 @@ class FileStore implements AuthStore {
     return savedDataMap.get(key);
   }
 
-  @Override public List findAll(String key, Object obj,Map<String, Object> parameters,
+  @Override public List findAll(String key, Object obj,
+                                Map<String, Object> parameters,
                                 String prefix) throws DataAccessException {
     List list = new ArrayList();
     for (Entry<String, Object> entry : savedDataMap.entrySet()) {
@@ -103,5 +104,4 @@ class FileStore implements AuthStore {
                                String prefix) throws DataAccessException {
     // TODO Add file store implementation for detach policy
   }
-
 }

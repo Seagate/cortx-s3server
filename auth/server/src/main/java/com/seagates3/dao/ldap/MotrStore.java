@@ -21,7 +21,8 @@ class MotrStore implements AuthStore {
   }
 
   @Override public List<Policy> findAll(
-      String keyToFind, Object obj, Map<String, Object> parameters, String prefix) throws DataAccessException {
+      String keyToFind, Object obj, Map<String, Object> parameters,
+      String prefix) throws DataAccessException {
     // TODO Auto-generated method stub
     return null;
   }
@@ -40,5 +41,4 @@ class MotrStore implements AuthStore {
                                String prefix) throws DataAccessException {
     // TODO Add motr store implementation for attach policy
   }
-
 }

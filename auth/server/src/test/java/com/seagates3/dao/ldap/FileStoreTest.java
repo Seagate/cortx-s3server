@@ -72,12 +72,13 @@ import com.seagates3.exception.DataAccessException;
   }
 
   @Test public void testFindAll() throws DataAccessException {
-	Map<String, Object> parameters = new HashMap<>();
+    Map<String, Object> parameters = new HashMap<>();
     WhiteboxImpl.setInternalState(mockFileStore, "savedDataMap", sampleMap);
     Mockito.doCallRealMethod().when(mockFileStore).findAll(
-        Mockito.anyString(), Mockito.anyObject(), Mockito.anyMap(), Mockito.anyString());
-    Assert.assertEquals(2,
-                        mockFileStore.findAll("acc1", null, parameters, "Policy").size());
+        Mockito.anyString(), Mockito.anyObject(), Mockito.anyMap(),
+        Mockito.anyString());
+    Assert.assertEquals(
+        2, mockFileStore.findAll("acc1", null, parameters, "Policy").size());
   }
 
   @Test public void testDelete() throws Exception {

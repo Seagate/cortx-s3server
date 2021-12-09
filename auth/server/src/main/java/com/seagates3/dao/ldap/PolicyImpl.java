@@ -72,7 +72,8 @@ class PolicyImpl implements PolicyDAO {
     storeInstance.save(policyDetailsMap, POLICY_PREFIX);
   }
 
-  @Override public List<Policy> findAll(Account account, Map<String, Object> parameters)
+  @Override public List<Policy> findAll(Account account,
+                                        Map<String, Object> parameters)
       throws DataAccessException {
     AuthStoreFactory factory = new AuthStoreFactory();
     AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
@@ -94,13 +95,12 @@ class PolicyImpl implements PolicyDAO {
     AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     String key = PolicyUtil.getKey("", account.getId());
     Map<String, Object> parameters = new HashMap<>();
-  	parameters.put("PolicyName", name);
+    parameters.put("PolicyName", name);
     List<Policy> policyList =
         storeInstance.findAll(key, account, parameters, POLICY_PREFIX);
-    if(!policyList.isEmpty()) {
-    	return (Policy)policyList.get(0);
+    if (!policyList.isEmpty()) {
+      return (Policy)policyList.get(0);
     }
     return null;
   }
-
 }

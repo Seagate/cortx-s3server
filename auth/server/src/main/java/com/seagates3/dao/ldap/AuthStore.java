@@ -19,7 +19,8 @@ interface AuthStore {
 
  public
   List<Policy> findAll(String keyToFind, Object key,
-                       Map<String, Object> parameters, String prefix) throws DataAccessException;
+                       Map<String, Object> parameters,
+                       String prefix) throws DataAccessException;
 
  public
   void delete (String keyToRemove, Object key,
@@ -32,5 +33,4 @@ interface AuthStore {
  public
   void detach(Map<String, Object> dataMap,
               String prefix) throws DataAccessException;
-
 }

@@ -69,7 +69,7 @@ public class S3ParameterValidatorUtil {
     final static String SAML_PROVIDER_NAME_PATTERN = "[\\w._-]+";
     final static String PASSWORD_PATTERN =
         "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+";
-    final static String ONLY_ATTACHED_PATTERN="(true|false)";
+    final static String ONLY_ATTACHED_PATTERN = "(true|false)";
 
     /**
      * Validate the name (user name, role name etc). Length of the name should
@@ -182,7 +182,7 @@ public class S3ParameterValidatorUtil {
 
         return !(marker.length() < 1 || marker.length() > MAX_MARKER_LENGTH);
     }
-    
+
     /**
      * Validate the OnlyAttached param.
      * It should be either true or false.
@@ -190,13 +190,13 @@ public class S3ParameterValidatorUtil {
      * @param onlyAttached onlyAttached to be validated.
      * @return true if the onlyAttached is valid.
      */
-	public static boolean isValidOnlyAttached(String onlyAttached) {
-		if (!onlyAttached.matches(ONLY_ATTACHED_PATTERN)) {
-            return false;
-        }
-		return true;
-	}
-    
+   public
+    static boolean isValidOnlyAttached(String onlyAttached) {
+      if (!onlyAttached.matches(ONLY_ATTACHED_PATTERN)) {
+        return false;
+      }
+      return true;
+    }
 
     /**
      * Validate the access key user name (user name, role name etc). Length of

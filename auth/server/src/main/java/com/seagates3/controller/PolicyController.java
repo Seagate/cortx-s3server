@@ -164,13 +164,13 @@ public class PolicyController extends AbstractController {
       List<Policy> policyList = null;
       Map<String, Object> parameters = new HashMap<>();
       if (requestBody.containsKey("OnlyAttached")) {
-    	  parameters.put("OnlyAttached", requestBody.get("OnlyAttached"));
+        parameters.put("OnlyAttached", requestBody.get("OnlyAttached"));
       }
       if (requestBody.containsKey("PathPrefix")) {
-    	  parameters.put("PathPrefix", requestBody.get("PathPrefix"));
+        parameters.put("PathPrefix", requestBody.get("PathPrefix"));
       }
       try {
- 	     policyList = policyDAO.findAll(requestor.getAccount(), parameters);
+        policyList = policyDAO.findAll(requestor.getAccount(), parameters);
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to list policies for account - " +
