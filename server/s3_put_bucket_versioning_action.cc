@@ -19,6 +19,7 @@
  */
 
 #include "s3_put_bucket_versioning_action.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
@@ -39,6 +40,8 @@ S3PutBucketVersioningAction::S3PutBucketVersioningAction(
     put_bucket_version_factory =
         std::make_shared<S3PutBucketVersioningBodyFactory>();
   }
+  s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  s3_motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   setup_steps();
 }
 
@@ -48,6 +51,8 @@ void S3PutBucketVersioningAction::setup_steps() {
   ACTION_TASK_ADD(
       S3PutBucketVersioningAction::validate_request_xml_versioning_status,
       this);
+  ACTION_TASK_ADD(S3PutBucketVersioningAction::can_update_versioning_status,
+                  this);
   ACTION_TASK_ADD(
       S3PutBucketVersioningAction::save_versioning_status_to_bucket_metadata,
       this);
@@ -173,7 +178,7 @@ void S3PutBucketVersioningAction::send_response_to_s3_client() {
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_object_uri());
+                  request->get_object_uri(), get_s3_error_message());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
@@ -190,5 +195,79 @@ void S3PutBucketVersioningAction::send_response_to_s3_client() {
 
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutBucketVersioningAction::can_update_versioning_status() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+
+  if (bucket_version_status == "Suspended") {
+    set_s3_error("OperationNotSupported");
+    set_s3_error_message("Bucket versioning cannot be suspended.");
+    send_response_to_s3_client();
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
+  }
+
+  check_if_bucket_empty();
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutBucketVersioningAction::check_if_bucket_empty() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  const auto& object_list_index_layout =
+      bucket_metadata->get_object_list_index_layout();
+  motr_kv_reader =
+      s3_motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+
+  if (zero(object_list_index_layout.oid)) {
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  } else {
+    motr_kv_reader->next_keyval(
+        object_list_index_layout, "", 1,
+        std::bind(&S3PutBucketVersioningAction::get_object_successful, this),
+        std::bind(&S3PutBucketVersioningAction::get_object_failed, this));
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutBucketVersioningAction::get_object_successful() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  auto& kvps = motr_kv_reader->get_key_values();
+  size_t length = kvps.size();
+  assert(length > 0);
+  s3_log(S3_LOG_DEBUG, request_id, "%lu Objects found in Object listing\n",
+         length);
+  set_s3_error("OperationNotSupported");
+  set_s3_error_message(
+      "Bucket versioning cannot be enabled on non-empty bucket.");
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+void S3PutBucketVersioningAction::get_object_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "No Objects found in Object listing\n");
+    next();
+  } else {
+    if (motr_kv_reader->get_state() ==
+        S3MotrKVSReaderOpState::failed_to_launch) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Bucket metadata next keyval operation failed due to pre launch "
+             "failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else if (motr_kv_reader->get_state() ==
+               S3MotrKVSReaderOpState::failed_e2big) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Next keyval operation failed due rpc message size threshold\n");
+      set_s3_error("InternalError");
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Failed to find Object listing\n");
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
