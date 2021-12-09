@@ -112,11 +112,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.doNothing().when(userPolicyDAO).attach(any(UserPolicy.class));
 
     String expectedResponseBody =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\" "
-        + "standalone=\"no\"?><AttachUserPolicyResponse "
-        + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
-        + "\"><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></"
-        + "AttachUserPolicyResponse>";
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AttachUserPolicyResponse " +
+        "xmlns=\"https://iam.seagate.com/doc/2010-05-08/" +
+        "\"><ResponseMetadata><RequestId>0000</RequestId></" +
+        "ResponseMetadata></" + "AttachUserPolicyResponse>";
 
     UserPolicyController userPolicyController =
         new UserPolicyController(requestor, requestBody);
@@ -246,11 +246,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.doNothing().when(userPolicyDAO).detach(any(UserPolicy.class));
 
     String expectedResponseBody =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\" "
-        + "standalone=\"no\"?><DetachUserPolicyResponse "
-        + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
-        + "\"><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></"
-        + "DetachUserPolicyResponse>";
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><DetachUserPolicyResponse " +
+        "xmlns=\"https://iam.seagate.com/doc/2010-05-08/" +
+        "\"><ResponseMetadata><RequestId>0000</RequestId></" +
+        "ResponseMetadata></" + "DetachUserPolicyResponse>";
 
     UserPolicyController userPolicyController =
         new UserPolicyController(requestor, requestBody);
