@@ -424,60 +424,54 @@ TEST_F(S3DeleteObjectActionTest, DeleteObjectsDelayedEnabled) {
 
 TEST_F(S3DeleteObjectActionTest, DeleteHandlerInEnabledState) {
   CREATE_OBJECT_METADATA;
-  /*
-    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-      get_bucket_versioning_status())
-        .WillRepeatedly(ReturnRef("Enabled"));
 
-    EXPECT_CALL(*(mock_request), has_query_param_key(_))
-        .Times(1).WillOnce(Return(false));
+  std::string version = "Enabled";
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+    get_bucket_versioning_status())
+      .WillRepeatedly(ReturnRef(version));
 
-    //action_under_test->delete_marker_metadata =
-    object_meta_factory->mock_delete_marker_metadata;
+  EXPECT_CALL(*(mock_request), has_query_param_key(_))
+      .Times(1).WillOnce(Return(false));
 
-    EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
-                regenerate_version_id()).Times(1);
-    EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
-                reset_date_time_to_current()).Times(1);
+  action_under_test->delete_marker_metadata = object_meta_factory->mock_delete_marker_metadata;
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+              regenerate_version_id()).Times(1);
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+              reset_date_time_to_current()).Times(1);
 
-    std::map<std::string, std::string> in_headers_copy;
-    //in_headers_copy.insert(std::pair<std::string, std::string>("x-amz-meta-a",
-    "true"));
-    EXPECT_CALL(*(mock_request), get_in_headers_copy())
-        .Times(1).WillOnce(ReturnRef(in_headers_copy));
+  std::map<std::string, std::string> in_headers_copy;
+  in_headers_copy.insert(std::pair<std::string, std::string>("x-amz-meta-a", "true"));
 
-    //EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
-    //    add_user_defined_attribute(_,_)).Times(AtLeast(1));
-    //EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata;),
-    set_delete_marker())
-    //    .Times(1);
+  EXPECT_CALL(*(mock_request), get_in_headers_copy())
+      .Times(1).WillOnce(ReturnRef(in_headers_copy));
 
-    call_count_one = 0;
-    action_under_test->clear_tasks();
-    ACTION_TASK_ADD_OBJPTR(action_under_test,
-                           S3DeleteObjectActionTest::func_callback_one,
-                           this);
-    EXPECT_EQ(1, call_count_one);
-    action_under_test->delete_handler();
-   */
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+        add_user_defined_attribute(_,_)).Times(AtLeast(1));
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                          S3DeleteObjectActionTest::func_callback_one,
+                          this);
+
+  action_under_test->delete_handler();
+  EXPECT_EQ(1, call_count_one);
 }
 
-/*
 TEST_F(S3DeleteObjectActionTest, MetadataHandlerInEnabledState) {
   CREATE_OBJECT_METADATA;
 
+  std::string version = "Enabled";
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
     get_bucket_versioning_status())
-      .WillRepeatedly(ReturnRef("Enabled"));
+      .WillRepeatedly(ReturnRef(version));
 
   EXPECT_CALL(*(mock_request), has_query_param_key(_))
       .Times(1).WillOnce(Return(false));
 
   action_under_test->delete_marker_metadata =
-object_meta_factory->mock_delete_marker_metadata;
+              object_meta_factory->mock_delete_marker_metadata;
 
-  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata), save(_,
-_)).Times(1);
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+              save(_,_)).Times(1);
   action_under_test->metadata_handler();
 }
-*/

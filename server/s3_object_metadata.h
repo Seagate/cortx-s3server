@@ -269,7 +269,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
     return part_index_layout;
   }
 
-  void regenerate_version_id();
+  virtual void regenerate_version_id();
 
   std::string const get_obj_version_id() { return object_version_id; }
   std::string const get_obj_version_key() { return rev_epoch_version_id_key; }
@@ -280,7 +280,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   void set_old_version_id(std::string old_obj_ver_id);
 
   // delete marker handler
-  void set_delete_marker();
+  virtual void set_delete_marker();
   bool get_delete_marker();
 
   std::string get_owner_name();

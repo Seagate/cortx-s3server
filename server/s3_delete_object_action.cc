@@ -18,6 +18,8 @@
  *
  */
 
+#include <typeinfo>
+
 #include "s3_delete_object_action.h"
 #include "s3_error_codes.h"
 #include "s3_iem.h"
@@ -141,6 +143,7 @@ void S3DeleteObjectAction::delete_handler() {
 
   std::string bucket_versioning =
       bucket_metadata->get_bucket_versioning_status();
+
   if (bucket_versioning == "Enabled" &&
       !request->has_query_param_key("versionId")) {
     create_delete_marker();
