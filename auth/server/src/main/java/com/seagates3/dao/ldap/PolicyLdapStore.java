@@ -248,63 +248,13 @@ class PolicyLdapStore {
  public
   List<Policy> findByIds(Map<String, Object> dataMap)
       throws DataAccessException {
-    String accountName = dataMap.get("accountName") != null
-                             ? (String)dataMap.get("accountName")
-                             : "";
-    List<String> policyIds = dataMap.get("policyIds") != null
-                                 ? (List<String>)dataMap.get("policyIds")
-                                 : null;
-
-    String[] attrs = {
-        LDAPUtils.POLICY_ID,                 LDAPUtils.PATH,
-        LDAPUtils.POLICY_CREATE_DATE,        LDAPUtils.POLICY_UPDATE_DATE,
-        LDAPUtils.DEFAULT_VERSION_ID,        LDAPUtils.POLICY_DOC,
-        LDAPUtils.POLICY_NAME,               LDAPUtils.IS_POLICY_ATTACHABLE,
-        LDAPUtils.POLICY_ARN,                LDAPUtils.POLICY_ATTACHMENT_COUNT,
-        LDAPUtils.POLICY_PERMISSION_BOUNDARY};
-
-    String ldapBase = String.format(
-        "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-        LDAPUtils.POLICY_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
-        LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
-        LDAPUtils.BASE_DN);
-    String filter = "(" + LDAPUtils.OBJECT_CLASS + "=" +
-                    LDAPUtils.POLICY_OBJECT_CLASS + ")";
-    String policyIdFilter = "";
-    if (policyIds != null && !policyIds.isEmpty()) {
-      for (String policyId : policyIds) {
-        policyIdFilter += "(policyId=" + policyId + ")";
-      }
-      if (policyIds.size() > 1) {
-        policyIdFilter = "(|" + policyIdFilter + ")";
-      }
-    }
-    String optionalFilter = "";
-    if (dataMap.get("pathPrefix") != null) {
-      optionalFilter =
-          "(" + LDAPUtils.PATH + "=" + (String)dataMap.get("pathPrefix") + ")";
-    }
-    LDAPSearchResults ldapResults = null;
-    if (policyIdFilter.length() > 0) {
-      filter = "(&" + filter + policyIdFilter + optionalFilter + ")";
-
-      LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
-      try {
-        ldapResults =
-            LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB, filter, attrs);
-      }
-      catch (LDAPException ex) {
-        LOGGER.error("Failed to find the policies: ");
-        throw new DataAccessException("Failed to find the policies.\n" + ex);
-      }
-    }
+	LDAPSearchResults ldapResults = getPolicyByIdsLdapResults(dataMap);
     List<Policy> resultList = new ArrayList<>();
     if (ldapResults != null) {
       while (ldapResults.hasMore()) {
-
         try {
-          Policy policy = new Policy();
           LDAPEntry entry = ldapResults.next();
+          Policy policy = new Policy();
           policy.setPolicyId(
               entry.getAttribute(LDAPUtils.POLICY_ID).getStringValue());
           policy.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
@@ -347,4 +297,59 @@ class PolicyLdapStore {
     }
     return resultList;
   }
+
+private LDAPSearchResults getPolicyByIdsLdapResults(Map<String, Object> dataMap) throws DataAccessException {
+	LDAPSearchResults ldapResults = null;
+    String accountName = dataMap.get("accountName") != null
+                             ? (String)dataMap.get("accountName")
+                             : "";
+    List<String> policyIds = dataMap.get("policyIds") != null
+                                 ? (List<String>)dataMap.get("policyIds")
+                                 : null;
+
+    String[] attrs = {
+        LDAPUtils.POLICY_ID,                 LDAPUtils.PATH,
+        LDAPUtils.POLICY_CREATE_DATE,        LDAPUtils.POLICY_UPDATE_DATE,
+        LDAPUtils.DEFAULT_VERSION_ID,        LDAPUtils.POLICY_DOC,
+        LDAPUtils.POLICY_NAME,               LDAPUtils.IS_POLICY_ATTACHABLE,
+        LDAPUtils.POLICY_ARN,                LDAPUtils.POLICY_ATTACHMENT_COUNT,
+        LDAPUtils.POLICY_PERMISSION_BOUNDARY};
+
+    String ldapBase = String.format(
+        "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+        LDAPUtils.POLICY_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
+        LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+        LDAPUtils.BASE_DN);
+    String filter = "(" + LDAPUtils.OBJECT_CLASS + "=" +
+                    LDAPUtils.POLICY_OBJECT_CLASS + ")";
+    String policyIdFilter = "";
+    if (policyIds != null && !policyIds.isEmpty()) {
+      for (String policyId : policyIds) {
+        policyIdFilter += "(policyId=" + policyId + ")";
+      }
+      if (policyIds.size() > 1) {
+        policyIdFilter = "(|" + policyIdFilter + ")";
+      }
+    }
+    String optionalFilter = "";
+    if (dataMap.get("pathPrefix") != null) {
+      optionalFilter =
+          "(" + LDAPUtils.PATH + "=" + (String)dataMap.get("pathPrefix") + ")";
+    }
+    
+    if (policyIdFilter.length() > 0) {
+      filter = "(&" + filter + policyIdFilter + optionalFilter + ")";
+
+      LOGGER.debug("Searching policy dn: " + ldapBase + " filter: " + filter);
+      try {
+        ldapResults =
+            LDAPUtils.search(ldapBase, LDAPConnection.SCOPE_SUB, filter, attrs);
+      }
+      catch (LDAPException ex) {
+        LOGGER.error("Failed to find the policies: ");
+        throw new DataAccessException("Failed to find the policies.\n" + ex);
+      }
+    }
+	return ldapResults;
+}
 }
