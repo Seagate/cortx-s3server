@@ -183,8 +183,7 @@ TEST_F(S3PutBucketVersioningActionTest,
   EXPECT_EQ(1, call_count_one);
 }
 
-TEST_F(S3PutBucketVersioningActionTest, ValidateRequestXmlWithSuspendedState)
-{
+TEST_F(S3PutBucketVersioningActionTest, ValidateRequestXmlWithSuspendedState) {
 
   mock_bucket_version_str =
       "<VersioningConfiguration "
