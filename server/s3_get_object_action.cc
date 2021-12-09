@@ -97,22 +97,36 @@ void S3GetObjectAction::fetch_object_info_failed() {
     if (zero(obj_list_idx_lo.oid)) {
       s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
       set_s3_error("NoSuchKey");
-    } else {
-      if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-        s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-        set_s3_error("NoSuchKey");
-      } else if (object_metadata->get_state() ==
-                 S3ObjectMetadataState::failed_to_launch) {
-        s3_log(S3_LOG_ERROR, request_id,
-               "Object metadata load operation failed due to pre launch "
-               "failure\n");
-        set_s3_error("ServiceUnavailable");
+    } else if (request->has_query_param_key("versionId") &&
+               request->get_query_string_value("versionId").empty()) {
+      // VersionId can not be empty
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Empty versionId provided in the request\n");
+      set_s3_error("InvalidArgument");
+      set_s3_error_message("Version id cannot be the empty string");
+      set_invalid_argument("versionId", "");
+    } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+      s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+      if (request->has_query_param_key("versionId")) {
+        set_s3_error("InvalidArgument");
+        set_s3_error_message("Invalid version id specified");
+        set_invalid_argument("versionId",
+                             request->get_query_string_value("versionId"));
       } else {
-        s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-        set_s3_error("InternalError");
+        set_s3_error("NoSuchKey");
       }
+    } else if (object_metadata->get_state() ==
+               S3ObjectMetadataState::failed_to_launch) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Object metadata load operation failed due to pre launch "
+             "failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
+      set_s3_error("InternalError");
     }
   }
+
   send_response_to_s3_client();
 }
 
@@ -866,6 +880,10 @@ void S3GetObjectAction::send_data_to_client() {
     request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value(
         "Content-Length", std::to_string(get_requested_content_length()));
+    if (bucket_metadata->get_bucket_versioning_status() != "Unversioned") {
+      request->set_out_header_value("x-amz-version-id",
+                                    object_metadata->get_obj_version_id());
+    }
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
     }
@@ -1057,7 +1075,11 @@ void S3GetObjectAction::send_response_to_s3_client() {
   } else if (is_error_state() && !get_s3_error_code().empty()) {
     // Invalid Bucket Name
     S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_object_uri());
+                  request->get_object_uri(), get_s3_error_message());
+    if (get_s3_error_code() == "InvalidArgument") {
+      error.set_invalid_arg(get_invalid_argument_name(),
+                            get_invalid_argument_value());
+    }
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",

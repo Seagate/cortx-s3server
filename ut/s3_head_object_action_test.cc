@@ -78,6 +78,8 @@ class S3HeadObjectActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*mock_request, has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
     // Owned and deleted by shared_ptr in S3HeadObjectAction
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(mock_request);
