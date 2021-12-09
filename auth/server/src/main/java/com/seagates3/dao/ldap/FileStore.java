@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.Policy;
 
 public
 class FileStore implements AuthStore {

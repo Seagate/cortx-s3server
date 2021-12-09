@@ -22,8 +22,6 @@ class LdapStore implements AuthStore {
  private
   final String METHOD_FINDALL = "findAll";
  private
-  final String METHOD_FINDALLBYPARAMETERS = "findAllByParameters";
- private
   final String METHOD_DELETE = "delete";
  private
   final String METHOD_ATTACH = "attach";

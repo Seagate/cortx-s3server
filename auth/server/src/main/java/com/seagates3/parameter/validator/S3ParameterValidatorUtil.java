@@ -192,10 +192,7 @@ public class S3ParameterValidatorUtil {
      */
    public
     static boolean isValidOnlyAttached(String onlyAttached) {
-      if (!onlyAttached.matches(ONLY_ATTACHED_PATTERN)) {
-        return false;
-      }
-      return true;
+      return onlyAttached.matches(ONLY_ATTACHED_PATTERN);
     }
 
     /**

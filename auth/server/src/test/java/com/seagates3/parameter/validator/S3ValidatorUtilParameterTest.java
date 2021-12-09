@@ -203,7 +203,7 @@ public class S3ValidatorUtilParameterTest {
     /**
      * Test S3ValidatorUtil#isValidOnlyAttached. case - Valid OnlyAttached.
      */
-    @Test public void IsValidOnlyAttached_ValidOnlyAttached_True() {
+    @Test public void isValidOnlyAttachedTrue() {
       String onlyAttached = "true";
       assertTrue(S3ParameterValidatorUtil.isValidOnlyAttached(onlyAttached));
       onlyAttached = "false";
@@ -213,7 +213,7 @@ public class S3ValidatorUtilParameterTest {
     /**
      * Test S3ValidatorUtil#isValidOnlyAttached. case - Invalid OnlyAttached.
      */
-    @Test public void IsValidOnlyAttached_InvalidOnlyAttached_False() {
+    @Test public void isValidOnlyAttachedFalse() {
       String onlyAttached = "abc";
       assertFalse(S3ParameterValidatorUtil.isValidOnlyAttached(onlyAttached));
       onlyAttached = "fal";
