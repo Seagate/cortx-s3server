@@ -119,6 +119,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // Used in validation
   std::string requested_bucket_name;
   std::string requested_object_name;
+  std::string requested_object_version_id;
 
   // Reverse epoch time used as version id key in verion index
   std::string rev_epoch_version_id_key;
@@ -440,6 +441,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   FRIEND_TEST(S3ObjectMetadataTest, GetEncodedBucketAcl);
   FRIEND_TEST(S3DeleteObjectActionTest, CleanupOnMetadataDeletion);
   FRIEND_TEST(S3ObjectMetadataTest, ValidateVersionEntryToJson);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFromVersionListIdex);
 };
 
 // Fragment or the part detail structure
