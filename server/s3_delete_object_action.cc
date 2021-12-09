@@ -171,9 +171,10 @@ void S3DeleteObjectAction::create_delete_marker() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // create metadata
-  delete_marker_metadata = object_metadata_factory->create_object_metadata_obj(
-      request, bucket_metadata->get_object_list_index_layout(),
-      bucket_metadata->get_objects_version_list_index_layout());
+  delete_marker_metadata =
+      object_metadata_factory->create_delete_marker_metadata_obj(
+          request, bucket_metadata->get_object_list_index_layout(),
+          bucket_metadata->get_objects_version_list_index_layout());
 
   // Generate a version id for the new object.
   delete_marker_metadata->regenerate_version_id();
@@ -190,7 +191,6 @@ void S3DeleteObjectAction::create_delete_marker() {
       delete_marker_metadata->add_user_defined_attribute(it.first, it.second);
     }
   }
-  delete_marker_metadata->set_delete_marker();
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

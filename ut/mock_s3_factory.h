@@ -78,6 +78,14 @@ class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
     mock_object_metadata->set_object_list_index_layout(id);
     mock_object_extnd_metadata->set_extended_list_index_layout(id);
   }
+  std::shared_ptr<S3ObjectMetadata> create_delete_marker_metadata_obj(
+      std::shared_ptr<S3RequestObject> req,
+      const struct s3_motr_idx_layout& obj_idx_lo = {},
+      const struct s3_motr_idx_layout& obj_ver_idx_lo = {}) override {
+
+    // mock_delete_marker_metadata->set_delete_marker();
+    return mock_delete_marker_metadata;
+  }
   std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
       const struct s3_motr_idx_layout& obj_idx_lo = {},

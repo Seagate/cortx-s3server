@@ -38,6 +38,18 @@
 extern struct m0_uint128 global_instance_id;
 
 std::shared_ptr<S3ObjectMetadata>
+S3ObjectMetadataFactory::create_delete_marker_metadata_obj(
+    std::shared_ptr<S3RequestObject> req,
+    const struct s3_motr_idx_layout& obj_idx_lo,
+    const struct s3_motr_idx_layout& obj_ver_idx_lo) {
+
+  std::shared_ptr<S3ObjectMetadata> meta =
+      create_object_metadata_obj(std::move(req), obj_idx_lo, obj_ver_idx_lo);
+  meta->set_delete_marker();
+  return meta;
+}
+
+std::shared_ptr<S3ObjectMetadata>
 S3ObjectMetadataFactory::create_object_metadata_obj(
     std::shared_ptr<S3RequestObject> req,
     const struct s3_motr_idx_layout& obj_idx_lo,

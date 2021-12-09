@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 225;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 226;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -114,6 +114,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3DeleteObjectAction::metadata_handler",
     "S3DeleteObjectAction::remove_probable_record",
     "S3DeleteObjectAction::send_response_to_s3_client",
+    "S3DeleteObjectActionTest::func_callback_one",
     "S3DeleteObjectTaggingAction::delete_object_tags",
     "S3DeleteObjectTaggingAction::send_response_to_s3_client",
     "S3GetBucketACLAction::send_response_to_s3_client",
