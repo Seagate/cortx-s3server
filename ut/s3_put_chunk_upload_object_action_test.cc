@@ -93,6 +93,8 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
         .WillRepeatedly(ReturnRef(object_name));
     EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-tagging")))
         .WillOnce(Return(""));
+    EXPECT_CALL(*mock_request, has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
     EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
