@@ -248,7 +248,7 @@ class PolicyLdapStore {
  public
   List<Policy> findByIds(Map<String, Object> dataMap)
       throws DataAccessException {
-	LDAPSearchResults ldapResults = getPolicyByIdsLdapResults(dataMap);
+    LDAPSearchResults ldapResults = getPolicyByIdsLdapResults(dataMap);
     List<Policy> resultList = new ArrayList<>();
     if (ldapResults != null) {
       while (ldapResults.hasMore()) {
@@ -298,8 +298,10 @@ class PolicyLdapStore {
     return resultList;
   }
 
-private LDAPSearchResults getPolicyByIdsLdapResults(Map<String, Object> dataMap) throws DataAccessException {
-	LDAPSearchResults ldapResults = null;
+ private
+  LDAPSearchResults getPolicyByIdsLdapResults(Map<String, Object> dataMap)
+      throws DataAccessException {
+    LDAPSearchResults ldapResults = null;
     String accountName = dataMap.get("accountName") != null
                              ? (String)dataMap.get("accountName")
                              : "";
@@ -336,7 +338,7 @@ private LDAPSearchResults getPolicyByIdsLdapResults(Map<String, Object> dataMap)
       optionalFilter =
           "(" + LDAPUtils.PATH + "=" + (String)dataMap.get("pathPrefix") + ")";
     }
-    
+
     if (policyIdFilter.length() > 0) {
       filter = "(&" + filter + policyIdFilter + optionalFilter + ")";
 
@@ -350,6 +352,6 @@ private LDAPSearchResults getPolicyByIdsLdapResults(Map<String, Object> dataMap)
         throw new DataAccessException("Failed to find the policies.\n" + ex);
       }
     }
-	return ldapResults;
-}
+    return ldapResults;
+  }
 }
