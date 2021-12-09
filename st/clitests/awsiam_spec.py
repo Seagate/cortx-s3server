@@ -50,6 +50,16 @@ def get_policy_list_count(raw_aws_cli_output):
             continue
     return count
 
+def get_attached_user_policy_list_count(raw_aws_cli_output, result_prefix):
+    raw_lines = raw_aws_cli_output.split('\n')
+    count = 0
+    for _, item in enumerate(raw_lines):
+        if (item.startswith(result_prefix)):
+            count = count + 1
+        else:
+            continue
+    return count
+
 def user_tests():
     date_pattern = "[0-9|]+Z"
     #tests
@@ -191,7 +201,148 @@ def policy_tests():
     result = AwsIamTest('Policy Validation-Duplicate SIDs').create_policy("invalidPolicy7",samplepolicy_testing)\
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
 
+def user_policy_tests():
+    #create-user
+    result = AwsIamTest('Create User').create_user("testUser").execute_test()
+    result.command_response_should_have("testUser")
+
+    #create-user
+    result = AwsIamTest('Create User').create_user("testUser2").execute_test()
+    result.command_response_should_have("testUser2")
+
+    #create-policy
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy",samplepolicy_testing) \
+        .execute_test()
+    result.command_response_should_have("iampolicy")
+    arn = (get_arn_from_policy_object(result.status.stdout))
+
+    #create-policy
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy_with_path("iampolicy2", \
+        samplepolicy_testing, "/listpolicy/").execute_test()
+    result.command_response_should_have("iampolicy2")
+    arn2 = (get_arn_from_policy_object(result.status.stdout))
+
+	#attach-user-policy
+    AwsIamTest('Attach User Policy').attach_user_policy("testUser", arn) \
+        .execute_test().command_is_successful()
+    AwsIamTest('Attach User Policy').attach_user_policy("testUser", arn2) \
+        .execute_test().command_is_successful()
+
+    #attach already attached policy
+    AwsIamTest('Attach User Policy').attach_user_policy("testUser", arn2) \
+        .execute_test(negative_case=True).command_should_fail() \
+            .command_error_should_have("EntityAlreadyExists")
+
+    #attach policy to non-existing user
+    AwsIamTest('Attach User Policy').attach_user_policy("jhjgj", arn2) \
+        .execute_test(negative_case=True).command_should_fail() \
+            .command_error_should_have("NoSuchEntity")
+
+	#list user attached policies
+    result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser").execute_test()
+    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    if(total_policies != 2):
+        print('List Policies Test failed')
+        quit()
+    result.command_response_should_have("iampolicy")
+
+    #list user attached policies with path prefix filter
+    result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser", \
+        path_prefix="/listpolicy/").execute_test()
+    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    if(total_policies != 1):
+        print('List Policies Test failed')
+        quit()
+    result.command_response_should_have("iampolicy2")
+
+	#list user policies for user not having any policies attached
+    result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser2") \
+        .execute_test()
+    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    if(total_policies != 0):
+        print('List Policies Test failed')
+        quit()
+
+    #list user policies for wrong username
+    AwsIamTest('List User Attached Policies').list_attached_user_policies("asdhj") \
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
+
+	#detach-user-policy
+    AwsIamTest('Detach User Policy').detach_user_policy("testUser", arn).execute_test() \
+        .command_is_successful()
+    AwsIamTest('Detach User Policy').detach_user_policy("testUser", arn2).execute_test() \
+        .command_is_successful()
+
+    #detach-user-policy for non existing user
+    result = AwsIamTest('Detach User Policy').detach_user_policy("hkhk", arn) \
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
+
+    #detach-user-policy with non existing policy
+    result = AwsIamTest('Detach User Policy').detach_user_policy("testUser", "arn:seagate:iam::103947660857:policy/oiuou") \
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
+
+    #detach-user-policy with non attached policy
+    result = AwsIamTest('Detach User Policy').detach_user_policy("testUser", arn) \
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
+
+	#list user policies after detaching the policies
+    result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser").execute_test()
+    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    if(total_policies != 0):
+        print('List Policies Test failed')
+        quit()
+
+    #delete-policy
+    result = AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+    result = AwsIamTest('Delete Policy').delete_policy(arn2).execute_test().command_is_successful()
+
+    policy_arns = []
+    non_attached_policy_arns = []
+    for i in range(21):
+        #create-policy
+        samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
+        samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+        result = AwsIamTest('Create Policy').create_policy(f"iampolicyquota{i}",samplepolicy_testing) \
+            .execute_test()
+        result.command_response_should_have(f"iampolicyquota{i}")
+        policy_arn = (get_arn_from_policy_object(result.status.stdout))
+
+        if i < 20:
+            AwsIamTest('Attach User Policy').attach_user_policy("testUser2", policy_arn) \
+                .execute_test().command_is_successful()
+            policy_arns.append(policy_arn)
+        else:
+            AwsIamTest('Attach User Policy').attach_user_policy("testUser2", policy_arn) \
+                .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidRequest")
+            non_attached_policy_arns.append(policy_arn)
+
+    #list user attached policies
+    result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser2").execute_test()
+    total_policies = get_attached_user_policy_list_count(result.status.stdout, "ATTACHEDPOLICIES")
+    if(total_policies != 20):
+        print('List Policies Test failed')
+        quit()
+
+    for policy_arn in non_attached_policy_arns:
+        result.command_response_should_not_have(policy_arn)
+        AwsIamTest('Delete Policy').delete_policy(policy_arn).execute_test().command_is_successful()
+
+    for policy_arn in policy_arns:
+        AwsIamTest('Detach User Policy').detach_user_policy("testUser2", policy_arn).execute_test() \
+                .command_is_successful()
+        AwsIamTest('Delete Policy').delete_policy(policy_arn).execute_test().command_is_successful()
+
+    #delete-user
+    result = AwsIamTest('Delete User').delete_user("testUser").execute_test().command_is_successful()
+    result = AwsIamTest('Delete User').delete_user("testUser2").execute_test().command_is_successful()
+
+
 if __name__ == '__main__':
 
     user_tests()
     policy_tests()
+    user_policy_tests()

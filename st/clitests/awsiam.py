@@ -97,6 +97,11 @@ class AwsIamTest(PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def create_policy_with_path(self, policy_name, policy, path):
+        cmd = "aws iam create-policy --policy-name " + policy_name + " --policy-document " + policy + " --path " + path
+        self.with_cli(cmd)
+        return self
+
     def get_policy(self, arn):
         cmd = "aws iam get-policy --policy-arn " + arn
         self.with_cli(cmd)
@@ -109,5 +114,22 @@ class AwsIamTest(PyCliTest):
 
     def list_policies(self):
         cmd = "aws iam list-policies"
+        self.with_cli(cmd)
+        return self
+
+    def attach_user_policy(self, user_name, policy_arn):
+        cmd = f"aws iam attach-user-policy --policy-arn {policy_arn} --user-name {user_name}"
+        self.with_cli(cmd)
+        return self
+
+    def detach_user_policy(self, user_name, policy_arn):
+        cmd = f"aws iam detach-user-policy --policy-arn {policy_arn} --user-name {user_name}"
+        self.with_cli(cmd)
+        return self
+
+    def list_attached_user_policies(self, user_name, **kwargs):
+        cmd = f"aws iam list-attached-user-policies --user-name {user_name}"
+        if kwargs.get("path_prefix"):
+            cmd = cmd + " --path-prefix " + kwargs.get("path_prefix")
         self.with_cli(cmd)
         return self
