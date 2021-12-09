@@ -58,6 +58,8 @@ class S3AbortMultipartActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(object_name));
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*ptr_mock_request, has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
 
     ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
 
