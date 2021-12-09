@@ -40,6 +40,9 @@
 #include "s3_put_bucket_replication_action.h"
 #include "s3_get_bucket_replication_action.h"
 #include "s3_delete_bucket_replication_action.h"
+#include "s3_bucket_remote_add_action.h"
+#include "s3_bucket_remote_list_action.h"
+#include "s3_bucket_remote_delete_action.h"
 
 void S3BucketAPIHandler::create_action() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
@@ -294,6 +297,30 @@ void S3BucketAPIHandler::create_action() {
           break;
         case S3HttpVerb::DELETE:
           s3_stats_inc("delete_bucket_encryption_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::remoteBucketInfo:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          request->set_action_str("BucketRemoteList");
+          action = std::make_shared<S3BucketRemoteListAction>(request);
+          s3_log(S3_LOG_DEBUG, request_id, "S3BucketRemoteListAction");
+          s3_stats_inc("bucket_remote_add_count");
+          break;
+        case S3HttpVerb::PUT:
+          request->set_action_str("BucketRemoteAdd");
+          action = std::make_shared<S3BucketRemoteAddAction>(request);
+          s3_log(S3_LOG_DEBUG, request_id, "S3BucketRemoteAddAction");
+          s3_stats_inc("bucket_remote_add_count");
+          break;
+        case S3HttpVerb::DELETE:
+          request->set_action_str("BucketRemoteDelete");
+          action = std::make_shared<S3BucketRemoteDeleteAction>(request);
+          s3_log(S3_LOG_DEBUG, request_id, "S3BucketRemoteDeleteAction");
+          s3_stats_inc("bucket_remote_add_count");
           break;
         default:
           return;

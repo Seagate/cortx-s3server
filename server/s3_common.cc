@@ -43,7 +43,9 @@ std::map<std::string, S3OperationCode, compare> S3OperationString{
     {"uploadId", S3OperationCode::multipart},
     {"torrent", S3OperationCode::torrent},
     {"select", S3OperationCode::selectcontent},
-    {"restore", S3OperationCode::restore}
+    {"restore", S3OperationCode::restore},
+    {"remoteBucketInfo", S3OperationCode::remoteBucketInfo}
+
     // {"selectcontent", S3OperationCode::selectcontent},
     // {"initupload", S3OperationCode::initupload},
     // {"partupload", S3OperationCode::partupload},

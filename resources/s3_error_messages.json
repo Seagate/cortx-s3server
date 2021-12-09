@@ -234,5 +234,10 @@
   "ReplicationOperationNotSupported": {
     "Description": "Following operation is not supported :: StorageClass, EncryptionConfiguration",
     "httpcode":    401
+    },
+    "NoSuchRemoteAliasList": {
+      "Description": "There is no alias name list associated with the bucket.",
+      "httpcode": 404
     }
+    
 }
