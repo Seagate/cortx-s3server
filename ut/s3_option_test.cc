@@ -19,6 +19,7 @@
  */
 
 #include "s3_option.h"
+#include "s3_stats_option.h"
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -77,6 +78,8 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ(4, instance->get_s3_grace_period_sec());
   EXPECT_FALSE(instance->get_is_s3_shutting_down());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
@@ -124,6 +127,8 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
   EXPECT_EQ(4, instance->get_s3_grace_period_sec());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
@@ -171,6 +176,8 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
   EXPECT_EQ(4, instance->get_s3_grace_period_sec());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
@@ -212,6 +219,8 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(1, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->get_is_s3_shutting_down());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("192.168.0.9", instance->get_statsd_ip_addr());
   EXPECT_EQ(1234, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
@@ -244,6 +253,8 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_FALSE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
@@ -286,6 +297,8 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_FALSE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
@@ -332,6 +345,8 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
   EXPECT_EQ(8125, instance->get_statsd_port());
   EXPECT_EQ(3, instance->get_statsd_max_send_retry());
@@ -363,6 +378,8 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
   EXPECT_EQ(8125, instance->get_statsd_port());
   EXPECT_EQ(3, instance->get_statsd_max_send_retry());
@@ -389,6 +406,8 @@ TEST_F(S3OptionsTest, LoadMotrSectionFromFile) {
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
   EXPECT_EQ(8125, instance->get_statsd_port());
   EXPECT_EQ(3, instance->get_statsd_max_send_retry());
@@ -416,6 +435,8 @@ TEST_F(S3OptionsTest, LoadSelectiveMotrSectionFromFile) {
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
+  EXPECT_EQ(StatsAggregatorBackendType::STATSD,
+            instance->get_stats_aggregator_backend_type());
   EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
   EXPECT_EQ(8125, instance->get_statsd_port());
   EXPECT_EQ(3, instance->get_statsd_max_send_retry());

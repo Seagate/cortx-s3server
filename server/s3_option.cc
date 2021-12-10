@@ -222,6 +222,16 @@ bool S3Option::load_section(std::string section_name,
               .as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_STATS");
       stats_enable = s3_option_node["S3_ENABLE_STATS"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_STATS_AGGREGATOR_BACKEND_TYPE");
+      std::string stats_aggregator_backend_str =
+          s3_option_node["S3_STATS_AGGREGATOR_BACKEND_TYPE"].as<std::string>();
+      if (!stats_aggregator_backend_str.compare("STATSD")) {
+        stats_aggregator_backend = StatsAggregatorBackendType::STATSD;
+      } else {
+        S3_OPTION_VALUE_INVALID_AND_RET("S3_STATS_AGGREGATOR_BACKEND_TYPE",
+                                        stats_aggregator_backend_str);
+      }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
       statsd_port = s3_option_node["S3_STATSD_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_IP_ADDR");
@@ -577,6 +587,16 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_LOG_FLUSH_FREQUENCY"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_STATS");
       stats_enable = s3_option_node["S3_ENABLE_STATS"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_STATS_AGGREGATOR_BACKEND_TYPE");
+      std::string stats_aggregator_backend_str =
+          s3_option_node["S3_STATS_AGGREGATOR_BACKEND_TYPE"].as<std::string>();
+      if (!stats_aggregator_backend_str.compare("STATSD")) {
+        stats_aggregator_backend = StatsAggregatorBackendType::STATSD;
+      } else {
+        S3_OPTION_VALUE_INVALID_AND_RET("S3_STATS_AGGREGATOR_BACKEND_TYPE",
+                                        stats_aggregator_backend_str);
+      }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_MAX_SEND_RETRY");
       statsd_max_send_retry =
           s3_option_node["S3_STATSD_MAX_SEND_RETRY"].as<unsigned short>();
@@ -1072,6 +1092,9 @@ void S3Option::dump_options() {
 
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_STATS = %s\n",
          (stats_enable ? "true" : "false"));
+  s3_log(S3_LOG_INFO, "", "S3_STATS_AGGREGATOR_BACKEND_TYPE = %s\n",
+         stats_aggregator_backend_type_to_string(stats_aggregator_backend)
+             .c_str());
   s3_log(S3_LOG_INFO, "", "S3_STATSD_IP_ADDR = %s\n", statsd_ip_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_STATSD_PORT = %d\n", statsd_port);
   s3_log(S3_LOG_INFO, "", "S3_STATSD_MAX_SEND_RETRY = %d\n",
@@ -1442,6 +1465,15 @@ void S3Option::set_eventbase(evbase_t* base) { eventbase = base; }
 bool S3Option::is_stats_enabled() { return stats_enable; }
 
 void S3Option::set_stats_enable(bool enable) { stats_enable = enable; }
+
+StatsAggregatorBackendType S3Option::get_stats_aggregator_backend_type() const {
+  return stats_aggregator_backend;
+}
+
+void S3Option::set_stats_aggregator_backend_type(
+    StatsAggregatorBackendType type) {
+  stats_aggregator_backend = type;
+}
 
 std::string S3Option::get_statsd_ip_addr() { return statsd_ip_addr; }
 

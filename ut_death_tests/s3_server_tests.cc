@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   int rc;
 
   g_option_instance = S3Option::get_instance();
-  g_stats_instance = S3Stats::get_instance();
+  g_stats_instance = S3StatsManager::get_instance();
   _init_log();
 
   ::testing::InitGoogleTest(&argc, argv);
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
   S3AuditInfoLogger::finalize();
 
   if (g_stats_instance) {
-    S3Stats::delete_instance();
+    S3StatsManager::delete_instance();
   }
   if (g_option_instance) {
     S3Option::destroy_instance();

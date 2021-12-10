@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+ * Copyright (c) 2020-2021 Seagate Technology LLC and/or its Affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@
 #include <string>
 #include <cstdint>
 
-#include "s3_stats.h"
-#include "event_utils.h"
-#include "s3_perf_metrics.h"
 #include "atexit.h"
+#include "event_utils.h"
+#include "s3_log.h"
+#include "s3_perf_metrics.h"
+#include "s3_stats.h"
 
 // Helper class, will keep value of a single throughput metric.
 class S3ThroughputMetric {

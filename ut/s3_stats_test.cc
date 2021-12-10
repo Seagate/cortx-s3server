@@ -19,6 +19,8 @@
  */
 
 #include "s3_stats.h"
+#include "s3_stats_option.h"
+#include "s3_statsd_stats.h"
 #include <iostream>
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -43,6 +45,8 @@ class S3StatsTest : public testing::Test {
   virtual void SetUp() {
     g_option_instance = S3Option::get_instance();
     g_option_instance->set_stats_enable(true);
+    g_option_instance->set_stats_aggregator_backend_type(
+        StatsAggregatorBackendType::STATSD);
 
     mock_socket = new MockSocketInterface();
     if (g_stats_instance) {
@@ -66,7 +70,8 @@ class S3StatsTest : public testing::Test {
         .WillOnce(Return(0))
         .RetiresOnSaturation();
 
-    s3_stats_under_test = g_stats_instance = S3Stats::get_instance(mock_socket);
+    s3_stats_under_test = g_stats_instance =
+        S3StatsManager::get_instance(mock_socket);
     if (g_stats_instance == nullptr) {
       std::cout << "Error initializing g_stats_instance..\n";
     }
@@ -75,55 +80,68 @@ class S3StatsTest : public testing::Test {
   void TearDown() { s3_stats_fini(); }
 
   static void TearDownTestCase() {
-    g_stats_instance = S3Stats::get_instance();
+    g_stats_instance = S3StatsManager::get_instance();
     g_option_instance->set_stats_enable(false);
   }
 };
 
 TEST_F(S3StatsTest, Init) {
   ASSERT_TRUE(g_stats_instance != NULL);
-  EXPECT_EQ(g_stats_instance->host, g_option_instance->get_statsd_ip_addr());
-  EXPECT_EQ(g_stats_instance->port, g_option_instance->get_statsd_port());
-  EXPECT_NE(g_stats_instance->sock, -1);
-  EXPECT_FALSE(g_stats_instance->metrics_allowlist.empty());
+
+  S3StatsdStats* statsd_stats_instance =
+      dynamic_cast<S3StatsdStats*>(g_stats_instance);
+
+  ASSERT_TRUE(statsd_stats_instance != NULL);
+
+  EXPECT_EQ(statsd_stats_instance->host,
+            g_option_instance->get_statsd_ip_addr());
+  EXPECT_EQ(statsd_stats_instance->port, g_option_instance->get_statsd_port());
+  EXPECT_NE(statsd_stats_instance->sock, -1);
+  EXPECT_FALSE(statsd_stats_instance->metrics_allowlist.empty());
 
   // test private utility functions
-  EXPECT_TRUE(g_stats_instance->is_fequal(1.0, 1.0));
-  EXPECT_FALSE(g_stats_instance->is_fequal(1.0, 1.01));
-  EXPECT_FALSE(g_stats_instance->is_fequal(1.0, 0.99));
+  EXPECT_TRUE(statsd_stats_instance->is_fequal(1.0, 1.0));
+  EXPECT_FALSE(statsd_stats_instance->is_fequal(1.0, 1.01));
+  EXPECT_FALSE(statsd_stats_instance->is_fequal(1.0, 0.99));
 
-  EXPECT_TRUE(g_stats_instance->is_keyname_valid("bucket1"));
-  EXPECT_TRUE(g_stats_instance->is_keyname_valid("bucket.object"));
-  EXPECT_FALSE(g_stats_instance->is_keyname_valid("bucket@object"));
-  EXPECT_FALSE(g_stats_instance->is_keyname_valid("bucket:object"));
-  EXPECT_FALSE(g_stats_instance->is_keyname_valid("bucket|object"));
-  EXPECT_FALSE(g_stats_instance->is_keyname_valid("@bucket|object:"));
+  EXPECT_TRUE(statsd_stats_instance->is_keyname_valid("bucket1"));
+  EXPECT_TRUE(statsd_stats_instance->is_keyname_valid("bucket.object"));
+  EXPECT_FALSE(statsd_stats_instance->is_keyname_valid("bucket@object"));
+  EXPECT_FALSE(statsd_stats_instance->is_keyname_valid("bucket:object"));
+  EXPECT_FALSE(statsd_stats_instance->is_keyname_valid("bucket|object"));
+  EXPECT_FALSE(statsd_stats_instance->is_keyname_valid("@bucket|object:"));
 }
 
 TEST_F(S3StatsTest, Allowlist) {
-  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish("uri_to_motr_oid"));
-  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish(
+  S3StatsdStats* statsd_stats_instance =
+      dynamic_cast<S3StatsdStats*>(g_stats_instance);
+
+  ASSERT_TRUE(statsd_stats_instance != NULL);
+
+  EXPECT_TRUE(statsd_stats_instance->is_allowed_to_publish("uri_to_motr_oid"));
+  EXPECT_TRUE(statsd_stats_instance->is_allowed_to_publish(
       "delete_object_from_motr_failed"));
-  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish("total_request_time"));
-  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish(
+  EXPECT_TRUE(
+      statsd_stats_instance->is_allowed_to_publish("total_request_time"));
+  EXPECT_TRUE(statsd_stats_instance->is_allowed_to_publish(
       "get_bucket_location_request_count"));
-  EXPECT_TRUE(
-      g_stats_instance->is_allowed_to_publish("get_object_acl_request_count"));
-  EXPECT_TRUE(
-      g_stats_instance->is_allowed_to_publish("get_service_request_count"));
-  EXPECT_FALSE(g_stats_instance->is_allowed_to_publish("xyz"));
+  EXPECT_TRUE(statsd_stats_instance->is_allowed_to_publish(
+      "get_object_acl_request_count"));
+  EXPECT_TRUE(statsd_stats_instance->is_allowed_to_publish(
+      "get_service_request_count"));
+  EXPECT_FALSE(statsd_stats_instance->is_allowed_to_publish("xyz"));
 
   // test loading of non-existing allowlist yaml file
   g_option_instance->set_stats_allowlist_filename(
       "non-existing-allowlist.yaml");
-  EXPECT_NE(g_stats_instance->load_allowlist(), 0);
+  EXPECT_NE(statsd_stats_instance->load_allowlist(), 0);
   g_option_instance->set_stats_allowlist_filename(
       "s3stats-allowlist-test.yaml");
 }
 
 // Tests that make use of mock_socket interface to check behaviour of s3stats.
 TEST_F(S3StatsTest, S3StatsGetInstanceMustFailForInvalidSocket) {
-  S3Stats::delete_instance();
+  S3StatsManager::delete_instance();
 
   MockSocketInterface* another_mock_socket = new MockSocketInterface();
 
@@ -131,7 +149,7 @@ TEST_F(S3StatsTest, S3StatsGetInstanceMustFailForInvalidSocket) {
   EXPECT_CALL(*another_mock_socket, socket(_, _, _)).WillOnce(Return(-1));
 
   // Construct a S3Stats instance using invalid socket.
-  S3Stats* s3_stats_test = S3Stats::get_instance(another_mock_socket);
+  S3Stats* s3_stats_test = S3StatsManager::get_instance(another_mock_socket);
 
   // socket is invalid (-1) so get_instance will return NULL.
   EXPECT_TRUE(s3_stats_test == nullptr);
@@ -146,17 +164,22 @@ TEST_F(S3StatsTest, S3StatsSendMustSucceedIfSocketSendToSucceeds) {
   // socket is valid so get_instance will not return NULL.
   ASSERT_TRUE(s3_stats_under_test != nullptr);
 
+  S3StatsdStats* statsd_stats_under_test =
+      dynamic_cast<S3StatsdStats*>(s3_stats_under_test);
+
+  ASSERT_TRUE(statsd_stats_under_test != NULL);
+
   // Ensure send return success status.
-  EXPECT_TRUE(s3_stats_under_test->send("TestMsg", 1) != -1);
+  EXPECT_TRUE(statsd_stats_under_test->send("TestMsg", 1) != -1);
 }
 
-/* Unit test that verifies return of S3Stats::get_instance using mocked fcntl
- * call.*/
+/* Unit test that verifies return of S3StatsManager::get_instance using mocked
+ * fcntl call.*/
 TEST_F(S3StatsTest, S3StatsGetInstanceMustFailIfSocketFcntlFails) {
   MockSocketInterface* another_mock_socket = new MockSocketInterface();
 
-  // Clean previously created S3Stats.
-  S3Stats::delete_instance();
+  // Clean previously created S3Stats instance.
+  S3StatsManager::delete_instance();
 
   // socket call will be mocked to return 1, a success status.
   EXPECT_CALL(*another_mock_socket, socket(_, _, _)).WillOnce(Return(1));
@@ -165,20 +188,20 @@ TEST_F(S3StatsTest, S3StatsGetInstanceMustFailIfSocketFcntlFails) {
   EXPECT_CALL(*another_mock_socket, fcntl(_, _, _)).WillRepeatedly(Return(-1));
 
   // Construct a S3Stats instance using invalid socket.
-  S3Stats* s3_stats_under_test = S3Stats::get_instance(another_mock_socket);
+  S3Stats* s3_stats_under_test =
+      S3StatsManager::get_instance(another_mock_socket);
 
   // socket is valid but fcntl failed so get_instance will return NULL.
   ASSERT_TRUE(s3_stats_under_test == nullptr);
 }
 
-/* Unit test that verifies success return of S3Stats::get_instance using mocked
- * socket
- * calls.*/
+/* Unit test that verifies success return of S3StatsManager::get_instance using
+ * mocked socket calls.*/
 TEST_F(S3StatsTest, S3StatsGetInstanceMustFailIfSocketItonFails) {
   MockSocketInterface* another_mock_socket = new MockSocketInterface();
 
   // Clean previously created S3Stats
-  S3Stats::delete_instance();
+  S3StatsManager::delete_instance();
 
   // socket call will be mocked to return 1, a success status.
   EXPECT_CALL(*another_mock_socket, socket(_, _, _)).WillOnce(Return(1));
@@ -190,7 +213,8 @@ TEST_F(S3StatsTest, S3StatsGetInstanceMustFailIfSocketItonFails) {
   EXPECT_CALL(*another_mock_socket, inet_aton(_, _)).WillOnce(Return(0));
 
   // Construct a S3Stats instance using invalid socket.
-  S3Stats* s3_stats_under_test = S3Stats::get_instance(another_mock_socket);
+  S3Stats* s3_stats_under_test =
+      S3StatsManager::get_instance(another_mock_socket);
 
   // socket is valid but inet_aton failed so get_instance will return NULL.
   ASSERT_TRUE(s3_stats_under_test == nullptr);
@@ -205,11 +229,16 @@ TEST_F(S3StatsTest, S3StatsSendMustRetryAndFailIfRetriesFail) {
       .WillRepeatedly(SetErrnoAndReturn(EAGAIN, -1));
 
   // Construct a S3Stats instance using invalid socket.
-  // S3Stats* s3_stats_under_test = S3Stats::get_instance(mock_socket);
+  // S3Stats* s3_stats_under_test = S3StatsManager::get_instance(mock_socket);
+
+  S3StatsdStats* statsd_stats_under_test =
+      dynamic_cast<S3StatsdStats*>(s3_stats_under_test);
+
+  ASSERT_TRUE(statsd_stats_under_test != NULL);
 
   // socket is valid so get_instance will return NULL.
-  ASSERT_TRUE(s3_stats_under_test != nullptr);
-  EXPECT_TRUE(s3_stats_under_test->send("TestMsg", 2) == -1);
+  ASSERT_TRUE(statsd_stats_under_test != nullptr);
+  EXPECT_TRUE(statsd_stats_under_test->send("TestMsg", 2) == -1);
 }
 
 /* Unit test that verifies success return of S3Stats::count using mocked socket
