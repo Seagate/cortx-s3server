@@ -1407,6 +1407,24 @@ TEST_F(S3PutObjectActionTest, MarkOldOidForDelValidation) {
   action_under_test->old_object_oid = old_object_oid;
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   action_under_test->old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return("objname/v1"));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  action_under_test->old_layout_id = 2;
+  action_under_test->layout_id = 2;
+
   size_t number_of_tasks_ver_enabled;
   size_t number_of_tasks_ver_disabled;
   versioning_status = "Unversioned";

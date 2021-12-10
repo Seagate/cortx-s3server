@@ -18,8 +18,6 @@
  *
  */
 
-#include <typeinfo>
-
 #include "s3_delete_object_action.h"
 #include "s3_error_codes.h"
 #include "s3_iem.h"
@@ -78,8 +76,6 @@ void S3DeleteObjectAction::setup_steps() {
   // someone else's object. Whereas deleting metadata first will worst case
   // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
-
-  // delete handler will divide request as per requirements
 
   /*
   delete handler
@@ -201,9 +197,6 @@ void S3DeleteObjectAction::create_delete_marker() {
 void S3DeleteObjectAction::save_delete_marker() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  // save metadata to object index and version index
-  // bypass shutdown signal check for next task
-  // check_shutdown_signal_for_next_task(false);
   delete_marker_metadata->save(
       std::bind(&S3DeleteObjectAction::save_delete_marker_success, this),
       std::bind(&S3DeleteObjectAction::save_delete_marker_failed, this));
@@ -409,10 +402,11 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (delete_marker_metadata) {
+  } else if (delete_marker_metadata && s3_del_obj_action_state ==
+              S3DeleteObjectActionState::deleteMarkerAdded) {
     // delete marker metadata responce
     request->set_out_header_value("x-amz-version-id",
-                                  delete_marker_metadata->get_obj_version_id());
+        delete_marker_metadata->get_obj_version_id());
     request->set_out_header_value("x-amz-delete-marker", "true");
     request->send_response(S3HttpSuccess204);
   } else {
