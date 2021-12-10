@@ -110,35 +110,7 @@ class PolicyLdapStore {
     if (ldapResults != null && ldapResults.hasMore()) {
       try {
         LDAPEntry entry = ldapResults.next();
-        policy.setPolicyId(
-            entry.getAttribute(LDAPUtils.POLICY_ID).getStringValue());
-        policy.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
-        policy.setDefaultVersionId(
-            entry.getAttribute(LDAPUtils.DEFAULT_VERSION_ID).getStringValue());
-        policy.setPolicyDoc(
-            entry.getAttribute(LDAPUtils.POLICY_DOC).getStringValue());
-        policy.setName(
-            entry.getAttribute(LDAPUtils.POLICY_NAME).getStringValue());
-        policy.setARN(
-            entry.getAttribute(LDAPUtils.POLICY_ARN).getStringValue());
-        policy.setAttachmentCount(Integer.parseInt(
-            entry.getAttribute(LDAPUtils.POLICY_ATTACHMENT_COUNT)
-                .getStringValue()));
-        policy.setIsPolicyAttachable(
-            entry.getAttribute(LDAPUtils.IS_POLICY_ATTACHABLE)
-                .getStringValue());
-        policy.setPermissionsBoundaryUsageCount(Integer.parseInt(
-            entry.getAttribute(LDAPUtils.POLICY_PERMISSION_BOUNDARY)
-                .getStringValue()));
-        String createTimeStamp =
-            entry.getAttribute(LDAPUtils.POLICY_CREATE_DATE).getStringValue();
-        String createTime = DateUtil.toServerResponseFormat(createTimeStamp);
-        policy.setCreateDate(createTime);
-
-        String modifyTimeStamp =
-            entry.getAttribute(LDAPUtils.POLICY_UPDATE_DATE).getStringValue();
-        String modifiedTime = DateUtil.toServerResponseFormat(modifyTimeStamp);
-        policy.setUpdateDate(modifiedTime);
+        policy = setPolicyFromLdapEntry(entry);        
       }
       catch (LDAPException ex) {
         LOGGER.error("Failed to find details of policy: " + policy.getName());
@@ -180,41 +152,10 @@ class PolicyLdapStore {
       while (ldapResults.hasMore()) {
 
         try {
-          Policy policy = new Policy();
-          policy.setAccount(account);
+          
           LDAPEntry entry = ldapResults.next();
-          policy.setPolicyId(
-              entry.getAttribute(LDAPUtils.POLICY_ID).getStringValue());
-          policy.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
-          policy.setDefaultVersionId(
-              entry.getAttribute(LDAPUtils.DEFAULT_VERSION_ID)
-                  .getStringValue());
-          policy.setPolicyDoc(
-              entry.getAttribute(LDAPUtils.POLICY_DOC).getStringValue());
-          policy.setName(
-              entry.getAttribute(LDAPUtils.POLICY_NAME).getStringValue());
-          policy.setARN(
-              entry.getAttribute(LDAPUtils.POLICY_ARN).getStringValue());
-          policy.setAttachmentCount(Integer.parseInt(
-              entry.getAttribute(LDAPUtils.POLICY_ATTACHMENT_COUNT)
-                  .getStringValue()));
-          policy.setIsPolicyAttachable(
-              entry.getAttribute(LDAPUtils.IS_POLICY_ATTACHABLE)
-                  .getStringValue());
-          policy.setPermissionsBoundaryUsageCount(Integer.parseInt(
-              entry.getAttribute(LDAPUtils.POLICY_PERMISSION_BOUNDARY)
-                  .getStringValue()));
-
-          String createTimeStamp =
-              entry.getAttribute(LDAPUtils.POLICY_CREATE_DATE).getStringValue();
-          String createTime = DateUtil.toServerResponseFormat(createTimeStamp);
-          policy.setCreateDate(createTime);
-
-          String modifyTimeStamp =
-              entry.getAttribute(LDAPUtils.POLICY_UPDATE_DATE).getStringValue();
-          String modifiedTime =
-              DateUtil.toServerResponseFormat(modifyTimeStamp);
-          policy.setUpdateDate(modifiedTime);
+          Policy policy = setPolicyFromLdapEntry(entry);
+          policy.setAccount(account);
           resultList.add(policy);
         }
         catch (LDAPException ex) {
@@ -254,39 +195,7 @@ class PolicyLdapStore {
       while (ldapResults.hasMore()) {
         try {
           LDAPEntry entry = ldapResults.next();
-          Policy policy = new Policy();
-          policy.setPolicyId(
-              entry.getAttribute(LDAPUtils.POLICY_ID).getStringValue());
-          policy.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
-          policy.setDefaultVersionId(
-              entry.getAttribute(LDAPUtils.DEFAULT_VERSION_ID)
-                  .getStringValue());
-          policy.setPolicyDoc(
-              entry.getAttribute(LDAPUtils.POLICY_DOC).getStringValue());
-          policy.setName(
-              entry.getAttribute(LDAPUtils.POLICY_NAME).getStringValue());
-          policy.setARN(
-              entry.getAttribute(LDAPUtils.POLICY_ARN).getStringValue());
-          policy.setAttachmentCount(Integer.parseInt(
-              entry.getAttribute(LDAPUtils.POLICY_ATTACHMENT_COUNT)
-                  .getStringValue()));
-          policy.setIsPolicyAttachable(
-              entry.getAttribute(LDAPUtils.IS_POLICY_ATTACHABLE)
-                  .getStringValue());
-          policy.setPermissionsBoundaryUsageCount(Integer.parseInt(
-              entry.getAttribute(LDAPUtils.POLICY_PERMISSION_BOUNDARY)
-                  .getStringValue()));
-
-          String createTimeStamp =
-              entry.getAttribute(LDAPUtils.POLICY_CREATE_DATE).getStringValue();
-          String createTime = DateUtil.toServerResponseFormat(createTimeStamp);
-          policy.setCreateDate(createTime);
-
-          String modifyTimeStamp =
-              entry.getAttribute(LDAPUtils.POLICY_UPDATE_DATE).getStringValue();
-          String modifiedTime =
-              DateUtil.toServerResponseFormat(modifyTimeStamp);
-          policy.setUpdateDate(modifiedTime);
+          Policy policy = setPolicyFromLdapEntry(entry);
           resultList.add(policy);
         }
         catch (LDAPException ex) {
@@ -297,6 +206,45 @@ class PolicyLdapStore {
     }
     return resultList;
   }
+ 
+private String getStringValueFromLdapAttribute(LDAPAttribute attribute) {
+	return attribute != null ? attribute.getStringValue() : "";
+}
+
+private Policy setPolicyFromLdapEntry(LDAPEntry entry) {
+	Policy policy= new Policy();
+	  policy.setPolicyId(getStringValueFromLdapAttribute(
+	      entry.getAttribute(LDAPUtils.POLICY_ID)));
+	  policy.setPath(getStringValueFromLdapAttribute(
+			  entry.getAttribute(LDAPUtils.PATH)));
+	  policy.setDefaultVersionId(getStringValueFromLdapAttribute(
+	      entry.getAttribute(LDAPUtils.DEFAULT_VERSION_ID)));
+	  policy.setPolicyDoc(getStringValueFromLdapAttribute(
+	      entry.getAttribute(LDAPUtils.POLICY_DOC)));
+	  policy.setName(getStringValueFromLdapAttribute(
+	      entry.getAttribute(LDAPUtils.POLICY_NAME)));
+	  policy.setARN(getStringValueFromLdapAttribute(
+	      entry.getAttribute(LDAPUtils.POLICY_ARN)));
+	  policy.setAttachmentCount(Integer.parseInt(getStringValueFromLdapAttribute(
+	      entry.getAttribute(LDAPUtils.POLICY_ATTACHMENT_COUNT))));
+	  policy.setIsPolicyAttachable(getStringValueFromLdapAttribute(
+	      entry.getAttribute(LDAPUtils.IS_POLICY_ATTACHABLE)));
+	  policy.setPermissionsBoundaryUsageCount(Integer.parseInt(
+			  getStringValueFromLdapAttribute(entry.getAttribute(LDAPUtils.POLICY_PERMISSION_BOUNDARY))));
+	  policy.setDescription(getStringValueFromLdapAttribute(entry.getAttribute(LDAPUtils.DESCRIPTION)));
+
+	  String createTimeStamp =
+			  getStringValueFromLdapAttribute(entry.getAttribute(LDAPUtils.POLICY_CREATE_DATE));
+	  String createTime = DateUtil.toServerResponseFormat(createTimeStamp);
+	  policy.setCreateDate(createTime);
+
+	  String modifyTimeStamp =
+			  getStringValueFromLdapAttribute(entry.getAttribute(LDAPUtils.POLICY_UPDATE_DATE));
+	  String modifiedTime =
+	      DateUtil.toServerResponseFormat(modifyTimeStamp);
+	  policy.setUpdateDate(modifiedTime);
+	return policy;
+}
 
  private
   LDAPSearchResults getPolicyByIdsLdapResults(Map<String, Object> dataMap)
