@@ -789,9 +789,9 @@ void S3MultiObjectCopyAction::save_metadata() {
     send_response_to_s3_client();
     return;
   }
-  // to rest Date and Last-Modfied time object metadata
+  // to rest Date and Last-Modified time object metadata
   part_metadata->reset_date_time_to_current();
-  part_metadata->set_content_length(request->get_data_length_str());
+  part_metadata->set_content_length(std::to_string(total_data_to_stream));
   part_metadata->set_md5(motr_writer->get_content_md5());
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
@@ -838,17 +838,11 @@ const char xml_comment_end[] = "\n   -->\n";
 
 std::string S3MultiObjectCopyAction::get_response_xml() {
   std::string response_xml;
-
-  if (!response_started) {
-    response_xml += xml_decl;
-  }
-  response_xml +=
-      "<CopyObjectResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
-  response_xml += S3CommonUtilities::format_xml_string(
-      "LastModified", new_object_metadata->get_last_modified_iso());
-  // ETag for the destination object would be same as Etag for Source Object
+  response_xml +="<CopyPartResult>\n";
   response_xml += S3CommonUtilities::format_xml_string(
       "ETag", new_object_metadata->get_md5(), true);
+  response_xml += S3CommonUtilities::format_xml_string(
+      "LastModified", new_object_metadata->get_last_modified_iso());
   response_xml += "\n</CopyObjectResult>";
   return response_xml;
 }
@@ -991,6 +985,7 @@ void S3MultiObjectCopyAction::send_response_to_s3_client() {
   } else if (motr_writer != NULL) {
     // AWS adds explicit quotes "" to etag values.
     std::string e_tag = "\"" + motr_writer->get_content_md5() + "\"";
+    s3_log(S3_LOG_INFO, stripped_request_id, "ETag %s\n", e_tag.c_str());
 
     request->set_out_header_value("ETag", e_tag);
 
@@ -1014,20 +1009,11 @@ void S3MultiObjectCopyAction::send_response_to_s3_client() {
 }
 
 void S3MultiObjectCopyAction::set_authorization_meta() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
-  request->set_action_str("PutObject");
-  request->reset_action_list();
-
-  if (!additional_object_metadata->get_tags().empty()) {
-    request->set_action_list("PutObjectTagging");
-  }
-  if (!request->get_header_value("x-amz-acl").empty()) {
-    request->set_action_list("PutObjectAcl");
-  }
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MultiObjectCopyAction::set_source_bucket_authorization_metadata() {
