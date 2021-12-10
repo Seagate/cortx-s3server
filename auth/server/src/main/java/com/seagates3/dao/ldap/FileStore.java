@@ -67,6 +67,7 @@ class FileStore implements AuthStore {
   }
 
   @Override public List findAll(String key, Object obj,
+                                Map<String, Object> apiParameters,
                                 String prefix) throws DataAccessException {
     List list = new ArrayList();
     for (Entry<String, Object> entry : savedDataMap.entrySet()) {

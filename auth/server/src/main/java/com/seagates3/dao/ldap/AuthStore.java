@@ -19,6 +19,7 @@ interface AuthStore {
 
  public
   List<Policy> findAll(String keyToFind, Object key,
+                       Map<String, Object> apiParameters,
                        String prefix) throws DataAccessException;
 
  public

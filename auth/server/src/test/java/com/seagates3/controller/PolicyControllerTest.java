@@ -144,8 +144,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
   @Test public void listPoliciesSuccess() throws DataAccessException {
     List<Policy> policyList = new ArrayList<>();
+    Map<String, Object> parameters = new HashMap<>();
     policyList.add(policy);
-    Mockito.when(mockPolicyDao.findAll(account)).thenReturn(policyList);
+    Mockito.when(mockPolicyDao.findAll(account, parameters))
+        .thenReturn(policyList);
     ServerResponse response = policyController.list();
     Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
@@ -153,8 +155,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   @Test public void listPoliciesFailsWithNullValues()
       throws DataAccessException {
     List<Policy> policyList = new ArrayList<>();
+    Map<String, Object> parameters = new HashMap<>();
     policyList.add(policy2);
-    Mockito.when(mockPolicyDao.findAll(account)).thenReturn(policyList);
+    Mockito.when(mockPolicyDao.findAll(account, parameters))
+        .thenReturn(policyList);
     ServerResponse response = policyController.list();
     Assert.assertEquals(null, response);
   }
