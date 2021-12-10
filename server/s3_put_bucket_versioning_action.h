@@ -28,12 +28,17 @@
 
 #include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
+#include "s3_motr_kvs_reader.h"
 #include "s3_factory.h"
 
 class S3PutBucketVersioningAction : public S3BucketAction {
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3PutBucketVersioningBodyFactory> put_bucket_version_factory;
   std::shared_ptr<S3PutVersioningBody> put_bucket_version_body;
+  std::shared_ptr<S3MotrKVSReaderFactory> s3_motr_kvs_reader_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string bucket_content_string;
   std::string bucket_version_status;
@@ -54,6 +59,10 @@ class S3PutBucketVersioningAction : public S3BucketAction {
   void save_versioning_status_to_bucket_metadata_failed();
   void fetch_bucket_info_failed();
   void send_response_to_s3_client();
+  void can_update_versioning_status();
+  void check_if_bucket_empty();
+  void get_object_successful();
+  void get_object_failed();
 
   // For Testing purpose
   FRIEND_TEST(S3PutBucketVersioningActionTest, Constructor);
@@ -81,6 +90,13 @@ class S3PutBucketVersioningAction : public S3BucketAction {
   FRIEND_TEST(S3PutBucketVersioningActionTest, SendResponseToClientSuccess);
   FRIEND_TEST(S3PutBucketVersioningActionTest,
               SendResponseToClientInternalError);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              CanUpdateVersioningStatusSuspended);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              CanUpdateVersioningStatusEnabled);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, CheckIfBucketEmpty);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, GetObjectSuccessFull);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, GetObjectFailed);
 };
 
 #endif

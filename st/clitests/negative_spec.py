@@ -393,7 +393,7 @@ for i, type in enumerate(config_types):
         execute_test().command_is_successful()
 
     S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
-        enable_fi_offnonm("enable", "motr_idx_op_fail", "26", "99").\
+        enable_fi_offnonm("enable", "motr_idx_op_fail", "36", "99").\
         execute_test().command_is_successful()
     #Post complete operation -- fetch_multipart_info
     S3cmdTest('s3cmd can not upload 18MBfile file').\
@@ -550,7 +550,7 @@ for i, type in enumerate(config_types):
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
 
-    fi_off="25"
+    fi_off="29"
     S3fiTest('s3cmd enable FI motr idx op fail').\
         enable_fi_offnonm("enable", "motr_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()

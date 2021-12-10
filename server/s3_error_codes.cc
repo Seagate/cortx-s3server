@@ -34,6 +34,11 @@ int S3Error::get_http_status_code() { return details.get_http_status_code(); }
 void S3Error::set_auth_error_message(const std::string& errmsg) {
   auth_error_message = errmsg;
 }
+void S3Error::set_invalid_arg(const std::string& arg_name,
+                              const std::string& arg_val) {
+  invalid_arg_name = arg_name;
+  invalid_arg_value = arg_val;
+}
 
 std::string& S3Error::to_xml(bool no_decl) {
   if (get_http_status_code() == -1) {
@@ -52,6 +57,12 @@ std::string& S3Error::to_xml(bool no_decl) {
   } else {
     xml_message +=
         S3CommonUtilities::format_xml_string("Message", auth_error_message);
+  }
+  if (!invalid_arg_name.empty()) {
+    xml_message +=
+        S3CommonUtilities::format_xml_string("ArgumentName", invalid_arg_name);
+    xml_message += S3CommonUtilities::format_xml_string("ArgumentValue",
+                                                        invalid_arg_value);
   }
   xml_message += S3CommonUtilities::format_xml_string("Resource", resource_key);
   xml_message += S3CommonUtilities::format_xml_string("RequestId", request_id);

@@ -112,6 +112,10 @@ class S3PutObjectAction : public S3ObjectAction {
   void add_part_object_to_probable_dead_oid_list(
       const std::shared_ptr<S3ObjectMetadata> &,
       std::vector<std::unique_ptr<S3ProbableDeleteRecord>> &);
+  // Finally, when object md is saved, we would need S3 BD to
+  // process leak due to parallel PUT requests.
+  // Below function adds entry to probable index.
+  void add_oid_for_parallel_leak_check();
 
   void initiate_data_streaming();
   void consume_incoming_content();
@@ -147,6 +151,10 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest, VaidateSpecialCharTagsCase1);
   FRIEND_TEST(S3PutObjectActionTest, VaidateSpecialCharTagsCase2);
   FRIEND_TEST(S3PutObjectActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateObjectKeyLengthPositiveCase);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase);
   FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
   FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailedTolaunch);
   FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailed);
@@ -205,6 +213,11 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest, SendFailedResponse);
   FRIEND_TEST(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout);
   FRIEND_TEST(S3PutObjectActionTest, DelayedDeleteOldObject);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateMissingContentLength);
+  FRIEND_TEST(S3PutObjectActionTest, AddOidToProbableDeadListVersioningEnabled);
+  FRIEND_TEST(S3PutObjectActionTest,
+              AddOidToProbableDeadListVersioningDisabled);
+  FRIEND_TEST(S3PutObjectActionTest, MarkOldOidForDelValidation);
 };
 
 #endif

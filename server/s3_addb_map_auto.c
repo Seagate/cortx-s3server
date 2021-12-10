@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 226;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 230;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -151,6 +151,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3HeadServiceAction::send_response_to_s3_client",
     "S3ObjectActionTest::func_callback_one",
     "S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list",
+    "S3PostCompleteAction::add_oid_for_parallel_leak_check",
     "S3PostCompleteAction::delete_multipart_metadata",
     "S3PostCompleteAction::delete_new_object",
     "S3PostCompleteAction::delete_old_object",
@@ -191,11 +192,13 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutBucketTaggingAction::validate_request",
     "S3PutBucketTaggingAction::validate_request_xml_tags",
     "S3PutBucketTaggingActionTest::func_callback_one",
+    "S3PutBucketVersioningAction::can_update_versioning_status",
     "S3PutBucketVersioningAction::save_versioning_status_to_bucket_metadata",
     "S3PutBucketVersioningAction::send_response_to_s3_client",
     "S3PutBucketVersioningAction::validate_request",
     "S3PutBucketVersioningAction::validate_request_xml_versioning_status",
     "S3PutBucketVersioningActionTest::func_callback_one",
+    "S3PutChunkUploadObjectAction::add_oid_for_parallel_leak_check",
     "S3PutChunkUploadObjectAction::create_object",
     "S3PutChunkUploadObjectAction::delete_new_object",
     "S3PutChunkUploadObjectAction::delete_old_object",
@@ -211,6 +214,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutChunkUploadObjectActionTestBase::func_callback_one",
     "S3PutFiAction::send_response_to_s3_client",
     "S3PutFiAction::set_fault_injection",
+    "S3PutMultiObjectAction::add_oid_for_parallel_leak_check",
     "S3PutMultiObjectAction::check_part_details",
     "S3PutMultiObjectAction::create_part_object",
     "S3PutMultiObjectAction::delete_new_object",
@@ -230,6 +234,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutObjectACLAction::setacl",
     "S3PutObjectACLAction::validate_acl_with_auth",
     "S3PutObjectACLAction::validate_request",
+    "S3PutObjectAction::add_oid_for_parallel_leak_check",
     "S3PutObjectAction::create_object",
     "S3PutObjectAction::delete_new_object",
     "S3PutObjectAction::delete_old_object",

@@ -106,6 +106,8 @@ class S3ObjectAction : public S3Action {
   FRIEND_TEST(S3ObjectActionTest, SetAuthorizationMeta);
   FRIEND_TEST(S3ObjectActionTest, FetchObjectInfoFailed);
   FRIEND_TEST(S3ObjectActionTest, FetchObjectInfoSuccess);
+  FRIEND_TEST(S3ObjectActionTest, FetchObjectInfo);
+  FRIEND_TEST(S3ObjectActionTest, FetchObjectInfoFailedEmptyVersionId);
 };
 
 #endif

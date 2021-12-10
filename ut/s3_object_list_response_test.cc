@@ -75,6 +75,8 @@ class S3ObjectListResponseTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*mock_request, has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
     mock_request->set_user_id("1");
     mock_request->set_user_name("s3user");
     mock_request->set_account_id("1");

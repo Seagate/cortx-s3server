@@ -150,6 +150,9 @@ void S3ObjectMetadata::initialize(bool ismultipart,
   user_id = request->get_user_id();
 
   object_key_uri = bucket_name + "\\" + object_name;
+  if (request->has_query_param_key("versionId")) {
+    set_version_id(request->get_query_string_value("versionId"));
+  }
 
   // Set the defaults
   (void)system_defined_attribute["Date"];
@@ -425,6 +428,7 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_layout should be set before using this method
   assert(non_zero(object_list_index_layout.oid));
+  assert(non_zero(objects_version_list_index_layout.oid));
 
   s3_timer.start();
 
@@ -437,10 +441,18 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success,
       motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   requested_bucket_name = bucket_name;
   requested_object_name = object_name;
-  motr_kv_reader->get_keyval(
-      object_list_index_layout, object_name,
-      std::bind(&S3ObjectMetadata::load_successful, this),
-      std::bind(&S3ObjectMetadata::load_failed, this));
+  requested_object_version_id = object_version_id;
+  if (object_version_id.empty()) {
+    motr_kv_reader->get_keyval(
+        object_list_index_layout, object_name,
+        std::bind(&S3ObjectMetadata::load_successful, this),
+        std::bind(&S3ObjectMetadata::load_failed, this));
+  } else {
+    motr_kv_reader->get_keyval(
+        objects_version_list_index_layout, get_version_key_in_index(),
+        std::bind(&S3ObjectMetadata::load_successful, this),
+        std::bind(&S3ObjectMetadata::load_failed, this));
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -448,7 +460,9 @@ bool S3ObjectMetadata::validate_attrs() {
 
   if (s3_di_fi_is_enabled("di_metadata_bucket_or_object_corrupted") ||
       requested_bucket_name != bucket_name ||
-      requested_object_name != object_name) {
+      requested_object_name != object_name ||
+      (!requested_object_version_id.empty() &&
+       requested_object_version_id != object_version_id)) {
     if (!S3Option::get_instance()
              ->get_s3_di_disable_metadata_corruption_iem()) {
       s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
@@ -457,13 +471,22 @@ bool S3ObjectMetadata::validate_attrs() {
              requested_bucket_name.c_str(), bucket_name.c_str(),
              requested_object_name.c_str(), object_name.c_str(),
              account_name.c_str());
-    } else {
+    } else if (requested_object_version_id.empty()) {
       s3_log(S3_LOG_ERROR, request_id,
              "Object metadata mismatch: "
              "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
              "req_object_name=\"%s\" c_object_name=\"%s\"\n",
              requested_bucket_name.c_str(), bucket_name.c_str(),
              requested_object_name.c_str(), object_name.c_str());
+    } else {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Object metadata mismatch: "
+             "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
+             "req_object_name=\"%s\" c_object_name=\"%s\" "
+             "req_object_ver_id=\"%s\" c_object_ver_id=\"%s\"\n",
+             requested_bucket_name.c_str(), bucket_name.c_str(),
+             requested_object_name.c_str(), object_name.c_str(),
+             requested_object_version_id.c_str(), object_version_id.c_str());
     }
     return false;
   }
@@ -831,23 +854,7 @@ std::string S3ObjectMetadata::to_json() {
 // Streaming to json
 std::string S3ObjectMetadata::version_entry_to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
-  Json::Value root;
-  // Processing version entry currently only needs minimal information
-  // In future when real S3 versioning is supported, this method will not be
-  // required and we can simply use to_json.
-
-  // root["Object-Name"] = object_name;
-  root["motr_oid"] = motr_oid_str;
-  root["layout_id"] = layout_id;
-  root["PVID"] = pvid_str;
-
-  S3DateTime current_time;
-  current_time.init_current_time();
-  root["create_timestamp"] = current_time.get_isoformat_string();
-
-  Json::FastWriter fastWriter;
-  return fastWriter.write(root);
-  ;
+  return to_json();
 }
 
 /*

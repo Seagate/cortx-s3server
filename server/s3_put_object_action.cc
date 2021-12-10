@@ -758,7 +758,10 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   assert(!new_oid_str.empty());
 
   // store old object oid
-  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+  bool delete_object =
+      (old_object_oid.u_hi || old_object_oid.u_lo) &&
+      ("Unversioned" == bucket_metadata->get_bucket_versioning_status());
+  if (delete_object) {
     assert(!old_oid_str.empty());
     if (number_of_parts != 0) {
       // This object was uploaded previously in multipart fashion
@@ -897,6 +900,11 @@ void S3PutObjectAction::send_response_to_s3_client() {
 
     request->set_out_header_value("ETag", e_tag);
 
+    if ("Enabled" == bucket_metadata->get_bucket_versioning_status()) {
+      request->set_out_header_value("x-amz-version-id",
+                                    new_object_metadata->get_obj_version_id());
+    }
+
     request->send_response(S3HttpSuccess200);
   }
 
@@ -915,17 +923,22 @@ void S3PutObjectAction::startcleanup() {
   clear_tasks();
   cleanup_started = true;
 
+  bool delete_object =
+      (old_object_oid.u_hi || old_object_oid.u_lo) &&
+      ("Unversioned" == bucket_metadata->get_bucket_versioning_status());
   // Success conditions
   if (s3_put_action_state == S3PutObjectActionState::completed) {
     s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    if (delete_object) {
       // mark old OID for deletion in overwrite case, this optimizes
       // backgrounddelete decisions.
       ACTION_TASK_ADD(S3PutObjectAction::mark_old_oid_for_deletion, this);
     }
+    // Add new oid for parallel leak check in S3 Background delete service
+    ACTION_TASK_ADD(S3PutObjectAction::add_oid_for_parallel_leak_check, this);
     // remove new oid from probable delete list.
     ACTION_TASK_ADD(S3PutObjectAction::remove_new_oid_probable_record, this);
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    if (delete_object) {
       // Object overwrite case, old object exists, delete it.
       ACTION_TASK_ADD(S3PutObjectAction::delete_old_object, this);
       // If delete object is successful, attempt to delete old probable record
@@ -1049,6 +1062,42 @@ void S3PutObjectAction::remove_new_oid_probable_record() {
                                 new_oid_str,
                                 std::bind(&S3PutObjectAction::next, this),
                                 std::bind(&S3PutObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutObjectAction::add_oid_for_parallel_leak_check() {
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
+  std::map<std::string, std::string> oid_key_val_mp;
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+  std::string oid_str =
+      S3M0Uint128Helper::to_string(new_object_metadata->get_oid());
+  // For parallel leak check, assume size as 0 (as it is dummy leak entry)
+  // This entry in probable delete list index helps S3 BD to process
+  // object leak caused due to parallel upload requests.
+  S3CommonUtilities::size_based_bucketing_of_objects(oid_str, 0);
+  std::unique_ptr<S3ProbableDeleteRecord> delete_rec;
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Adding new object for parallel leak check, with key [%s]\n",
+         oid_str.c_str());
+  delete_rec.reset(new S3ProbableDeleteRecord(
+      oid_str, old_object_oid, new_object_metadata->get_object_name(),
+      new_object_metadata->get_oid(), layout_id,
+      new_object_metadata->get_pvid_str(),
+      bucket_metadata->get_object_list_index_layout().oid,
+      bucket_metadata->get_objects_version_list_index_layout().oid,
+      new_object_metadata->get_version_key_in_index(), false /* force_delete */,
+      false, {0ULL, 0ULL}, 0, 0,
+      bucket_metadata->get_extended_metadata_index_layout().oid,
+      new_object_metadata->get_obj_version_key(), {0ULL, 0ULL}));
+
+  oid_key_val_mp[delete_rec->get_key()] = delete_rec->to_json();
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
+                             oid_key_val_mp,
+                             std::bind(&S3PutObjectAction::next, this),
+                             std::bind(&S3PutObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
