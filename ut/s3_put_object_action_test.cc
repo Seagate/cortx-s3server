@@ -1404,30 +1404,63 @@ TEST_F(S3PutObjectActionTest, AddOidToProbableDeadListVersioningDisabled) {
 TEST_F(S3PutObjectActionTest, MarkOldOidForDelValidation) {
   CREATE_OBJECT_METADATA;
   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+
+  // common expectations
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->old_object_oid = old_object_oid;
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
-  action_under_test->old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
-  size_t number_of_tasks_ver_enabled;
-  size_t number_of_tasks_ver_disabled;
-  versioning_status = "Unversioned";
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _))
+      .Times(2)
+      .WillRepeatedly(Invoke(this, &S3PutObjectActionTest::dummy_put_keyval));
+
+  // expectations for startcleanup()
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
               get_bucket_versioning_status())
-      .Times(AtLeast(1))
-      .WillOnce(ReturnRef(versioning_status));
-  action_under_test->clear_tasks();
+      .Times(AtLeast(2))
+      .WillRepeatedly(ReturnRef(versioning_status));
   action_under_test->s3_put_action_state = S3PutObjectActionState::completed;
+
+  // expectations for mark_old_oid_for_deletion()
+  action_under_test->old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+
+  // expectations for add_oid_for_parallel_leak_check()
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->layout_id = 9;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .WillRepeatedly(Return(std::string("abcd")));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index())
+      .WillRepeatedly(Return(std::string("abcd/18133434")));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_obj_version_key())
+      .WillRepeatedly(Return(std::string("18133434")));
+
+  // expectations for remove_new_oid_probable_record()
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(AtLeast(1));
+
+  versioning_status = "Unversioned";
   action_under_test->startcleanup();
-  number_of_tasks_ver_disabled = action_under_test->number_of_tasks();
+  auto number_of_tasks_ver_disabled = action_under_test->number_of_tasks();
 
   versioning_status = "Enabled";
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_bucket_versioning_status())
-      .Times(AtLeast(1))
-      .WillOnce(ReturnRef(versioning_status));
-  action_under_test->clear_tasks();
-  action_under_test->s3_put_action_state = S3PutObjectActionState::completed;
   action_under_test->startcleanup();
-  number_of_tasks_ver_enabled = action_under_test->number_of_tasks();
+  auto number_of_tasks_ver_enabled = action_under_test->number_of_tasks();
 
   EXPECT_EQ(number_of_tasks_ver_disabled, number_of_tasks_ver_enabled + 2);
 }
