@@ -89,6 +89,7 @@ class LdapStore implements AuthStore {
   }
 
   @Override public List findAll(String strToFind, Object obj,
+                                Map<String, Object> apiParameters,
                                 String prefix) throws DataAccessException {
     String className = CLASS_PACKAGE + prefix + CLASS_SUFFIX;
     LOGGER.debug("calling method - " + METHOD_FINDALL + " of class - " +
@@ -96,8 +97,9 @@ class LdapStore implements AuthStore {
     try {
       Class < ? > storeClass = Class.forName(className);
       Object instance = storeClass.newInstance();
-      Method method = storeClass.getMethod(METHOD_FINDALL, Object.class);
-      return (List)method.invoke(instance, obj);
+      Method method =
+          storeClass.getMethod(METHOD_FINDALL, Object.class, Object.class);
+      return (List)method.invoke(instance, obj, apiParameters);
     }
     catch (ClassNotFoundException e) {
       LOGGER.error("Exception occurred " + e);

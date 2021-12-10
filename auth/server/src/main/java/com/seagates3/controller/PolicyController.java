@@ -20,6 +20,7 @@
 
 package com.seagates3.controller;
 
+import com.seagates3.constants.APIRequestParamsConstants;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.PolicyDAO;
@@ -37,6 +38,8 @@ import java.util.Map;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
 import java.util.List;
 
 public class PolicyController extends AbstractController {
@@ -160,8 +163,19 @@ public class PolicyController extends AbstractController {
      */
     @Override public ServerResponse list() {
       List<Policy> policyList = null;
+      Map<String, Object> apiParameters = new HashMap<>();
+      if (requestBody.containsKey(APIRequestParamsConstants.ONLY_ATTACHED)) {
+        apiParameters.put(
+            APIRequestParamsConstants.ONLY_ATTACHED,
+            requestBody.get(APIRequestParamsConstants.ONLY_ATTACHED));
+      }
+      if (requestBody.containsKey(APIRequestParamsConstants.PATH_PREFIX)) {
+        apiParameters.put(
+            APIRequestParamsConstants.PATH_PREFIX,
+            requestBody.get(APIRequestParamsConstants.PATH_PREFIX));
+      }
       try {
-        policyList = policyDAO.findAll(requestor.getAccount());
+        policyList = policyDAO.findAll(requestor.getAccount(), apiParameters);
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to list policies for account - " +

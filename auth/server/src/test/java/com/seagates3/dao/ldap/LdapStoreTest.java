@@ -121,13 +121,14 @@ import com.seagates3.util.DateUtil;
   }
 
   @Test public void testFindAll() throws Exception {
+    Map<String, Object> parameters = new HashMap<>();
     PowerMockito.mockStatic(DateUtil.class);
     PowerMockito.when(DateUtil.toServerResponseFormat(Mockito.anyString()))
         .thenReturn("");
     PowerMockito.when(LDAPUtils.class, "search", any(String.class),
                       any(Integer.class), any(String.class),
                       any(String[].class)).thenReturn(ldapResults);
-    List returnObj = ldapstore.findAll("", account, "Policy");
+    List returnObj = ldapstore.findAll("", account, parameters, "Policy");
     Assert.assertEquals(true, returnObj.isEmpty());
   }
 

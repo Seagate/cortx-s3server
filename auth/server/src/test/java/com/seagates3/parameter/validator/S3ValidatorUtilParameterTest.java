@@ -142,7 +142,7 @@ public class S3ValidatorUtilParameterTest {
      */
     @Test
     public void IsValidPathPrefix_ValidPathPrefix_True() {
-        String path = "/seagate123@/test";
+      String path = "/seagate123@/test/";
         assertTrue(S3ParameterValidatorUtil.isValidPathPrefix(path));
 
         path = "/";
@@ -198,6 +198,28 @@ public class S3ValidatorUtilParameterTest {
         char c = "\u0100".toCharArray()[0];
         String marker = String.valueOf(c);
         assertFalse(S3ParameterValidatorUtil.isValidMarker(marker));
+    }
+
+    /**
+     * Test S3ValidatorUtil#isValidOnlyAttached. case - Valid OnlyAttached.
+     */
+    @Test public void isValidOnlyAttachedTrue() {
+      String onlyAttached = "true";
+      assertTrue(S3ParameterValidatorUtil.isValidOnlyAttached(onlyAttached));
+      onlyAttached = "false";
+      assertTrue(S3ParameterValidatorUtil.isValidOnlyAttached(onlyAttached));
+    }
+
+    /**
+     * Test S3ValidatorUtil#isValidOnlyAttached. case - Invalid OnlyAttached.
+     */
+    @Test public void isValidOnlyAttachedFalse() {
+      String onlyAttached = "abc";
+      assertFalse(S3ParameterValidatorUtil.isValidOnlyAttached(onlyAttached));
+      onlyAttached = "fal";
+      assertFalse(S3ParameterValidatorUtil.isValidOnlyAttached(onlyAttached));
+      onlyAttached = "tr";
+      assertFalse(S3ParameterValidatorUtil.isValidOnlyAttached(onlyAttached));
     }
 
     /**
