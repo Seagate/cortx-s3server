@@ -335,15 +335,15 @@ class PolicyLdapStore {
       if (onlyAttachedValue.equals(TRUE)) {
         optionalFilter +=
             "(!(" + LDAPUtils.POLICY_ATTACHMENT_COUNT + "=0" + "))";
-       }
-     }
-     if (apiParameters.get(APIRequestParamsConstants.POLICY_NAME) != null) {
-       optionalFilter +=
-           "(" + LDAPUtils.POLICY_NAME + "=" +
-           (String)apiParameters.get(APIRequestParamsConstants.POLICY_NAME) +
-           ")";
-     }
+      }
+    }
+    if (apiParameters.get(APIRequestParamsConstants.POLICY_NAME) != null) {
+      optionalFilter +=
+          "(" + LDAPUtils.POLICY_NAME + "=" +
+          (String)apiParameters.get(APIRequestParamsConstants.POLICY_NAME) +
+          ")";
+    }
 
-     return optionalFilter;
- }
+    return optionalFilter;
+  }
 }
