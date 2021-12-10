@@ -114,7 +114,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_UNIT_SIZES_FOR_MEMORY_POOL: [16384]            # Memory pool will be created for each of these unit_size with following properties
    S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT: 10        # 10 blocks, the initial pool size = multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_POOL_EXPANDABLE_COUNT: 50            # 50 blocks, pool's expandable size, multiple of S3_MOTR_UNIT_SIZE
-   S3_MOTR_READ_POOL_MAX_THRESHOLD: 1048576000        # 1GB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE
+   S3_MOTR_READ_POOL_MAX_THRESHOLD: 524288000        # 500MB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_MEMPOOL_ZERO_BUFFER: false           # Enable Motr Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_MOTR_OPERATION_WAIT_PERIOD: 90                  # 90 s, Maximum wait duration for sync motr operations.
    S3_MOTR_FIRST_READ_SIZE: 4                         # Size in MB of the First Read Request to MOTR
