@@ -14,6 +14,7 @@ import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.constants.APIRequestParameters;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Policy;
@@ -150,9 +151,10 @@ class PolicyLdapStore {
 
  public
   List<Policy> findAll(Object accountObj,
-                       Object parametersObj) throws DataAccessException {
+                       Object apiParametersObj) throws DataAccessException {
     Account account = (Account)accountObj;
-    Map<String, Object> parameters = (Map<String, Object>)parametersObj;
+    Map<String, Object> apiParameters = (Map<String, Object>)apiParametersObj;
+    final String TRUE = "true";
     String optionalFilter = "";
     String[] attrs = {LDAPUtils.POLICY_ID,
                       LDAPUtils.PATH,
@@ -172,21 +174,21 @@ class PolicyLdapStore {
 
     String filter = "(" + LDAPUtils.OBJECT_CLASS + "=" +
                     LDAPUtils.POLICY_OBJECT_CLASS + ")";
-    if (!parameters.isEmpty()) {
-      if (parameters.get("PathPrefix") != null) {
+    if (!apiParameters.isEmpty()) {
+      if (apiParameters.get(APIRequestParameters.PATH_PREFIX) != null) {
         optionalFilter += "(" + LDAPUtils.PATH + "=" +
-                          (String)parameters.get("PathPrefix") + ")";
+                          (String)apiParameters.get(APIRequestParameters.PATH_PREFIX) + ")";
       }
-      if (parameters.get("OnlyAttached") != null) {
-        String onlyAttachedValue = (String)parameters.get("OnlyAttached");
-        if (onlyAttachedValue.equals("true")) {
+      if (apiParameters.get(APIRequestParameters.ONLY_ATTACHED) != null) {
+        String onlyAttachedValue = (String)apiParameters.get(APIRequestParameters.ONLY_ATTACHED);
+        if (onlyAttachedValue.equals(TRUE)) {
           optionalFilter +=
               "(!(" + LDAPUtils.POLICY_ATTACHMENT_COUNT + "=0" + "))";
         }
       }
-      if (parameters.get("PolicyName") != null) {
+      if (apiParameters.get(APIRequestParameters.POLICY_NAME) != null) {
         optionalFilter += "(" + LDAPUtils.POLICY_NAME + "=" +
-                          (String)parameters.get("PolicyName") + ")";
+                          (String)apiParameters.get(APIRequestParameters.POLICY_NAME) + ")";
       }
     }
     filter = "(&" + filter + optionalFilter + ")";
