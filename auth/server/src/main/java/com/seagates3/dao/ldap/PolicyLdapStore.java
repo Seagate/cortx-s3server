@@ -14,7 +14,7 @@ import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
-import com.seagates3.constants.APIRequestParameters;
+import com.seagates3.constants.APIRequestParamsConstants;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Policy;
@@ -154,7 +154,6 @@ class PolicyLdapStore {
                        Object apiParametersObj) throws DataAccessException {
     Account account = (Account)accountObj;
     Map<String, Object> apiParameters = (Map<String, Object>)apiParametersObj;
-    final String TRUE = "true";
     String optionalFilter = "";
     String[] attrs = {LDAPUtils.POLICY_ID,
                       LDAPUtils.PATH,
@@ -175,21 +174,7 @@ class PolicyLdapStore {
     String filter = "(" + LDAPUtils.OBJECT_CLASS + "=" +
                     LDAPUtils.POLICY_OBJECT_CLASS + ")";
     if (!apiParameters.isEmpty()) {
-      if (apiParameters.get(APIRequestParameters.PATH_PREFIX) != null) {
-        optionalFilter += "(" + LDAPUtils.PATH + "=" +
-                          (String)apiParameters.get(APIRequestParameters.PATH_PREFIX) + ")";
-      }
-      if (apiParameters.get(APIRequestParameters.ONLY_ATTACHED) != null) {
-        String onlyAttachedValue = (String)apiParameters.get(APIRequestParameters.ONLY_ATTACHED);
-        if (onlyAttachedValue.equals(TRUE)) {
-          optionalFilter +=
-              "(!(" + LDAPUtils.POLICY_ATTACHMENT_COUNT + "=0" + "))";
-        }
-      }
-      if (apiParameters.get(APIRequestParameters.POLICY_NAME) != null) {
-        optionalFilter += "(" + LDAPUtils.POLICY_NAME + "=" +
-                          (String)apiParameters.get(APIRequestParameters.POLICY_NAME) + ")";
-      }
+    	optionalFilter = prepareOptionalFilter(apiParameters);
     }
     filter = "(&" + filter + optionalFilter + ")";
 
@@ -270,4 +255,27 @@ class PolicyLdapStore {
       throw new DataAccessException("Failed to delete the policy.\n" + ex);
     }
   }
+ 
+ private String prepareOptionalFilter(Map<String, Object> apiParameters){
+	 final String TRUE = "true";
+	 String optionalFilter = "";
+
+     if (apiParameters.get(APIRequestParamsConstants.PATH_PREFIX) != null) {
+       optionalFilter += "(" + LDAPUtils.PATH + "=" +
+                         (String)apiParameters.get(APIRequestParamsConstants.PATH_PREFIX) + ")";
+     }
+     if (apiParameters.get(APIRequestParamsConstants.ONLY_ATTACHED) != null) {
+       String onlyAttachedValue = (String)apiParameters.get(APIRequestParamsConstants.ONLY_ATTACHED);
+       if (onlyAttachedValue.equals(TRUE)) {
+         optionalFilter +=
+             "(!(" + LDAPUtils.POLICY_ATTACHMENT_COUNT + "=0" + "))";
+       }
+     }
+     if (apiParameters.get(APIRequestParamsConstants.POLICY_NAME) != null) {
+       optionalFilter += "(" + LDAPUtils.POLICY_NAME + "=" +
+                         (String)apiParameters.get(APIRequestParamsConstants.POLICY_NAME) + ")";
+     }
+     
+     return optionalFilter;
+ }
 }

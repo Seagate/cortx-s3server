@@ -20,7 +20,7 @@
 
 package com.seagates3.controller;
 
-import com.seagates3.constants.APIRequestParameters;
+import com.seagates3.constants.APIRequestParamsConstants;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.PolicyDAO;
@@ -164,11 +164,11 @@ public class PolicyController extends AbstractController {
     @Override public ServerResponse list() {
       List<Policy> policyList = null;
       Map<String, Object> apiParameters = new HashMap<>();
-      if (requestBody.containsKey(APIRequestParameters.ONLY_ATTACHED)) {
-    	  apiParameters.put(APIRequestParameters.ONLY_ATTACHED, requestBody.get(APIRequestParameters.ONLY_ATTACHED));
+      if (requestBody.containsKey(APIRequestParamsConstants.ONLY_ATTACHED)) {
+    	  apiParameters.put(APIRequestParamsConstants.ONLY_ATTACHED, requestBody.get(APIRequestParamsConstants.ONLY_ATTACHED));
       }
-      if (requestBody.containsKey(APIRequestParameters.PATH_PREFIX)) {
-    	  apiParameters.put(APIRequestParameters.PATH_PREFIX, requestBody.get(APIRequestParameters.PATH_PREFIX));
+      if (requestBody.containsKey(APIRequestParamsConstants.PATH_PREFIX)) {
+    	  apiParameters.put(APIRequestParamsConstants.PATH_PREFIX, requestBody.get(APIRequestParamsConstants.PATH_PREFIX));
       }
       try {
         policyList = policyDAO.findAll(requestor.getAccount(), apiParameters);

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.seagates3.constants.APIRequestParameters;
+import com.seagates3.constants.APIRequestParamsConstants;
 import com.seagates3.dao.PolicyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
@@ -96,7 +96,7 @@ class PolicyImpl implements PolicyDAO {
     AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     String key = PolicyUtil.getKey("", account.getId());
     Map<String, Object> apiParameters = new HashMap<>();
-    apiParameters.put(APIRequestParameters.POLICY_NAME, name);
+    apiParameters.put(APIRequestParamsConstants.POLICY_NAME, name);
     List<Policy> policyList =
         storeInstance.findAll(key, account, apiParameters, POLICY_PREFIX);
     if (!policyList.isEmpty()) {
