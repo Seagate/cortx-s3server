@@ -176,19 +176,22 @@ class PolicyLdapStore {
                     LDAPUtils.POLICY_OBJECT_CLASS + ")";
     if (!apiParameters.isEmpty()) {
       if (apiParameters.get(APIRequestParameters.PATH_PREFIX) != null) {
-        optionalFilter += "(" + LDAPUtils.PATH + "=" +
-                          (String)apiParameters.get(APIRequestParameters.PATH_PREFIX) + ")";
+        optionalFilter +=
+            "(" + LDAPUtils.PATH + "=" +
+            (String)apiParameters.get(APIRequestParameters.PATH_PREFIX) + ")";
       }
       if (apiParameters.get(APIRequestParameters.ONLY_ATTACHED) != null) {
-        String onlyAttachedValue = (String)apiParameters.get(APIRequestParameters.ONLY_ATTACHED);
+        String onlyAttachedValue =
+            (String)apiParameters.get(APIRequestParameters.ONLY_ATTACHED);
         if (onlyAttachedValue.equals(TRUE)) {
           optionalFilter +=
               "(!(" + LDAPUtils.POLICY_ATTACHMENT_COUNT + "=0" + "))";
         }
       }
       if (apiParameters.get(APIRequestParameters.POLICY_NAME) != null) {
-        optionalFilter += "(" + LDAPUtils.POLICY_NAME + "=" +
-                          (String)apiParameters.get(APIRequestParameters.POLICY_NAME) + ")";
+        optionalFilter +=
+            "(" + LDAPUtils.POLICY_NAME + "=" +
+            (String)apiParameters.get(APIRequestParameters.POLICY_NAME) + ")";
       }
     }
     filter = "(&" + filter + optionalFilter + ")";

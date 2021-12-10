@@ -165,10 +165,12 @@ public class PolicyController extends AbstractController {
       List<Policy> policyList = null;
       Map<String, Object> apiParameters = new HashMap<>();
       if (requestBody.containsKey(APIRequestParameters.ONLY_ATTACHED)) {
-    	  apiParameters.put(APIRequestParameters.ONLY_ATTACHED, requestBody.get(APIRequestParameters.ONLY_ATTACHED));
+        apiParameters.put(APIRequestParameters.ONLY_ATTACHED,
+                          requestBody.get(APIRequestParameters.ONLY_ATTACHED));
       }
       if (requestBody.containsKey(APIRequestParameters.PATH_PREFIX)) {
-    	  apiParameters.put(APIRequestParameters.PATH_PREFIX, requestBody.get(APIRequestParameters.PATH_PREFIX));
+        apiParameters.put(APIRequestParameters.PATH_PREFIX,
+                          requestBody.get(APIRequestParameters.PATH_PREFIX));
       }
       try {
         policyList = policyDAO.findAll(requestor.getAccount(), apiParameters);
