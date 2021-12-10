@@ -129,8 +129,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "standalone=\"no\"?><AttachUserPolicyResponse " +
         "xmlns=\"https://iam.seagate.com/doc/2010-05-08/" +
         "\"><ResponseMetadata><RequestId>0000</RequestId></" +
-        "ResponseMetadata></" +
-        "AttachUserPolicyResponse>";
+        "ResponseMetadata></AttachUserPolicyResponse>";
 
     UserPolicyController userPolicyController =
         new UserPolicyController(requestor, requestBody);
@@ -279,8 +278,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "standalone=\"no\"?><DetachUserPolicyResponse " +
         "xmlns=\"https://iam.seagate.com/doc/2010-05-08/" +
         "\"><ResponseMetadata><RequestId>0000</RequestId></" +
-        "ResponseMetadata></" +
-        "DetachUserPolicyResponse>";
+        "ResponseMetadata></DetachUserPolicyResponse>";
 
     UserPolicyController userPolicyController =
         new UserPolicyController(requestor, requestBody);
