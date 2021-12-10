@@ -94,6 +94,8 @@ class S3GetObjectActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*(ptr_mock_request), has_query_param_key("versionId"))
+        .WillRepeatedly(Return(false));
 
     // Owned and deleted by shared_ptr in S3GetObjectAction
     bucket_meta_factory =
@@ -254,6 +256,82 @@ TEST_F(S3GetObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
 
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
   EXPECT_TRUE(action_under_test->object_metadata != NULL);
+}
+
+TEST_F(S3GetObjectActionTest, FetchObjectInfoFailedEmptyVersionId) {
+  CREATE_BUCKET_METADATA;
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+
+  EXPECT_CALL(*(ptr_mock_request), http_verb())
+      .WillOnce(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*(ptr_mock_request), get_operation_code())
+      .WillOnce(Return(S3OperationCode::tagging));
+  EXPECT_CALL(*(ptr_mock_request), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*(ptr_mock_request), get_query_string_value("versionId"))
+      .WillRepeatedly(Return(""));
+  action_under_test->fetch_object_info();
+  EXPECT_STREQ("InvalidArgument",
+               action_under_test->get_s3_error_code().c_str());
+  EXPECT_STREQ("Version id cannot be the empty string",
+               action_under_test->get_s3_error_message().c_str());
+}
+
+TEST_F(S3GetObjectActionTest, FetchObjectInfoFailedInvalidVersionId) {
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(ptr_mock_request), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*(ptr_mock_request), get_query_string_value("versionId"))
+      .WillRepeatedly(Return("xyz"));
+
+  action_under_test->fetch_object_info_failed();
+  EXPECT_STREQ("InvalidArgument",
+               action_under_test->get_s3_error_code().c_str());
+  EXPECT_STREQ("Invalid version id specified",
+               action_under_test->get_s3_error_message().c_str());
+}
+
+TEST_F(S3GetObjectActionTest, FetchObjectInfoFailedKeyNotPresent) {
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(ptr_mock_request), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(false));
+
+  action_under_test->fetch_object_info_failed();
+  EXPECT_STREQ("NoSuchKey", action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3GetObjectActionTest, ValidateObjectOfSizeZero) {

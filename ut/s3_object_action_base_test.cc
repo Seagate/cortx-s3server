@@ -117,6 +117,8 @@ S3ObjectActionTest::S3ObjectActionTest()
       .WillRepeatedly(ReturnRef(bucket_name));
   EXPECT_CALL(*request_mock, get_object_name())
       .WillRepeatedly(ReturnRef(object_name));
+  EXPECT_CALL(*(request_mock), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(false));
 
   mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(request_mock);
   bucket_meta_factory =
@@ -198,6 +200,8 @@ TEST_F(S3ObjectActionTest, FetchBucketInfoSuccess) {
   S3AuditInfo s3_audit_info;
   std::string owner_canonical_id;
 
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
+      .Times(AtLeast(1));
   action_under_test_ptr->load_metadata();
   action_under_test_ptr->clear_tasks();
 
@@ -224,11 +228,64 @@ TEST_F(S3ObjectActionTest, FetchObjectInfoFailed) {
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(
       zero_index_layout);
 
-  // EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
-  // EXPECT_CALL(*request_mock, send_response(_, _)).Times(1);
   EXPECT_CALL(*(request_mock), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(request_mock), get_operation_code())
       .WillOnce(Return(S3OperationCode::tagging));
+  action_under_test_ptr->fetch_object_info();
+  EXPECT_EQ(1, action_under_test_ptr->fetch_object_info_failed_called);
+}
+
+TEST_F(S3ObjectActionTest, FetchObjectInfo) {
+  CREATE_BUCKET_METADATA;
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(request_mock), http_verb()).WillOnce(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*(request_mock), get_operation_code())
+      .WillOnce(Return(S3OperationCode::tagging));
+  EXPECT_CALL(*(request_mock), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*(request_mock), get_query_string_value("versionId"))
+      .WillRepeatedly(Return("xyz"));
+
+  action_under_test_ptr->fetch_object_info();
+
+  EXPECT_TRUE(action_under_test_ptr->bucket_metadata != NULL);
+  EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
+}
+
+TEST_F(S3ObjectActionTest, FetchObjectInfoFailedEmptyVersionId) {
+  CREATE_BUCKET_METADATA;
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(request_mock), http_verb()).WillOnce(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*(request_mock), get_operation_code())
+      .WillOnce(Return(S3OperationCode::tagging));
+  EXPECT_CALL(*(request_mock), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*(request_mock), get_query_string_value("versionId"))
+      .WillRepeatedly(Return(""));
+
   action_under_test_ptr->fetch_object_info();
   EXPECT_EQ(1, action_under_test_ptr->fetch_object_info_failed_called);
 }
