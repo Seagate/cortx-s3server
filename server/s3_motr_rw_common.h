@@ -38,6 +38,8 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
                                  void *user_data);
 
 void s3_motr_op_stable(struct m0_op *op);
+void s3_motr_op_executed(struct m0_op *op);
+std::string s3_motr_op_common(struct m0_op *op);
 
 void s3_motr_op_failed(struct m0_op *op);
 // funtion is to handle motr pre launch opeariton failures in async way

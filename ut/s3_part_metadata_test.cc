@@ -280,7 +280,7 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessful) {
   metadata_under_test->motr_kv_writer->idx_los.push_back({myoid});
 
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
   metadata_under_test->create_part_index_successful();
 }
 
@@ -291,7 +291,7 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata) {
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   metadata_under_test->motr_kv_writer->idx_los.push_back({myoid});
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
   metadata_under_test->create_part_index_successful();
 }
 
@@ -378,7 +378,7 @@ TEST_F(S3PartMetadataTest, SaveMetadata) {
   metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
 
   metadata_under_test->save_metadata();
   EXPECT_STREQ(

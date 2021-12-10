@@ -482,7 +482,8 @@ void S3MotrKVSWriter::delete_indices_failed() {
 void S3MotrKVSWriter::put_keyval(
     const struct s3_motr_idx_layout &idx_lo,
     const std::map<std::string, std::string> &kv_list,
-    std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+    std::function<void(void)> on_success, std::function<void(void)> on_failed,
+    S3MotrKVSWriter::CallbackType callback) {
 
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with oid = %" SCNx64 " : %" SCNx64
@@ -517,7 +518,7 @@ void S3MotrKVSWriter::put_keyval(
   writer_context->init_kvs_write_op_ctx(kv_list.size());
 
   // Ret code can be ignored as its already handled in async case.
-  put_keyval_impl(kv_list, true, false, 0, 0);
+  put_keyval_impl(kv_list, true, false, 0, 0, callback);
 }
 
 void S3MotrKVSWriter::put_partial_keyval(
@@ -580,7 +581,8 @@ void S3MotrKVSWriter::put_partial_keyval(
 
 int S3MotrKVSWriter::put_keyval_impl(
     const std::map<std::string, std::string> &kv_list, bool is_async,
-    bool put_keyval_partially, int offset, unsigned int how_many) {
+    bool put_keyval_partially, int offset, unsigned int how_many,
+    CallbackType callback) {
 
   int rc = 0;
   struct s3_motr_idx_op_context *idx_op_ctx = NULL;
@@ -598,10 +600,14 @@ int S3MotrKVSWriter::put_keyval_impl(
     op_ctx->application_context = (void *)writer_context.get();
 
     // Operation callbacks are used in async mode.
-    if (idx_op_ctx->cbs->oop_executed) {
-      idx_op_ctx->cbs->oop_executed = NULL;
+    if (callback == S3MotrKVSWriter::CallbackType::EXECUTED) {
+      idx_op_ctx->cbs->oop_executed = s3_motr_op_executed;
+    } else {
+      if (callback == S3MotrKVSWriter::CallbackType::STABLE) {
+        idx_op_ctx->cbs->oop_executed = NULL;
+        idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
+      }
     }
-    idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
     idx_op_ctx->cbs->oop_failed = s3_motr_op_failed;
 
   } else {
@@ -713,7 +719,8 @@ int S3MotrKVSWriter::put_keyval_sync(
 void S3MotrKVSWriter::put_keyval(const struct s3_motr_idx_layout &idx_lo,
                                  const std::string &key, const std::string &val,
                                  std::function<void(void)> on_success,
-                                 std::function<void(void)> on_failed) {
+                                 std::function<void(void)> on_failed,
+                                 S3MotrKVSWriter::CallbackType callback) {
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with oid = %" SCNx64 " : %" SCNx64
          " key = %s and value = %s\n",
@@ -755,8 +762,14 @@ void S3MotrKVSWriter::put_keyval(const struct s3_motr_idx_layout &idx_lo,
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)writer_context.get();
 
-  idx_op_ctx->cbs->oop_executed = NULL;
-  idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
+  if (callback == S3MotrKVSWriter::CallbackType::EXECUTED) {
+    idx_op_ctx->cbs->oop_executed = s3_motr_op_executed;
+  } else {
+    if (callback == S3MotrKVSWriter::CallbackType::STABLE) {
+      idx_op_ctx->cbs->oop_executed = NULL;
+      idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
+    }
+  }
   idx_op_ctx->cbs->oop_failed = s3_motr_op_failed;
 
   set_up_key_value_store(kvs_ctx, key, val);
