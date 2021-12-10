@@ -1,6 +1,7 @@
 package com.seagates3.constants;
 
-public class APIRequestParamsConstants {
+public
+class APIRequestParamsConstants {
 
  public
   final static String ONLY_ATTACHED = "OnlyAttached";

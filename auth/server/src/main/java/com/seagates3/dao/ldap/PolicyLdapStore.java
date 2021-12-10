@@ -174,7 +174,7 @@ class PolicyLdapStore {
     String filter = "(" + LDAPUtils.OBJECT_CLASS + "=" +
                     LDAPUtils.POLICY_OBJECT_CLASS + ")";
     if (!apiParameters.isEmpty()) {
-    	optionalFilter = prepareOptionalFilter(apiParameters);
+      optionalFilter = prepareOptionalFilter(apiParameters);
     }
     filter = "(&" + filter + optionalFilter + ")";
 
@@ -255,27 +255,33 @@ class PolicyLdapStore {
       throw new DataAccessException("Failed to delete the policy.\n" + ex);
     }
   }
- 
- private String prepareOptionalFilter(Map<String, Object> apiParameters){
-	 final String TRUE = "true";
-	 String optionalFilter = "";
 
-     if (apiParameters.get(APIRequestParamsConstants.PATH_PREFIX) != null) {
-       optionalFilter += "(" + LDAPUtils.PATH + "=" +
-                         (String)apiParameters.get(APIRequestParamsConstants.PATH_PREFIX) + ")";
-     }
-     if (apiParameters.get(APIRequestParamsConstants.ONLY_ATTACHED) != null) {
-       String onlyAttachedValue = (String)apiParameters.get(APIRequestParamsConstants.ONLY_ATTACHED);
-       if (onlyAttachedValue.equals(TRUE)) {
-         optionalFilter +=
-             "(!(" + LDAPUtils.POLICY_ATTACHMENT_COUNT + "=0" + "))";
+ private
+  String prepareOptionalFilter(Map<String, Object> apiParameters) {
+    final String TRUE = "true";
+    String optionalFilter = "";
+
+    if (apiParameters.get(APIRequestParamsConstants.PATH_PREFIX) != null) {
+      optionalFilter +=
+          "(" + LDAPUtils.PATH + "=" +
+          (String)apiParameters.get(APIRequestParamsConstants.PATH_PREFIX) +
+          ")";
+    }
+    if (apiParameters.get(APIRequestParamsConstants.ONLY_ATTACHED) != null) {
+      String onlyAttachedValue =
+          (String)apiParameters.get(APIRequestParamsConstants.ONLY_ATTACHED);
+      if (onlyAttachedValue.equals(TRUE)) {
+        optionalFilter +=
+            "(!(" + LDAPUtils.POLICY_ATTACHMENT_COUNT + "=0" + "))";
        }
      }
      if (apiParameters.get(APIRequestParamsConstants.POLICY_NAME) != null) {
-       optionalFilter += "(" + LDAPUtils.POLICY_NAME + "=" +
-                         (String)apiParameters.get(APIRequestParamsConstants.POLICY_NAME) + ")";
+       optionalFilter +=
+           "(" + LDAPUtils.POLICY_NAME + "=" +
+           (String)apiParameters.get(APIRequestParamsConstants.POLICY_NAME) +
+           ")";
      }
-     
+
      return optionalFilter;
  }
 }
