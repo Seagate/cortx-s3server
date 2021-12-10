@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.seagates3.constants.APIRequestParamsConstants;
 import com.seagates3.dao.PolicyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
@@ -72,12 +73,13 @@ class PolicyImpl implements PolicyDAO {
     storeInstance.save(policyDetailsMap, POLICY_PREFIX);
   }
 
-  @Override public List<Policy> findAll(Account account)
+  @Override public List<Policy> findAll(Account account,
+                                        Map<String, Object> apiParameters)
       throws DataAccessException {
     AuthStoreFactory factory = new AuthStoreFactory();
     AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     String key = PolicyUtil.getKey("", account.getId());
-    return storeInstance.findAll(key, account, POLICY_PREFIX);
+    return storeInstance.findAll(key, account, apiParameters, POLICY_PREFIX);
   }
 
   @Override public void delete (Policy policy) throws DataAccessException {
@@ -93,12 +95,12 @@ class PolicyImpl implements PolicyDAO {
     AuthStoreFactory factory = new AuthStoreFactory();
     AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
     String key = PolicyUtil.getKey("", account.getId());
+    Map<String, Object> apiParameters = new HashMap<>();
+    apiParameters.put(APIRequestParamsConstants.POLICY_NAME, name);
     List<Policy> policyList =
-        storeInstance.findAll(key, account, POLICY_PREFIX);
-    for (Policy policy : policyList) {
-      if (name.equalsIgnoreCase(policy.getName())) {
-        return policy;
-      }
+        storeInstance.findAll(key, account, apiParameters, POLICY_PREFIX);
+    if (!policyList.isEmpty()) {
+      return (Policy)policyList.get(0);
     }
     return null;
   }

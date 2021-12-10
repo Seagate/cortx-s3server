@@ -82,6 +82,11 @@ public abstract class AbstractParameterValidator {
                     requestBody.get("Marker"));
         }
 
+        if (requestBody.containsKey("OnlyAttached")) {
+          return S3ParameterValidatorUtil.isValidOnlyAttached(
+              requestBody.get("OnlyAttached"));
+        }
+
         return true;
     }
 
