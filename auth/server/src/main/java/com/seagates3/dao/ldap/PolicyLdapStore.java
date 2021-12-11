@@ -300,7 +300,8 @@ class PolicyLdapStore {
     String optionalFilter = "";
     if (dataMap.get(APIRequestParamsConstants.PATH_PREFIX) != null) {
       optionalFilter =
-          "(" + LDAPUtils.PATH + "=" + (String)dataMap.get(APIRequestParamsConstants.PATH_PREFIX) + ")";
+          "(" + LDAPUtils.PATH + "=" +
+          (String)dataMap.get(APIRequestParamsConstants.PATH_PREFIX) + ")";
     }
 
     if (policyIdFilter.length() > 0) {

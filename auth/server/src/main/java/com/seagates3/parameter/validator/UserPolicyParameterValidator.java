@@ -19,10 +19,12 @@ class UserPolicyParameterValidator extends AbstractParameterValidator {
 
  private
   Boolean isValidUserPolicyParameters(Map<String, String> requestBody) {
-    if (!S3ParameterValidatorUtil.isValidName(requestBody.get(APIRequestParamsConstants.USER_NAME))) {
+    if (!S3ParameterValidatorUtil.isValidName(
+             requestBody.get(APIRequestParamsConstants.USER_NAME))) {
       return false;
     }
 
-    return S3ParameterValidatorUtil.isValidARN(requestBody.get(APIRequestParamsConstants.POLICY_ARN));
+    return S3ParameterValidatorUtil.isValidARN(
+        requestBody.get(APIRequestParamsConstants.POLICY_ARN));
   }
 }

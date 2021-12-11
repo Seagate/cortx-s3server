@@ -65,23 +65,23 @@ public abstract class AbstractParameterValidator {
      * @return true if input is valid.
      */
     public Boolean isValidListParams(Map<String, String> requestBody) {
-        if (requestBody.containsKey(APIRequestParamsConstants.PATH_PREFIX)) {
-            if (!S3ParameterValidatorUtil.isValidPathPrefix(
-                    requestBody.get(APIRequestParamsConstants.PATH_PREFIX))) {
+       if (requestBody.containsKey(APIRequestParamsConstants.PATH_PREFIX)) {
+         if (!S3ParameterValidatorUtil.isValidPathPrefix(
+                  requestBody.get(APIRequestParamsConstants.PATH_PREFIX))) {
                 return false;
             }
         }
 
         if (requestBody.containsKey(APIRequestParamsConstants.MAX_ITEMS)) {
-            if (!S3ParameterValidatorUtil.isValidMaxItems(
-                    requestBody.get(APIRequestParamsConstants.MAX_ITEMS))) {
+          if (!S3ParameterValidatorUtil.isValidMaxItems(
+                   requestBody.get(APIRequestParamsConstants.MAX_ITEMS))) {
                 return false;
             }
         }
 
         if (requestBody.containsKey(APIRequestParamsConstants.MARKER)) {
-            return S3ParameterValidatorUtil.isValidMarker(
-            		APIRequestParamsConstants.MARKER);
+          return S3ParameterValidatorUtil.isValidMarker(
+              APIRequestParamsConstants.MARKER);
         }
 
         if (requestBody.containsKey(APIRequestParamsConstants.ONLY_ATTACHED)) {

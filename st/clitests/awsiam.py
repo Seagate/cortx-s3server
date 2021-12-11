@@ -112,8 +112,12 @@ class AwsIamTest(PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def list_policies(self):
+    def list_policies(self, **kwargs):
         cmd = "aws iam list-policies"
+        if kwargs.get("path_prefix"):
+            cmd = cmd + " --path-prefix " + kwargs.get("path_prefix")
+        if kwargs.get("only_attached"):
+            cmd = cmd + " --only-attached "
         self.with_cli(cmd)
         return self
 

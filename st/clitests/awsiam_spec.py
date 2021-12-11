@@ -219,8 +219,51 @@ def user_policy_tests():
 	#attach-user-policy
     AwsIamTest('Attach User Policy').attach_user_policy("testUser", arn) \
         .execute_test().command_is_successful()
+
+    #list policies
+    result = AwsIamTest('List Policies').list_policies().execute_test()
+    total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
+    if(total_policies != 2):
+        print('List Policies Test failed')
+        quit()
+
+    #list policies with only attached
+    result = AwsIamTest('List Policies').list_policies(only_attached=True).execute_test()
+    total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
+    if(total_policies != 1):
+        print('List Policies with only attached Test failed')
+        quit()
+
+    #list policies with only attached and path prefix
+    result = AwsIamTest('List Policies').list_policies(only_attached=True, path_prefix="/listpolicy/").execute_test()
+    total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
+    if(total_policies != 0):
+        print('List Policies with only attached and path prefix Test failed')
+        quit()
+
     AwsIamTest('Attach User Policy').attach_user_policy("testUser", arn2) \
         .execute_test().command_is_successful()
+
+    #list policies with only attached
+    result = AwsIamTest('List Policies').list_policies(only_attached=True).execute_test()
+    total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
+    if(total_policies != 2):
+        print('List Policies with only attached Test failed')
+        quit()
+
+    #list policies with path prefix
+    result = AwsIamTest('List Policies').list_policies(path_prefix="/listpolicy/").execute_test()
+    total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
+    if(total_policies != 1):
+        print('List Policies with path prefix Test failed')
+        quit()
+
+    #list policies with only attached and path prefix
+    result = AwsIamTest('List Policies').list_policies(only_attached=True, path_prefix="/listpolicy/").execute_test()
+    total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
+    if(total_policies != 1):
+        print('List Policies with only attached and path prefix Test failed')
+        quit()
 
     #attach already attached policy
     AwsIamTest('Attach User Policy').attach_user_policy("testUser", arn2) \
@@ -266,6 +309,13 @@ def user_policy_tests():
         .command_is_successful()
     AwsIamTest('Detach User Policy').detach_user_policy("testUser", arn2).execute_test() \
         .command_is_successful()
+
+    #list policies with only attached after detaching policies
+    result = AwsIamTest('List Policies').list_policies(only_attached=True).execute_test()
+    total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
+    if(total_policies != 0):
+        print('List Policies with only attached after detaching policies Test failed')
+        quit()
 
     #detach-user-policy for non existing user
     result = AwsIamTest('Detach User Policy').detach_user_policy("hkhk", arn) \
