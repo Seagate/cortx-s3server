@@ -2041,6 +2041,12 @@ AwsTest('Aws can get bucket versioning Enabled status').get_bucket_versioning("s
 #******** Delete object in enable versioning state ********
 #AwsTest('Aws can delete object in versioning state').delete_object("seagatebucket", "simpleobj1").execute_test().command_is_successful()
 
+#******** Suspend Versioning on Bucket ********
+AwsTest('Aws can suspend versioning on bucket').put_bucket_versioning("seagatebucket", "Suspended").execute_test().command_is_successful()
+
+#******** Get Bucket Versioning Suspended status ********
+AwsTest('Aws can get bucket versioning Suspended status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_have("Suspended")
+
 #************Negative case to get versioning status of non-existant bucket*******
 AwsTest('Aws can not get versioning status of non-existant bucket').get_bucket_versioning("seagate1")\
 .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
