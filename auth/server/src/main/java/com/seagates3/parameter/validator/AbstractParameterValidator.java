@@ -81,7 +81,7 @@ public abstract class AbstractParameterValidator {
 
         if (requestBody.containsKey(APIRequestParamsConstants.MARKER)) {
           return S3ParameterValidatorUtil.isValidMarker(
-              APIRequestParamsConstants.MARKER);
+              requestBody.get(APIRequestParamsConstants.MARKER));
         }
 
         if (requestBody.containsKey(APIRequestParamsConstants.ONLY_ATTACHED)) {
