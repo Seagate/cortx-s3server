@@ -68,7 +68,8 @@ class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
         std::make_shared<MockS3ObjectMetadata>(req, s3_motr_mock_ptr);
     mock_object_extnd_metadata =
         std::make_shared<MockS3ObjectExtendedMetadata>(req, s3_motr_mock_ptr);
-    mock_delete_marker_metadata = std::make_shared<MockS3ObjectMetadata>(req, s3_motr_mock_ptr);
+    mock_delete_marker_metadata =
+        std::make_shared<MockS3ObjectMetadata>(req, s3_motr_mock_ptr);
   }
   void set_object_list_index_oid(const struct m0_uint128& id) {
     mock_object_metadata->set_object_list_index_layout({id});

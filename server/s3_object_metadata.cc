@@ -391,9 +391,7 @@ void S3ObjectMetadata::set_delete_marker() {
   is_delete_marker = true;
 }
 
-bool S3ObjectMetadata::get_delete_marker() {
-  return is_delete_marker;
-}
+bool S3ObjectMetadata::get_delete_marker() { return is_delete_marker; }
 
 void S3ObjectMetadata::set_old_oid(struct m0_uint128 id) {
   old_oid = id;
@@ -819,7 +817,7 @@ std::string S3ObjectMetadata::to_json() {
     root["System-Defined"][sit.first] = sit.second;
   }
 
-  if(is_delete_marker) {
+  if (is_delete_marker) {
     root["System-Defined"]["x-amz-delete-marker"] = "true";
   }
 
@@ -957,7 +955,7 @@ int S3ObjectMetadata::from_json(std::string content) {
       S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 
   if (system_defined_attribute.find("x-amz-delete-marker") !=
-            system_defined_attribute.end()) {
+      system_defined_attribute.end()) {
     is_delete_marker = true;
   }
 
