@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.constants.APIRequestParamsConstants;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.PolicyDAO;
@@ -51,8 +52,8 @@ class UserPolicyController extends AbstractController {
 
  public
   ServerResponse attach() throws DataAccessException {
-    String userName = requestBody.get("UserName");
-    String policyARN = requestBody.get("PolicyArn");
+    String userName = requestBody.get(APIRequestParamsConstants.USER_NAME);
+    String policyARN = requestBody.get(APIRequestParamsConstants.POLICY_ARN);
 
     LOGGER.info("Attach policy: " + policyARN + " to user: " + userName);
     ServerResponse serverResponse = null;
@@ -84,8 +85,8 @@ class UserPolicyController extends AbstractController {
 
  public
   ServerResponse detach() throws DataAccessException {
-    String userName = requestBody.get("UserName");
-    String policyARN = requestBody.get("PolicyArn");
+    String userName = requestBody.get(APIRequestParamsConstants.USER_NAME);
+    String policyARN = requestBody.get(APIRequestParamsConstants.POLICY_ARN);
 
     LOGGER.info("Detach policy: " + policyARN + " from user: " + userName);
     ServerResponse serverResponse = null;
@@ -115,8 +116,8 @@ class UserPolicyController extends AbstractController {
 
  public
   ServerResponse list() throws DataAccessException {
-    String pathPrefix = requestBody.get("PathPrefix");
-    String userName = requestBody.get("UserName");
+    String pathPrefix = requestBody.get(APIRequestParamsConstants.PATH_PREFIX);
+    String userName = requestBody.get(APIRequestParamsConstants.USER_NAME);
 
     LOGGER.info("List policies for user: " + userName);
     ServerResponse serverResponse = null;
@@ -126,7 +127,7 @@ class UserPolicyController extends AbstractController {
       checkIfUserExists(user, userName);
       Map<String, Object> dataMap = new HashMap<String, Object>();
       if (pathPrefix != null) {
-        dataMap.put("pathPrefix", pathPrefix);
+        dataMap.put(APIRequestParamsConstants.PATH_PREFIX, pathPrefix);
       }
       dataMap.put("accountName", user.getAccountName());
       dataMap.put("policyIds", user.getPolicyIds());
