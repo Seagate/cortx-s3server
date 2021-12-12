@@ -143,6 +143,10 @@ public class PolicyController extends AbstractController {
         LOGGER.error(requestBody.get("PolicyARN") + "Policy does not exists");
         return responseGenerator.noSuchEntity();
       }
+      if(policy.getAttachmentCount() > 0) {
+    	  LOGGER.error(requestBody.get("PolicyARN") + " cannot be deleted because it is attached to the entities.");
+          return responseGenerator.deletePolicyConflict("An error occurred (DeleteConflict) when calling the DeletePolicy operation: Cannot delete a policy attached to entities.");
+      }
       LOGGER.info("Deleting policy : " + policy.getName());
       try {
         policy.setAccount(requestor.getAccount());
