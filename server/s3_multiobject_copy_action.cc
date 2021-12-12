@@ -837,14 +837,18 @@ const char xml_comment_begin[] = "<!--   \n";
 const char xml_comment_end[] = "\n   -->\n";
 
 std::string S3MultiObjectCopyAction::get_response_xml() {
-  std::string response_xml;
-  response_xml +="<CopyPartResult>\n";
-  response_xml += S3CommonUtilities::format_xml_string(
-      "ETag", new_object_metadata->get_md5(), true);
-  response_xml += S3CommonUtilities::format_xml_string(
-      "LastModified", new_object_metadata->get_last_modified_iso());
-  response_xml += "\n</CopyObjectResult>";
-  return response_xml;
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  std::string xml_response = "";
+  xml_response += "<CopyPartResult>\n";
+  xml_response += S3CommonUtilities::format_xml_string(
+      "ETag", motr_writer->get_content_md5(), true);
+  xml_response += S3CommonUtilities::format_xml_string(
+      "LastModified", additional_object_metadata->get_last_modified_iso());
+  xml_response += "\n</CopyPartResult>";
+  s3_log(S3_LOG_INFO, stripped_request_id, "Base xml: %s", xml_response.c_str());
+
+  return xml_response;
 }
 
 void S3MultiObjectCopyAction::start_response() {
@@ -854,8 +858,6 @@ void S3MultiObjectCopyAction::start_response() {
   request->set_out_header_value("Connection", "close");
 
   request->send_reply_start(S3HttpSuccess200);
-  request->send_reply_body(xml_decl, sizeof(xml_decl) - 1);
-  request->send_reply_body(xml_comment_begin, sizeof(xml_comment_begin) - 1);
 
   response_started = true;
   request->set_response_started_by_action(true);
@@ -946,30 +948,40 @@ void S3MultiObjectCopyAction::add_object_oid_to_probable_dead_oid_list_failed() 
 
 void S3MultiObjectCopyAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (S3Option::get_instance()->is_getoid_enabled()) {
 
-  if ((auth_in_progress) &&
-      (get_auth_client()->get_state() == S3AuthClientOpState::started)) {
-    get_auth_client()->abort_chunk_auth_op();
-    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-    return;
+    request->set_out_header_value("x-stx-oid",
+                                  S3M0Uint128Helper::to_string(new_object_oid));
+    request->set_out_header_value("x-stx-layout-id", std::to_string(layout_id));
   }
+  std::string response_xml;
+  int http_status_code = S3HttpFailed500;
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
-    // Send response with 'Service Unavailable' code.
-    S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
+    // Metadata saved for object is always a success condition.
+    assert(s3_copy_part_action_state != S3CopyPartActionState::metadataSaved);
 
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
+    S3Error error(get_s3_error_code(), request->get_request_id());
 
-    if (get_s3_error_code() == "ServiceUnavailable" ||
-        get_s3_error_code() == "InternalError") {
+    if (S3CopyPartActionState::validationFailed == s3_copy_part_action_state &&
+        "InvalidRequest" == get_s3_error_code()) {
+      if (if_source_and_destination_same()) {  // Source and Destination same
+        error.set_auth_error_message(InvalidRequestSourceAndDestinationSame);
+      } else if (additional_object_metadata->get_content_length() >
+                 MaxCopyObjectSourceSize) {  // Source object size greater than
+                                             // 5GB
+        error.set_auth_error_message(
+            InvalidRequestSourceObjectSizeGreaterThan5GB);
+      }
+    }
+    response_xml = std::move(error.to_xml(response_started));
+    http_status_code = error.get_http_status_code();
+
+    if (!response_started && (get_s3_error_code() == "ServiceUnavailable" ||
+                              get_s3_error_code() == "InternalError")) {
       request->set_out_header_value("Connection", "close");
     }
-
     if (get_s3_error_code() == "ServiceUnavailable") {
       if (reject_if_shutting_down()) {
         int retry_after_period =
@@ -980,30 +992,23 @@ void S3MultiObjectCopyAction::send_response_to_s3_client() {
         request->set_out_header_value("Retry-After", "1");
       }
     }
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (motr_writer != NULL) {
-    // AWS adds explicit quotes "" to etag values.
-    std::string e_tag = "\"" + motr_writer->get_content_md5() + "\"";
-    s3_log(S3_LOG_INFO, stripped_request_id, "ETag %s\n", e_tag.c_str());
-
-    request->set_out_header_value("ETag", e_tag);
-
-    request->send_response(S3HttpSuccess200);
   } else {
-    set_s3_error("InternalError");
-    S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
+    s3_copy_part_action_state = S3CopyPartActionState::completed;
+
+    response_xml = get_response_xml();
+    http_status_code = S3HttpSuccess200;
+  }
+  if (response_started) {
+    request->send_reply_body(response_xml.c_str(), response_xml.length());
+    request->send_reply_end();
+    request->close_connection();
+  } else {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->set_out_header_value("Connection", "close");
-    request->send_response(error.get_http_status_code(), response_xml);
-  }
 
-  S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
-  request->resume(false);
+    request->send_response(http_status_code, std::move(response_xml));
+  }
   startcleanup();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
