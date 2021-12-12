@@ -304,6 +304,10 @@ def user_policy_tests():
     AwsIamTest('List User Attached Policies').list_attached_user_policies("asdhj") \
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
 
+    #delete policy attached to user
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test(negative_case=True).command_should_fail() \
+            .command_error_should_have("DeleteConflict")
+
 	#detach-user-policy
     AwsIamTest('Detach User Policy').detach_user_policy("testUser", arn).execute_test() \
         .command_is_successful()
