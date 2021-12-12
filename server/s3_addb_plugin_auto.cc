@@ -76,6 +76,7 @@
 #include "s3_put_chunk_upload_object_action.h"
 #include "s3_put_fi_action.h"
 #include "s3_put_multiobject_action.h"
+#include "s3_put_multiobjectcopy_action.h"
 #include "s3_put_object_acl_action.h"
 #include "s3_put_object_action.h"
 #include "s3_put_object_tagging_action.h"
@@ -168,6 +169,8 @@ int s3_addb_init() {
       S3_ADDB_S3_PUT_FI_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PutMultiObjectAction))] =
       S3_ADDB_S3_PUT_MULTI_OBJECT_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(S3PutMultiObjectCopyAction))] =
+      S3_ADDB_S3_PUT_MULTI_OBJECT_COPY_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PutObjectACLAction))] =
       S3_ADDB_S3_PUT_OBJECT_ACL_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PutObjectAction))] =
@@ -420,6 +423,12 @@ int s3_addb_init() {
          ": class S3PutMultiObjectAction\n",
          (uint64_t)S3_ADDB_S3_PUT_MULTI_OBJECT_ACTION_ID,
          (int64_t)S3_ADDB_S3_PUT_MULTI_OBJECT_ACTION_ID);
+
+  s3_log(S3_LOG_DEBUG, "",
+         "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
+         ": class S3PutMultiObjectCopyAction\n",
+         (uint64_t)S3_ADDB_S3_PUT_MULTI_OBJECT_COPY_ACTION_ID,
+         (int64_t)S3_ADDB_S3_PUT_MULTI_OBJECT_COPY_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning

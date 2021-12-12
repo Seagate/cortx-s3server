@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 219;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 228;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -218,6 +218,15 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutMultiObjectAction::save_metadata",
     "S3PutMultiObjectAction::send_response_to_s3_client",
     "S3PutMultiObjectAction::validate_multipart_request",
+    "S3PutMultiObjectCopyAction::check_part_details",
+    "S3PutMultiObjectCopyAction::check_source_bucket_authorization",
+    "S3PutMultiObjectCopyAction::copy_object",
+    "S3PutMultiObjectCopyAction::create_part_object",
+    "S3PutMultiObjectCopyAction::fetch_multipart_metadata",
+    "S3PutMultiObjectCopyAction::fetch_part_info",
+    "S3PutMultiObjectCopyAction::save_metadata",
+    "S3PutMultiObjectCopyAction::send_response_to_s3_client",
+    "S3PutMultiObjectCopyAction::set_source_bucket_authorization_metadata",
     "S3PutMultipartObjectActionTest::func_callback_one",
     "S3PutObjectACLAction::send_response_to_s3_client",
     "S3PutObjectACLAction::setacl",
