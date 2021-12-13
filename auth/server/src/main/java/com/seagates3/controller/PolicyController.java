@@ -228,9 +228,6 @@ public class PolicyController extends AbstractController {
       Policy policy = null;
       String policyArn = requestBody.get(APIRequestParamsConstants.POLICY_ARN);
       String versionId = requestBody.get(APIRequestParamsConstants.VERSIONID);
-      if (policyArn == null || versionId == null) {
-        return responseGenerator.badRequest();
-      }
       try {
         policy = policyDAO.findByArn(policyArn, requestor.getAccount());
       }
@@ -242,7 +239,8 @@ public class PolicyController extends AbstractController {
         LOGGER.error("Policy does not exists- " + policyArn);
         return responseGenerator.noSuchEntity();
       }
-      if (!versionId.equals(policy.getDefaultVersionid())) {
+      if (!versionId.equals(policy.getDefaultVersionid()) ||
+          !"true".equalsIgnoreCase(policy.getIsPolicyAttachable())) {
         return responseGenerator.noSuchEntity(
             "Policy " + policyArn + " version " + versionId +
             " does not exist or is not attachable.");

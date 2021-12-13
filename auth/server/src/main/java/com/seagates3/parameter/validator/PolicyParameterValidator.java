@@ -22,6 +22,8 @@ package com.seagates3.parameter.validator;
 
 import java.util.Map;
 
+import com.seagates3.constants.APIRequestParamsConstants;
+
 /**
  * Validate the input for managed policy APIs - Create, Delete, List and Update.
  */
@@ -57,5 +59,14 @@ public class PolicyParameterValidator extends AbstractParameterValidator {
 
         return S3ParameterValidatorUtil.isValidPolicyDocument(
                 requestBody.get("PolicyDocument"));
+    }
+
+   public
+    Boolean isValidGetPolicyVersionParams(Map<String, String> requestBody) {
+      if (requestBody.get(APIRequestParamsConstants.POLICY_ARN) == null ||
+          requestBody.get(APIRequestParamsConstants.VERSIONID) == null) {
+        return false;
+      }
+      return true;
     }
 }

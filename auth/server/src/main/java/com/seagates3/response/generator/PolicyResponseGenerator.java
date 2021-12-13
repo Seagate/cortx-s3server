@@ -150,12 +150,12 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
       responseElements = new LinkedHashMap();
       responseElements.put("Document", policy.getPolicyDoc());
       responseElements.put("VersionId", policy.getDefaultVersionid());
-      responseElements.put("IsDefaultVersion", true);
+      responseElements.put("IsDefaultVersion", "true");
       responseElements.put("CreateDate", policy.getCreateDate());
 
       policyMembers.add(responseElements);
       return new XMLResponseFormatter().formatGetResponse(
-          "PolicyVersion", "PolicyVersion", policyMembers,
+          "GetPolicyVersion", "PolicyVersion", policyMembers,
           AuthServerConfig.getReqId());
     }
 }
