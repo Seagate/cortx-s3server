@@ -43,6 +43,7 @@ S3DeleteObjectAction::S3DeleteObjectAction(
          request->get_object_name().c_str());
 
   action_uses_cleanup = true;
+  delete_marker_metadata = nullptr;
   s3_del_obj_action_state = S3DeleteObjectActionState::empty;
 
   if (motr_api) {
@@ -179,7 +180,7 @@ void S3DeleteObjectAction::create_delete_marker() {
   // TODO: update null version
 
   for (const auto& it: request->get_in_headers_copy()) {
-    if (it.first.find("x-amz-meta-") == std::string::npos) {
+    if (it.first.find("x-amz-meta-") == 0) {
       s3_log(S3_LOG_DEBUG, request_id,
              "Writing user metadata on object: [%s] -> [%s]\n",
              it.first.c_str(), it.second.c_str());
