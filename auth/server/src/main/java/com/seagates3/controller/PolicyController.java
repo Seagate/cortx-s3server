@@ -217,4 +217,36 @@ public class PolicyController extends AbstractController {
       LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
       return responseGenerator.generateGetResponse(policy);
     }
+    
+    /**
+     * Get policy for requesting ARN
+     *
+     * @return ServerResponse.
+     */
+    public ServerResponse getPolicyVersion() {
+      Policy policy = null;
+      String policyArn = requestBody.get(APIRequestParamsConstants.POLICY_ARN);
+      String versionId = requestBody.get(APIRequestParamsConstants.VERSIONID);
+      if(policyArn == null || versionId == null) {
+    	  return responseGenerator.badRequest();
+      }
+      try {
+        policy = policyDAO.findByArn(policyArn,
+                                     requestor.getAccount());
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to get requested policy- " +
+                     policyArn);
+        return responseGenerator.internalServerError();
+      }
+      if (policy == null || !policy.exists()) {
+        LOGGER.error("Policy does not exists- " + policyArn);
+        return responseGenerator.noSuchEntity();
+      }
+      if(!versionId.equals(policy.getDefaultVersionid())) {
+      	return responseGenerator.noSuchEntity("Policy " + policyArn + " version " + versionId + " does not exist or is not attachable.");
+      }
+      LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
+      return responseGenerator.generateGetPolicyVersionResponse(policy);
+    }
  }
