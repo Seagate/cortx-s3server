@@ -182,7 +182,7 @@ void S3DeleteObjectAction::create_delete_marker() {
   // TODO: update null version
 
   s3_log(S3_LOG_DEBUG, request_id, "Add delete marker4\n");
-  for (auto it : request->get_in_headers_copy()) {
+  for (const auto& kv: request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
       s3_log(S3_LOG_DEBUG, request_id,
              "Writing user metadata on object: [%s] -> [%s]\n",
