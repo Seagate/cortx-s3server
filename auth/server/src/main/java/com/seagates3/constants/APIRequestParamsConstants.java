@@ -23,6 +23,7 @@ class APIRequestParamsConstants {
 
  public
   final static String MARKER = "Marker";
- 
- public final static String VERSIONID = "VersionId";
+
+ public
+  final static String VERSIONID = "VersionId";
 }

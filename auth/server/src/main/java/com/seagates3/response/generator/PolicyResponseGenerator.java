@@ -141,19 +141,21 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
                             errorMessage);
     }
 
-public ServerResponse generateGetPolicyVersionResponse(Policy policy) {
-	
-	ArrayList<LinkedHashMap<String, String>> policyMembers =
-	          new ArrayList<>();
-  LinkedHashMap responseElements;
-  responseElements = new LinkedHashMap();
-  responseElements.put("Document", policy.getPolicyDoc());
-  responseElements.put("VersionId", policy.getDefaultVersionid());
-  responseElements.put("IsDefaultVersion", true);
-  responseElements.put("CreateDate", policy.getCreateDate());
+   public
+    ServerResponse generateGetPolicyVersionResponse(Policy policy) {
 
-  policyMembers.add(responseElements);
-  return new XMLResponseFormatter().formatGetResponse(
-      "PolicyVersion", "PolicyVersion", policyMembers, AuthServerConfig.getReqId());
-}
+      ArrayList<LinkedHashMap<String, String>> policyMembers =
+          new ArrayList<>();
+      LinkedHashMap responseElements;
+      responseElements = new LinkedHashMap();
+      responseElements.put("Document", policy.getPolicyDoc());
+      responseElements.put("VersionId", policy.getDefaultVersionid());
+      responseElements.put("IsDefaultVersion", true);
+      responseElements.put("CreateDate", policy.getCreateDate());
+
+      policyMembers.add(responseElements);
+      return new XMLResponseFormatter().formatGetResponse(
+          "PolicyVersion", "PolicyVersion", policyMembers,
+          AuthServerConfig.getReqId());
+    }
 }
