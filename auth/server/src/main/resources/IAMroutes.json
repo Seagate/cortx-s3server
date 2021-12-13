@@ -1,6 +1,7 @@
 {
     "AttachUserPolicy": "UserPolicy#attach",
     "DetachUserPolicy": "UserPolicy#detach",
+    "ListAttachedUserPolicies": "UserPolicy#list",
     "ChangePassword": "UserLoginProfile#changepassword",
     "CreateAccount": "Account#create",
     "CreateAccountLoginProfile": "AccountLoginProfile#create",

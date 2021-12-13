@@ -41,4 +41,10 @@ class MotrStore implements AuthStore {
                                String prefix) throws DataAccessException {
     // TODO Add motr store implementation for attach policy
   }
+
+  @Override public List<Policy> findByIds(
+      Map<String, Object> dataMap, String prefix) throws DataAccessException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

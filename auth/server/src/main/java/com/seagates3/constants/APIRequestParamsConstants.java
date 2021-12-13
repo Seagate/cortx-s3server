@@ -17,4 +17,10 @@ class APIRequestParamsConstants {
 
  public
   final static String POLICY_NAME = "PolicyName";
+
+ public
+  final static String MAX_ITEMS = "MaxItems";
+
+ public
+  final static String MARKER = "Marker";
 }
