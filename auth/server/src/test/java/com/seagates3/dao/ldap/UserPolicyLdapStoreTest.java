@@ -121,8 +121,10 @@ import com.seagates3.model.UserPolicy;
     return policy;
   }
 
- private void verifyLDAPUtilsModifyCalls() throws LDAPException {
-	    PowerMockito.verifyStatic(Mockito.times(2));
-	    LDAPUtils.modify(Matchers.anyString(), Matchers.any(LDAPModification.class));
- }
+ private
+  void verifyLDAPUtilsModifyCalls() throws LDAPException {
+    PowerMockito.verifyStatic(Mockito.times(2));
+    LDAPUtils.modify(Matchers.anyString(),
+                     Matchers.any(LDAPModification.class));
+  }
 }
