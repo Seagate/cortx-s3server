@@ -129,8 +129,6 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_HEAD_OBJECT_ACTION_ID,
   /* S3HeadServiceAction: */
   S3_ADDB_S3_HEAD_SERVICE_ACTION_ID,
-  /* S3MultiObjectCopyAction: */
-  S3_ADDB_S3_MULTI_OBJECT_COPY_ACTION_ID,
   /* S3PostCompleteAction: */
   S3_ADDB_S3_POST_COMPLETE_ACTION_ID,
   /* S3PostMultipartObjectAction: */
@@ -149,6 +147,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_PUT_FI_ACTION_ID,
   /* S3PutMultiObjectAction: */
   S3_ADDB_S3_PUT_MULTI_OBJECT_ACTION_ID,
+  /* S3PutMultipartCopyAction: */
+  S3_ADDB_S3_PUT_MULTIPART_COPY_ACTION_ID,
   /* S3PutObjectACLAction: */
   S3_ADDB_S3_PUT_OBJECT_ACL_ACTION_ID,
   /* S3PutObjectAction: */

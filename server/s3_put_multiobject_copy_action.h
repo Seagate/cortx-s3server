@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_MULTIOBJECT_COPY_ACTION_H__
-#define __S3_SERVER_S3_MULTIOBJECT_COPY_ACTION_H__
+#ifndef __S3_SERVER_S3_PUT_MULTIPART_COPY_ACTION_H__
+#define __S3_SERVER_S3_PUT_MULTIPART_COPY_ACTION_H__
 
 #include <cstddef>
 #include <cstdint>
@@ -56,7 +56,7 @@ enum class S3CopyPartActionState {
 
 class S3ObjectDataCopier;
 
-class S3MultiObjectCopyAction : public S3PutObjectActionBase {
+class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   std::string auth_acl;
   S3CopyPartActionState s3_copy_part_action_state;
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
@@ -103,7 +103,7 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void check_destination_bucket_authorization_failed();
 
  public:
-  S3MultiObjectCopyAction(
+  S3PutMultipartCopyAction(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory = nullptr,
@@ -155,66 +155,66 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void remove_old_object_version_metadata();
   void delete_new_object();
 
-  friend class S3MultiObjectCopyActionTest;
+  friend class S3PutMultipartCopyActionTest;
 
-  FRIEND_TEST(S3MultiObjectCopyActionTest, GetSourceBucketAndObjectSuccess);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, GetSourceBucketAndSpecialObjectSuccess);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, UIGetSourceBucketAndObjectSuccess);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, GetSourceBucketAndObjectFailure);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, FetchSourceBucketInfoFailedMissing);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest, GetSourceBucketAndObjectSuccess);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, GetSourceBucketAndSpecialObjectSuccess);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, UIGetSourceBucketAndObjectSuccess);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, GetSourceBucketAndObjectFailure);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, FetchSourceBucketInfoFailedMissing);
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               FetchSourceBucketInfoFailedFailedToLaunch);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, FetchSourceBucketInfoFailedInternalError);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, FetchSourceObjectInfoListIndexNull);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, FetchSourceObjectInfoListIndexGood);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest, FetchSourceBucketInfoFailedInternalError);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, FetchSourceObjectInfoListIndexNull);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, FetchSourceObjectInfoListIndexGood);
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               FetchSourceObjectInfoSuccessGreaterThan5GB);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, FetchSourceObjectInfoSuccessLessThan5GB);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest, FetchSourceObjectInfoSuccessLessThan5GB);
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               ValidateCopyObjectRequestSourceBucketEmpty);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               ValidateCopyObjectRequestMetadataDirectiveReplace);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               ValidateCopyObjectRequestMetadataDirectiveInvalid);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               ValidateCopyObjectRequestTaggingDirectiveReplace);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               ValidateCopyObjectRequestTaggingDirectiveInvalid);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               ValidateCopyObjectRequestSourceAndDestinationSame);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, ValidateCopyObjectRequestSuccess);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest, ValidateCopyObjectRequestSuccess);
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               FetchDestinationBucketInfoFailedMetadataMissing);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               FetchDestinationBucketInfoFailedFailedToLaunch);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               FetchDestinationBucketInfoFailedInternalError);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, FetchDestinationObjectInfoFailed);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, FetchDestinationObjectInfoSuccess);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CreateObjectFirstAttempt);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CreateOneOrMoreObjects);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CreateObjectSecondAttempt);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CreateObjectFailedTestWhileShutdown);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest, FetchDestinationObjectInfoFailed);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, FetchDestinationObjectInfoSuccess);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CreateObjectFirstAttempt);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CreateOneOrMoreObjects);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CreateObjectSecondAttempt);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CreateObjectFailedTestWhileShutdown);
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               CreateObjectFailedWithCollisionExceededRetry);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CreateObjectFailedWithCollisionRetry);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CreateObjectFailedTest);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CreateObjectFailedToLaunchTest);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CreateNewOidTest);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, CopyFragments);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, ZeroSizeObject);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SaveMetadata);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SaveObjectMetadataFailed);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SendResponseWhenShuttingDown);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SendErrorResponse);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SendSuccessResponse);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SendSuccessResponseAtEnd);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SendSuccessResponseSpread);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SendFailedResponse);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SendFailedResponseAtEnd);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, SendFailedResponseSpread);
-  FRIEND_TEST(S3MultiObjectCopyActionTest, DestinationAuthorization);
-  FRIEND_TEST(S3MultiObjectCopyActionTest,
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CreateObjectFailedWithCollisionRetry);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CreateObjectFailedToLaunchTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CreateNewOidTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, CopyFragments);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, ZeroSizeObject);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SaveMetadata);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SaveObjectMetadataFailed);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SendResponseWhenShuttingDown);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SendErrorResponse);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SendSuccessResponseAtEnd);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SendSuccessResponseSpread);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SendFailedResponse);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SendFailedResponseAtEnd);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, SendFailedResponseSpread);
+  FRIEND_TEST(S3PutMultipartCopyActionTest, DestinationAuthorization);
+  FRIEND_TEST(S3PutMultipartCopyActionTest,
               DestinationAuthorizationSourceTagsAndACLHeader);
 };
-#endif  // __S3_SERVER_S3_MULTIOBJECT_COPY_ACTION_H__
+#endif  // __S3_SERVER_S3_PUT_MULTIPART_COPY_ACTION_H__
