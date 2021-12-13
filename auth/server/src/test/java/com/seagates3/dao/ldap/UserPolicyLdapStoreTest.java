@@ -7,6 +7,8 @@ import static org.mockito.Matchers.anyString;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -46,7 +48,8 @@ import com.seagates3.model.UserPolicy;
                                   new LDAPModification());
     UserPolicyLdapStore userPolicyLdapStore = new UserPolicyLdapStore();
     userPolicyLdapStore.attach(userPolicy);
-    assert(true);
+
+    verifyLDAPUtilsModifyCalls();
   }
 
   @Test public void testDetachSuccess() throws Exception {
@@ -54,7 +57,8 @@ import com.seagates3.model.UserPolicy;
                                   new LDAPModification());
     UserPolicyLdapStore userPolicyLdapStore = new UserPolicyLdapStore();
     userPolicyLdapStore.detach(userPolicy);
-    assert(true);
+
+    verifyLDAPUtilsModifyCalls();
   }
 
   @Test public void testAttachFailed() throws Exception {
@@ -116,4 +120,9 @@ import com.seagates3.model.UserPolicy;
 
     return policy;
   }
+
+ private void verifyLDAPUtilsModifyCalls() throws LDAPException {
+	    PowerMockito.verifyStatic(Mockito.times(2));
+	    LDAPUtils.modify(Matchers.anyString(), Matchers.any(LDAPModification.class));
+ }
 }
