@@ -39,6 +39,7 @@ class S3PutMultiObjectCopyAction : public S3PutObjectActionBase {
 
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::unique_ptr<S3ObjectDataCopier> object_data_copier;
+  size_t total_data_to_stream;
   struct m0_uint128 old_object_oid;
   int old_layout_id;
   struct m0_uint128 new_object_oid;
@@ -48,6 +49,8 @@ class S3PutMultiObjectCopyAction : public S3PutObjectActionBase {
   std::shared_ptr<S3MotrWiter> motr_writer = NULL;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer = nullptr;
   std::string auth_acl;
+  int max_parallel_copy = 0;
+  bool response_started = false;
 
   int part_number;
   std::string upload_id;
@@ -95,7 +98,9 @@ class S3PutMultiObjectCopyAction : public S3PutObjectActionBase {
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
   void setup_steps();
+  std::string get_response_xml();
   // void start();
+  void set_authorization_meta();
   void set_source_bucket_authorization_metadata();
   void check_source_bucket_authorization();
   void check_source_bucket_authorization_success();
@@ -111,14 +116,17 @@ class S3PutMultiObjectCopyAction : public S3PutObjectActionBase {
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
+  void initiate_copy_object();
   void copy_object();
-
-  void copy_object_successful();
+  bool copy_object_cb();
+  void copy_object_success();
   void copy_object_failed();
 
   void save_metadata();
   void save_object_metadata_success();
   void save_metadata_failed();
+  void start_response();
+  bool if_source_and_destination_same();
   void send_response_to_s3_client();
 
   // Rollback tasks
