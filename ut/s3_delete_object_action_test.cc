@@ -442,9 +442,7 @@ TEST_F(S3DeleteObjectActionTest, DeleteHandlerInEnabledState) {
   EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
               reset_date_time_to_current()).Times(1);
 
-  std::map<std::string, std::string> in_headers_copy;
-  in_headers_copy.insert(
-      std::pair<std::string, std::string>("x-amz-meta-a", "true"));
+  std::map<std::string, std::string> in_headers_copy{{"x-amz-meta-a", "true"}};
 
   EXPECT_CALL(*(mock_request), get_in_headers_copy()).Times(1).WillOnce(
       ReturnRef(in_headers_copy));
