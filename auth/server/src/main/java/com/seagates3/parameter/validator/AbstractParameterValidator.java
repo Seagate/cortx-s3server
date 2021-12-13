@@ -22,6 +22,8 @@ package com.seagates3.parameter.validator;
 
 import java.util.Map;
 
+import com.seagates3.constants.APIRequestParamsConstants;
+
 /**
  * Abstract class for Validator classes.
  */
@@ -63,28 +65,28 @@ public abstract class AbstractParameterValidator {
      * @return true if input is valid.
      */
     public Boolean isValidListParams(Map<String, String> requestBody) {
-        if (requestBody.containsKey("PathPrefix")) {
-            if (!S3ParameterValidatorUtil.isValidPathPrefix(
-                    requestBody.get("PathPrefix"))) {
+       if (requestBody.containsKey(APIRequestParamsConstants.PATH_PREFIX)) {
+         if (!S3ParameterValidatorUtil.isValidPathPrefix(
+                  requestBody.get(APIRequestParamsConstants.PATH_PREFIX))) {
                 return false;
             }
         }
 
-        if (requestBody.containsKey("MaxItems")) {
-            if (!S3ParameterValidatorUtil.isValidMaxItems(
-                    requestBody.get("MaxItems"))) {
+        if (requestBody.containsKey(APIRequestParamsConstants.MAX_ITEMS)) {
+          if (!S3ParameterValidatorUtil.isValidMaxItems(
+                   requestBody.get(APIRequestParamsConstants.MAX_ITEMS))) {
                 return false;
             }
         }
 
-        if (requestBody.containsKey("Marker")) {
-            return S3ParameterValidatorUtil.isValidMarker(
-                    requestBody.get("Marker"));
+        if (requestBody.containsKey(APIRequestParamsConstants.MARKER)) {
+          return S3ParameterValidatorUtil.isValidMarker(
+              requestBody.get(APIRequestParamsConstants.MARKER));
         }
 
-        if (requestBody.containsKey("OnlyAttached")) {
+        if (requestBody.containsKey(APIRequestParamsConstants.ONLY_ATTACHED)) {
           return S3ParameterValidatorUtil.isValidOnlyAttached(
-              requestBody.get("OnlyAttached"));
+              requestBody.get(APIRequestParamsConstants.ONLY_ATTACHED));
         }
 
         return true;

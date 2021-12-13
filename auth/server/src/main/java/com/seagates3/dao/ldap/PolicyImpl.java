@@ -104,4 +104,12 @@ class PolicyImpl implements PolicyDAO {
     }
     return null;
   }
+
+  @Override public List<Policy> findByIds(Map<String, Object> dataMap)
+      throws DataAccessException {
+    AuthStoreFactory factory = new AuthStoreFactory();
+    AuthStore storeInstance = factory.createAuthStore(POLICY_PREFIX);
+    List<Policy> policies = storeInstance.findByIds(dataMap, POLICY_PREFIX);
+    return policies;
+  }
 }
