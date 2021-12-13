@@ -79,8 +79,8 @@ void S3DeleteObjectAction::setup_steps() {
 
   /*
   delete handler
-    probable delete   // if bucket is suspended
-    create delete marker //if bucket is enabled
+    probable delete   // if bucket versioning is suspended
+    create delete marker // if bucket versioning is enabled
   object_metadata_handler
     save delete_marker  // if bucket is suspended
     delete_metadata //if bucket is enabled
