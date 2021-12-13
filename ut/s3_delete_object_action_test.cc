@@ -18,8 +18,8 @@
  *
  */
 
-#include <memory>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "mock_s3_motr_wrapper.h"
