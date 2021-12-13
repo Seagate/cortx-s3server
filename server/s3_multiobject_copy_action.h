@@ -101,7 +101,6 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void check_source_bucket_authorization_failed();
   void set_source_bucket_authorization_metadata();
   void check_destination_bucket_authorization_failed();
-  void copy_each_part_fragment(int index);
 
  public:
   S3MultiObjectCopyAction(
@@ -122,29 +121,20 @@ class S3MultiObjectCopyAction : public S3PutObjectActionBase {
   void check_part_details();
   void fetch_multipart_metadata();
   void fetch_multipart_failed();
-  void validate_copyobject_request();
+  void validate_multipart_partcopy_request();
   void fetch_part_info();
   void fetch_part_info_success();
   void fetch_part_info_failed();
-  void create_target_object();
+  void create_part_object();
   void create_objects();
-  void create_parts_fragments(int index);
-  void create_part_fragment_successful();
-  void create_part_fragment_failed();
-  void create_object();
-  void create_object_successful();
-  void create_object_failed();
-  void initiate_copy_object();
-  void copy_object();
-  bool copy_object_cb();
-  void copy_object_success();
-  void copy_object_failed();
-  void copy_fragments();
-  void copy_part_fragment_success(int index);
-  void copy_part_fragment_failed(int index);
-  void save_fragment_metadata();
-  void save_fragment_metadata_successful();
-  void save_fragment_metadata_failed();
+  void create_part();
+  void create_part_object_successful();
+  void create_part_object_failed();
+  void initiate_part_copy();
+  void copy_part_object();
+  bool copy_part_object_cb();
+  void copy_part_object_success();
+  void copy_part_object_failed();
   void save_metadata();
   void save_metadata_failed();
   void save_object_metadata_success();
