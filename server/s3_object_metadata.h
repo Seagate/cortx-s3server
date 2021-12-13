@@ -282,7 +282,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   // delete marker handler
   virtual void set_delete_marker();
-  bool get_delete_marker();
+  bool get_delete_marker() const;
 
   std::string get_owner_name();
   std::string get_owner_id();
