@@ -7,7 +7,6 @@ import static org.mockito.Matchers.anyString;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -124,7 +123,6 @@ import com.seagates3.model.UserPolicy;
  private
   void verifyLDAPUtilsModifyCalls() throws LDAPException {
     PowerMockito.verifyStatic(Mockito.times(2));
-    LDAPUtils.modify(Matchers.anyString(),
-                     Matchers.any(LDAPModification.class));
+    LDAPUtils.modify(anyString(), any(LDAPModification.class));
   }
 }
