@@ -570,11 +570,11 @@ class ConfigCmd(SetupCmd):
     libevent_pool_initial_size = int(s3configfileconfstore.get_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_INITIAL_SIZE"))
     libevent_pool_max_threshold = int(s3configfileconfstore.get_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_MAX_THRESHOLD"))
     if "small" == self.setup_size:
-      libevent_pool_initial_size = libevent_pool_initial_size / 2;
-      libevent_pool_max_threshold = libevent_pool_max_threshold / 2;
+      libevent_pool_initial_size = int(libevent_pool_initial_size / 2);
+      libevent_pool_max_threshold = int(libevent_pool_max_threshold / 2);
     elif "medium" == self.setup_size:
-      libevent_pool_initial_size = (libevent_pool_initial_size * 3) / 4;
-      libevent_pool_max_threshold = (libevent_pool_max_threshold * 3) / 4;
+      libevent_pool_initial_size = int((libevent_pool_initial_size * 3) / 4);
+      libevent_pool_max_threshold = int((libevent_pool_max_threshold * 3) / 4);
     else:
       libevent_pool_initial_size = libevent_pool_initial_size
       libevent_pool_max_threshold = libevent_pool_max_threshold
