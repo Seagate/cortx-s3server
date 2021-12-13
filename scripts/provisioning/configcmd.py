@@ -567,8 +567,8 @@ class ConfigCmd(SetupCmd):
 
     # load config file, read required keysand modify as per size
     s3configfileconfstore = S3CortxConfStore(f'yaml://{configfile}', 'update_limits')
-    libevent_pool_initial_size = int(s3configfileconfstore.get_config("S3_SERVER_CONFIG>S3_LIBEVENT_POOL_INITIAL_SIZE"))
-    libevent_pool_max_threshold = int(s3configfileconfstore.get_config("S3_SERVER_CONFIG>S3_LIBEVENT_POOL_MAX_THRESHOLD"))
+    libevent_pool_initial_size = int(s3configfileconfstore.get_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_INITIAL_SIZE"))
+    libevent_pool_max_threshold = int(s3configfileconfstore.get_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_MAX_THRESHOLD"))
     if "small" == self.setup_size:
       libevent_pool_initial_size = libevent_pool_initial_size / 2;
       libevent_pool_max_threshold = libevent_pool_max_threshold / 2;
@@ -578,8 +578,8 @@ class ConfigCmd(SetupCmd):
     else:
       libevent_pool_initial_size = libevent_pool_initial_size
       libevent_pool_max_threshold = libevent_pool_max_threshold
-    s3configfileconfstore.set_config("S3_SERVER_CONFIG>S3_LIBEVENT_POOL_INITIAL_SIZE", libevent_pool_initial_size, True)
-    s3configfileconfstore.set_config("S3_SERVER_CONFIG>S3_LIBEVENT_POOL_MAX_THRESHOLD", libevent_pool_max_threshold, True)
+    s3configfileconfstore.set_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_INITIAL_SIZE", libevent_pool_initial_size, True)
+    s3configfileconfstore.set_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_MAX_THRESHOLD", libevent_pool_max_threshold, True)
 
     self.logger.info("Update memory buffer sizes completed")
 
