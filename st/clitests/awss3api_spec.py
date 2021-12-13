@@ -2022,43 +2022,6 @@ AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")
 AwsTest('Aws can delete bucket').delete_bucket("target-bucket")\
     .execute_test().command_is_successful()
 
-#******** Create Bucket ********
-AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
-
-#******** Get Bucket Versioning default status ********
-AwsTest('Aws can get bucket versioning default status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_be_empty()
-
-#******** Enable Versioning on Bucket ********
-AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("seagatebucket", "Enabled").execute_test().command_is_successful()
-
-#******** Get Bucket Versioning Enabled status ********
-AwsTest('Aws can get bucket versioning Enabled status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_have("Enabled")
-
-# TODO: uncomment in specific version delete as empty bucket not possible without this api.
-#******** Put Object in Bucket Versioning Suspended status ********
-#AwsTest('Aws can get bucket versioning Suspended status').get_bucket_versioning("seagatebucket").execute_test().command_response_should_have("Suspended")
-
-#******** Delete object in enable versioning state ********
-#AwsTest('Aws can delete object in versioning state').delete_object("seagatebucket", "simpleobj1").execute_test().command_is_successful()
-
-#************Negative case to get versioning status of non-existant bucket*******
-AwsTest('Aws can not get versioning status of non-existant bucket').get_bucket_versioning("seagate1")\
-.execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
-
-#********** Negative case to check versioning status cannot be changed back to unversioned ***********
-
-AwsTest('Aws can not change the versioning status back to unversioned')\
-    .put_bucket_versioning("seagatebucket", "Unversioned")\
-    .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedXML")
-
-#************Negative case to enable versioning on non-existant bucket*******
-AwsTest('Aws can not enable versioning on non-existant bucket').put_bucket_versioning("seagate1", "Enabled")\
-    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
-
-#******** Delete Bucket ********
-AwsTest('Aws can delete bucket').delete_bucket("seagatebucket")\
-    .execute_test().command_is_successful()
-
 #-------------------Delete Accounts------------------
 test_msg = "Delete account sourceAccount"
 s3test_access_key = S3ClientConfig.access_key_id

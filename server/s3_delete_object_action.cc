@@ -77,15 +77,12 @@ void S3DeleteObjectAction::setup_steps() {
   // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
 
-  /*
-  delete handler
-    probable delete   // if bucket versioning is suspended
-    create delete marker // if bucket versioning is enabled
-  object_metadata_handler
-    save delete_marker  // if bucket versioning is suspended
-    delete_metadata // if bucket versioning is enabled
-  send_responce_to_client
-  */
+
+  // delete_handler call probable_delete if bucket versioning is suspended
+  // or disabled else in enabled case it call create_delete_marker
+  // on other hand object_metadata_handler call delete_metadata if bucket
+  // versioning is suspended or disabled else call save_delete_marker enabled
+  // versioning state
   ACTION_TASK_ADD(S3DeleteObjectAction::delete_handler, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::metadata_handler, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
@@ -181,9 +178,8 @@ void S3DeleteObjectAction::create_delete_marker() {
 
   // TODO: update null version
 
-  s3_log(S3_LOG_DEBUG, request_id, "Add delete marker4\n");
-  for (const auto& kv: request->get_in_headers_copy()) {
-    if (it.first.find("x-amz-meta-") != std::string::npos) {
+  for (const auto& it: request->get_in_headers_copy()) {
+    if (it.first.find("x-amz-meta-") == std::string::npos) {
       s3_log(S3_LOG_DEBUG, request_id,
              "Writing user metadata on object: [%s] -> [%s]\n",
              it.first.c_str(), it.second.c_str());
