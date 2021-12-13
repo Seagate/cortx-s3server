@@ -43,7 +43,7 @@ S3ObjectMetadataFactory::create_delete_marker_metadata_obj(
     const struct s3_motr_idx_layout& obj_idx_lo,
     const struct s3_motr_idx_layout& obj_ver_idx_lo) {
 
-  std::shared_ptr<S3ObjectMetadata> meta =
+  auto meta =
       create_object_metadata_obj(std::move(req), obj_idx_lo, obj_ver_idx_lo);
   meta->set_delete_marker();
   return meta;
