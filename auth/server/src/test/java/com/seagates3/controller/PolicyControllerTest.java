@@ -189,33 +189,42 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
-  @Test public void getPolicyVersionSuccessful()
-	      throws DataAccessException {
-	  policy.setPolicyDoc("{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
-	  Mockito.when(mockPolicyDao.findByArn(
-              "arn:aws:iam::352620587691:policy/policy1", account))
-	  			.thenReturn(policy);
-	  ServerResponse response = policyController.getPolicyVersion();
-	  Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
-	  }
-  @Test public void getPolicyVersionFailure()
-	      throws DataAccessException {
-	  requestBody.put("VersionId", "v2");
-	  policy.setPolicyDoc("{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
-	  Mockito.when(mockPolicyDao.findByArn(
-              "arn:aws:iam::352620587691:policy/policy1", account))
-	  			.thenReturn(policy);
-	  ServerResponse response = policyController.getPolicyVersion();
-	  Assert.assertEquals(HttpResponseStatus.NOT_FOUND, response.getResponseStatus());
-	  }
+  @Test public void getPolicyVersionSuccessful() throws DataAccessException {
+    policy.setPolicyDoc(
+        "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
+        "\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":" +
+        "\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
+    ServerResponse response = policyController.getPolicyVersion();
+    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+  }
+  @Test public void getPolicyVersionFailure() throws DataAccessException {
+    requestBody.put("VersionId", "v2");
+    policy.setPolicyDoc(
+        "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
+        "\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":" +
+        "\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
+    ServerResponse response = policyController.getPolicyVersion();
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                        response.getResponseStatus());
+  }
   @Test public void getPolicyVersionNotAttachableFailure()
-	      throws DataAccessException {
-	  policy.setIsPolicyAttachable("false");
-	  policy.setPolicyDoc("{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
-	  Mockito.when(mockPolicyDao.findByArn(
-              "arn:aws:iam::352620587691:policy/policy1", account))
-	  			.thenReturn(policy);
-	  ServerResponse response = policyController.getPolicyVersion();
-	  Assert.assertEquals(HttpResponseStatus.NOT_FOUND, response.getResponseStatus());
-	  }
+      throws DataAccessException {
+    policy.setIsPolicyAttachable("false");
+    policy.setPolicyDoc(
+        "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
+        "\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":" +
+        "\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
+    ServerResponse response = policyController.getPolicyVersion();
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                        response.getResponseStatus());
+  }
 }
