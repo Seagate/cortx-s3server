@@ -21,13 +21,16 @@
 package com.seagates3.controller;
 
 import java.lang.reflect.Constructor;
+import com.seagates3.constants.APIRequestParamsConstants;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
-
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.seagates3.dao.ldap.PolicyImpl;
+import com.seagates3.dao.ldap.UserImpl;
 import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.authentication.SignatureValidator;
@@ -38,6 +41,7 @@ import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.authserver.IAMResourceMapper;
 import com.seagates3.authserver.ResourceMap;
 import com.seagates3.exception.AuthResourceNotFoundException;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.InternalServerException;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidArgumentException;
@@ -46,6 +50,7 @@ import com.seagates3.exception.InvalidUserException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
+import com.seagates3.model.Policy;
 import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
@@ -55,6 +60,7 @@ import org.json.JSONObject;
 import org.json.JSONException;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.HashMap;
 
 public
 class IAMController {
@@ -261,6 +267,7 @@ class IAMController {
             !requestAction.equals("ValidatePolicy") &&
             !"AuthorizeUser".equals(requestAction)) {
           requestor = RequestorService.getRequestor(clientRequestToken);
+          loadRequestor(requestor);
         }
       }
       catch (InvalidAccessKeyException ex) {
@@ -289,8 +296,9 @@ class IAMController {
         requestor.setName(requestBody.get("RequestorUserName"));
         requestor.setAccount(account);
 
-        LOGGER.info("Authorizing user: " + requestor.getName() + " account: " +
-                    requestor.getAccount().getName());
+        LOGGER.debug("Authorizing user: " + requestor.getName() + " account: " +
+                     requestor.getAccount().getName());
+        loadRequestor(requestor);
         serverResponse = new Authorizer().authorize(requestor, requestBody);
         return serverResponse;
       } else if (requestAction.equals("ValidateACL")) {
@@ -319,15 +327,16 @@ class IAMController {
       if (requestAction.equals("AuthenticateUser")) {
         serverResponse = responseGenerator.generateAuthenticatedResponse(
             requestor, clientRequestToken);
-        LOGGER.info("Request is authenticated for user: " +
-                    requestor.getName() + " account: " +
-                    requestor.getAccount().getName());
+        LOGGER.debug("Request is authenticated for user: " +
+                     requestor.getName() + " account: " +
+                     requestor.getAccount().getName());
 
         return serverResponse;
       } else if (requestAction.equals("AuthenticateAndAuthorize")) {
-        LOGGER.info("User is Authenticated hence Authorizing user: " +
-                    requestor.getName() + " account: " +
-                    requestor.getAccount().getName());
+        LOGGER.debug("User is authenticated hence authorizing  " +
+                     requestor.getName() + " of account: " +
+                     requestor.getAccount().getName());
+        loadRequestor(requestor);
         serverResponse = new Authorizer().authorize(requestor, requestBody);
         return serverResponse;
       }
@@ -368,25 +377,43 @@ class IAMController {
           requestAction.equals("GetTempAuthCredentials") ||
           requestAction.equals("UpdateAccountLoginProfile") ||
           requestAction.equals("DeleteAccount"))) {
-      try {
-        if (RootPermissionAuthorizer.getInstance().containsAction(
-                requestAction)) {
-          new IAMApiAuthorizer().authorizeRootUser(requestor, requestBody);
-        } else {
-          new IAMApiAuthorizer().authorize(requestor, requestBody);
-        }
-        LOGGER.info("Request is authorized for user: " + requestor.getName() +
-                    " account: " + requestor.getAccount());
-      }
-      catch (InvalidUserException e) {
-        LOGGER.error(e.getServerResponse().getResponseBody());
-        return e.getServerResponse();
+      // Authorize with IAM Policy
+      serverResponse = new Authorizer().authorize(requestor, requestBody);
+      if (serverResponse != null &&
+          serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
+        return serverResponse;
       }
     }
 
     return performAction(resourceMap, requestBody, requestor);
   }
-
+  /**
+   * Below will load requestor object with user and policy data using ldap calls
+   * @param requestor
+   */
+ private
+  void loadRequestor(Requestor requestor) {
+    try {
+      requestor.setUser(new UserImpl().findByUserId(
+          requestor.getAccount().getName(), requestor.getId()));
+      List<String> policyDocList = new ArrayList<>();
+      if (!Authorizer.isRootUser(requestor.getUser())) {
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put(APIRequestParamsConstants.ACCOUNT_NAME,
+                    requestor.getUser().getAccountName());
+        dataMap.put(APIRequestParamsConstants.POLICY_IDS,
+                    requestor.getUser().getPolicyIds());
+        List<Policy> attachedPolicies = new PolicyImpl().findByIds(dataMap);
+        for (Policy policy : attachedPolicies) {
+          policyDocList.add(policy.getPolicyDoc());
+        }
+      }
+      requestor.setPolicyDocuments(policyDocList);
+    }
+    catch (DataAccessException e) {
+      LOGGER.error("Exception while loading requestor " + e);
+    }
+  }
   /**
    * Validate the request parameters.
    *
@@ -534,5 +561,4 @@ class IAMController {
     finally { return user_Identity.toString(); }
   }
 }
-
 

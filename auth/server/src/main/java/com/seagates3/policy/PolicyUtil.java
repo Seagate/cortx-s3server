@@ -23,6 +23,9 @@ package com.seagates3.policy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import com.seagates3.model.Policy;
 
 public
 class PolicyUtil {
@@ -47,7 +50,11 @@ class PolicyUtil {
   public static String
   getResourceFromResourceArn(String arn) {
     String tokens[] = arn.split(":");
-    return tokens[5];
+    if (tokens.length > 5) {
+      return tokens[5];
+    } else {
+      return arn;
+    }
   }
 
   /**
@@ -122,6 +129,7 @@ class PolicyUtil {
    */
  public
   static boolean isPatternMatching(String input, String pattern) {
+    if (input == null) return false;
     int inputLength = input.length();
     int patternLength = pattern.length();
     if (patternLength == 0) return (inputLength == 0);
@@ -225,5 +233,20 @@ class PolicyUtil {
  public
   static String getKey(String policyName, String accountid) {
     return policyName + "#" + accountid;
+  }
+
+  /**
+   * Below will convert policy List to policyMap key:policy_id value:policy json
+   *
+   * @param policyList
+   * @return
+   */
+ public
+  static Map<String, String> convertPolicyListToMap(List<Policy> policyList) {
+    Map<String, String> policyMap = new HashMap<>();
+    for (Policy policy : policyList) {
+      policyMap.put(policy.getPolicyId(), policy.getPolicyDoc());
+    }
+    return policyMap;
   }
 }
