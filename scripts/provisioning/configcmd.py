@@ -134,11 +134,6 @@ class ConfigCmd(SetupCmd):
                               'yaml://')
     self.logger.info("validate s3 cluster config file completed")
 
-    # update memory limits
-    self.logger.info("updating memory limits started")
-    self.update_memory_limits()
-    self.logger.info("updating memory limits complete")
-
     self.logger.info("Backing up s3 cluster sample file to temp dir started")
     self.make_sample_old_files([self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE')])
     self.logger.info("Backing up s3 cluster sample file to temp dir complete")
@@ -161,6 +156,11 @@ class ConfigCmd(SetupCmd):
                                 self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 'yaml://')
     self.logger.info("validate s3 config files completed")
+
+    # update memory limits
+    self.logger.info("updating memory limits started")
+    self.update_memory_limits()
+    self.logger.info("updating memory limits complete")
 
     self.logger.info("create symbolic link of FID config files started")
     self.create_symbolic_link_fid()
@@ -575,9 +575,6 @@ class ConfigCmd(SetupCmd):
     elif "medium" == self.setup_size:
       libevent_pool_initial_size = (libevent_pool_initial_size * 3) / 4;
       libevent_pool_max_threshold = (libevent_pool_max_threshold * 3) / 4;
-    elif "large" == self.setup_size:
-      libevent_pool_initial_size = libevent_pool_initial_size
-      libevent_pool_max_threshold = libevent_pool_max_threshold
     else:
       libevent_pool_initial_size = libevent_pool_initial_size
       libevent_pool_max_threshold = libevent_pool_max_threshold
