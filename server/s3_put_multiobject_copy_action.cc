@@ -38,19 +38,6 @@
 
 extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
-const uint64_t MaxCopyObjectSourceSize = 5368709120UL;  // 5GB
-
-const char InvalidRequestSourceObjectSizeGreaterThan5GB[] =
-    "The specified copy source is larger than the maximum allowable size for a "
-    "copy source: 5368709120";
-const char InvalidRequestSourceAndDestinationSame[] =
-    "This copy request is illegal because it is trying to copy an object to "
-    "itself without changing the object's metadata, storage class, website "
-    "redirect location or encryption attributes.";
-
-const char DirectiveValueReplace[] = "REPLACE";
-const char DirectiveValueCOPY[] = "COPY";
-
 S3PutMultipartCopyAction::S3PutMultipartCopyAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
@@ -145,44 +132,7 @@ void S3PutMultipartCopyAction::setup_steps() {
 
 // Validate source bucket and object
 void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  auto meta_directive_hdr =
-      request->get_header_value("x-amz-metadata-directive");
-  auto tagging_directive_hdr =
-      request->get_header_value("x-amz-tagging-directive");
-
-  if (!meta_directive_hdr.empty()) {
-    s3_log(S3_LOG_DEBUG, stripped_request_id,
-           "Received x-amz-metadata-directive header, value: %s",
-           meta_directive_hdr.c_str());
-    if (meta_directive_hdr == DirectiveValueReplace) {
-      s3_copy_part_action_state = S3CopyPartActionState::validationFailed;
-      set_s3_error("NotImplemented");
-      send_response_to_s3_client();
-      return;
-    } else if (meta_directive_hdr != DirectiveValueCOPY) {
-      s3_copy_part_action_state = S3CopyPartActionState::validationFailed;
-      set_s3_error("InvalidArgument");
-      send_response_to_s3_client();
-      return;
-    }
-  }
-  if (!tagging_directive_hdr.empty()) {
-    s3_log(S3_LOG_DEBUG, stripped_request_id,
-           "Received x-amz-tagging-directive header, value: %s",
-           tagging_directive_hdr.c_str());
-    if (tagging_directive_hdr == DirectiveValueReplace) {
-      s3_copy_part_action_state = S3CopyPartActionState::validationFailed;
-      set_s3_error("NotImplemented");
-      send_response_to_s3_client();
-      return;
-    } else if (tagging_directive_hdr != DirectiveValueCOPY) {
-      s3_copy_part_action_state = S3CopyPartActionState::validationFailed;
-      set_s3_error("InvalidArgument");
-      send_response_to_s3_client();
-      return;
-    }
-  }
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);  
   if (additional_bucket_name.empty() || additional_object_name.empty()) {
     set_s3_error("InvalidArgument");
     send_response_to_s3_client();
@@ -193,7 +143,7 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
     send_response_to_s3_client();
     return;
   }
-  if (MaxCopyObjectSourceSize <
+  if (MaxPartCopySourcePartSize <
       additional_object_metadata->get_content_length()) {
     s3_copy_part_action_state = S3CopyPartActionState::validationFailed;
     set_s3_error("InvalidRequest");
@@ -663,12 +613,12 @@ void S3PutMultipartCopyAction::send_response_to_s3_client() {
     if (S3CopyPartActionState::validationFailed == s3_copy_part_action_state &&
         "InvalidRequest" == get_s3_error_code()) {
       if (if_source_and_destination_same()) {  // Source and Destination same
-        error.set_auth_error_message(InvalidRequestSourceAndDestinationSame);
+        error.set_auth_error_message(InvalidRequestPartCopySourceAndDestinationSame);
       } else if (additional_object_metadata->get_content_length() >
-                 MaxCopyObjectSourceSize) {  // Source object size greater than
+                 MaxPartCopySourcePartSize) {  // Source object size greater than
                                              // 5GB
         error.set_auth_error_message(
-            InvalidRequestSourceObjectSizeGreaterThan5GB);
+            InvalidRequestSourcePartSizeGreaterThan5GB);
       }
     }
     response_xml = std::move(error.to_xml(response_started));

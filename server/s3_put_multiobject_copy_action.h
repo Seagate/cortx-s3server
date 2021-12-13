@@ -40,6 +40,16 @@
 #include "s3_probable_delete_record.h"
 #include "s3_timer.h"
 
+const uint64_t MaxPartCopySourcePartSize = 5368709120UL;  // 5GB
+
+const char InvalidRequestSourcePartSizeGreaterThan5GB[] =
+    "The specified part in copy source is larger than the maximum allowable "
+    "size for a part in copy source: 5368709120";
+const char InvalidRequestPartCopySourceAndDestinationSame[] =
+    "This upload part copy request is illegal because it is trying to copy "
+    "an object to itself without changing the object's metadata, storage "
+    "class, website redirect location or encryption attributes.";
+
 enum class S3CopyPartActionState {
   empty = 0,         // Initial state
   validationFailed,  // Any validations failed for request, including metadata
@@ -92,7 +102,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   S3Timer s3_timer;
 
   int get_part_number() {
-    return atoi((request->get_query_string_value("partNumber")).c_str());
+    return strtol((request->get_query_string_value("partNumber")).c_str(), 0, 10);
   }
 
   void set_authorization_meta();

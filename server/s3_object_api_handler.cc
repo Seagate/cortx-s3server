@@ -78,7 +78,7 @@ void S3ObjectAPIHandler::create_action() {
           break;
         case S3HttpVerb::PUT:
           if (!request->get_header_value("x-amz-copy-source").empty()) {
-            // Multipart copy
+            //  Multipart UploadPartcopy
             request->set_object_size(request->get_data_length());
             request->set_action_str("PutMultiObjectCopy");
             action = std::make_shared<S3PutMultipartCopyAction>(request);
