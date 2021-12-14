@@ -105,7 +105,7 @@ class S3PutObjectActionBase : public S3ObjectAction {
       std::shared_ptr<S3ObjectMetadata> &, struct s3_part_frag_context);
   void add_parts_fragment_oid_to_probable_dead_oid_list_success();
 
-  void startcleanup() final;
+  void startcleanup();
   void mark_new_oid_for_deletion();
   void mark_old_oid_for_deletion();
   void remove_old_oid_probable_record();

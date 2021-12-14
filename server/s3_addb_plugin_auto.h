@@ -147,6 +147,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_PUT_FI_ACTION_ID,
   /* S3PutMultiObjectAction: */
   S3_ADDB_S3_PUT_MULTI_OBJECT_ACTION_ID,
+  /* S3PutMultipartCopyAction: */
+  S3_ADDB_S3_PUT_MULTIPART_COPY_ACTION_ID,
   /* S3PutObjectACLAction: */
   S3_ADDB_S3_PUT_OBJECT_ACL_ACTION_ID,
   /* S3PutObjectAction: */
