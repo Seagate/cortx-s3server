@@ -32,7 +32,7 @@ class S3CortxMsgBus:
         """Init."""
         self._producer = None
         self._consumer = None
-        self._kafka_endpoint = "tcp://127.0.0.1:9092"
+        self._kafka_endpoint = ["tcp://127.0.0.1:9092"]
         MessageBus.init(self._kafka_endpoint)
 
     @staticmethod
