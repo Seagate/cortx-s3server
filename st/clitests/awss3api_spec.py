@@ -1823,16 +1823,23 @@ AwsTest('Can not suspend versioning on bucket')\
     .command_should_fail()\
     .command_error_should_have("OperationNotSupported")
 
-#******** Test Cleanup ********
-AwsTest('Aws can delete the object')\
+AwsTest('Aws can delete the latest version of the object (DeleteMarker)')\
     .delete_object(bucket, file)\
     .execute_test()\
     .command_is_successful()
 
-AwsTest('Aws can delete the bucket')\
-    .delete_bucket(bucket)\
-    .execute_test()\
-    .command_is_successful()
+#******** Test Cleanup ********
+# XXX: Temporarily disabled until deleting objects by version-id is supported
+# AwsTest('Aws can delete all the object versions')\
+#     .delete_object(bucket, file)\
+#     .execute_test()\
+#     .command_is_successful()
+
+# XXX: Temporarily disabled until deleting objects by version-id is supported
+# AwsTest('Aws can delete the bucket')\
+#     .delete_bucket(bucket)\
+#     .execute_test()\
+#     .command_is_successful()
 
 
 ################################################################################
