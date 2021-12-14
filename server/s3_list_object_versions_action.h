@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+ * Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   bool check_any_keys_after_prefix;
   size_t max_record_count;
   bool fetch_successful;
-  size_t key_Count;
+  size_t key_count;
   bool json_error = false;
   short retry_count = 0;
   bool response_is_truncated;
@@ -68,11 +68,13 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadata> object_metadata;
 
   // Internal functions
-  void add_marker_version(std::string key, std::string version_id);
-  void add_next_marker_version(std::string next_key, std::string next_value);
-  void add_object_version(std::string key, std::string value);
-  void add_common_prefix(std::string common_prefix);
-  bool is_prefix_in_common_prefix(std::string& prefix);
+  void add_marker_version(const std::string& key,
+                          const std::string& version_id);
+  void add_next_marker_version(const std::string& next_key,
+                               const std::string& next_value);
+  void add_object_version(const std::string& key, const std::string& value);
+  void add_common_prefix(const std::string& common_prefix);
+  bool is_prefix_in_common_prefix(const std::string& prefix);
   std::string& get_response_xml();
   std::string get_encoded_key_value(const std::string& key_value);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+ * Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,9 +96,6 @@ class S3ListObjectVersionsTest : public testing::Test {
   std::map<std::string, std::pair<int, std::string>> return_keys_values;
   std::map<std::string, std::string> input_headers;
   std::string bucket_name, object_name;
-  int call_count_one;
-
-  void func_callback_one() { call_count_one += 1; }
 };
 
 void S3ListObjectVersionsTest::SetUp() {
@@ -118,7 +115,7 @@ TEST_F(S3ListObjectVersionsTest, Constructor) {
   EXPECT_TRUE(action_under_test_ptr->object_metadata_factory != nullptr);
   EXPECT_FALSE(action_under_test_ptr->fetch_successful);
   EXPECT_FALSE(action_under_test_ptr->response_is_truncated);
-  EXPECT_EQ(0, action_under_test_ptr->key_Count);
+  EXPECT_EQ(0, action_under_test_ptr->key_count);
   EXPECT_EQ("", action_under_test_ptr->last_key);
   EXPECT_EQ("", action_under_test_ptr->last_object_checked);
   EXPECT_EQ(0, action_under_test_ptr->versions_list.size());
@@ -138,8 +135,7 @@ TEST_F(S3ListObjectVersionsTest, FetchBucketInfoFailedMissing) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
   action_under_test_ptr->fetch_bucket_info_failed();
-  EXPECT_STREQ("NoSuchBucket",
-               action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_EQ("NoSuchBucket", action_under_test_ptr->get_s3_error_code());
 }
 
 TEST_F(S3ListObjectVersionsTest, FetchBucketInfoFailedToLaunch) {
@@ -150,8 +146,7 @@ TEST_F(S3ListObjectVersionsTest, FetchBucketInfoFailedToLaunch) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
   action_under_test_ptr->fetch_bucket_info_failed();
-  EXPECT_STREQ("ServiceUnavailable",
-               action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_EQ("ServiceUnavailable", action_under_test_ptr->get_s3_error_code());
 }
 
 TEST_F(S3ListObjectVersionsTest, FetchBucketInfoFailedInternalError) {
@@ -162,8 +157,7 @@ TEST_F(S3ListObjectVersionsTest, FetchBucketInfoFailedInternalError) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->fetch_bucket_info_failed();
-  EXPECT_STREQ("InternalError",
-               action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_EQ("InternalError", action_under_test_ptr->get_s3_error_code());
 }
 
 TEST_F(S3ListObjectVersionsTest, ValidateRequestInvalidArgument) {
@@ -246,8 +240,7 @@ TEST_F(S3ListObjectVersionsTest, GetNextVersionsFailed) {
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
 
   action_under_test_ptr->get_next_versions_failed();
-  EXPECT_STREQ("InternalError",
-               action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_EQ("InternalError", action_under_test_ptr->get_s3_error_code());
 }
 
 TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessful) {
@@ -261,8 +254,6 @@ TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessful) {
   return_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(10, "keyval")));
 
-  action_under_test_ptr->request_prefix.assign("");
-  action_under_test_ptr->request_delimiter.assign("");
   action_under_test_ptr->max_keys = 3;
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
@@ -288,8 +279,6 @@ TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessfulJsonError) {
   return_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(10, "keyval")));
 
-  action_under_test_ptr->request_prefix.assign("");
-  action_under_test_ptr->request_delimiter.assign("");
   action_under_test_ptr->max_keys = 3;
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
@@ -302,7 +291,6 @@ TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessfulJsonError) {
       S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->clear_tasks();
   action_under_test_ptr->get_next_versions_successful();
-  // Expect no versions in the version_list.
   EXPECT_EQ(0, action_under_test_ptr->versions_list.size());
 }
 
@@ -315,8 +303,7 @@ TEST_F(S3ListObjectVersionsTest, SendResponseToClientServiceUnavailable) {
   EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
 
   action_under_test_ptr->check_shutdown_and_rollback();
-  EXPECT_STREQ("ServiceUnavailable",
-               action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_EQ("ServiceUnavailable", action_under_test_ptr->get_s3_error_code());
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
 

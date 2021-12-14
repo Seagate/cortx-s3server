@@ -300,10 +300,10 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
-  bool is_latest() {
+  bool is_latest() const {
     return latest;
   };
-  bool is_delete_marker() {
+  bool is_delete_marker() const {
     return delete_marker;
   };
 
