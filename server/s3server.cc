@@ -33,6 +33,7 @@
 #include "fid/fid.h"
 #include "murmur3_hash.h"
 #include "s3_bucket_metadata_cache.h"
+#include "s3_data_usage.h"
 #include "s3_motr_layout.h"
 #include "s3_common_utilities.h"
 #include "s3_daemonize_server.h"
@@ -68,7 +69,7 @@
 #define BUCKET_METADATA_LIST_INDEX_OID_U_LO 2
 #define OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO 3
 #define GLOBAL_INSTANCE_INDEX_U_LO 4
-#define BUCKET_OBJECT_COUNT_INDEX_OID_U_LO 5
+#define DATA_USAGE_ACCOUNTS_INDEX_OID_U_LO 5
 
 extern "C" void mem_log_msg_func(int mempool_log_level, const char *msg) {
   if (mempool_log_level == MEMPOOL_LOG_INFO) {
@@ -97,7 +98,7 @@ struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 // index will have s3server instance information
 struct s3_motr_idx_layout global_instance_list_index_layout;
 // index will have s3server instance information
-struct s3_motr_idx_layout bucket_object_count_index_layout;
+struct s3_motr_idx_layout data_usage_accounts_index_layout;
 // objects listed in this index are probable delete candidates and not absolute.
 struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
@@ -1095,10 +1096,10 @@ int main(int argc, char **argv) {
          global_instance_list_index_layout.pver.f_key,
          global_instance_list_index_layout.layout_type);
 
-  // bucket_object_count_index_layout - will hold accountid/bucket_name as key,
+  // data_usage_accounts_index_layout - will hold accountid/bucket_name as key,
   // bucket medata as value.
-  rc = create_global_index(bucket_object_count_index_layout,
-                           BUCKET_OBJECT_COUNT_INDEX_OID_U_LO);
+  rc = create_global_index(data_usage_accounts_index_layout,
+                           DATA_USAGE_ACCOUNTS_INDEX_OID_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
@@ -1109,11 +1110,11 @@ int main(int argc, char **argv) {
   s3_log(S3_LOG_DEBUG, nullptr,
          "Bucket object count index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
          "layout_type: 0x%x",
-         bucket_object_count_index_layout.oid.u_hi,
-         bucket_object_count_index_layout.oid.u_lo,
-         bucket_object_count_index_layout.pver.f_container,
-         bucket_object_count_index_layout.pver.f_key,
-         bucket_object_count_index_layout.layout_type);
+         data_usage_accounts_index_layout.oid.u_hi,
+         data_usage_accounts_index_layout.oid.u_lo,
+         data_usage_accounts_index_layout.pver.f_container,
+         data_usage_accounts_index_layout.pver.f_key,
+         data_usage_accounts_index_layout.layout_type);
 
   extern struct m0_config motr_conf;
 
@@ -1257,6 +1258,9 @@ int main(int argc, char **argv) {
           g_option_instance->get_bucket_metadata_cache_max_size(),
           g_option_instance->get_bucket_metadata_cache_expire_sec(),
           g_option_instance->get_bucket_metadata_cache_refresh_sec()));
+
+  S3DataUsageCache::get_instance()->set_max_cache_size(
+      g_option_instance->get_data_usage_accounts_cache_max_size());
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()

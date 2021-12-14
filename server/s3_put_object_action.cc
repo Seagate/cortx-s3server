@@ -32,7 +32,7 @@
 #include "s3_m0_uint128_helper.h"
 #include "s3_perf_metrics.h"
 #include "s3_common_utilities.h"
-#include "s3_bucket_counters.h"
+#include "s3_data_usage.h"
 
 extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
@@ -608,7 +608,7 @@ void S3PutObjectAction::save_bucket_counters() {
     inc_obj_size = new_object_metadata->get_content_length();
   }
 
-  S3BucketCapacityCache::update_bucket_capacity(
+  S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3PutObjectAction::save_bucket_counters_success, this),
       std::bind(&S3PutObjectAction::save_bucket_counters_failed, this));
