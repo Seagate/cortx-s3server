@@ -36,6 +36,7 @@
 #include "s3_put_object_tagging_action.h"
 #include "s3_get_object_tagging_action.h"
 #include "s3_delete_object_tagging_action.h"
+#include "s3_put_multiobject_copy_action.h"
 #include "s3_stats.h"
 
 void S3ObjectAPIHandler::create_action() {
@@ -77,8 +78,11 @@ void S3ObjectAPIHandler::create_action() {
           break;
         case S3HttpVerb::PUT:
           if (!request->get_header_value("x-amz-copy-source").empty()) {
-            // Copy Object in part upload not yet supported.
-            // Do nothing = unsupported API
+            //  Multipart UploadPartcopy
+            request->set_object_size(request->get_data_length());
+            request->set_action_str("PutMultiObjectCopy");
+            action = std::make_shared<S3PutMultipartCopyAction>(request);
+            s3_stats_inc("put_multipart_copy_part_request_count");
           } else {
             // Multipart part uploads
             request->set_object_size(request->get_data_length());
