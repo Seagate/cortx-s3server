@@ -18,9 +18,7 @@
  *
  */
 
-#include <map>
 #include <memory>
-#include <string>
 
 #include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
@@ -432,7 +430,7 @@ TEST_F(S3DeleteObjectActionTest, DeleteHandlerInEnabledState) {
               get_bucket_versioning_status())
       .WillRepeatedly(ReturnRef(version));
 
-  EXPECT_CALL(*(mock_request), has_query_param_key(_)).Times(1).WillOnce(
+  EXPECT_CALL(*(mock_request), has_query_param_key(_)).Times(AtLeast(1)).WillRepeatedly(
       Return(false));
 
   action_under_test->delete_marker_metadata =
@@ -442,13 +440,10 @@ TEST_F(S3DeleteObjectActionTest, DeleteHandlerInEnabledState) {
   EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
               reset_date_time_to_current()).Times(1);
 
-  std::map<std::string, std::string> in_headers_copy{{"x-amz-meta-a", "true"}};
-
-  EXPECT_CALL(*(mock_request), get_in_headers_copy()).Times(1).WillOnce(
-      ReturnRef(in_headers_copy));
-
   EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
-              add_user_defined_attribute(_, _)).Times(AtLeast(1));
+              set_content_length(_)).Times(1);
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+              set_content_type(_)).Times(1);
 
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,

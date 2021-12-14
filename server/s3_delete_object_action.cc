@@ -43,7 +43,6 @@ S3DeleteObjectAction::S3DeleteObjectAction(
          request->get_object_name().c_str());
 
   action_uses_cleanup = true;
-  delete_marker_metadata = nullptr;
   s3_del_obj_action_state = S3DeleteObjectActionState::empty;
 
   if (motr_api) {
@@ -82,8 +81,8 @@ void S3DeleteObjectAction::setup_steps() {
   // delete_handler call probable_delete if bucket versioning is suspended
   // or disabled else in enabled case it call create_delete_marker
   // on other hand object_metadata_handler call delete_metadata if bucket
-  // versioning is suspended or disabled else call save_delete_marker enabled
-  // versioning state
+  // versioning is suspended or disabled else call save_delete_marker
+  // enabled versioning state
   ACTION_TASK_ADD(S3DeleteObjectAction::delete_handler, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::metadata_handler, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
@@ -135,26 +134,29 @@ void S3DeleteObjectAction::fetch_object_info_failed() {
 void S3DeleteObjectAction::delete_handler() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  std::string bucket_versioning =
-      bucket_metadata->get_bucket_versioning_status();
-
-  if (bucket_versioning == "Enabled" &&
-      !request->has_query_param_key("versionId")) {
-    create_delete_marker();
-    next();
+  // TODO: support version id
+  if (request->has_query_param_key("versionId")) {
+    set_s3_error("OperationNotSupported");
+    s3_del_obj_action_state =
+      S3DeleteObjectActionState::validationFailed;
+    send_response_to_s3_client();
   } else {
-    populate_probable_dead_oid_list();
-  }
 
+    if (bucket_metadata->get_bucket_versioning_status() == "Enabled" &&
+        !request->has_query_param_key("versionId")) {
+      create_delete_marker();
+      next();
+    } else {
+      populate_probable_dead_oid_list();
+    }
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::metadata_handler() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  std::string bucket_versioning =
-      bucket_metadata->get_bucket_versioning_status();
-  if (bucket_versioning == "Enabled" &&
+  if (bucket_metadata->get_bucket_versioning_status() == "Enabled" &&
       !request->has_query_param_key("versionId")) {
     save_delete_marker();
   } else {
@@ -176,17 +178,10 @@ void S3DeleteObjectAction::create_delete_marker() {
   // Generate a version id for the new object.
   delete_marker_metadata->regenerate_version_id();
   delete_marker_metadata->reset_date_time_to_current();
-
+  delete_marker_metadata->set_content_length(
+    request->get_data_length_str());
+  delete_marker_metadata->set_content_type(request->get_content_type());
   // TODO: update null version
-
-  for (const auto& it: request->get_in_headers_copy()) {
-    if (it.first.find("x-amz-meta-") == 0) {
-      s3_log(S3_LOG_DEBUG, request_id,
-             "Writing user metadata on object: [%s] -> [%s]\n",
-             it.first.c_str(), it.second.c_str());
-      delete_marker_metadata->add_user_defined_attribute(it.first, it.second);
-    }
-  }
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -426,6 +421,7 @@ void S3DeleteObjectAction::startcleanup() {
       s3_del_obj_action_state ==
           S3DeleteObjectActionState::probableEntryRecordFailed) {
     // Nothing to clean up
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry Nothing to clean up\n", __func__);
     done();
   } else {
     if (s3_del_obj_action_state == S3DeleteObjectActionState::metadataDeleted) {
