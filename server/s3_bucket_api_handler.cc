@@ -39,6 +39,7 @@
 #include "s3_delete_bucket_tagging_action.h"
 #include "s3_put_bucket_versioning_action.h"
 #include "s3_get_bucket_versioning_action.h"
+#include "s3_list_object_versions_action.h"
 
 void S3BucketAPIHandler::create_action() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
@@ -336,6 +337,16 @@ void S3BucketAPIHandler::create_action() {
           return;
       };
       break;
+    case S3OperationCode::versions:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          request->set_action_str("ListObjectVersions");
+          action = std::make_shared<S3ListObjectVersionsAction>(request);
+          s3_stats_inc("list_object_versions_count");
+          break;
+        default:
+          return;
+      }
     default:
       // should never be here.
       return;
