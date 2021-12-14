@@ -50,6 +50,7 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD0(get_bucket_name, std::string());
   MOCK_METHOD0(get_content_length, size_t());
   MOCK_METHOD1(set_content_length, void(std::string length));
+  MOCK_METHOD1(set_content_type, void(std::string length));
   MOCK_METHOD0(get_content_length_str, std::string());
   MOCK_METHOD0(get_last_modified_gmt, std::string());
   MOCK_METHOD0(get_user_id, std::string());
@@ -83,7 +84,8 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD2(remove_version_metadata,
                void(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
+  MOCK_METHOD0(regenerate_version_id, void());
+  MOCK_METHOD0(set_delete_marker, void());
 };
 
 #endif
-

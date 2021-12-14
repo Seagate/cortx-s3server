@@ -38,6 +38,18 @@
 extern struct m0_uint128 global_instance_id;
 
 std::shared_ptr<S3ObjectMetadata>
+S3ObjectMetadataFactory::create_delete_marker_metadata_obj(
+    std::shared_ptr<S3RequestObject> req,
+    const struct s3_motr_idx_layout& obj_idx_lo,
+    const struct s3_motr_idx_layout& obj_ver_idx_lo) {
+
+  auto meta =
+      create_object_metadata_obj(std::move(req), obj_idx_lo, obj_ver_idx_lo);
+  meta->set_delete_marker();
+  return meta;
+}
+
+std::shared_ptr<S3ObjectMetadata>
 S3ObjectMetadataFactory::create_object_metadata_obj(
     std::shared_ptr<S3RequestObject> req,
     const struct s3_motr_idx_layout& obj_idx_lo,
@@ -372,6 +384,11 @@ void S3ObjectMetadata::set_version_id(std::string ver_id) {
   object_version_id = ver_id;
   rev_epoch_version_id_key =
       S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
+}
+
+void S3ObjectMetadata::set_delete_marker() {
+  system_defined_attribute["x-amz-delete-marker"] = "true";
+  is_delete_marker_ = true;
 }
 
 void S3ObjectMetadata::set_old_oid(struct m0_uint128 id) {
@@ -797,6 +814,11 @@ std::string S3ObjectMetadata::to_json() {
     }
     root["System-Defined"][sit.first] = sit.second;
   }
+
+  if (is_delete_marker_) {
+    root["System-Defined"]["x-amz-delete-marker"] = "true";
+  }
+
   for (auto uit : user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
@@ -929,6 +951,9 @@ int S3ObjectMetadata::from_json(std::string content) {
   object_version_id = system_defined_attribute["x-amz-version-id"];
   rev_epoch_version_id_key =
       S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
+
+  is_delete_marker_ = system_defined_attribute.find("x-amz-delete-marker") !=
+                      system_defined_attribute.end();
 
   members = newroot["User-Defined"].getMemberNames();
   for (auto it : members) {
