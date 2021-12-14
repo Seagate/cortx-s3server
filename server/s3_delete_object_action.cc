@@ -78,7 +78,11 @@ void S3DeleteObjectAction::setup_steps() {
   // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
 
-  // validate version-id in request
+  // delete_handler call probable_delete if bucket versioning is suspended
+  // or disabled else in enabled case it call create_delete_marker
+  // on other hand object_metadata_handler call delete_metadata if bucket
+  // versioning is suspended or disabled else call save_delete_marker
+  // enabled versioning state
   ACTION_TASK_ADD(S3DeleteObjectAction::delete_handler, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::metadata_handler, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
