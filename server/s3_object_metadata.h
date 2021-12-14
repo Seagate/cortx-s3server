@@ -156,6 +156,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string motr_part_layout_str;
 
   bool is_multipart = false;
+  bool latest = false;
+  bool delete_marker = false;
 
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -278,6 +280,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   void set_version_id(std::string ver_id);
 
+  void set_latest(bool is_latest) { latest = is_latest; }
+
   std::string get_old_obj_version_id() { return motr_old_object_version_id; }
   void set_old_version_id(std::string old_obj_ver_id);
 
@@ -298,6 +302,12 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
+  bool is_latest() const {
+    return latest;
+  };
+  bool is_delete_marker() const {
+    return delete_marker;
+  };
 
   virtual struct m0_fid get_pvid() const;
   void set_pvid(const struct m0_fid* p_pvid);

@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 230;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 234;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -148,6 +148,10 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3HeadBucketAction::send_response_to_s3_client",
     "S3HeadObjectAction::send_response_to_s3_client",
     "S3HeadServiceAction::send_response_to_s3_client",
+    "S3ListObjectVersionsAction::check_latest_versions",
+    "S3ListObjectVersionsAction::get_next_versions",
+    "S3ListObjectVersionsAction::send_response_to_s3_client",
+    "S3ListObjectVersionsAction::validate_request",
     "S3ObjectActionTest::func_callback_one",
     "S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list",
     "S3PostCompleteAction::add_oid_for_parallel_leak_check",
