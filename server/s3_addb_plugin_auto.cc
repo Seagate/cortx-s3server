@@ -68,6 +68,7 @@
 #include "s3_head_bucket_action.h"
 #include "s3_head_object_action.h"
 #include "s3_head_service_action.h"
+#include "s3_list_object_versions_action.h"
 #include "s3_post_complete_action.h"
 #include "s3_post_multipartobject_action.h"
 #include "s3_put_bucket_acl_action.h"
@@ -154,6 +155,8 @@ int s3_addb_init() {
       S3_ADDB_S3_HEAD_OBJECT_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3HeadServiceAction))] =
       S3_ADDB_S3_HEAD_SERVICE_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(S3ListObjectVersionsAction))] =
+      S3_ADDB_S3_LIST_OBJECT_VERSIONS_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PostCompleteAction))] =
       S3_ADDB_S3_POST_COMPLETE_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PostMultipartObjectAction))] =
@@ -378,6 +381,12 @@ int s3_addb_init() {
          ": class S3HeadServiceAction\n",
          (uint64_t)S3_ADDB_S3_HEAD_SERVICE_ACTION_ID,
          (int64_t)S3_ADDB_S3_HEAD_SERVICE_ACTION_ID);
+
+  s3_log(S3_LOG_DEBUG, "",
+         "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
+         ": class S3ListObjectVersionsAction\n",
+         (uint64_t)S3_ADDB_S3_LIST_OBJECT_VERSIONS_ACTION_ID,
+         (int64_t)S3_ADDB_S3_LIST_OBJECT_VERSIONS_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
