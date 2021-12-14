@@ -156,6 +156,8 @@ class S3Option {
   unsigned bucket_metadata_cache_expire_sec;
   unsigned bucket_metadata_cache_refresh_sec;
 
+  unsigned data_usage_accounts_cache_max_size;
+
   bool s3_di_disable_data_corruption_iem;
   bool s3_di_disable_metadata_corruption_iem;
 
@@ -437,6 +439,8 @@ class S3Option {
   unsigned get_bucket_metadata_cache_max_size() const;
   unsigned get_bucket_metadata_cache_expire_sec() const;
   unsigned get_bucket_metadata_cache_refresh_sec() const;
+
+  unsigned get_data_usage_accounts_cache_max_size() const;
 
   std::string get_motr_local_addr();
   std::string get_motr_ha_addr();

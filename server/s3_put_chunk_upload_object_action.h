@@ -34,7 +34,7 @@
 #include "s3_object_metadata.h"
 #include "s3_probable_delete_record.h"
 #include "s3_timer.h"
-#include "s3_bucket_counters.h"
+#include "s3_data_usage.h"
 
 enum class S3PutChunkUploadObjectActionState {
   empty,             // Initial state
