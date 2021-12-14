@@ -178,8 +178,7 @@ void S3DeleteObjectAction::create_delete_marker() {
   // Generate a version id for the new object.
   delete_marker_metadata->regenerate_version_id();
   delete_marker_metadata->reset_date_time_to_current();
-  delete_marker_metadata->set_content_length(
-    request->get_data_length_str());
+  delete_marker_metadata->set_content_length("0");
   delete_marker_metadata->set_content_type(request->get_content_type());
   // TODO: update null version
 
