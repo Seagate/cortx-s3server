@@ -36,7 +36,7 @@ class S3CortxMsgBus:
         #MessageBus.init(self._kafka_endpoint)
 
     @staticmethod
-    def configure_endpoint(self, endpoint:str):
+    def configure_endpoint(endpoint: list):
         """Configure endpoints."""
         MessageBus.init(endpoint)
 
