@@ -78,6 +78,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
 
   int part_number;
   std::string upload_id;
+  size_t total_data_to_copy = 0;
   unsigned motr_write_payload_size;
   bool if_source_and_destination_same();
   S3Timer s3_timer;

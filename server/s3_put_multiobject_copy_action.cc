@@ -452,10 +452,6 @@ void S3PutMultipartCopyAction::save_metadata_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-const char xml_decl[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-const char xml_comment_begin[] = "<!--   \n";
-const char xml_comment_end[] = "\n   -->\n";
-
 std::string S3PutMultipartCopyAction::get_response_xml() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
