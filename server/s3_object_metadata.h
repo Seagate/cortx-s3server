@@ -279,13 +279,18 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   void set_version_id(std::string ver_id);
 
   void set_latest(bool is_latest) { latest = is_latest; }
+  bool is_latest() const {
+    return latest;
+  };
 
   std::string get_old_obj_version_id() { return motr_old_object_version_id; }
   void set_old_version_id(std::string old_obj_ver_id);
 
   // delete marker handler
   virtual void set_delete_marker();
-  bool get_delete_marker() const;
+  bool is_delete_marker() const {
+    return is_delete_marker_;
+  };
 
   std::string get_owner_name();
   std::string get_owner_id();
@@ -304,12 +309,6 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
-  bool is_latest() const {
-    return latest;
-  };
-  bool is_delete_marker() const {
-    return is_delete_marker_;
-  };
 
   virtual struct m0_fid get_pvid() const;
   void set_pvid(const struct m0_fid* p_pvid);

@@ -391,8 +391,6 @@ void S3ObjectMetadata::set_delete_marker() {
   is_delete_marker_ = true;
 }
 
-bool S3ObjectMetadata::get_delete_marker() const { return is_delete_marker_; }
-
 void S3ObjectMetadata::set_old_oid(struct m0_uint128 id) {
   old_oid = id;
   motr_old_oid_str = S3M0Uint128Helper::to_string(old_oid);

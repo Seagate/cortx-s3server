@@ -650,12 +650,12 @@ TEST_F(S3ObjectMetadataTest, RemoveVersionMetadataFailed) {
 }
 
 TEST_F(S3ObjectMetadataTest, GetDeleteMarkerDefaultValue) {
-  EXPECT_FALSE(metadata_obj_under_test->get_delete_marker());
+  EXPECT_FALSE(metadata_obj_under_test->is_delete_marker());
 }
 
 TEST_F(S3ObjectMetadataTest, SetDeleteMarkerToTue) {
   metadata_obj_under_test->set_delete_marker();
-  EXPECT_TRUE(metadata_obj_under_test->get_delete_marker());
+  EXPECT_TRUE(metadata_obj_under_test->is_delete_marker());
 }
 
 TEST_F(S3ObjectMetadataTest, CheckDefaultDeleteMarkerInFromJson) {
