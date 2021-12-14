@@ -103,7 +103,7 @@ void S3PutObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3PutObjectAction::validate_put_request, this);
   ACTION_TASK_ADD(S3PutObjectAction::create_object, this);
   ACTION_TASK_ADD(S3PutObjectAction::initiate_data_streaming, this);
-  ACTION_TASK_ADD(S3PutObjectAction::save_bucket_counters, this);
+  ACTION_TASK_ADD(S3PutObjectAction::save_data_usage, this);
   ACTION_TASK_ADD(S3PutObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3PutObjectAction::send_response_to_s3_client, this);
   // ...
@@ -592,7 +592,7 @@ void S3PutObjectAction::write_object_failed() {
   send_response_to_s3_client();
 }
 
-void S3PutObjectAction::save_bucket_counters() {
+void S3PutObjectAction::save_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -610,23 +610,23 @@ void S3PutObjectAction::save_bucket_counters() {
 
   S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
-      std::bind(&S3PutObjectAction::save_bucket_counters_success, this),
-      std::bind(&S3PutObjectAction::save_bucket_counters_failed, this));
+      std::bind(&S3PutObjectAction::save_data_usage_success, this),
+      std::bind(&S3PutObjectAction::save_data_usage_failed, this));
 
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3PutObjectAction::save_bucket_counters_success() {
+void S3PutObjectAction::save_data_usage_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-  s3_put_action_state = S3PutObjectActionState::savebktcountersSuccess;
+  s3_put_action_state = S3PutObjectActionState::saveDataUsageSuccess;
   next();
 }
 
-void S3PutObjectAction::save_bucket_counters_failed() {
+void S3PutObjectAction::save_data_usage_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_put_action_state = S3PutObjectActionState::savebktcountersFailed;
-  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+  s3_put_action_state = S3PutObjectActionState::saveDataUsageFailed;
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Data Usage");
   set_s3_error("InternalError");
   // Clean up will be done after response.
   // we would want to remove the object from motr also
@@ -634,7 +634,7 @@ void S3PutObjectAction::save_bucket_counters_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3PutObjectAction::revert_bucket_counters() {
+void S3PutObjectAction::revert_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -655,7 +655,7 @@ void S3PutObjectAction::revert_bucket_counters() {
 
   // Failure cb should do bg work.
   // success to call next.
-  S3BucketCapacityCache::update_bucket_capacity(
+  S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3PutObjectAction::next, this),
       std::bind(&S3PutObjectAction::next, this));
@@ -1012,7 +1012,7 @@ void S3PutObjectAction::startcleanup() {
              s3_put_action_state ==
                  S3PutObjectActionState::metadataSaveFailed ||
              s3_put_action_state ==
-                 S3PutObjectActionState::savebktcountersFailed) {
+                 S3PutObjectActionState::saveDataUsageFailed) {
     // PUT is assumed to be failed with a need to rollback
     s3_log(S3_LOG_DEBUG, request_id,
            "Cleanup new Object: s3_put_action_state[%d]\n",
@@ -1026,7 +1026,7 @@ void S3PutObjectAction::startcleanup() {
     ACTION_TASK_ADD(S3PutObjectAction::delete_new_object, this);
 
     if (s3_put_action_state == S3PutObjectActionState::metadataSaveFailed) {
-      ACTION_TASK_ADD(S3PutObjectAction::revert_bucket_counters, this);
+      ACTION_TASK_ADD(S3PutObjectAction::revert_data_usage, this);
     }
     // If delete object is successful, attempt to delete new probable record
   } else {

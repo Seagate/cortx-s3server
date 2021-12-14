@@ -77,7 +77,7 @@ void S3DeleteObjectAction::setup_steps() {
   // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
   ACTION_TASK_ADD(S3DeleteObjectAction::populate_probable_dead_oid_list, this);
-  ACTION_TASK_ADD(S3DeleteObjectAction::save_bucket_counters, this);
+  ACTION_TASK_ADD(S3DeleteObjectAction::save_data_usage, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
   ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
   // ...
@@ -294,7 +294,7 @@ void S3DeleteObjectAction::delete_metadata_failed() {
   send_response_to_s3_client();
 }
 
-void S3DeleteObjectAction::save_bucket_counters() {
+void S3DeleteObjectAction::save_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -304,31 +304,31 @@ void S3DeleteObjectAction::save_bucket_counters() {
 
   S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
-      std::bind(&S3DeleteObjectAction::save_bucket_counters_success, this),
-      std::bind(&S3DeleteObjectAction::save_bucket_counters_failed, this));
+      std::bind(&S3DeleteObjectAction::save_data_usage_success, this),
+      std::bind(&S3DeleteObjectAction::save_data_usage_failed, this));
 
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3DeleteObjectAction::save_bucket_counters_success() {
+void S3DeleteObjectAction::save_data_usage_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-  s3_del_obj_action_state = S3DeleteObjectActionState::savebktcountersSuccess;
+  s3_del_obj_action_state = S3DeleteObjectActionState::saveDataUsageSuccess;
   next();
 }
 
 // TODO : how to handle failures to save bucket counters at this stage.
 // Currently just logging error and moving ahead.
-void S3DeleteObjectAction::save_bucket_counters_failed() {
+void S3DeleteObjectAction::save_data_usage_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_del_obj_action_state = S3DeleteObjectActionState::savebktcountersFailed;
-  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+  s3_del_obj_action_state = S3DeleteObjectActionState::saveDataUsageFailed;
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Data Usage");
   set_s3_error("InternalError");
   send_response_to_s3_client();
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3DeleteObjectAction::revert_bucket_counters() {
+void S3DeleteObjectAction::revert_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -337,7 +337,7 @@ void S3DeleteObjectAction::revert_bucket_counters() {
   inc_obj_size = (object_metadata->get_content_length());
 
   // failure case bg handling required.
-  S3BucketCapacityCache::update_bucket_capacity(
+  S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3DeleteObjectAction::next, this),
       std::bind(&S3DeleteObjectAction::next, this));
@@ -396,12 +396,12 @@ void S3DeleteObjectAction::startcleanup() {
     } else if (s3_del_obj_action_state ==
                    S3DeleteObjectActionState::metadataDeleteFailed ||
                s3_del_obj_action_state ==
-                   S3DeleteObjectActionState::savebktcountersFailed) {
+                   S3DeleteObjectActionState::saveDataUsageFailed) {
       // Failed to delete metadata, so object is still live, remove probable rec
       ACTION_TASK_ADD(S3DeleteObjectAction::remove_probable_record, this);
       if (s3_del_obj_action_state ==
           S3DeleteObjectActionState::metadataDeleteFailed) {
-        ACTION_TASK_ADD(S3DeleteObjectAction::revert_bucket_counters, this);
+        ACTION_TASK_ADD(S3DeleteObjectAction::revert_data_usage, this);
       }
       // Start running the cleanup task list
       start();

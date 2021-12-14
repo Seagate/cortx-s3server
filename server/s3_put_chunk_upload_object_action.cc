@@ -115,7 +115,7 @@ void S3PutChunkUploadObjectAction::setup_steps() {
                   this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::create_object, this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::initiate_data_streaming, this);
-  ACTION_TASK_ADD(S3PutChunkUploadObjectAction::save_bucket_counters, this);
+  ACTION_TASK_ADD(S3PutChunkUploadObjectAction::save_data_usage, this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::send_response_to_s3_client,
                   this);
@@ -727,7 +727,7 @@ void S3PutChunkUploadObjectAction::save_object_metadata_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3PutChunkUploadObjectAction::save_bucket_counters() {
+void S3PutChunkUploadObjectAction::save_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -745,27 +745,25 @@ void S3PutChunkUploadObjectAction::save_bucket_counters() {
 
   S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
-      std::bind(&S3PutChunkUploadObjectAction::save_bucket_counters_success,
-                this),
-      std::bind(&S3PutChunkUploadObjectAction::save_bucket_counters_failed,
-                this));
+      std::bind(&S3PutChunkUploadObjectAction::save_data_usage_success, this),
+      std::bind(&S3PutChunkUploadObjectAction::save_data_usage_failed, this));
 
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3PutChunkUploadObjectAction::save_bucket_counters_success() {
+void S3PutChunkUploadObjectAction::save_data_usage_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
   s3_put_chunk_action_state =
-      S3PutChunkUploadObjectActionState::savebktcountersSuccess;
+      S3PutChunkUploadObjectActionState::saveDataUsageSuccess;
   next();
 }
 
-void S3PutChunkUploadObjectAction::save_bucket_counters_failed() {
+void S3PutChunkUploadObjectAction::save_data_usage_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_chunk_action_state =
-      S3PutChunkUploadObjectActionState::savebktcountersFailed;
-  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+      S3PutChunkUploadObjectActionState::saveDataUsageFailed;
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Data Usage");
   set_s3_error("InternalError");
   // Clean up will be done after response.
   // we would want to remove the object from motr also
@@ -773,7 +771,7 @@ void S3PutChunkUploadObjectAction::save_bucket_counters_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3PutChunkUploadObjectAction::revert_bucket_counters() {
+void S3PutChunkUploadObjectAction::revert_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -792,7 +790,7 @@ void S3PutChunkUploadObjectAction::revert_bucket_counters() {
   s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
          inc_obj_size);
 
-  S3BucketCapacityCache::update_bucket_capacity(
+  S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
@@ -1090,7 +1088,7 @@ void S3PutChunkUploadObjectAction::startcleanup() {
              s3_put_chunk_action_state ==
                  S3PutChunkUploadObjectActionState::dataSignatureCheckFailed ||
              s3_put_chunk_action_state ==
-                 S3PutChunkUploadObjectActionState::savebktcountersFailed) {
+                 S3PutChunkUploadObjectActionState::saveDataUsageFailed) {
     // PUT is assumed to be failed with a need to rollback new object
     s3_log(S3_LOG_DEBUG, request_id,
            "Cleanup new Object: s3_put_chunk_action_state[%d]\n",
@@ -1107,8 +1105,7 @@ void S3PutChunkUploadObjectAction::startcleanup() {
 
     if (s3_put_chunk_action_state ==
         S3PutChunkUploadObjectActionState::metadataSaveFailed) {
-      ACTION_TASK_ADD(S3PutChunkUploadObjectAction::revert_bucket_counters,
-                      this);
+      ACTION_TASK_ADD(S3PutChunkUploadObjectAction::revert_data_usage, this);
     }
     // If delete object is successful, attempt to delete new probable record
   } else {

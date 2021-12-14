@@ -105,9 +105,9 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   void save_object_metadata_success();
   void save_object_metadata_failed();
   void save_dest_bucket_counters();
-  void save_bucket_counters_success();
-  void save_bucket_counters_failed();
-  void revert_dest_bucket_counters();
+  void save_data_usage_success();
+  void save_data_usage_failed();
+  void revert_dest_data_usage();
   void start_response();
   void send_response_to_s3_client() final;
 

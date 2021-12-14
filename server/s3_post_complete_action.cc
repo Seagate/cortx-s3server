@@ -129,7 +129,7 @@ void S3PostCompleteAction::setup_steps() {
   ACTION_TASK_ADD(S3PostCompleteAction::get_next_parts_info, this);
   ACTION_TASK_ADD(
       S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list, this);
-  ACTION_TASK_ADD(S3PostCompleteAction::save_bucket_counters, this);
+  ACTION_TASK_ADD(S3PostCompleteAction::save_data_usage, this);
   ACTION_TASK_ADD(S3PostCompleteAction::save_metadata, this);
   ACTION_TASK_ADD(S3PostCompleteAction::delete_multipart_metadata, this);
   ACTION_TASK_ADD(S3PostCompleteAction::delete_part_list_index, this);
@@ -939,7 +939,7 @@ void S3PostCompleteAction::save_object_metadata_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3PostCompleteAction::save_bucket_counters() {
+void S3PostCompleteAction::save_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -957,25 +957,25 @@ void S3PostCompleteAction::save_bucket_counters() {
 
   S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
-      std::bind(&S3PostCompleteAction::save_bucket_counters_success, this),
-      std::bind(&S3PostCompleteAction::save_bucket_counters_failed, this));
+      std::bind(&S3PostCompleteAction::save_data_usage_success, this),
+      std::bind(&S3PostCompleteAction::save_data_usage_failed, this));
 
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3PostCompleteAction::save_bucket_counters_success() {
+void S3PostCompleteAction::save_data_usage_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
   s3_post_complete_action_state =
-      S3PostCompleteActionState::savebktcountersSuccess;
+      S3PostCompleteActionState::saveDataUsageSuccess;
   next();
 }
 
-void S3PostCompleteAction::save_bucket_counters_failed() {
+void S3PostCompleteAction::save_data_usage_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_post_complete_action_state =
-      S3PostCompleteActionState::savebktcountersFailed;
-  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+      S3PostCompleteActionState::saveDataUsageFailed;
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Data Usage");
   set_s3_error("InternalError");
   // Clean up will be done after response.
   // we would want to remove the object from motr also
@@ -983,7 +983,7 @@ void S3PostCompleteAction::save_bucket_counters_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3PostCompleteAction::revert_bucket_counters() {
+void S3PostCompleteAction::revert_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -1003,7 +1003,7 @@ void S3PostCompleteAction::revert_bucket_counters() {
          inc_obj_size);
 
   // Failure cb should call bg services.
-  S3BucketCapacityCache::update_bucket_capacity(
+  S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3PostCompleteAction::next, this),
       std::bind(&S3PostCompleteAction::next, this));
@@ -1241,13 +1241,13 @@ void S3PostCompleteAction::startcleanup() {
         s3_post_complete_action_state ==
             S3PostCompleteActionState::metadataSaveFailed ||
         s3_post_complete_action_state ==
-            S3PostCompleteActionState::savebktcountersFailed ||
+            S3PostCompleteActionState::saveDataUsageFailed ||
         s3_post_complete_action_state == S3PostCompleteActionState::completed) {
       ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record,
                       this);
       if (s3_post_complete_action_state ==
           S3PostCompleteActionState::metadataSaveFailed) {
-        ACTION_TASK_ADD(S3PostCompleteAction::revert_bucket_counters, this);
+        ACTION_TASK_ADD(S3PostCompleteAction::revert_data_usage, this);
       }
     } else {
       // Should never be here.

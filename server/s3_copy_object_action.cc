@@ -423,7 +423,7 @@ void S3CopyObjectAction::save_metadata() {
   check_shutdown_signal_for_next_task(false);
   new_object_metadata->save(
       std::bind(&S3CopyObjectAction::save_object_metadata_success, this),
-      std::bind(&S3CopyObjectAction::revert_dest_bucket_counters, this));
+      std::bind(&S3CopyObjectAction::revert_dest_data_usage, this));
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -467,23 +467,23 @@ void S3CopyObjectAction::save_dest_bucket_counters() {
 
   S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
-      std::bind(&S3CopyObjectAction::save_bucket_counters_success, this),
-      std::bind(&S3CopyObjectAction::save_bucket_counters_failed, this));
+      std::bind(&S3CopyObjectAction::save_data_usage_success, this),
+      std::bind(&S3CopyObjectAction::save_data_usage_failed, this));
 
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3CopyObjectAction::save_bucket_counters_success() {
+void S3CopyObjectAction::save_data_usage_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
-  s3_put_action_state = S3PutObjectActionState::savebktcountersSuccess;
+  s3_put_action_state = S3PutObjectActionState::saveDataUsageSuccess;
   next();
 }
 
-void S3CopyObjectAction::save_bucket_counters_failed() {
+void S3CopyObjectAction::save_data_usage_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_put_action_state = S3PutObjectActionState::savebktcountersFailed;
-  s3_log(S3_LOG_ERROR, request_id, "failed to save Bucket Counters");
+  s3_put_action_state = S3PutObjectActionState::saveDataUsageFailed;
+  s3_log(S3_LOG_ERROR, request_id, "failed to save Data Usage");
   set_s3_error("InternalError");
   // Clean up will be done after response.
   // we would want to remove the object from motr also
@@ -491,7 +491,7 @@ void S3CopyObjectAction::save_bucket_counters_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
-void S3CopyObjectAction::revert_dest_bucket_counters() {
+void S3CopyObjectAction::revert_dest_data_usage() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int64_t inc_object_count = 0;
   int64_t inc_obj_size = 0;
@@ -510,7 +510,7 @@ void S3CopyObjectAction::revert_dest_bucket_counters() {
   s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
          inc_obj_size);
 
-  S3BucketCapacityCache::update_bucket_capacity(
+  S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3CopyObjectAction::save_object_metadata_failed, this),
       std::bind(&S3CopyObjectAction::save_object_metadata_failed, this));
