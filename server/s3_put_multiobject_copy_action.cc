@@ -85,6 +85,24 @@ S3PutMultipartCopyAction::S3PutMultipartCopyAction(
     part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
   }
 
+  if (motr_s3_writer_factory) {
+    motr_writer_factory = motr_s3_writer_factory;
+  } else {
+    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
+  }
+
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+
+  if (kv_writer_factory) {
+    motr_kv_writer_factory = std::move(kv_writer_factory);
+  } else {
+    motr_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
+
   if (motr_s3_reader_factory) {
     motr_reader_factory = std::move(motr_s3_reader_factory);
   } else {
