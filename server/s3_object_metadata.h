@@ -155,7 +155,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   bool is_multipart = false;
   bool latest = false;
-  bool is_delete_marker = false;
+  bool is_delete_marker_ = false;
 
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -308,7 +308,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
     return latest;
   };
   bool is_delete_marker() const {
-    return is_delete_marker;
+    return is_delete_marker_;
   };
 
   virtual struct m0_fid get_pvid() const;
