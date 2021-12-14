@@ -123,6 +123,7 @@ void S3ListObjectVersionsAction::validate_request() {
     if (!S3CommonUtilities::stoul(max_k, max_keys)) {
       s3_log(S3_LOG_DEBUG, request_id, "invalid max-keys = %s\n",
              max_k.c_str());
+      // TODO: Add invalid argument details to the response.
       set_s3_error("InvalidArgument");
       send_response_to_s3_client();
       return;
