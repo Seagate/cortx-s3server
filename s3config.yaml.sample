@@ -86,7 +86,7 @@ S3_SERVER_CONFIG:
    S3_BUCKET_METADATA_CACHE_MAX_SIZE: 1                 # Max count of entries in bucket MD cache
    S3_BUCKET_METADATA_CACHE_EXPIRE_SEC: 5               # Expiration time for bucket metadata in cache
    S3_BUCKET_METADATA_CACHE_REFRESH_SEC: 4              # Refresh timeout. After this timeout proactive MD re-load will happen.
-   S3_DATA_USAGE_ACCOUNTS_CACHE_MAX_SIZE: 1             # Max count of entries in data usage for accounts cache
+   S3_DATA_USAGE_ACCOUNTS_CACHE_MAX_SIZE: 10            # Max count of entries in data usage for accounts cache
 S3_AUTH_CONFIG:
    S3_AUTH_IP_ADDR: ipv4:127.0.0.1                      # Auth server IP address Should be in below format:
                                                         # ipv4 address format: ipv4:127.0.0.1

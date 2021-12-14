@@ -55,16 +55,16 @@ class S3DataUsageCache {
 
  public:
   static S3DataUsageCache *get_instance();
+  static void update_data_usage(std::shared_ptr<RequestObject> req,
+                                std::shared_ptr<S3BucketMetadata> src,
+                                int64_t objects_count_increment,
+                                int64_t bytes_count_increment,
+                                std::function<void()> on_success,
+                                std::function<void()> on_failure);
 
   S3DataUsageCache(const S3DataUsageCache &) = delete;
   S3DataUsageCache &operator=(const S3DataUsageCache &) = delete;
 
   void set_max_cache_size(size_t max_size);
-  void update_data_usage(std::shared_ptr<RequestObject> req,
-                         std::shared_ptr<S3BucketMetadata> src,
-                         int64_t objects_count_increment,
-                         int64_t bytes_count_increment,
-                         std::function<void()> on_success,
-                         std::function<void()> on_failure);
   virtual ~S3DataUsageCache() {}
 };

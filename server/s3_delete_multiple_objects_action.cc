@@ -357,7 +357,7 @@ void S3DeleteMultipleObjectsAction::save_bucket_counters() {
     }
   }
 
-  S3DataUsageCache::get_instance()->update_data_usage(
+  S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3DeleteMultipleObjectsAction::delete_extended_metadata, this),
       std::bind(&S3DeleteMultipleObjectsAction::save_bucket_counters_failed,

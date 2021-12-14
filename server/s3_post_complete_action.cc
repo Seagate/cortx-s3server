@@ -959,7 +959,7 @@ void S3PostCompleteAction::save_bucket_counters() {
            __func__, new_object_metadata->get_content_length());
   }
 
-  S3DataUsageCache::get_instance()->update_data_usage(
+  S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3PostCompleteAction::save_bucket_counters_success, this),
       std::bind(&S3PostCompleteAction::save_bucket_counters_failed, this));
