@@ -139,7 +139,6 @@ class S3DeleteObjectActionTest : public testing::Test {
   std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
-
   std::shared_ptr<S3DeleteObjectAction> action_under_test;
 
   struct s3_motr_idx_layout index_layout;
@@ -421,4 +420,55 @@ TEST_F(S3DeleteObjectActionTest, DeleteObjectsDelayedEnabled) {
               delete_object(_, _, _, _, _)).Times(0);
   S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
   action_under_test->delete_objects();
+}
+
+TEST_F(S3DeleteObjectActionTest, DeleteHandlerInEnabledState) {
+  CREATE_OBJECT_METADATA;
+
+  std::string version = "Enabled";
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_bucket_versioning_status())
+      .WillRepeatedly(ReturnRef(version));
+
+  EXPECT_CALL(*(mock_request), has_query_param_key(_))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(false));
+
+  action_under_test->delete_marker_metadata =
+      object_meta_factory->mock_delete_marker_metadata;
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+              regenerate_version_id()).Times(1);
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+              reset_date_time_to_current()).Times(1);
+
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+              set_content_length(_)).Times(1);
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata),
+              set_content_type(_)).Times(1);
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteObjectActionTest::func_callback_one, this);
+
+  action_under_test->delete_handler();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3DeleteObjectActionTest, MetadataHandlerInEnabledState) {
+  CREATE_OBJECT_METADATA;
+
+  std::string version = "Enabled";
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_bucket_versioning_status())
+      .WillRepeatedly(ReturnRef(version));
+
+  EXPECT_CALL(*(mock_request), has_query_param_key(_)).Times(1).WillOnce(
+      Return(false));
+
+  action_under_test->delete_marker_metadata =
+      object_meta_factory->mock_delete_marker_metadata;
+
+  EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata), save(_, _))
+      .Times(1);
+  action_under_test->metadata_handler();
 }

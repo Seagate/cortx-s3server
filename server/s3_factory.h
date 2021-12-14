@@ -67,6 +67,10 @@ class S3ObjectMetadataFactory {
   virtual ~S3ObjectMetadataFactory() = default;
 
   // The implementation is moved to s3_object_metadata.cc
+  virtual std::shared_ptr<S3ObjectMetadata> create_delete_marker_metadata_obj(
+      std::shared_ptr<S3RequestObject> req,
+      const struct s3_motr_idx_layout& obj_idx_lo = {},
+      const struct s3_motr_idx_layout& obj_ver_idx_lo = {});
 
   virtual std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
