@@ -77,7 +77,6 @@ void S3DeleteObjectAction::setup_steps() {
   // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
 
-
   // delete_handler call probable_delete if bucket versioning is suspended
   // or disabled else in enabled case it call create_delete_marker
   // on other hand object_metadata_handler call delete_metadata if bucket
@@ -137,8 +136,7 @@ void S3DeleteObjectAction::delete_handler() {
   // TODO: support version id
   if (request->has_query_param_key("versionId")) {
     set_s3_error("OperationNotSupported");
-    s3_del_obj_action_state =
-      S3DeleteObjectActionState::validationFailed;
+    s3_del_obj_action_state = S3DeleteObjectActionState::validationFailed;
     send_response_to_s3_client();
   } else {
 
@@ -420,7 +418,8 @@ void S3DeleteObjectAction::startcleanup() {
       s3_del_obj_action_state ==
           S3DeleteObjectActionState::probableEntryRecordFailed) {
     // Nothing to clean up
-    s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry Nothing to clean up\n", __func__);
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry Nothing to clean up\n",
+           __func__);
     done();
   } else {
     if (s3_del_obj_action_state == S3DeleteObjectActionState::metadataDeleted) {

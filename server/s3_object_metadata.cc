@@ -955,7 +955,7 @@ int S3ObjectMetadata::from_json(std::string content) {
       S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 
   is_delete_marker = system_defined_attribute.find("x-amz-delete-marker") !=
-      system_defined_attribute.end();
+                     system_defined_attribute.end();
 
   members = newroot["User-Defined"].getMemberNames();
   for (auto it : members) {

@@ -430,8 +430,9 @@ TEST_F(S3DeleteObjectActionTest, DeleteHandlerInEnabledState) {
               get_bucket_versioning_status())
       .WillRepeatedly(ReturnRef(version));
 
-  EXPECT_CALL(*(mock_request), has_query_param_key(_)).Times(AtLeast(1)).WillRepeatedly(
-      Return(false));
+  EXPECT_CALL(*(mock_request), has_query_param_key(_))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(false));
 
   action_under_test->delete_marker_metadata =
       object_meta_factory->mock_delete_marker_metadata;
