@@ -50,25 +50,11 @@ const char InvalidRequestPartCopySourceAndDestinationSame[] =
     "an object to itself without changing the object's metadata, storage "
     "class, website redirect location or encryption attributes.";
 
-enum class S3CopyPartActionState {
-  empty = 0,         // Initial state
-  validationFailed,  // Any validations failed for request, including metadata
-  probableEntryRecordFailed,
-  newObjOidCreated,         // New object created
-  newObjOidCreationFailed,  // New object create failed
-  writeComplete,            // data write to object completed successfully
-  writeFailed,              // data write to object failed
-  md5ValidationFailed,      // md5 check failed
-  metadataSaved,            // metadata saved for new object
-  metadataSaveFailed,       // metadata saved for new object
-  completed,                // All stages done completely
-};
-
 class S3ObjectDataCopier;
 
 class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   std::string auth_acl;
-  S3CopyPartActionState s3_copy_part_action_state;
+  S3PutObjectActionState s3_copy_part_action_state;
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::unique_ptr<S3ObjectDataCopier> object_data_copier;
   std::shared_ptr<S3ObjectDataCopier> fragment_data_copier;
