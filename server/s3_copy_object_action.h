@@ -31,7 +31,7 @@
 #include "s3_put_object_action_base.h"
 #include "s3_object_data_copier.h"
 #include "s3_object_metadata.h"
-#include "s3_bucket_counters.h"
+#include "s3_data_usage.h"
 
 const uint64_t MaxCopyObjectSourceSize = 5368709120UL;  // 5GB
 
