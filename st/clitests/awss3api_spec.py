@@ -276,7 +276,7 @@ os.system("rm -rf " + upload_content)
 dirs = ['boo', 'foo', 'quax']
 filesize = 1024
 object_range = [5, 32, 10]
-index = 0 
+index = 0
 for child_dir in dirs:
     out_dir = os.path.join(temp_dir, child_dir)
     os.makedirs(out_dir, exist_ok=True)
@@ -310,7 +310,7 @@ object_list_file = create_object_list_file("obj_list_mix_keys.json", obj_list, "
 
 # Step 2: Validate the uploaded objects using s3api
 # Step 2.1: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 1 --prefix "foo" --delimiter "/"
-# Expected output: 
+# Expected output:
 #   foo#123
 #   foo+123
 #   foo/ (under COMMONPREFIXES)
@@ -337,7 +337,7 @@ if check is False:
     assert False, "Failed to match expected common prefix in the list"
 
 # Step 2.2: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 2 --delimiter "/"
-# Expected output: 
+# Expected output:
 #  asdf
 #  bo0
 #  boo#
@@ -730,7 +730,7 @@ if dest_obj_etag != source_obj_etag:
 
 # ***************Overwrite case*******************
 # A ---> multipart object upload
-# B ---> Simple object 
+# B ---> Simple object
 # Four cases : (overwrite second one with first)
 # AA, AB, BA, BB
 
@@ -1823,16 +1823,23 @@ AwsTest('Can not suspend versioning on bucket')\
     .command_should_fail()\
     .command_error_should_have("OperationNotSupported")
 
-#******** Test Cleanup ********
-AwsTest('Aws can delete the object')\
+AwsTest('Aws can delete the latest version of the object (DeleteMarker)')\
     .delete_object(bucket, file)\
     .execute_test()\
     .command_is_successful()
 
-AwsTest('Aws can delete the bucket')\
-    .delete_bucket(bucket)\
-    .execute_test()\
-    .command_is_successful()
+#******** Test Cleanup ********
+# XXX: Temporarily disabled until deleting objects by version-id is supported
+# AwsTest('Aws can delete all the object versions')\
+#     .delete_object(bucket, file)\
+#     .execute_test()\
+#     .command_is_successful()
+
+# XXX: Temporarily disabled until deleting objects by version-id is supported
+# AwsTest('Aws can delete the bucket')\
+#     .delete_bucket(bucket)\
+#     .execute_test()\
+#     .command_is_successful()
 
 
 ################################################################################
