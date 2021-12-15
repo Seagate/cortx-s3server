@@ -68,3 +68,77 @@ class S3DataUsageCache {
   void set_max_cache_size(size_t max_size);
   virtual ~S3DataUsageCache() {}
 };
+
+class DataUsageItem {
+  // A key to the Motr index that a cache writes into;
+  // currenly its "<account name>/<unique S3 server ID>".
+  std::string motr_key;
+  // Item's key in the data usage cache; currently "<account name>".
+  std::string cache_key;
+  std::shared_ptr<MotrAPI> motr_kv_api;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kv_writer_factory;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+
+  int64_t objects_count;
+  int64_t bytes_count;
+
+  struct IncCallbackPair {
+    IncCallbackPair(const std::string &rid, std::function<void()> s,
+                    std::function<void()> f)
+        : request_id{rid}, on_success{s}, on_failure{f} {};
+    std::string request_id;
+    std::function<void()> on_success;
+    std::function<void()> on_failure;
+  };
+
+  // current_* attributes serve the request that is being read/written,
+  // i.e. Motr performs I/O operation for it right now.
+  std::shared_ptr<RequestObject> current_request;
+  int64_t current_objects_increment;
+  int64_t current_bytes_increment;
+  std::list<std::shared_ptr<struct IncCallbackPair> > current_callbacks;
+
+  // pending_* attributes serve the request that is to be executed.
+  std::shared_ptr<RequestObject> pending_request;
+  int64_t pending_objects_increment;
+  int64_t pending_bytes_increment;
+  std::list<std::shared_ptr<struct IncCallbackPair> > pending_callbacks;
+
+  using DataUsageStateNotifyCb = std::function<
+      void(DataUsageItem *, DataUsageItemState, DataUsageItemState)>;
+  // Calls back to the cache singleton when an item state is changed.
+  DataUsageStateNotifyCb state_cb;
+
+  DataUsageItemState state;
+  // Item's place in the list of inactive items that the cache maintains
+  std::list<DataUsageItem *>::iterator ptr_inactive;
+
+  std::string get_item_request_id();
+  void set_state(DataUsageItemState new_state);
+  void do_kvs_read();
+  void kvs_read_success();
+  void kvs_read_failure();
+  void do_kvs_write();
+  void kvs_write_success();
+  void kvs_write_failure();
+  void run_successful_callbacks();
+  void run_failure_callbacks();
+  void fail_all();
+  std::string to_json();
+  int from_json(std::string content);
+
+ public:
+  DataUsageItem(std::shared_ptr<RequestObject> req,
+                const std::string &key_in_cache,
+                DataUsageStateNotifyCb subscriber,
+                std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory =
+                    nullptr,
+                std::shared_ptr<S3MotrKVSWriterFactory> kvs_writer_factory =
+                    nullptr,
+                std::shared_ptr<MotrAPI> motr_api = nullptr);
+  void save(std::shared_ptr<RequestObject> req, int64_t objects_count_increment,
+            int64_t bytes_count_increment, std::function<void()> on_success,
+            std::function<void()> on_failure);
+};
