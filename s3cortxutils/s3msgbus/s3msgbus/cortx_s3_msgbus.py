@@ -24,6 +24,8 @@
 import os.path
 import errno
 import traceback
+import logging
+import socket
 from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer, MessageBusAdmin
 
 class S3CortxMsgBus:
@@ -33,12 +35,16 @@ class S3CortxMsgBus:
         self._producer = None
         self._consumer = None
         self._kafka_endpoint = ["tcp://127.0.0.1:9092"]
-        MessageBus.init(self._kafka_endpoint)
+        s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+        logger_handle = logging.getLogger(s3deployment_logger_name)
+        MessageBus.init(self._kafka_endpoint, logger=logger_handle)
 
     @staticmethod
     def configure_endpoint(endpoint: list):
         """Configure endpoints."""
-        MessageBus.init(endpoint)
+        s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+        logger_handle = logging.getLogger(s3deployment_logger_name)
+        MessageBus.init(endpoint, logger=logger_handle)
 
     def setup_producer(self, prod_id, msg_type, method):
         """Setup producer."""
