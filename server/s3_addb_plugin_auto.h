@@ -87,6 +87,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_ACCOUNT_DELETE_METADATA_ACTION_ID,
   /* S3CopyObjectAction: */
   S3_ADDB_S3_COPY_OBJECT_ACTION_ID,
+  /* S3DataUsageAction: */
+  S3_ADDB_S3_DATA_USAGE_ACTION_ID,
   /* S3DeleteBucketAction: */
   S3_ADDB_S3_DELETE_BUCKET_ACTION_ID,
   /* S3DeleteBucketPolicyAction: */

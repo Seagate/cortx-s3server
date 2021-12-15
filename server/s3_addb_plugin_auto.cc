@@ -46,6 +46,7 @@
 #include "s3_abort_multipart_action.h"
 #include "s3_account_delete_metadata_action.h"
 #include "s3_copy_object_action.h"
+#include "s3_data_usage_action.h"
 #include "s3_delete_bucket_action.h"
 #include "s3_delete_bucket_policy_action.h"
 #include "s3_delete_bucket_tagging_action.h"
@@ -108,6 +109,8 @@ int s3_addb_init() {
       S3_ADDB_S3_ACCOUNT_DELETE_METADATA_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3CopyObjectAction))] =
       S3_ADDB_S3_COPY_OBJECT_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(S3DataUsageAction))] =
+      S3_ADDB_S3_DATA_USAGE_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3DeleteBucketAction))] =
       S3_ADDB_S3_DELETE_BUCKET_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3DeleteBucketPolicyAction))] =
@@ -240,6 +243,12 @@ int s3_addb_init() {
          ": class S3CopyObjectAction\n",
          (uint64_t)S3_ADDB_S3_COPY_OBJECT_ACTION_ID,
          (int64_t)S3_ADDB_S3_COPY_OBJECT_ACTION_ID);
+
+  s3_log(S3_LOG_DEBUG, "",
+         "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
+         ": class S3DataUsageAction\n",
+         (uint64_t)S3_ADDB_S3_DATA_USAGE_ACTION_ID,
+         (int64_t)S3_ADDB_S3_DATA_USAGE_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning

@@ -22,6 +22,7 @@
 #include "s3_api_handler.h"
 #include "s3_account_delete_metadata_action.h"
 #include "s3_get_audit_log_schema_action.h"
+#include "s3_data_usage_action.h"
 
 void S3ManagementAPIHandler::create_action() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry", __func__);
@@ -40,6 +41,11 @@ void S3ManagementAPIHandler::create_action() {
           if (full_uri.compare("/s3/audit-log/schema") == 0) {
             action = std::make_shared<S3GetAuditLogSchemaAction>(request);
             s3_log(S3_LOG_DEBUG, request_id, "S3GetAuditLogSchemaAction");
+          } else {
+            if (full_uri.compare("/s3/data_usage") == 0) {
+              action = std::make_shared<S3DataUsageAction>(request);
+              s3_log(S3_LOG_DEBUG, request_id, "S3GetDataUsageAction");
+            }
           }
         } break;
         default:
