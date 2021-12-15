@@ -411,7 +411,7 @@ class ConfigCmd(SetupCmd):
       self.logger.info("Init Msg Bus started")
       endpoints_val = self.get_confvalue_with_defaults("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
       self.logger.info(f"Msg Bus end point value is {endpoints_val}")
-      S3CortxMsgBus.configure_endpoint(endpoints_val)
+      S3CortxMsgBus.configure_endpoint(endpoints_val, self.logger)
       self.logger.info("Init Msg Bus completed")
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
           S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
@@ -682,6 +682,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>scheduler_logger_directory", self.update_bgdelete_scheduler_log_dir)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>scheduler_log_file", self.update_bgdelete_scheduler_log_file_path)
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS", "message_bus>platform_url")
     self.logger.info("Update s3 bgdelete scheduler config file completed")
 
   def update_s3_bgdelete_worker_configs(self):
@@ -690,6 +691,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT", "cortx_s3>consumer_endpoint", self.update_bgdelete_consumer_endpoint)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_logger_directory", self.update_bgdelete_processor_log_dir)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_log_file", self.update_bgdelete_processor_log_file_path)
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS", "message_bus>platform_url")
     self.logger.info("Update s3 bgdelete worker config file completed")
 
   def update_bgdelete_producer_endpoint(self, value_to_update, additional_param):

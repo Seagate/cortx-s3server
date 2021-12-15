@@ -34,16 +34,10 @@ class S3CortxMsgBus:
         """Init."""
         self._producer = None
         self._consumer = None
-        self._kafka_endpoint = ["tcp://127.0.0.1:9092"]
-        s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-        logger_handle = logging.getLogger(s3deployment_logger_name)
-        MessageBus.init(self._kafka_endpoint, logger=logger_handle)
 
     @staticmethod
-    def configure_endpoint(endpoint: list):
+    def configure_endpoint(endpoint: list, logger_handle):
         """Configure endpoints."""
-        s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-        logger_handle = logging.getLogger(s3deployment_logger_name)
         MessageBus.init(endpoint, logger=logger_handle)
 
     def setup_producer(self, prod_id, msg_type, method):

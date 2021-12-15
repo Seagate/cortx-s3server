@@ -497,6 +497,16 @@ class CORTXS3Config(object):
                 "Could not parse admin id from config file " +
                 self._conf_file)
 
+    def get_msgbus_platform_url(self):
+        """Return platform url from config file or KeyError."""
+        try:
+          msgbus_platform_url = self.s3confstore.get_config('message_bus>platform_url')
+          return msgbus_platform_url
+        except:
+            raise KeyError(
+                "Could not parse platform url from config file " +
+                self._conf_file)
+
     def get_purge_sleep_time(self):
         """Return purge sleep time from config file or KeyError."""
         try:

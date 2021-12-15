@@ -42,6 +42,8 @@ from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 from s3backgrounddelete.cortx_s3_signal import SigTermHandler
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 #from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
@@ -55,6 +57,9 @@ class ObjectRecoveryScheduler(object):
         self.create_logger()
         self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Scheduler")
+        if self.config.get_messaging_platform() == MESSAGE_BUS:
+          endpoints_val = self.config.get_msgbus_platform_url()
+          S3CortxMsgBus.configure_endpoint(endpoints_val, self.logger)
         self.producer = None
         self.producer_name = producer_name
         self.term_signal = SigTermHandler()
