@@ -24,8 +24,6 @@
 import os.path
 import errno
 import traceback
-import logging
-import socket
 from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer, MessageBusAdmin
 
 class S3CortxMsgBus:
