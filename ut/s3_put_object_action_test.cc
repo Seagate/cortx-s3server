@@ -1340,7 +1340,7 @@ TEST_F(S3PutObjectActionTest, AddOidToProbableDeadListVersioningEnabled) {
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(index_layout));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _)).Times(1);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
       "mock_pvid", index_layout.oid, index_layout.oid,
@@ -1384,7 +1384,7 @@ TEST_F(S3PutObjectActionTest, AddOidToProbableDeadListVersioningDisabled) {
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(index_layout));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _)).Times(1);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
       "mock_pvid", index_layout.oid, index_layout.oid,
@@ -1412,7 +1412,7 @@ TEST_F(S3PutObjectActionTest, MarkOldOidForDelValidation) {
   action_under_test->old_object_oid = old_object_oid;
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _))
+              put_keyval(_, _, _, _, _))
       .Times(2)
       .WillRepeatedly(Invoke(this, &S3PutObjectActionTest::dummy_put_keyval));
 
