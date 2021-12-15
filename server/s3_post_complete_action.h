@@ -160,6 +160,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_success();
   void add_object_oid_to_probable_dead_oid_list_failed();
+  void add_oid_for_parallel_leak_check();
 
   // Add object part to the new object's extended metadata portion
   void add_part_object_to_object_extended(

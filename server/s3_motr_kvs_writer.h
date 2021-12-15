@@ -121,6 +121,12 @@ enum class S3MotrKVSWriterOpState {
 };
 
 class S3MotrKVSWriter {
+ public:
+  enum class CallbackType {
+    STABLE,
+    EXECUTED
+  };
+
  private:
   // std::vector<struct m0_uint128> oid_list;
   std::vector<struct s3_motr_idx_layout> idx_los;
@@ -167,9 +173,11 @@ class S3MotrKVSWriter {
   // void sync_keyval_successful();
   // void sync_keyval_failed();
 
-  virtual int put_keyval_impl(const std::map<std::string, std::string>& kv_list,
-                              bool is_async, bool is_partial_write = false,
-                              int offset = 0, unsigned int how_many = 0);
+  virtual int put_keyval_impl(
+      const std::map<std::string, std::string>& kv_list, bool is_async,
+      bool is_partial_write = false, int offset = 0, unsigned int how_many = 0,
+      S3MotrKVSWriter::CallbackType
+          callback = S3MotrKVSWriter::CallbackType::STABLE);
 
  public:
   S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
@@ -218,7 +226,9 @@ class S3MotrKVSWriter {
   virtual void put_keyval(const struct s3_motr_idx_layout& idx_lo,
                           const std::map<std::string, std::string>& kv_list,
                           std::function<void(void)> on_success,
-                          std::function<void(void)> on_failed);
+                          std::function<void(void)> on_failed,
+                          S3MotrKVSWriter::CallbackType
+                              callback = S3MotrKVSWriter::CallbackType::STABLE);
 
   virtual void put_partial_keyval(
       const struct s3_motr_idx_layout& idx_lo,
@@ -228,10 +238,11 @@ class S3MotrKVSWriter {
       unsigned int how_many = 30);
 
   // Async save operation.
-  virtual void put_keyval(const struct s3_motr_idx_layout& idx_lo,
-                          const std::string& key, const std::string& val,
-                          std::function<void(void)> on_success,
-                          std::function<void(void)> on_failed);
+  virtual void put_keyval(
+      const struct s3_motr_idx_layout& idx_lo, const std::string& key,
+      const std::string& val, std::function<void(void)> on_success,
+      std::function<void(void)> on_failed,
+      enum CallbackType callback = S3MotrKVSWriter::CallbackType::STABLE);
   // Sync save operation.
   virtual int put_keyval_sync(
       const struct s3_motr_idx_layout& idx_lo,

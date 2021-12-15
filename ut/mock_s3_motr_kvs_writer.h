@@ -54,14 +54,16 @@ class MockS3MotrKVSWriter : public S3MotrKVSWriter {
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed));
 
-  MOCK_METHOD5(put_keyval,
+  MOCK_METHOD6(put_keyval,
                void(const struct s3_motr_idx_layout&, const std::string&,
                     const std::string&, std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed));
-  MOCK_METHOD4(put_keyval,
+                    std::function<void(void)> on_failed,
+                    CallbackType callback));
+  MOCK_METHOD5(put_keyval,
                void(const struct s3_motr_idx_layout&,
                     const std::map<std::string, std::string>& kv_list,
                     std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed));
+                    std::function<void(void)> on_failed,
+                    CallbackType callback));
 };
 #endif

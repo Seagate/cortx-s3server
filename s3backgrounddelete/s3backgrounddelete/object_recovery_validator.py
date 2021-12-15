@@ -291,8 +291,8 @@ class ObjectRecoveryValidator:
                 else:
                     self._logger.info("Failed to delete object with oid [" + obj_oid + "] from motr store")
             else:
-                self._logger.info("The key: " + key_in_index + " does not exist. Delete motr object")
-                status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id, self.pvid_str)
+                self._logger.info("The key: " + key_in_index + " does not exist.")
+                # status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id, self.pvid_str)
 
             if (status):
                 #EXTENDED LIST ENTRY DEL
@@ -390,7 +390,7 @@ class ObjectRecoveryValidator:
             self._logger.error(
                 "Failed to parse JSON data for: " + probable_delete_value + " due to: " + error)
             return
-
+        self.is_multipart = True if self.object_leak_info["is_multipart"] == "true" else False
         # Assumption: Key = <current oid>-<new oid> for
         # an old object of PUT overwrite request
         if (self.object_leak_info["old_oid"] == NULL_OBJ_OID):
@@ -426,6 +426,45 @@ class ObjectRecoveryValidator:
 
         if (versionEntry["motr_oid"] != current_oid):
             return True
+
+
+    def del_objects_in_extendedlist(self, object_extended_list_index):
+        """
+        Delete objects belonging to a multipart object from an extended index list.
+        """
+        bStatus = False
+        ext_motr_oid_key = "OID"
+        ext_layout_id_key = "layout-id"
+        ext_pvid_key = "PVID"
+        ext_api_prefix = "EXTENDED MD LIST DEL"
+        if (object_extended_list_index is None):
+            return bStatus
+
+        part_no = 0
+        if "part" in self.object_leak_info:
+            part_no = self.object_leak_info["part"]
+
+        self._logger.info("Processing extended list with total parts = " + str(part_no))
+        extended_key_prefix = self.object_leak_info["object_key_in_index"] + "|" + \
+            self.object_leak_info["ext_version_id"] + "|" + "P"
+
+        parent_oid = NULL_OBJ_OID
+        if "parent_oid" in self.object_leak_info:
+            parent_oid = self.object_leak_info["parent_oid"]
+
+        if (parent_oid == NULL_OBJ_OID and part_no != 0):
+            # This is parent multipart object. Process extended entries
+            for part in range(1, part_no + 1):
+                extended_key = extended_key_prefix + str(part) + "|" + "F1"
+                self._logger.info("Processing extended entry with key " + extended_key)
+                status = self.del_obj_from_extended_index(object_extended_list_index, extended_key, \
+                                    ext_motr_oid_key, ext_layout_id_key, ext_pvid_key, ext_api_prefix)
+                bStatus = status
+                if (not status):
+                    self._logger.info("Failed to delete object using key [" + extended_key + \
+                                    "] from extended index ")
+
+        return bStatus
 
 
     def process_objects_in_versionlist(self, object_version_list_index, current_oid, callback, timeVersionEntry=15, marker = None):
@@ -505,6 +544,9 @@ class ObjectRecoveryValidator:
         # Object leak detection algo: Step #2
         # Check if 'forceDelete' is set on leak entry. If yes, delete object and record from probable leak table
         force_delete = self.object_leak_info["force_delete"]
+        ovli_oid = self.object_leak_info["objects_version_list_index_oid"]
+        ovli_key = self.object_leak_info["version_key_in_index"]
+
         if (force_delete == "true"):
             # Handle Multipart parent object stale entry
             part_no = 0
@@ -522,6 +564,11 @@ class ObjectRecoveryValidator:
                     self._logger.info("Multipart parent: Failed to delete version entry " + version_key +
                                       " from version index")
                 else:
+                    # After deleting version entry, delete extended entries of multipart dummy object
+                    # from extended index
+                    # Note: Below call deletes motr objects associated with extended entries and then
+                    # removes extended entries of multipart object.
+                    status = self.del_objects_in_extendedlist(self.object_leak_info["extended_md_idx_oid"])
                     self._logger.info("Deleted version entry associated with multipart object oid =" + self.object_leak_id)
                     probable_index_id = self.config.get_probable_delete_index_id()
                     probable_rec_key = self.probable_delete_records["Key"]
@@ -558,8 +605,118 @@ class ObjectRecoveryValidator:
 
         obj_key = self.object_leak_info["object_key_in_index"]
         obj_list_id = self.object_leak_info["object_list_index_oid"]
+        current_oid = ""
+
+        status, current_object_md = self.get_object_metadata(obj_list_id, obj_key)
+        if (status):
+            # Either object exists or object does not exist.
+            if (current_object_md is None):
+                # Object does not exist.
+                self._logger.info("Object key " + obj_key + " does not exist in object list index.")
+                # If this is multipart operation, there could be no object existing in object list index
+                if not self.is_multipart:
+                    status = self.process_probable_delete_record(True, True)
+                    if (status):
+                        self._logger.info("Leak oid " + self.object_leak_id + " processed successfully and deleted")
+                    else:
+                        self._logger.error("Failed to process leak oid " + self.object_leak_id)
+                    return
+            else:
+                # Object exists. Continue further with leak algorithm.
+                current_oid = current_object_md["motr_oid"]
+        else:
+            self._logger.error("Failed to process leak oid " + self.object_leak_id +
+                        " Skipping entry for the next run")
+            return
 
         if (force_delete == "false"):
+            part_no = 0
+            if "part" in self.object_leak_info:
+                part_no = self.object_leak_info["part"]
+
+            if (self.oid_prefix == "J" and part_no > 0):
+                if (self.object_leak_info["extended_md_idx_oid"] != NULL_OBJ_OID):
+                    # This condition indicates successfull S3 POST complete API.
+                    # - Check for parallel S3 POST calls by checking this oid with current/live object oid
+                    # If they are different, it means this multipart is stale/leak. Delete all extended/parts objects
+                    # and then the version entry.
+                    if (self.object_leak_id != current_oid):
+                        # This is stale/leak multipart oid. Delete version entry associated with it.
+                        self._logger.info("Multipart leak for multipart oid " + self.object_leak_id)
+                        version_index = self.object_leak_info["objects_version_list_index_oid"]
+                        version_key = self.object_leak_info["version_key_in_index"]
+                        status = self.delete_key_from_index(version_index, version_key, "VERSION INDEX KEY DEL")
+                        if (not status):
+                            self._logger.info("Multipart parent: Failed to delete version entry " + version_key +
+                                            " from version index")
+                        # Delete all objects associated with this multipart.
+                        status = self.del_objects_in_extendedlist(self.object_leak_info["extended_md_idx_oid"])
+                        if status:
+                            # Remove leak entry from probable delete list index
+                            status = self.process_probable_delete_record(True, False)
+                            if status:
+                                self._logger.info("Processed possible multipart leak for multipart oid " + self.object_leak_id)
+                        else:
+                            self._logger.info("Failed to process possible multipart leak for multipart oid " + self.object_leak_id)
+                    else:
+                        # No leak. Remove leak entry from probable delete list index
+                        status = self.process_probable_delete_record(True, False)
+                        self._logger.info("No leak detected for multipart oid " + self.object_leak_id + " . Removed leak entry")
+                else:
+                    # This condition indicates successful Multipart PUT request API.
+                    # - Check for parallel S3 Multipart PUT calls by checking this oid with current/live object oid
+                    # in the part index. If they are different, it means this is stale/leak multipart PUT object
+                    part_index_oid = NULL_OBJ_OID
+                    if "part_list_idx_oid" in self.object_leak_info:
+                        # This is possibly multipart PART operation
+                        part_index_oid = self.object_leak_info["part_list_idx_oid"]
+
+                    if part_index_oid != NULL_OBJ_OID:
+                        status, part_info = self.get_object_Entry(part_index_oid, str(part_no))
+                        if (not status):
+                            self._logger.info("Error! Failed to get part info for part no:  " + str(part_no) +
+                                " from part list index: " + part_index_oid)
+                            return status
+
+                        if (part_info is not None):
+                            obj_oid = part_info["motr_oid"]
+                            if (obj_oid != self.object_leak_id):
+                                # Possible part leak. Delete part object from motr store
+                                self._logger.info("PART leak for multipart part with oid " + self.object_leak_id)
+                                status = self.delete_object_from_storage(self.object_leak_id, \
+                                    self.object_leak_layout_id, self.pvid_str)
+                                if (status):
+                                    self._logger.info("Deleted part object with oid " + self.object_leak_id + " from motr store")
+                                    # Remove leak entry from probable delete list index
+                                    status = self.process_probable_delete_record(True, False)
+                                else:
+                                    self._logger.info("Failed to delete part with oid [" + self.object_leak_id + "] from motr store")
+                            else:
+                                # No leak. Remove leak entry from probable delete list index
+                                status = self.process_probable_delete_record(True, False)
+                                self._logger.info("No leak detected for part " + str(part_no) + ". Removed leak entry")
+                        else:
+                            # Remove leak entry from probable delete list index
+                            status = self.process_probable_delete_record(True, False)
+                            self._logger.info("The part: " + str(part_no) + " does not exist in part index. Removed leak entry")
+                return status
+            else:
+                # This is leak check for simple PUT due to parallel PUT
+                # Check if object is live/current
+                if (self.object_leak_id != current_oid):
+                    # This is stale/leak simple PUT; delete object from motr and remove version entry
+                    self._logger.info("Simple PUT leak for oid " + self.object_leak_id)
+                    status = self.process_probable_delete_record(True, True)
+                    if status:
+                        self._logger.info("Processed leak entry " + self.object_leak_id + " successfully")
+                    else:
+                        self._logger.info("Failed to process leak for oid " + self.object_leak_id)
+                else:
+                    # No leak. Remove leak entry from probable delete list index
+                    status = self.process_probable_delete_record(True, False)
+                    self._logger.info("No leak detected for simple object " + self.object_leak_id + ". Removed leak entry")
+                return status
+
             # For multipart new object request, check if entry exists in multipart metadata
             # If entry does not exist, delete the object and associated leak entry from probabale delete list
             if ("true" == self.object_leak_info["is_multipart"]):
@@ -594,30 +751,7 @@ class ObjectRecoveryValidator:
                         "Skipping entry. Failed to search multipart index")
                 return
 
-        status, current_object_md = self.get_object_metadata(obj_list_id, obj_key)
-
-        if (status):
-            # Either object exists or object does not exist.
-            if (current_object_md is None):
-                # Object does not exist.
-                self._logger.info("Object key " + obj_key + " does not exist in object list index. " +
-                    "Delete motr oid and the leak entry")
-                status = self.process_probable_delete_record(True, True)
-                if (status):
-                    self._logger.info("Leak oid " + self.object_leak_id + " processed successfully and deleted")
-                else:
-                    self._logger.error("Failed to process leak oid " + self.object_leak_id)
-                return
-            else:
-                # Object exists. Contine further with leak algorithm.
-                pass
-        else:
-            self._logger.error("Failed to process leak oid " + self.object_leak_id +
-                        " Skipping entry for next run")
-            return
-
         # Object leak detection algo: Step #3 - For old object
-        current_oid = current_object_md["motr_oid"]
         # If leak entry is corresponding to old object
         if (self.object_leak_info["old_oid"] == NULL_OBJ_OID):
             # If old object is different than current object in metadata
@@ -680,9 +814,6 @@ class ObjectRecoveryValidator:
             else:
                 # Check if the request is in progress.
                 # For this, check if new object oid is present in version table
-                ovli_oid = self.object_leak_info["objects_version_list_index_oid"]
-                ovli_key = self.object_leak_info["version_key_in_index"]
-
                 status, versioninfo = self.get_object_Entry(ovli_oid, ovli_key)
 
                 if (status and versioninfo is not None):
