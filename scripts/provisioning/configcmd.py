@@ -520,7 +520,7 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f'{configfile} file is not present')
 
     # load config file (example: s3configfileconfstore = confstore object to /etc/cortx/s3/conf/s3config.yaml)
-    s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
+    s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', str(uuid.uuid1()))
 
     # get the value to be updated from provisioner config for given key
     # Fetchinng the incoming value from the provisioner config file
