@@ -24,6 +24,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <gtest/gtest_prod.h>
 
 #include "s3_factory.h"
 #include "s3_motr_kvs_reader.h"
@@ -141,4 +142,18 @@ class DataUsageItem {
   void save(std::shared_ptr<RequestObject> req, int64_t objects_count_increment,
             int64_t bytes_count_increment, std::function<void()> on_success,
             std::function<void()> on_failure);
+
+  friend S3DataUsageCache;
+  friend class DataUsageItemTest;
+
+  FRIEND_TEST(DataUsageItemTest, Constructor);
+  FRIEND_TEST(DataUsageItemTest, GetItemRequestId);
+  FRIEND_TEST(DataUsageItemTest, SetState);
+  FRIEND_TEST(DataUsageItemTest, SimpleSuccessfulSave);
+  FRIEND_TEST(DataUsageItemTest, SimpleSaveMissingKey);
+  FRIEND_TEST(DataUsageItemTest, SimpleSaveFailedToRead);
+  FRIEND_TEST(DataUsageItemTest, SimpleSaveFailedToWrite);
+  FRIEND_TEST(DataUsageItemTest, MultipleSaveSuccessful);
+  FRIEND_TEST(DataUsageItemTest, MultipleSaveOneWriteFailed);
+  FRIEND_TEST(DataUsageItemTest, MultipleSaveConsequent);
 };
