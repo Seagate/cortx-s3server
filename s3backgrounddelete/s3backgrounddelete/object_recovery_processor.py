@@ -25,7 +25,6 @@ the cortx message_bus message queue.
 
 import os
 import errno
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 import traceback
 import logging
 import datetime

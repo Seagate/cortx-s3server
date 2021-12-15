@@ -39,7 +39,6 @@ import sys
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 from s3backgrounddelete.cortx_s3_signal import SigTermHandler
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
