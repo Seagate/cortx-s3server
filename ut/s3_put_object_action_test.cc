@@ -78,7 +78,7 @@ using ::testing::DefaultValue;
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
                 get_bucket_versioning_status())                           \
         .Times(AtLeast(1))                                                \
-        .WillOnce(ReturnRef(versioning_status));                          \
+        .WillRepeatedly(ReturnRef(versioning_status));                    \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
         .Times(AtLeast(1));                                               \
     EXPECT_CALL(*(ptr_mock_request), http_verb())                         \
@@ -1403,6 +1403,52 @@ TEST_F(S3PutObjectActionTest, AddOidToProbableDeadListVersioningDisabled) {
   action_under_test->add_object_oid_to_probable_dead_oid_list();
 }
 
+TEST_F(S3PutObjectActionTest, AddOidToProbableDeadListVersioningSuspended) {
+  versioning_status = "Suspended";
+  CREATE_OBJECT_METADATA_VER;
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+  action_under_test->old_object_oid = old_object_oid;
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test->old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->set_null_object_version_id("abcd");
+  action_under_test->null_object_metadata =
+      object_meta_factory->mock_null_object_metadata;
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata),
+              set_version_id(_)).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata), load(_, _))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .Times(1)
+      .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index())
+      .Times(1)
+      .WillOnce(Return("objname/v1"));
+
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(1024));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(index_layout));
+  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
+      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      "mock_pvid", index_layout.oid, index_layout.oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->new_probable_del_rec.reset(prob_rec);
+  action_under_test->layout_id = 2;
+  action_under_test->old_layout_id = 2;
+  action_under_test->add_object_oid_to_probable_dead_oid_list();
+}
+
 TEST_F(S3PutObjectActionTest, MarkOldOidForDelValidation) {
   CREATE_OBJECT_METADATA;
   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
@@ -1465,4 +1511,76 @@ TEST_F(S3PutObjectActionTest, MarkOldOidForDelValidation) {
   auto number_of_tasks_ver_enabled = action_under_test->number_of_tasks();
 
   EXPECT_EQ(number_of_tasks_ver_disabled, number_of_tasks_ver_enabled + 2);
+}
+
+TEST_F(S3PutObjectActionTest, FetchNullVersionObject) {
+  action_under_test->null_object_metadata =
+      object_meta_factory->mock_null_object_metadata;
+  action_under_test->set_null_object_version_id("abcd");
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata),
+              set_version_id(_)).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata), load(_, _))
+      .Times(AtLeast(1));
+  action_under_test->fetch_null_version_object_info();
+}
+TEST_F(S3PutObjectActionTest, FetchNullVersionObjectSuccessful) {
+  CREATE_BUCKET_METADATA;
+
+  action_under_test->null_object_metadata =
+      object_meta_factory->mock_null_object_metadata;
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata), get_state())
+      .WillOnce(Return(S3ObjectMetadataState::present));
+
+  struct m0_uint128 old_oid = {0x1ffff, 0x1ffff};
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata), get_oid())
+      .Times(1)
+      .WillOnce(Return(old_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata),
+              get_layout_id())
+      .Times(1)
+      .WillOnce(Return(layout_id));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata),
+              get_object_name()).WillRepeatedly(Return(std::string("abcd")));
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata),
+              get_version_key_in_index())
+      .WillRepeatedly(Return(std::string("abcd/18133434")));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
+  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
+      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      "mock_pvid", index_layout.oid, index_layout.oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->new_probable_del_rec.reset(prob_rec);
+  MockS3ProbableDeleteRecord *prob_rec2 = new MockS3ProbableDeleteRecord(
+      "oid_str", {0ULL, 0ULL}, "abc_obj", oid, old_layout_id, "mock_pvid",
+      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
+      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->old_probable_del_rec.reset(prob_rec2);
+  action_under_test->number_of_parts = 0;
+
+  action_under_test->old_layout_id = 2;
+  action_under_test->layout_id = 2;
+
+  action_under_test->fetch_null_version_object_info_success();
+
+  EXPECT_OID_NE(zero_oid, action_under_test->old_object_oid);
+}
+TEST_F(S3PutObjectActionTest, FetchNullVersionObjectFailed) {
+  action_under_test->null_object_metadata =
+      object_meta_factory->mock_null_object_metadata;
+  EXPECT_CALL(*(object_meta_factory->mock_null_object_metadata), get_state())
+      .WillOnce(Return(S3ObjectMetadataState::missing));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
+  action_under_test->fetch_null_version_object_info_failed();
 }

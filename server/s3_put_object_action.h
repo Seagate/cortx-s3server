@@ -46,6 +46,10 @@ class S3PutObjectAction : public S3ObjectAction {
   int layout_id;
   int number_of_parts;
   unsigned motr_write_payload_size;
+  bool null_version_object_initialized{false};
+  std::string null_object_version_id;
+  std::shared_ptr<S3ObjectMetadata> null_object_metadata;
+
   // string used for salting the uri
   std::string salt;
   std::shared_ptr<S3MotrWiter> motr_writer;
@@ -69,6 +73,7 @@ class S3PutObjectAction : public S3ObjectAction {
   // Probable delete record for new object OID in case of current req failure
   std::string new_oid_str;  // Key for new probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+  std::map<std::string, std::string> probable_oid_list;
   std::vector<struct m0_uint128> old_obj_oids;
   std::vector<struct m0_fid> old_obj_pvids;
   std::vector<int> old_obj_layout_ids;
@@ -108,6 +113,8 @@ class S3PutObjectAction : public S3ObjectAction {
   void fetch_ext_object_info_success();
 
   void add_object_oid_to_probable_dead_oid_list();
+  void _add_object_oid_to_probable_dead_oid_list(
+      std::shared_ptr<S3ObjectMetadata> old_object_metadata);
   void add_object_oid_to_probable_dead_oid_list_failed();
   void add_part_object_to_probable_dead_oid_list(
       const std::shared_ptr<S3ObjectMetadata> &,
@@ -116,6 +123,11 @@ class S3PutObjectAction : public S3ObjectAction {
   // process leak due to parallel PUT requests.
   // Below function adds entry to probable index.
   void add_oid_for_parallel_leak_check();
+  void update_global_probable_dead_object_list_index();
+
+  void fetch_null_version_object_info();
+  void fetch_null_version_object_info_success();
+  void fetch_null_version_object_info_failed();
 
   void initiate_data_streaming();
   void consume_incoming_content();
@@ -127,6 +139,8 @@ class S3PutObjectAction : public S3ObjectAction {
   void save_object_metadata_success();
   void save_object_metadata_failed();
   void send_response_to_s3_client();
+
+  void set_null_object_version_id(std::string ver_id);
 
   // Rollback tasks
   void startcleanup() override;
@@ -218,6 +232,11 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest,
               AddOidToProbableDeadListVersioningDisabled);
   FRIEND_TEST(S3PutObjectActionTest, MarkOldOidForDelValidation);
+  FRIEND_TEST(S3PutObjectActionTest,
+              AddOidToProbableDeadListVersioningSuspended);
+  FRIEND_TEST(S3PutObjectActionTest, FetchNullVersionObject);
+  FRIEND_TEST(S3PutObjectActionTest, FetchNullVersionObjectSuccessful);
+  FRIEND_TEST(S3PutObjectActionTest, FetchNullVersionObjectFailed);
 };
 
 #endif
