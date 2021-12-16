@@ -411,7 +411,7 @@ class ConfigCmd(SetupCmd):
       self.logger.info("Init Msg Bus started")
       endpoints_val = self.get_confvalue_with_defaults("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
       self.logger.info(f"Msg Bus end point value is {endpoints_val}")
-      S3CortxMsgBus.configure_endpoint(endpoints_val, self.logger)
+      S3CortxMsgBus.configure_endpoint(endpoints_val)
       self.logger.info("Init Msg Bus completed")
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
           S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)

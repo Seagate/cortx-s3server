@@ -172,7 +172,7 @@ def main():
       endpoints_key = s3_confkeys_store.get_config("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
       endpoints_val = prov_confkeys_store.get_config(endpoints_key)
       logger.info(f"Msg Bus end point value is {endpoints_val}")
-      S3CortxMsgBus.configure_endpoint(endpoints_val, logger)
+      S3CortxMsgBus.configure_endpoint(endpoints_val)
       logger.info("Init Msg Bus completed")
 
       # Start S3 Background Producer
@@ -193,7 +193,7 @@ def main():
       endpoints_key = s3_confkeys_store.get_config("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
       endpoints_val = prov_confkeys_store.get_config(endpoints_key)
       logger.info(f"Msg Bus end point value is {endpoints_val}")
-      S3CortxMsgBus.configure_endpoint(endpoints_val, logger)
+      S3CortxMsgBus.configure_endpoint(endpoints_val)
       logger.info("Init Msg Bus completed")
 
       # Start the Background Consumer

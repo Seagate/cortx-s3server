@@ -50,7 +50,7 @@ class ObjectRecoveryProcessor(object):
         self.logger.info("Initialising the Object Recovery Processor")
         if self.config.get_messaging_platform() == MESSAGE_BUS:
           endpoints_val = self.config.get_msgbus_platform_url()
-          S3CortxMsgBus.configure_endpoint(endpoints_val, self.logger)
+          S3CortxMsgBus.configure_endpoint(endpoints_val)
         self.term_signal = SigTermHandler()
 
     def consume(self):

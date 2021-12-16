@@ -34,9 +34,9 @@ class S3CortxMsgBus:
         self._consumer = None
 
     @staticmethod
-    def configure_endpoint(endpoint: list, logger_handle):
+    def configure_endpoint(endpoint: list):
         """Configure endpoints."""
-        MessageBus.init(endpoint, logger=logger_handle)
+        MessageBus.init(endpoint)
 
     def setup_producer(self, prod_id, msg_type, method):
         """Setup producer."""
