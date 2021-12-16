@@ -33,7 +33,7 @@
 constexpr size_t kVersionIdTsLen = 8;
 // As the version ID timestamp is encoded in Base62, the maximum value
 // for 8-characters is 62^8 - 1. This is the maximum time interval in ms.
-constexpr uint64_t kMaxTimeStampCount = UINT64_C(218340105584895);
+constexpr uint64_t kMaxTimeStampCount = 218340105584895;
 
 uint64_t S3ObjectVersioningHelper::generate_timestamp(
     const std::chrono::system_clock::time_point& tp) {
@@ -48,9 +48,9 @@ std::string S3ObjectVersioningHelper::get_versionid_from_timestamp(
     uint64_t ts) {
   auto version_ts = base62::base62_encode(ts, kVersionIdTsLen);
 
+  // TODO: use 18-byte random data for more random bits, and no padding
   S3Uuid uuid;
   auto uuid_str = base64_encode(uuid.ptr(), sizeof(uuid_t));
-  // TODO: use 18-byte random data to avoid any padding
   S3CommonUtilities::find_and_replaceall(uuid_str, "=", "");
   // TODO: URL-safe, use alternative alphabet to avoid replacement
   S3CommonUtilities::find_and_replaceall(uuid_str, "+", "-");

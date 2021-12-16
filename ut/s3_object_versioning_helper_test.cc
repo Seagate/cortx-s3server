@@ -44,7 +44,7 @@ using TimePoint = std::chrono::time_point<Clock>;
 using Millis = std::chrono::milliseconds;
 using UnsignedMillis = std::chrono::duration<uint64_t, std::milli>;
 
-constexpr auto kMaxTimeStampCount = UINT64_C(218340105584895);  // 62^8 - 1
+constexpr uint64_t kMaxTimeStampCount = 218340105584895;  // 62^8 - 1
 
 const auto kVersionIdRegExMatcher = MatchesRegex(
     "^"                   // start of string
@@ -56,7 +56,7 @@ const auto kVersionIdRegExMatcher = MatchesRegex(
 // Splits a version ID, returning the timestamp component as the first
 // item, and the random UUID as the second item.
 std::pair<std::string, std::string> SplitVersionId(
-    const std::string version_id) {
+    const std::string& version_id) {
   return std::make_pair(std::string(version_id, 0, 8),
                         std::string(version_id, 9, version_id.length()));
 }

@@ -40,18 +40,21 @@ const std::string kBase62 =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz";
 
+// Tests the encoding of values 0-61.
 TEST(Base62, SimpleEncode) {
   for (uint64_t i = 0; i < 62; i++) {
     EXPECT_EQ(base62_encode(i), std::string{kBase62.at(i)});
   }
 }
 
+// Tests the decoding of single character strings [0-9A-Za-z].
 TEST(Base62, SimpleDecode) {
   for (size_t i = 0; i < 62; i++) {
     EXPECT_EQ(base62_decode(std::string{kBase62[i]}), i);
   }
 }
 
+// Tests the encoding of minimum and maximum integer values.
 TEST(Base62, EncodeMinMax) {
   EXPECT_EQ(base62_encode(0), "0");
   EXPECT_EQ(base62_encode(static_cast<uint64_t>(std::pow(62, 8)) - 1),
@@ -59,6 +62,7 @@ TEST(Base62, EncodeMinMax) {
   EXPECT_EQ(base62_encode(UINT64_MAX), "LygHa16AHYF");
 }
 
+// Tests the decoding of minimum and maximum encoded strings.
 TEST(Base62, DecodeMinMax) {
   EXPECT_EQ(base62_decode("0"), 0);
   EXPECT_EQ(base62_decode("zzzzzzzz"),
@@ -66,6 +70,7 @@ TEST(Base62, DecodeMinMax) {
   EXPECT_EQ(base62_decode("LygHa16AHYF"), UINT64_MAX);
 }
 
+// Tests that encoded strings are padded.
 TEST(Base62, EncodeWithPadding) {
   EXPECT_EQ(base62_encode(63, /*pad*/ 0), "11");
   EXPECT_EQ(base62_encode(0, /*pad*/ 5), "00000");
@@ -73,6 +78,7 @@ TEST(Base62, EncodeWithPadding) {
   EXPECT_EQ(base62_encode(UINT64_MAX, /*pad*/ 1), "LygHa16AHYF");
 }
 
+// Tests the decoding of strings that have leading zeroes.
 TEST(Base62, DecodeLeadingZeroes) {
   EXPECT_EQ(base62_decode("0"), 0);
   EXPECT_EQ(base62_decode("000000"), 0);
@@ -87,6 +93,7 @@ TEST(Base62, DecodeLeadingZeroes) {
   EXPECT_EQ(base62_decode("0000Sr3dQSZ"), 1639015361963);
 }
 
+// Tests the behavior of decoding strings that are too large.
 TEST(Base62, Overflows) {
   EXPECT_EQ(base62_decode("LygHa16AHYG"), 0);   // UINT64_MAX + 1
   EXPECT_EQ(base62_decode("LygHa16AHZG"), 62);  // UINT64_MAX + 62
@@ -94,6 +101,8 @@ TEST(Base62, Overflows) {
             UINT64_C(15143072536417990655));  // (62^11 - 1) & UINT64_MAX
 }
 
+// Test the encoding and decoding of a random number of values, and ensures they
+// are in sorted ordering.
 TEST(Base62, RandomRange) {
   // There are far too many values between 0 and UINT64_MAX
   // to test them all, so pick a set of random ones to vary
