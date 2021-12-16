@@ -30,6 +30,7 @@ samlMetadataFileName=saml-metadata.xml
 # operations can be configured using below three paramters.
 maxAccountLimit=1000
 maxIAMUserLimit=1000
+maxIAMPolicyLimit=1000
 ldapSearchResultsSizeLimit=1000
 dataSource=ldap
 ldapHost=127.0.0.1

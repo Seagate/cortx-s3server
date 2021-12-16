@@ -483,5 +483,9 @@ public class AuthServerConfig {
     static boolean isEnableIamPolicy() {
       return Boolean.valueOf(authServerConfig.getProperty("enableIamPolicy"));
     }
+   public
+    static int getMaxIAMPolicyLimit() {
+      return Integer.parseInt(authServerConfig.getProperty("maxIAMPolicyLimit"));
+    }
 }
 

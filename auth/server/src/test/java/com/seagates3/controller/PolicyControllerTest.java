@@ -76,6 +76,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.doReturn("2012-10-17")
         .when(AuthServerConfig.class, "getPolicyVersion");
     PowerMockito.doReturn("0000").when(AuthServerConfig.class, "getReqId");
+    PowerMockito.doReturn(1000).when(AuthServerConfig.class, "getMaxIAMPolicyLimit");
 
     Requestor requestor = new Requestor();
     requestor.setAccount(account);
