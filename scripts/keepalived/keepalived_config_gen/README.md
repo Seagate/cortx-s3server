@@ -47,7 +47,6 @@ Config generation is done in two steps
 ## Requirements
 
 -   python3.6
--   PyYAML 5.4.1
 
 ## Create mapping of virtual IPs to hosts
 
