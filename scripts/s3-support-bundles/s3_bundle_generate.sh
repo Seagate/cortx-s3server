@@ -19,9 +19,25 @@
 #
 
 
+
 #######################################################
 # Generate Support bundle for S3Server #
 #######################################################
+
+##############################################
+# common prameter/values used by every service
+##############################################
+
+s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
+base_log_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_log_key")
+echo "base_log_file_path: $base_log_file_path"
+
+s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
+base_config_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_config_key")
+echo "base_config_file_path: $base_config_file_path"
+
+## Add file/directory locations for bundling
+args=()
 
 USAGE="USAGE: bash $(basename "$0") -b <bundleid> -t <path> -c <confstore_url> -s <services>
 Generate support bundle for s3server.
@@ -31,11 +47,147 @@ where:
 -c        Confstore URL.
 -s        services list."
 
+##################
+# Helper Functions 
+##################
+
+# collect common logs
+collect_common() {
+    echo "collect common logs started"
+
+    # Collect s3cluster config file if available
+    s3cluster_config="$base_config_file_path/s3/s3backgrounddelete/s3_cluster.yaml"
+    if [ -f "$s3cluster_config" ];
+    then
+        args+=($s3cluster_config)
+    fi
+
+    # Collect S3 deployment log
+    s3deployment_log="$base_log_file_path/s3/s3deployment/s3deployment.log"
+    if [ -f "$s3deployment_log" ];
+    then
+        args+=($s3deployment_log*)
+    fi
+
+    echo "collect common logs completed"
+}
+
+# collect haproxy logs
+collect_haproxy() {
+    echo "collect haproxy logs started"
+
+    haproxy_config="/etc/haproxy/haproxy.cfg"
+    # collect rotated logs for haproxy and ldap along with live log
+    haproxy_log="$base_log_file_path/haproxy.log"
+    haproxy_status_log="$base_log_file_path/haproxy-status.log"
+    haproxy_log_k8s=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_LOG_SYMLINK")
+
+    # Collect haproxy config file if available
+    if [ -f "$haproxy_config" ];
+    then
+        args+=($haproxy_config)
+    fi
+
+    # Collect haproxy log along with rotated logs if available
+    if [ -f "$haproxy_log" ];
+    then
+        args+=($haproxy_log*)
+    fi
+
+    # Collect haproxy status log along with rotated logs if available
+    if [ -f "$haproxy_status_log" ];
+    then
+        args+=($haproxy_status_log*)
+    fi
+
+    # Collect haproxy k8s log along with rotated logs if available
+    if [ -f "$haproxy_log_k8s" ];
+    then
+        args+=($haproxy_log_k8s*)
+    fi
+
+    echo "collect haproxy logs completed"
+}
+
+# collect s3 server logs
+collect_s3server() {
+    echo "collect s3server logs started"
+    echo "collect s3server logs completed"
+}
+
+# collect auth server logs
+collect_authserver() {
+    echo "collect authserver logs started"
+
+    # Collect authserver config file if available
+    authserver_config="$base_config_file_path/auth/resources/authserver.properties"
+    if [ -f "$authserver_config" ];
+    then
+        args+=($authserver_config)
+    fi
+
+    # Collect authserver log directory if available
+    authserver_logdir=$(s3confstore "properties://$authserver_config" getkey --key="logFilePath")
+    if [ -d "$authserver_logdir" ];
+    then
+        args+=($authserver_logdir)
+    fi
+
+    # Check if auth serve log directory point to auth folder instead of "auth/server" in properties file
+    if [[ "$authserver_logdir" = *"auth/server" ]];
+    then
+        authserver_logdir=${authserver_logdir/%"/auth/server"/"/auth"}
+    fi
+
+    echo "collect authserver logs completed"
+}
+
+# collect s3 bgdelete scheduler logs
+collect_s3bgschedular() {
+    echo "collect s3bgschedular logs started"
+
+    backgrounddelete_config="$base_config_file_path/s3/s3backgrounddelete/config.yaml"
+    # Collect s3 backgrounddelete producer logs if available
+    backgrounddelete_producer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>scheduler_logger_directory")
+    if [ -d "$backgrounddelete_producer_logdir" ];
+    then
+        args+=($backgrounddelete_producer_logdir)
+    fi
+
+    echo "collect s3bgschedular logs completed"
+}
+
+# collect s3 bgdelete worker logs
+collect_s3bgworker() {
+    echo "collect s3bgworker logs started"
+
+    backgrounddelete_config="$base_config_file_path/s3/s3backgrounddelete/config.yaml"
+    # Collect s3 backgrounddelete consumer logs if available
+    backgrounddelete_consumer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>processor_logger_directory")
+    if [ -d "$backgrounddelete_consumer_logdir" ];
+    then
+        args+=($backgrounddelete_consumer_logdir)
+    fi
+
+    echo "collect s3bgworker logs completed"
+}
+
+# usage
 usage() {
   echo "$USAGE"
   exit 1
 }
 
+# Clean up temp files
+cleanup_tmp_files(){
+rm -rf "$tmp_dir"
+}
+
+###############################
+### Main script starts here ###
+###############################
+
+# parse the command line arguments
 while getopts "b:t:c:s:" opt; do
   case "${opt}" in
     b) bundle_id=${OPTARG} ;;
@@ -46,23 +198,68 @@ while getopts "b:t:c:s:" opt; do
   esac
 done
 
-if [ -z "$bundle_id" ] || [ -z "$bundle_path" ] || [ -z "$confstore_url" ] || [ -z "$services" ] ; then
+if [ -z "$bundle_id" ] || [ -z "$bundle_path" ] || [ -z "$confstore_url" ] ; then
   usage
 fi
 
+# Print all the variables
 echo "Bundle_id: $bundle_id"
 echo "bundle_path: $bundle_path"
 echo "confstore_url: $confstore_url"
 echo "services: $services"
 
+if [ "$services" = "" ]; then
+  services="haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+fi
 
-s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
-s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
+# TBD Mapping logic of old vs new service names
 
-base_config_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_config_key")
-base_log_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_log_key")
-echo "base_config_file_path: $base_config_file_path"
-echo "base_log_file_path: $base_log_file_path"
+IFS=',' #setting comma as delimiter  
+read -a servicelist <<<"$services"
+for service in "${servicelist[@]}"; #accessing each element of array
+do
+  echo "Service name: $service"
+  collect_common
+  if [ "$service" = "haproxy" ]; then
+    collect_haproxy
+  fi
+  if [ "$service" = "s3server" ]; then
+    collect_s3server
+  fi
+  if [ "$service" = "authserver" ]; then
+    collect_authserver
+  fi
+  if [ "$service" = "s3bgschedular" ]; then
+    collect_s3bgschedular
+  fi
+  if [ "$service" = "s3bgworker" ]; then
+    collect_s3bgworker
+  fi
+
+done
+
+# Build tar.gz file with bundleid at bundle_path location
+# Create folder with component name at given destination
+bundle_name="s3_$bundle_id.tar.xz"
+s3_bundle_location=$bundle_path/s3
+
+mkdir -p $s3_bundle_location
+
+# Build tar file
+echo "Generating tar..."
+
+#TODO migrate to gzip
+echo $args
+tar -cvJf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-changed
+
+# Clean up temp files
+cleanup_tmp_files
+
+echo "S3 support bundle generated successfully at $s3_bundle_location/$bundle_name !!!"
+exit
+
+
+
 
 # Fetch iamuser password from properties file and decrypt it.
 sgiamadminpwd=''
@@ -76,27 +273,12 @@ then
     sgiamadminpwd=$(s3cipher decrypt --data="$encryptedkey" --key="$ldapcipherkey")
 fi
 
-bundle_name="s3_$bundle_id.tar.xz"
-s3_bundle_location=$bundle_path/s3
-
-haproxy_config="/etc/haproxy/haproxy.cfg"
-# Collecting rotated logs for haproxy and ldap along with live log
-haproxy_log="$base_log_file_path/haproxy.log"
-haproxy_status_log="$base_log_file_path/haproxy-status.log"
-haproxy_log_k8s=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_LOG_SYMLINK")
 
 s3server_config="$base_config_file_path/s3/conf/s3config.yaml"
-authserver_config="$base_config_file_path/auth/resources/authserver.properties"
-backgrounddelete_config="$base_config_file_path/s3/s3backgrounddelete/config.yaml"
-s3cluster_config="$base_config_file_path/s3/s3backgrounddelete/s3_cluster.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 
 sys_auditlog_dir="/var/log/audit"
-
-# S3 deployment log
-
-s3deployment_log="$base_log_file_path/s3/s3deployment/s3deployment.log"
 
 
 # Create tmp folder with pid value to allow parallel execution
@@ -142,9 +324,6 @@ fi
 
 # 1. Get log directory path from config file
 s3server_logdir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_LOG_DIR")
-authserver_logdir=$(s3confstore "properties://$authserver_config" getkey --key="logFilePath")
-backgrounddelete_producer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>scheduler_logger_directory")
-backgrounddelete_consumer_logdir=$(s3confstore "yaml://$backgrounddelete_config" getkey --key="logconfig>processor_logger_directory")
 s3_motr_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 s3_core_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
 
@@ -313,20 +492,8 @@ collect_first_m0trace_file(){
   fi
 }
 
-# Check if auth serve log directory point to auth folder instead of "auth/server" in properties file
-if [[ "$authserver_logdir" = *"auth/server" ]];
-then
-    authserver_logdir=${authserver_logdir/%"/auth/server"/"/auth"}
-fi
 
-## Add file/directory locations for bundling
-args=()
 
-# Collect S3 deployment log
-if [ -f "$s3deployment_log" ];
-then
-    args+=($s3deployment_log*)
-fi
 
 # install debug rpms
 if [[ "$compress_core_file" == false  && -d "$debug_rpm_local_dir" ]];
@@ -370,28 +537,11 @@ then
     args+=($sys_auditlog_dir)
 fi
 
-# Collect s3 backgrounddelete producer logs if available
-if [ -d "$backgrounddelete_producer_logdir" ];
-then
-    args+=($backgrounddelete_producer_logdir)
-fi
-
-# Collect s3 backgrounddelete consumer logs if available
-if [ -d "$backgrounddelete_consumer_logdir" ];
-then
-    args+=($backgrounddelete_consumer_logdir)
-fi
 
 # Collect s3server log directory if available
 if [ -d "$s3server_logdir" ];
 then
     args+=($s3server_logdir)
-fi
-
-# Collect authserver log directory if available
-if [ -d "$authserver_logdir" ];
-then
-    args+=($authserver_logdir)
 fi
 
 # Collect s3 server config file if available
@@ -400,22 +550,10 @@ then
     args+=($s3server_config)
 fi
 
-# Collect authserver config file if available
-if [ -f "$authserver_config" ];
-then
-    args+=($authserver_config)
-fi
-
 # Collect backgrounddelete config file if available
 if [ -f "$backgrounddelete_config" ];
 then
     args+=($backgrounddelete_config)
-fi
-
-# Collect s3cluster config file if available
-if [ -f "$s3cluster_config" ];
-then
-    args+=($s3cluster_config)
 fi
 
 if [ -f "$s3startsystem_script" ];
@@ -427,30 +565,6 @@ fi
 if [ -f "$s3server_binary" ];
 then
     args+=($s3server_binary)
-fi
-
-# Collect haproxy config file if available
-if [ -f "$haproxy_config" ];
-then
-    args+=($haproxy_config)
-fi
-
-# Collect haproxy log along with rotated logs if available
-if [ -f "$haproxy_log" ];
-then
-    args+=($haproxy_log*)
-fi
-
-# Collect haproxy status log along with rotated logs if available
-if [ -f "$haproxy_status_log" ];
-then
-    args+=($haproxy_status_log*)
-fi
-
-# Collect haproxy k8s log along with rotated logs if available
-if [ -f "$haproxy_log_k8s" ];
-then
-    args+=($haproxy_log_k8s*)
 fi
 
 # Create temporary directory for creating other files as below
@@ -551,25 +665,3 @@ else
     fi
 fi
 
-# Clean up temp files
-cleanup_tmp_files(){
-rm -rf "$tmp_dir"
-}
-
-## 2. Build tar.gz file with bundleid at bundle_path location
-# Create folder with component name at given destination
-
-mkdir -p $s3_bundle_location
-
-# Build tar file
-echo "Generating tar..."
-
-#tar -cf - $args --warning=no-file-changed 2>/dev/null | xz -1e --thread=0 > $s3_bundle_location/$bundle_name 2>/dev/null
-
-echo $args
-tar -cvJf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-changed
-
-# Clean up temp files
-cleanup_tmp_files
-
-echo "S3 support bundle generated successfully at $s3_bundle_location/$bundle_name !!!"
