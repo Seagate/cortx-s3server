@@ -54,6 +54,7 @@ class S3DeleteObjectAction : public S3ObjectAction {
 
   // delete marker metadata
   std::shared_ptr<S3ObjectMetadata> delete_marker_metadata;
+  bool is_object_delete_marker;
 
   // Probable delete record for object OID to be deleted
   std::string oid_str;  // Key for probable delete rec
@@ -77,11 +78,13 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void fetch_bucket_info_failed();
   void fetch_ext_object_info_failed();
   void fetch_object_info_failed();
+  void delete_version_metadata();
   void delete_metadata();
   void delete_metadata_failed();
   void delete_metadata_successful();
   void set_authorization_meta();
 
+  void validate_request();
   void delete_handler();
   void metadata_handler();
   void create_delete_marker();
@@ -138,8 +141,10 @@ class S3DeleteObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3DeleteObjectActionTest, MarkOIDSForDeletion);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectsDelayedEnabled);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectsDelayedDisabled);
-  FRIEND_TEST(S3DeleteObjectActionTest, DeleteHandlerInEnabledState);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteHandlerCreateDeleteMarker);
   FRIEND_TEST(S3DeleteObjectActionTest, MetadataHandlerInEnabledState);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteHandlerDeleteDeleteMarker);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteVersionMetadata);
 };
 
 #endif
