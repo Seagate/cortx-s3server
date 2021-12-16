@@ -23,7 +23,6 @@ package com.seagates3.policy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Condition;
 import com.amazonaws.auth.policy.Policy;
@@ -36,14 +35,13 @@ import org.json.JSONObject;
 import com.seagates3.acl.AccessControlList;
 import com.seagates3.authorization.Authorizer;
 import com.seagates3.dao.ldap.AccountImpl;
-import com.seagates3.dao.ldap.UserImpl;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
-
+import com.seagates3.constants.APIRequestParamsConstants;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 public
@@ -58,12 +56,12 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     // authorized if match is found
     // AccessDenied if Deny found
     try {
-      String requestedOperation =
-          identifyOperationToAuthorize(requestBody).toLowerCase();
+      String requestedOperation = identifyOperationToAuthorize(
+          requestBody.get(APIRequestParamsConstants.S3_ACTION));
       LOGGER.debug("operation to authorize - " + requestedOperation);
       if (requestedOperation != null) {
-        serverResponse =
-            authorizeOperation(requestBody, requestedOperation, requestor);
+        serverResponse = authorizeOperation(
+            requestBody, requestedOperation.toLowerCase(), requestor);
       }
     }
     catch (Exception e) {
@@ -71,34 +69,6 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     }
     LOGGER.debug("authorizePolicy response - " + serverResponse);
     return serverResponse;
-  }
-
-  /**
-   * Below method will identify requested operation by user
-   *
-   * @param requestBody
-   * @return
-   */
- private
-  String identifyOperationToAuthorize(Map<String, String> requestBody) {
-    String s3Action = requestBody.get("S3Action");
-    if (null != s3Action) {
-      switch (s3Action) {
-        case "HeadBucket":
-          s3Action = "ListBucket";
-          break;
-        case "HeadObject":
-          s3Action = "GetObject";
-          break;
-        case "DeleteBucketTagging":
-          s3Action = "PutBucketTagging";
-          break;
-      }
-      s3Action = "s3:" + s3Action;
-      LOGGER.debug("identifyOperationToAuthorize has returned action as - " +
-                   s3Action);
-    }
-    return s3Action;
   }
 
   /**
@@ -174,8 +144,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
               "The specified method is not allowed against this resource.");
         }
       } else {
-        boolean isRootUser = Authorizer.isRootUser(
-            new UserImpl().findByUserId(requestor.getId()));
+        boolean isRootUser = Authorizer.isRootUser(requestor.getUser());
         if (isRootUser &&
             requestor.getAccount().getCanonicalId().equals(resourceOwner)) {
           response = responseGenerator.ok();
@@ -183,22 +152,6 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
           response = responseGenerator.AccessDenied();
         }
       }
-      } else {
-        if (response != null &&
-            response.getResponseStatus() == HttpResponseStatus.OK) {
-          if (requestor == null) {
-            return responseGenerator.generateAuthorizationResponse(null, null);
-          } else {
-          boolean isRootUser = Authorizer.isRootUser(
-              new UserImpl().findByUserId(requestor.getId()));
-          if (isRootUser ||
-              requestor.getAccount().getCanonicalId().equals(resourceOwner)) {
-            response = responseGenerator.ok();
-          } else {
-            response = responseGenerator.AccessDenied();
-          }
-        }
-        }
       }
     return response;
   }
@@ -228,7 +181,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
       switch (provider) {
         case "AWS":
           if (new PrincipalArnParser().isArnFormatValid(principalId)) {
-            User user = new UserImpl().findByArn(principalId);
+            User user = requestor.getUser();
             if (user != null && user.exists() &&
                 user.getId().equals(requestor.getId())) {
               isMatching = true;
@@ -256,94 +209,5 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     return isMatching;
   }
 
-  /**
-   * Below will validate requested resource against resource inside policy
-   *
-   * @param resourceList
-   * @param requestedResource
-   * @return
-   */
- private
-  boolean isResourceMatching(List<String> resourceList,
-                             String requestedResource) {
-    boolean isMatching = false;
-    for (String resourceArn : resourceList) {
-      String resource = PolicyUtil.getResourceFromResourceArn(resourceArn);
-      if (PolicyUtil.isPatternMatching(requestedResource, resource)) {
-        isMatching = true;
-        break;
-      }
-    }
-    LOGGER.debug("isResourceMatching:: result - " + String.valueOf(isMatching));
-    return isMatching;
-  }
-
-  /**
-   * Below will validate requested operation against the actions inside policy
-   * including wildcard-chars
-   *
-   * @param actionsList
-   * @param requestedOperation
-   * @return
-   */
- private
-  boolean isActionMatching(List<Action> actionsList,
-                           String requestedOperation) {
-    boolean isMatching = false;
-    for (Action action : actionsList) {
-      List<String> matchingActionsList =
-          PolicyUtil.getAllMatchingActions(action.getActionName());
-      for (String matchingAction : matchingActionsList) {
-        if (matchingAction.equals(requestedOperation)) {
-          isMatching = true;
-          break;
-        }
-      }
-      if (isMatching) {
-        break;
-      }
-    }
-    LOGGER.debug("isActionMatching:: result - " + String.valueOf(isMatching));
-    return isMatching;
-  }
-
-  /**
-   * Checks if the Conditions from policy are satisfied in the request.
-   * Returns true if there are no conditions in policy.
-   * @param conditions
-   * @param requestBody
-   * @return - true if policy conditions are satisfied
-   */
- private
-  boolean isConditionMatching(List<Condition> conditions,
-                              Map<String, String> requestBody) {
-    if (conditions.isEmpty()) return true;
-
-    /**
-     * Check if the headers from requestBody satisfy the policy conditions
-     * Sample Condition -
-     * "Condition": {
-     *   "StringEquals": {
-     *     "s3:x-amz-acl": ["bucket-owner-read", "bucket-owner-full-control"]
-     *   }
-     * }
-     */
-    boolean result = false;
-    for (Condition condition : conditions) {
-      PolicyCondition pc = ConditionFactory.getCondition(
-          condition.getType(),
-          ConditionUtil.removeKeyPrefix(condition.getConditionKey()),
-          condition.getValues());
-      if (pc != null)
-        result = pc.isSatisfied(requestBody);
-      else
-        result = false;
-
-      if (!result) break;
-    }
-    LOGGER.debug("isConditionMatching:: result - " + String.valueOf(result));
-    return result;
-  }
 }
-
 

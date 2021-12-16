@@ -53,6 +53,9 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import com.seagates3.dao.UserDAO;
+import com.seagates3.model.User;
+import java.util.Collections;
 
 @RunWith(PowerMockRunner.class)
     @PrepareForTest({DAODispatcher.class, LdapConnectionManager.class,
@@ -168,6 +171,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
         Account account = new Account();
         account.setId("12345");
         account.setName("s3test");
+        User user = new User();
+        user.setId("123");
+        user.setPolicyIds(Collections.EMPTY_LIST);
         Requestor expectedRequestor = new Requestor();
         expectedRequestor.setAccessKey(accessKey);
         expectedRequestor.setId("123");
@@ -191,7 +197,11 @@ import org.powermock.modules.junit4.PowerMockRunner;
         PowerMockito.doReturn(accountDAO).when(DAODispatcher.class,
                 "getResourceDAO", DAOResource.ACCOUNT
         );
+        UserDAO userDAO = mock(UserDAO.class);
+        doReturn(userDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
         Mockito.doReturn(account).when(accountDAO).find("s3test");
+        Mockito.doReturn(user).when(userDAO).find("s3test", "123");
         Requestor requestor = requestorImpl.find(accessKey);
         Assert.assertThat(expectedRequestor, new ReflectionEquals(requestor));
     }
