@@ -70,7 +70,7 @@ fi
 # Ensure default working dir is present
 # e.g. /var/log/cortx/motr/<machine-id>/s3server-<fid>
 s3_working_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
-s3_working_dir= "$s3_working_dir/s3server-$fid"
+s3_working_dir="$s3_working_dir/s3server-$fid"
 
 mkdir -p $s3_working_dir
 
