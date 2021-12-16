@@ -485,7 +485,8 @@ public class AuthServerConfig {
     }
    public
     static int getMaxIAMPolicyLimit() {
-      return Integer.parseInt(authServerConfig.getProperty("maxIAMPolicyLimit"));
+      return Integer.parseInt(
+          authServerConfig.getProperty("maxIAMPolicyLimit"));
     }
 }
 

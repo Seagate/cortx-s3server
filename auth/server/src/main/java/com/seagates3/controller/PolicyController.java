@@ -70,22 +70,26 @@ public class PolicyController extends AbstractController {
     public ServerResponse create() {
         Policy policy;
         int existingPoliciesCount;
-        String policyName = requestBody.get(APIRequestParamsConstants.POLICY_NAME);
+        String policyName =
+            requestBody.get(APIRequestParamsConstants.POLICY_NAME);
         Account account = requestor.getAccount();
         int maxIAMpolicyLimit = AuthServerConfig.getMaxIAMPolicyLimit();
         try {
-            existingPoliciesCount = getExistingPoliciesCount(account);
+          existingPoliciesCount = getExistingPoliciesCount(account);
 
-            if (existingPoliciesCount >= maxIAMpolicyLimit) {
-              LOGGER.error("Maximum allowed Policy limit has exceeded (i.e." +
-            		  maxIAMpolicyLimit + ")");
-              return responseGenerator.limitExceeded("The request was rejected because it attempted to create policy beyond the current limits (i.e" + maxIAMpolicyLimit +" )");
-            }
+          if (existingPoliciesCount >= maxIAMpolicyLimit) {
+            LOGGER.error("Maximum allowed Policy limit has exceeded (i.e." +
+                         maxIAMpolicyLimit + ")");
+            return responseGenerator.limitExceeded(
+                "The request was rejected because it attempted to create "
+                "policy beyond the current limits (i.e" +
+                maxIAMpolicyLimit + " )");
           }
-          catch (DataAccessException ex) {
-            LOGGER.error("Failed to validate policy count limit: " + ex);
-            return responseGenerator.internalServerError();
-          }
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to validate policy count limit: " + ex);
+          return responseGenerator.internalServerError();
+        }
         try {
           policy = policyDAO.find(account, policyName);
         } catch (DataAccessException ex) {
@@ -228,8 +232,8 @@ public class PolicyController extends AbstractController {
       LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
       return responseGenerator.generateGetResponse(policy);
     }
-    
-    private
+
+   private
     int getExistingPoliciesCount(Account account) throws DataAccessException {
       Map<String, Object> apiParameters = new HashMap<>();
       List<Policy> policyList = null;
