@@ -71,7 +71,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   bool auth_in_progress = false;
   bool auth_failed = false;
   bool auth_completed = false;
-    
+
   bool motr_write_in_progress = false;
   bool motr_write_completed = false;  // full object write
   bool write_failed = false;
@@ -84,7 +84,8 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   S3Timer s3_timer;
 
   int get_part_number() {
-    return strtol((request->get_query_string_value("partNumber")).c_str(), 0, 10);
+    return strtol((request->get_query_string_value("partNumber")).c_str(), 0,
+                  10);
   }
 
   void set_authorization_meta();
@@ -98,7 +99,8 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   S3PutMultipartCopyAction(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<MotrAPI> motr_api = nullptr,
-      std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
+          nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
@@ -145,6 +147,5 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   void delete_old_object();
   void remove_old_object_version_metadata();
   void delete_new_object();
-
 };
 #endif  // __S3_SERVER_S3_PUT_MULTIPART_COPY_ACTION_H__

@@ -51,15 +51,16 @@ S3PutMultipartCopyAction::S3PutMultipartCopyAction(
     : S3PutObjectActionBase(std::move(req), std::move(bucket_meta_factory),
                             std::move(object_meta_factory), std::move(motr_api),
                             std::move(motr_s3_writer_factory),
-                            std::move(kv_writer_factory)){
+                            std::move(kv_writer_factory)) {
   part_number = get_part_number();
   upload_id = request->get_query_string_value("uploadId");
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: UploadPartCopy. Destination: [%s], Source: [%s], \
          Part[%d] for UploadId [%s]\n",
-         request->get_object_uri().c_str(), request->get_headers_copysource().c_str(),
-         part_number, upload_id.c_str());
+         request->get_object_uri().c_str(),
+         request->get_headers_copysource().c_str(), part_number,
+         upload_id.c_str());
 
   action_uses_cleanup = true;
   s3_copy_part_action_state = S3PutObjectActionState::empty;
@@ -111,19 +112,21 @@ S3PutMultipartCopyAction::S3PutMultipartCopyAction(
 
   S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
                  &new_object_oid);
-  
+
   setup_steps();
 }
 
 void S3PutMultipartCopyAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  ACTION_TASK_ADD(S3PutMultipartCopyAction::validate_multipart_partcopy_request, this);
+  ACTION_TASK_ADD(S3PutMultipartCopyAction::validate_multipart_partcopy_request,
+                  this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::check_part_details, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::fetch_multipart_metadata, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::fetch_part_info, this);
-  ACTION_TASK_ADD(S3PutMultipartCopyAction::set_source_bucket_authorization_metadata,
+  ACTION_TASK_ADD(
+      S3PutMultipartCopyAction::set_source_bucket_authorization_metadata, this);
+  ACTION_TASK_ADD(S3PutMultipartCopyAction::check_source_bucket_authorization,
                   this);
-  ACTION_TASK_ADD(S3PutMultipartCopyAction::check_source_bucket_authorization, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::create_part_object, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::initiate_part_copy, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::save_metadata, this);
@@ -132,7 +135,7 @@ void S3PutMultipartCopyAction::setup_steps() {
 
 // Validate source bucket and object
 void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);  
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (additional_bucket_name.empty() || additional_object_name.empty()) {
     set_s3_error("InvalidArgument");
     send_response_to_s3_client();
@@ -386,7 +389,7 @@ void S3PutMultipartCopyAction::copy_part_object() {
         std::bind(&S3PutMultipartCopyAction::copy_part_object_failed, this));
     f_success = true;
   }
-  catch (const std::exception& ex) {
+  catch (const std::exception &ex) {
     s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
   }
   catch (...) {
@@ -480,7 +483,8 @@ std::string S3PutMultipartCopyAction::get_response_xml() {
   xml_response += S3CommonUtilities::format_xml_string(
       "LastModified", additional_object_metadata->get_last_modified_iso());
   xml_response += "\n</CopyPartResult>";
-  s3_log(S3_LOG_INFO, stripped_request_id, "Base xml: %s", xml_response.c_str());
+  s3_log(S3_LOG_INFO, stripped_request_id, "Base xml: %s",
+         xml_response.c_str());
 
   return xml_response;
 }
@@ -556,7 +560,8 @@ void S3PutMultipartCopyAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3PutMultipartCopyAction::add_object_oid_to_probable_dead_oid_list_failed() {
+void
+S3PutMultipartCopyAction::add_object_oid_to_probable_dead_oid_list_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_copy_part_action_state = S3PutObjectActionState::probableEntryRecordFailed;
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
@@ -590,10 +595,12 @@ void S3PutMultipartCopyAction::send_response_to_s3_client() {
     if (S3PutObjectActionState::validationFailed == s3_copy_part_action_state &&
         "InvalidRequest" == get_s3_error_code()) {
       if (if_source_and_destination_same()) {  // Source and Destination same
-        error.set_auth_error_message(InvalidRequestPartCopySourceAndDestinationSame);
+        error.set_auth_error_message(
+            InvalidRequestPartCopySourceAndDestinationSame);
       } else if (additional_object_metadata->get_content_length() >
-                 MaxPartCopySourcePartSize) {  // Source object size greater than
-                                             // 5GB
+                 MaxPartCopySourcePartSize) {  // Source object size greater
+                                               // than
+                                               // 5GB
         error.set_auth_error_message(
             InvalidRequestSourcePartSizeGreaterThan5GB);
       }
@@ -668,10 +675,12 @@ void S3PutMultipartCopyAction::check_source_bucket_authorization() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   auth_client->check_authorization(
-      std::bind(&S3PutMultipartCopyAction::check_source_bucket_authorization_success,
-                this),
-      std::bind(&S3PutMultipartCopyAction::check_source_bucket_authorization_failed,
-                this));
+      std::bind(
+          &S3PutMultipartCopyAction::check_source_bucket_authorization_success,
+          this),
+      std::bind(
+          &S3PutMultipartCopyAction::check_source_bucket_authorization_failed,
+          this));
 }
 
 void S3PutMultipartCopyAction::check_source_bucket_authorization_success() {
@@ -711,7 +720,8 @@ void S3PutMultipartCopyAction::startcleanup() {
     if (old_object_oid.u_hi || old_object_oid.u_lo) {
       // mark old OID for deletion in overwrite case, this optimizes
       // backgrounddelete decisions.
-      ACTION_TASK_ADD(S3PutMultipartCopyAction::mark_old_oid_for_deletion, this);
+      ACTION_TASK_ADD(S3PutMultipartCopyAction::mark_old_oid_for_deletion,
+                      this);
     }
     // remove new oid from probable delete list.
     ACTION_TASK_ADD(S3PutMultipartCopyAction::remove_new_oid_probable_record,
@@ -721,10 +731,13 @@ void S3PutMultipartCopyAction::startcleanup() {
       ACTION_TASK_ADD(S3PutMultipartCopyAction::delete_old_object, this);
       // If delete object is successful, attempt to delete old probable record
     }
-  } else if (s3_copy_part_action_state == S3PutObjectActionState::newObjOidCreated ||
+  } else if (s3_copy_part_action_state ==
+                 S3PutObjectActionState::newObjOidCreated ||
              s3_copy_part_action_state == S3PutObjectActionState::writeFailed ||
-             s3_copy_part_action_state == S3PutObjectActionState::md5ValidationFailed ||
-             s3_copy_part_action_state == S3PutObjectActionState::metadataSaveFailed) {
+             s3_copy_part_action_state ==
+                 S3PutObjectActionState::md5ValidationFailed ||
+             s3_copy_part_action_state ==
+                 S3PutObjectActionState::metadataSaveFailed) {
     // PUT is assumed to be failed with a need to rollback
     s3_log(S3_LOG_DEBUG, request_id,
            "Cleanup new Object: s3_copy_part_action_state[%d]\n",
@@ -743,7 +756,8 @@ void S3PutMultipartCopyAction::startcleanup() {
            "No Cleanup required: s3_copy_part_action_state[%d]\n",
            s3_copy_part_action_state);
     assert(s3_copy_part_action_state == S3PutObjectActionState::empty ||
-           s3_copy_part_action_state == S3PutObjectActionState::validationFailed ||
+           s3_copy_part_action_state ==
+               S3PutObjectActionState::validationFailed ||
            s3_copy_part_action_state ==
                S3PutObjectActionState::probableEntryRecordFailed ||
            s3_copy_part_action_state ==
@@ -810,10 +824,10 @@ void S3PutMultipartCopyAction::remove_old_oid_probable_record() {
     motr_kv_writer =
         motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
-                                old_oid_rec_key,
-                                std::bind(&S3PutMultipartCopyAction::next, this),
-                                std::bind(&S3PutMultipartCopyAction::next, this));
+  motr_kv_writer->delete_keyval(
+      global_probable_dead_object_list_index_layout, old_oid_rec_key,
+      std::bind(&S3PutMultipartCopyAction::next, this),
+      std::bind(&S3PutMultipartCopyAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -825,10 +839,10 @@ void S3PutMultipartCopyAction::remove_new_oid_probable_record() {
     motr_kv_writer =
         motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
-                                new_oid_str,
-                                std::bind(&S3PutMultipartCopyAction::next, this),
-                                std::bind(&S3PutMultipartCopyAction::next, this));
+  motr_kv_writer->delete_keyval(
+      global_probable_dead_object_list_index_layout, new_oid_str,
+      std::bind(&S3PutMultipartCopyAction::next, this),
+      std::bind(&S3PutMultipartCopyAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -850,7 +864,8 @@ void S3PutMultipartCopyAction::delete_old_object() {
   }
   motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
-      std::bind(&S3PutMultipartCopyAction::remove_old_oid_probable_record, this),
+      std::bind(&S3PutMultipartCopyAction::remove_old_oid_probable_record,
+                this),
       std::bind(&S3PutMultipartCopyAction::next, this), old_object_oid,
       old_layout_id, object_multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -865,8 +880,9 @@ void S3PutMultipartCopyAction::delete_new_object() {
 
   motr_writer->set_oid(new_object_oid);
   motr_writer->delete_object(
-      std::bind(&S3PutMultipartCopyAction::remove_new_oid_probable_record, this),
-      std::bind(&S3PutMultipartCopyAction::next, this), new_object_oid, layout_id,
-      object_multipart_metadata->get_pvid());
+      std::bind(&S3PutMultipartCopyAction::remove_new_oid_probable_record,
+                this),
+      std::bind(&S3PutMultipartCopyAction::next, this), new_object_oid,
+      layout_id, object_multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
