@@ -81,9 +81,9 @@ public class PolicyController extends AbstractController {
             LOGGER.error("Maximum allowed Policy limit has exceeded (i.e." +
                          maxIAMpolicyLimit + ")");
             return responseGenerator.limitExceeded(
-                "The request was rejected because it attempted to create "
-                + "policy beyond the current limits (i.e" +
-                maxIAMpolicyLimit + " )");
+                "The request was rejected because it attempted to create " +
+                "policy beyond the current limits (i.e" + maxIAMpolicyLimit +
+                " )");
           }
         }
         catch (DataAccessException ex) {
