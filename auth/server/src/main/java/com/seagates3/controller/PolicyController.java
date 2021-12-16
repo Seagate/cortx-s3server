@@ -82,7 +82,7 @@ public class PolicyController extends AbstractController {
                          maxIAMpolicyLimit + ")");
             return responseGenerator.limitExceeded(
                 "The request was rejected because it attempted to create "
-                "policy beyond the current limits (i.e" +
+                + "policy beyond the current limits (i.e" +
                 maxIAMpolicyLimit + " )");
           }
         }
