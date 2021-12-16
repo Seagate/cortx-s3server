@@ -35,6 +35,7 @@ CONFIG:
   # Public keys which came from provisioner which may or may not have default values.
   CONFSTORE_SETUP_TYPE: "cortx>common>setup_type" #M (Usedby : s3_deployment)
   CONFSTORE_SETUP_SIZE: "cortx>common>setup_size" #O (Usedby : s3_deployment)
+
   CONFSTORE_BASE_LOG_PATH: "cortx>common>storage>log" #M (Usedby : all)
   CONFSTORE_S3_SECURITY_CERTIFICATE: "cortx>common>security>ssl_certificate" #O default - /etc/ssl/stx/stx.pem (Usedby : s3_deployment, haproxy)
   #CONFSTORE_S3_STORAGE_MISC: "cortx>common>storage>misc" #O default - /var/data/cortx (Usedby : none)
