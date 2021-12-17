@@ -82,12 +82,12 @@ public class PolicyController extends AbstractController {
                          maxIAMpolicyLimit + ")");
             return responseGenerator.limitExceeded(
                 "The request was rejected because it attempted to create " +
-                "policy beyond the current limits (i.e" + maxIAMpolicyLimit +
+                "policy beyond the current limit (i.e " + maxIAMpolicyLimit +
                 " )");
           }
         }
         catch (DataAccessException ex) {
-          LOGGER.error("Failed to validate policy count limit: " + ex);
+          LOGGER.error("Failed to get total policy count from ldap " + ex);
           return responseGenerator.internalServerError();
         }
         try {
@@ -141,6 +141,25 @@ public class PolicyController extends AbstractController {
           LOGGER.error("Exception while saving the policy- " +
                        requestBody.get("PolicyName"));
             return responseGenerator.internalServerError();
+        }
+        
+        // Handle multi-threaded/ multi-node create() API calls.
+        try {
+        	existingPoliciesCount = getExistingPoliciesCount(account);
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to get total policy count from ldap:" + ex);
+          return responseGenerator.internalServerError();
+        }
+        try {
+          if (existingPoliciesCount > maxIAMpolicyLimit) {
+        	  policyDAO.delete(policy);
+            return responseGenerator.internalServerError();
+          }
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to create user entry -" + ex);
+          return responseGenerator.internalServerError();
         }
 
         return responseGenerator.generateCreateResponse(policy);

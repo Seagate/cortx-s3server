@@ -177,4 +177,32 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
+  
+  @Test public void createPolicyReturnMaxLimitExceeded() throws Exception {
+	  List<Policy> policyList = new ArrayList<>();
+	  policyList.add(policy);
+	  Map<String, Object> findAllParameters = new HashMap<>();
+      PowerMockito.doReturn(0)
+          .when(AuthServerConfig.class, "getMaxIAMPolicyLimit");
+      Mockito.doReturn(policyList).when(mockPolicyDao).findAll(account,findAllParameters);
+      ServerResponse response = policyController.create();
+      Assert.assertEquals(HttpResponseStatus.CONFLICT,
+                          response.getResponseStatus());
+	    }
+  
+  @Test public void createPolicyConcurrencyIssue() throws Exception {
+	  List<Policy> policyList = new ArrayList<>();
+	  List<Policy> policyListNew = new ArrayList<>();
+	  policyListNew.add(policy);
+	  policyListNew.add(policy2);
+	  Map<String, Object> findAllParameters = new HashMap<>();
+      PowerMockito.doReturn(1)
+          .when(AuthServerConfig.class, "getMaxIAMPolicyLimit");
+      PowerMockito.when(mockPolicyDao, "findAll", account,findAllParameters)
+      .thenReturn(policyList, policyListNew);
+      Mockito.doNothing().when(mockPolicyDao).save(any(Policy.class));
+      ServerResponse response = policyController.create();
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+	    }
 }
