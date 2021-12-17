@@ -37,7 +37,7 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
-
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -45,6 +45,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
 import org.powermock.core.classloader.annotations.MockPolicy;
@@ -52,7 +53,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.internal.WhiteboxImpl;
-
+import java.util.Collections;
 import com.seagates3.acl.ACLValidation;
 import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
@@ -86,9 +87,10 @@ import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import com.seagates3.service.RequestorService;
 import com.seagates3.util.BinaryUtil;
-
+import com.seagates3.model.User;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.HashMap;
 
 @RunWith(PowerMockRunner.class) @MockPolicy(Slf4jMockPolicy.class)
     @PowerMockIgnore({"javax.management.*"}) @PrepareForTest(
@@ -116,6 +118,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   SignatureValidator signatureValidator;
  private
   String acl;
+ private
+  Account account;
+
   @Before public void setUp() throws Exception {
     mockStatic(IAMResourceMapper.class);
     mockStatic(RequestorService.class);
@@ -133,6 +138,20 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
     controller = new IAMController();
     requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+    account = Mockito.mock(Account.class);
+    User user = Mockito.mock(User.class);
+    UserImpl userImpl = Mockito.mock(UserImpl.class);
+    PolicyImpl policyImpl = Mockito.mock(PolicyImpl.class);
+
+    whenNew(UserImpl.class).withNoArguments().thenReturn(userImpl);
+    whenNew(PolicyImpl.class).withNoArguments().thenReturn(policyImpl);
+    Mockito.when(userImpl.findByUserId(Mockito.anyString(),
+                                       Mockito.anyString())).thenReturn(user);
+    Mockito.when(policyImpl.findAll(account, new HashMap<String, Object>()))
+        .thenReturn(Collections.EMPTY_LIST);
+    when(requestor.getUser()).thenReturn(user);
+    when(user.getPolicyIds()).thenReturn(Collections.EMPTY_LIST);
   }
 
   @BeforeClass public static void setUpBeforeClass() throws Exception {
@@ -252,9 +271,13 @@ import io.netty.handler.codec.http.HttpResponseStatus;
           " </AccessControlList>\n" + "</AccessControlPolicy>\n";
 
     requestBody.put("Action", "AuthorizeUser");
+    requestBody.put("S3Action", "PutObject");
     requestBody.put("Authorization", "abc");
+    UserImpl userImpl = mock(UserImpl.class);
+    PolicyImpl policyImpl = mock(PolicyImpl.class);
     ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
     Account account = mock(Account.class);
+    User user = mock(User.class);
     whenNew(Requestor.class).withNoArguments().thenReturn(requestor);
     when(AuthServerConfig.getReqId()).thenReturn("0000");
     when(ClientRequestParser.parse(httpRequest, requestBody))
@@ -262,12 +285,21 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(requestor.getId()).thenReturn("MH12");
     when(requestor.getName()).thenReturn("tylerdurden");
     when(requestor.getAccount()).thenReturn(account);
-
+    when(requestor.getUser()).thenReturn(user);
     when(account.getId()).thenReturn("NS5144");
     when(account.getName()).thenReturn("jack");
     when(account.getCanonicalId()).thenReturn("MH12");
+    when(user.getId()).thenReturn("u123");
+    when(user.getName()).thenReturn("root");
+    when(user.getPolicyIds()).thenReturn(Collections.EMPTY_LIST);
     when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
+    whenNew(UserImpl.class).withNoArguments().thenReturn(userImpl);
+    whenNew(PolicyImpl.class).withNoArguments().thenReturn(policyImpl);
+    Mockito.when(userImpl.findByUserId(Mockito.anyString(),
+                                       Mockito.anyString())).thenReturn(user);
+    Mockito.when(policyImpl.findAll(account, new HashMap<String, Object>()))
+        .thenReturn(Collections.EMPTY_LIST);
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", "/seagatebucket-aj01/dir-1/abc1");
     requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl));
@@ -292,7 +324,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         .thenReturn(serverResponse);
     when(serverResponse.getResponseStatus())
         .thenReturn(HttpResponseStatus.UNAUTHORIZED);
-
+    when(requestor.getAccount()).thenReturn(account);
     ServerResponse response = controller.serve(httpRequest, requestBody);
 
     assertEquals(serverResponse, response);
@@ -303,13 +335,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Action", "AuthenticateUser");
     ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
     SignatureValidator signatureValidator = mock(SignatureValidator.class);
-
     Account account = mock(Account.class);
     when(requestor.getName()).thenReturn("tylerdurden");
     when(requestor.getAccount()).thenReturn(account);
     when(account.getId()).thenReturn("NS5144");
     when(account.getName()).thenReturn("jack");
-
     AuthenticationResponseGenerator responseGenerator =
         mock(AuthenticationResponseGenerator.class);
     when(ClientRequestParser.parse(httpRequest, requestBody))
@@ -380,16 +410,19 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Action", "ValidateACL");
     ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
     Account account = mock(Account.class);
+    User user = mock(User.class);
     when(AuthServerConfig.getReqId()).thenReturn("0000");
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
     when(requestor.getId()).thenReturn("MH12");
     when(requestor.getName()).thenReturn("tylerdurden");
     when(requestor.getAccount()).thenReturn(account);
-
+    when(requestor.getUser()).thenReturn(user);
     when(account.getId()).thenReturn("MH12");
     when(account.getName()).thenReturn("tylerdurden");
     when(account.getCanonicalId()).thenReturn("MH12");
+    when(user.getId()).thenReturn("u123");
+    when(user.getPolicyIds()).thenReturn(Collections.EMPTY_LIST);
     when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     PowerMockito.when(ACLValidation.class, "checkIdExists", "MH12",
@@ -730,6 +763,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     SignatureValidator signatureValidator = mock(SignatureValidator.class);
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
+    Account account = mock(Account.class);
+    User user = mock(User.class);
+    when(requestor.getAccount()).thenReturn(account);
+    when(requestor.getUser()).thenReturn(user);
+
+    when(account.getId()).thenReturn("NS5144");
+    when(account.getName()).thenReturn("jack");
+    when(account.getCanonicalId()).thenReturn("MH12");
+    when(user.getId()).thenReturn("u123");
+    when(user.getPolicyIds()).thenReturn(Collections.EMPTY_LIST);
     when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
@@ -774,7 +817,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         .thenReturn(serverResponse);
     when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
     when(AuthServerConfig.getReqId()).thenReturn("0000");
-
+    when(requestor.getAccount()).thenReturn(account);
     when(IAMResourceMapper.getResourceMap("CreateAccessKey"))
         .thenReturn(resourceMap);
     doReturn(Boolean.TRUE)
@@ -806,6 +849,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     SignatureValidator signatureValidator = mock(SignatureValidator.class);
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
+    Account account = mock(Account.class);
+    User user = mock(User.class);
+    when(requestor.getAccount()).thenReturn(account);
+    when(requestor.getUser()).thenReturn(user);
+
+    when(account.getId()).thenReturn("NS5144");
+    when(account.getName()).thenReturn("jack");
+    when(account.getCanonicalId()).thenReturn("MH12");
+    when(user.getId()).thenReturn("u123");
+    when(user.getPolicyIds()).thenReturn(Collections.EMPTY_LIST);
     when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
@@ -1002,4 +1055,3 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         .invoke("performAction", resourceMap, requestBody, requestor);
   }
 }
-

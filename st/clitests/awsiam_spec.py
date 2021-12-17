@@ -23,12 +23,44 @@ import yaml
 from framework import Config
 from framework import S3PyCliTest
 from awsiam import AwsIamTest
+from awss3api import AwsTest
 from s3client_config import S3ClientConfig
 from s3cmd import S3cmdTest
 from s3fi import S3fiTest
 import shutil
 from auth import AuthTest
 from ldap_setup import LdapInfo
+
+def prepare_test_data_for_user_policies(username):
+    policy_arns = []
+    non_attached_policy_arns = []
+    for i in range(21):
+        policy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
+        policy_testing = "file://" + os.path.abspath(policy)
+        result = AwsIamTest('Create Policy').create_policy(f"iampolicyquota{i}",policy_testing) \
+            .execute_test()
+        policy_arn = (get_arn_from_policy_object(result.status.stdout))
+        if i < 20:
+            AwsIamTest('Attach User Policy').attach_user_policy(username, policy_arn) \
+                .execute_test().command_is_successful()
+            policy_arns.append(policy_arn)
+        else:
+            AwsIamTest('Attach User Policy').attach_user_policy(username, policy_arn) \
+                .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidRequest")
+            non_attached_policy_arns.append(policy_arn)
+    return policy_arns, non_attached_policy_arns
+
+def get_keys_from_accesskey_object(raw_aws_cli_output):
+    credentials = {}
+    raw_lines = raw_aws_cli_output.split('\n')
+    for _, item in enumerate(raw_lines):
+        if (item.startswith("ACCESSKEY")):
+            line = item.split('\t')
+            credentials['AccessKeyId'] = line[1]
+            credentials['SecretAccessKey'] = line[2]
+        else:
+            continue
+    return credentials
 
 def get_arn_from_policy_object(raw_aws_cli_output):
     raw_lines = raw_aws_cli_output.split('\n')
@@ -82,7 +114,7 @@ def user_tests():
 
     AwsIamTest('Delete User').delete_user("testUser").execute_test().command_is_successful()
 
-def policy_tests():
+def iam_policy_crud_tests():
     #create-policy
     samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
     samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
@@ -346,23 +378,7 @@ def user_policy_tests():
 
     policy_arns = []
     non_attached_policy_arns = []
-    for i in range(21):
-        #create-policy
-        samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
-        samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
-        result = AwsIamTest('Create Policy').create_policy(f"iampolicyquota{i}",samplepolicy_testing) \
-            .execute_test()
-        result.command_response_should_have(f"iampolicyquota{i}")
-        policy_arn = (get_arn_from_policy_object(result.status.stdout))
-
-        if i < 20:
-            AwsIamTest('Attach User Policy').attach_user_policy("testUser2", policy_arn) \
-                .execute_test().command_is_successful()
-            policy_arns.append(policy_arn)
-        else:
-            AwsIamTest('Attach User Policy').attach_user_policy("testUser2", policy_arn) \
-                .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidRequest")
-            non_attached_policy_arns.append(policy_arn)
+    policy_arns,non_attached_policy_arns = prepare_test_data_for_user_policies("testUser2")
 
     #list user attached policies
     result = AwsIamTest('List User Attached Policies').list_attached_user_policies("testUser2").execute_test()
@@ -385,8 +401,129 @@ def user_policy_tests():
     result = AwsIamTest('Delete User').delete_user("testUser2").execute_test().command_is_successful()
 
 
+def iam_policy_authorization_tests():
+    #Only IAM Policy Present
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'createpolicy-allow-iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy1",samplepolicy_testing).execute_test().command_is_successful()
+    arn = (get_arn_from_policy_object(result.status.stdout))
+    AwsIamTest('Create User').create_user("testUser").execute_test().command_is_successful()
+    result = AwsIamTest('Create AccessKey').create_access_key("testUser").execute_test().command_is_successful()
+    keys = (get_keys_from_accesskey_object(result.status.stdout))
+    AwsIamTest('Attach User policy').attach_user_policy("testUser",arn).execute_test().command_is_successful()
+    os.environ["AWS_ACCESS_KEY_ID"] = keys['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = keys['SecretAccessKey']
+    result = AwsIamTest('Create Policy').create_policy("iampolicy2",samplepolicy_testing).execute_test()
+    result.command_response_should_have("iampolicy2")
+    arn2 = (get_arn_from_policy_object(result.status.stdout))
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    AwsIamTest('Detach User policy').detach_user_policy("testUser",arn).execute_test().command_is_successful()
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+    AwsIamTest('Delete Policy').delete_policy(arn2).execute_test().command_is_successful()
+
+    #Allow in IAMPolicy and Allow in Bucket Policy
+    AwsTest('Aws can create bucket').create_bucket("samplebucket").execute_test().command_is_successful()
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'put-object-allow-bucket-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    AwsTest("Aws can put policy on bucket").put_bucket_policy("samplebucket",samplepolicy_testing).execute_test().command_is_successful()
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'put-object-allow-iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy",samplepolicy_testing).execute_test().command_is_successful()
+    arn = (get_arn_from_policy_object(result.status.stdout))
+    AwsIamTest('Attach User policy').attach_user_policy("testUser",arn).execute_test().command_is_successful()
+    os.environ["AWS_ACCESS_KEY_ID"] = keys['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = keys['SecretAccessKey']
+    AwsTest('Put object to bucket').put_object("samplebucket", "testObject").execute_test().command_is_successful()
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    AwsIamTest('Detach User policy').detach_user_policy("testUser",arn).execute_test().command_is_successful()
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+    AwsTest("Aws can delete policy on bucket").delete_bucket_policy("samplebucket").execute_test().command_is_successful()
+
+    #Allow in IAM policy only
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'get-object-allow-iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("testpolicy",samplepolicy_testing).execute_test().command_is_successful()
+    arn = (get_arn_from_policy_object(result.status.stdout))
+    AwsIamTest('Attach User policy').attach_user_policy("testUser",arn).execute_test().command_is_successful()
+    os.environ["AWS_ACCESS_KEY_ID"] = keys['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = keys['SecretAccessKey']
+    AwsTest('Aws can get object').get_object("samplebucket", "testObject").execute_test().command_is_successful()
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    AwsIamTest('Detach User policy').detach_user_policy("testUser",arn).execute_test().command_is_successful()
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+    AwsTest('Aws can delete object').delete_object("samplebucket","testObject").execute_test().command_is_successful()
+
+    #Deny in IAM Policy and Allow in Bucket Policy
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'put-object-allow-bucket-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    AwsTest("Aws can put policy on bucket").put_bucket_policy("samplebucket",samplepolicy_testing).execute_test().command_is_successful()
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'put-object-deny-iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy",samplepolicy_testing).execute_test().command_is_successful()
+    arn = (get_arn_from_policy_object(result.status.stdout))
+    AwsIamTest('Attach User policy').attach_user_policy("testUser",arn).execute_test().command_is_successful()
+    os.environ["AWS_ACCESS_KEY_ID"] = keys['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = keys['SecretAccessKey']
+    AwsTest('Put object to bucket').put_object("samplebucket", "testObject").execute_test(negative_case=True)\
+    .command_should_fail().command_error_should_have("AccessDenied")
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    AwsIamTest('Detach User policy').detach_user_policy("testUser",arn).execute_test().command_is_successful()
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+    AwsTest("Aws can delete policy on bucket").delete_bucket_policy("samplebucket").execute_test().command_is_successful()
+
+    #Allow in IAM Policy and Deny in Bucket Policy
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'put-object-deny-bucket-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    AwsTest("Aws can put policy on bucket").put_bucket_policy("samplebucket",samplepolicy_testing).execute_test().command_is_successful()
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'put-object-allow-iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy",samplepolicy_testing).execute_test().command_is_successful()
+    arn = (get_arn_from_policy_object(result.status.stdout))
+    AwsIamTest('Attach User policy').attach_user_policy("testUser",arn).execute_test().command_is_successful()
+    os.environ["AWS_ACCESS_KEY_ID"] = keys['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = keys['SecretAccessKey']
+    AwsTest('Put object to bucket').put_object("samplebucket", "testObject").execute_test(negative_case=True)\
+    .command_should_fail().command_error_should_have("AccessDenied")
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    AwsIamTest('Detach User policy').detach_user_policy("testUser",arn).execute_test().command_is_successful()
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+    AwsTest("Aws can delete policy on bucket").delete_bucket_policy("samplebucket").execute_test().command_is_successful()
+
+    #IAM operation and No IAM policy
+    os.environ["AWS_ACCESS_KEY_ID"] = keys['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = keys['SecretAccessKey']
+    AwsIamTest('List Access Keys').list_access_keys("testUser").execute_test().command_is_successful()
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+    #deny in iam policy but should be allowed for root account
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'get-policy-deny-iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy",samplepolicy_testing).execute_test().command_is_successful()
+    arn = (get_arn_from_policy_object(result.status.stdout))
+    AwsIamTest('Attach User policy').attach_user_policy("testUser",arn).execute_test().command_is_successful()
+    os.environ["AWS_ACCESS_KEY_ID"] = keys['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = keys['SecretAccessKey']
+    AwsIamTest('Get Policy').get_policy(arn).execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    AwsIamTest('Get Policy').get_policy(arn).execute_test().command_is_successful()
+    AwsIamTest('Detach User policy').detach_user_policy("testUser",arn).execute_test().command_is_successful()
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+
+
+    AwsTest('Aws can delete bucket').delete_bucket("samplebucket").execute_test().command_is_successful()
+    AwsIamTest('Delete AccessKey').delete_access_key(keys['AccessKeyId']).execute_test().command_is_successful()
+    AwsIamTest('Delete User').delete_user("testUser").execute_test().command_is_successful()
+
 if __name__ == '__main__':
 
-    user_tests()
-    policy_tests()
+    #user_tests()
+    #iam_policy_crud_tests()
     user_policy_tests()
+    #iam_policy_authorization_tests()
