@@ -502,9 +502,9 @@ std::string DataUsageItem::to_json() {
 
   Json::Value root;
   root[JSON_OBJECTS_COUNT] = Json::Value(
-      (Json::Value::UInt64)(objects_count + current_objects_increment));
+      (Json::Value::Int64)(objects_count + current_objects_increment));
   root[JSON_BYTES_COUNT] =
-      Json::Value((Json::Value::UInt64)(bytes_count + current_bytes_increment));
+      Json::Value((Json::Value::Int64)(bytes_count + current_bytes_increment));
 
   Json::FastWriter fastWriter;
   std::string json = fastWriter.write(root);
