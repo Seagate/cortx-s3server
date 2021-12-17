@@ -131,8 +131,9 @@ public class PolicyController extends AbstractController {
     @Override public ServerResponse delete () {
       Policy policy = null;
       try {
-        policy = policyDAO.findByArn(requestBody.get(APIRequestParamsConstants.POLICYARN),
-                                     requestor.getAccount());
+        policy = policyDAO.findByArn(
+            requestBody.get(APIRequestParamsConstants.POLICYARN),
+            requestor.getAccount());
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to find the requested policy in ldap- " +
@@ -140,7 +141,8 @@ public class PolicyController extends AbstractController {
         return responseGenerator.internalServerError();
       }
       if (policy == null || !policy.exists()) {
-        LOGGER.error(requestBody.get(APIRequestParamsConstants.POLICYARN) + "Policy does not exists");
+        LOGGER.error(requestBody.get(APIRequestParamsConstants.POLICYARN) +
+                     "Policy does not exists");
         return responseGenerator.noSuchEntity();
       }
       if (policy.getAttachmentCount() > 0) {
@@ -202,8 +204,9 @@ public class PolicyController extends AbstractController {
     @Override public ServerResponse get() {
       Policy policy = null;
       try {
-        policy = policyDAO.findByArn(requestBody.get(APIRequestParamsConstants.POLICYARN),
-                                     requestor.getAccount());
+        policy = policyDAO.findByArn(
+            requestBody.get(APIRequestParamsConstants.POLICYARN),
+            requestor.getAccount());
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to get requested policy- " +
@@ -211,7 +214,8 @@ public class PolicyController extends AbstractController {
         return responseGenerator.internalServerError();
       }
       if (policy == null || !policy.exists()) {
-        LOGGER.error("Policy does not exists- " + requestBody.get(APIRequestParamsConstants.POLICYARN));
+        LOGGER.error("Policy does not exists- " +
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
         return responseGenerator.noSuchEntity();
       }
       LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
