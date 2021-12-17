@@ -78,7 +78,7 @@ class SetupCmd(object):
     # validate supported services
     lookup_service = ["haproxy", "s3server", "authserver", "bgscheduler", "bgworker"]
     if self.services is None:
-      self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+      self.services = "haproxy,s3server,authserver,bgscheduler,bgworker"
 
     self.bg_delete_service = "bgworker"
     if -1 != self.services.find("bg_"):
