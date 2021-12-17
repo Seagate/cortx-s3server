@@ -88,8 +88,9 @@ class SetupCmd(object):
     if self.services is None:
       self.services = str(f"{self.service_haproxy},{self.service_s3server},{self.service_authserver},{self.service_bgscheduler},{self.service_bgworker}")
 
+    self.bg_delete_service = self.service_bgworker
     if -1 != self.services.find("bg_"):
-      self.service_bgworker = "bg_consumer"
+      self.bg_delete_service = "bg_consumer"
     # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
     ######### start
     services_map = {
