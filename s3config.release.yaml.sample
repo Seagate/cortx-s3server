@@ -40,11 +40,11 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_AUDIT_LOG_DIR: "/var/log/cortx/s3"              # S3 Audit log directory
    S3_AUDIT_LOG_CONFIG: "/opt/seagate/cortx/s3/conf/s3server_audit_log.properties" # S3 Server Audit log configuration file.
    S3_AUDIT_LOG_FORMAT_TYPE: "JSON"                     # S3 Server Audit log format type. JSON logs in json format & S3_FORMAT logs in s3 format.
-   S3_AUDIT_LOGGER_POLICY: "rsyslog-tcp"                # Audit info logger policy: disabled - logger disabled; rsyslog-tcp - send logs to rsyslog via tcp socket; log4cxx - use log4cxx; syslog - send logs to rsyslog via syslog call; kafka-web - send logs to Kafka Web;
+   S3_AUDIT_LOGGER_POLICY: "kafka-web"                # Audit info logger policy: disabled - logger disabled; rsyslog-tcp - send logs to rsyslog via tcp socket; log4cxx - use log4cxx; syslog - send logs to rsyslog via syslog call; kafka-web - send logs to Kafka Web;
    S3_AUDIT_LOGGER_HOST: "localhost"                    # Remote host name to connect to if logger needs to work via network
-   S3_AUDIT_LOGGER_PORT: 514                            # Port on which rsyslog or kafka webserver is listening
+   S3_AUDIT_LOGGER_PORT: 28300                            # Port on which rsyslog or kafka webserver is listening
    S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"  # Rsyslog msgid to filter messages
-   S3_AUDIT_LOGGER_KAFKA_WEB_PATH: "/topics/s3auditlogs" # URL path for POST requests
+   S3_AUDIT_LOGGER_KAFKA_WEB_PATH: "/AuditLog/message" # URL path for POST requests
    S3_AUDIT_MAX_RETRY_COUNT: 5                          # Max retry count in case of audit log failure
    S3_IEM_HOST: "localhost"                              # host to connect for IEM
    S3_IEM_PORT: 28300                                    # IEM rest server port
