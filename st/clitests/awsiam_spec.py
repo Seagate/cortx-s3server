@@ -354,7 +354,7 @@ def user_policy_tests():
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
 
     #detach-user-policy with non existing policy
-    result = AwsIamTest('Detach User Policy').detach_user_policy("testUser", "arn:seagate:iam::103947660857:policy/oiuou") \
+    result = AwsIamTest('Detach User Policy').detach_user_policy("testUser", "arn:aws:iam::103947660857:policy/oiuou") \
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
 
     #detach-user-policy with non attached policy
@@ -519,7 +519,7 @@ def iam_policy_authorization_tests():
 
 if __name__ == '__main__':
 
-    #user_tests()
-    #iam_policy_crud_tests()
+    user_tests()
+    iam_policy_crud_tests()
     user_policy_tests()
-    #iam_policy_authorization_tests()
+    iam_policy_authorization_tests()
