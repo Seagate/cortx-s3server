@@ -142,10 +142,10 @@ public class PolicyController extends AbstractController {
                        requestBody.get("PolicyName"));
             return responseGenerator.internalServerError();
         }
-        
+
         // Handle multi-threaded/ multi-node create() API calls.
         try {
-        	existingPoliciesCount = getExistingPoliciesCount(account);
+          existingPoliciesCount = getExistingPoliciesCount(account);
         }
         catch (DataAccessException ex) {
           LOGGER.error("Failed to get total policy count from ldap:" + ex);
@@ -153,7 +153,7 @@ public class PolicyController extends AbstractController {
         }
         try {
           if (existingPoliciesCount > maxIAMpolicyLimit) {
-        	  policyDAO.delete(policy);
+            policyDAO.delete (policy);
             return responseGenerator.internalServerError();
           }
         }
