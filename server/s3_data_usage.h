@@ -71,6 +71,12 @@ class S3DataUsageCache {
   void set_max_cache_size(size_t max_size);
   void set_item_factory(std::shared_ptr<DataUsageItemFactory> factory);
   virtual ~S3DataUsageCache() {}
+
+  friend class S3DataUsageCacheTest;
+  FRIEND_TEST(S3DataUsageCacheTest, SetMaxCacheSize);
+  FRIEND_TEST(S3DataUsageCacheTest, UpdateWithEmptyCache);
+  FRIEND_TEST(S3DataUsageCacheTest, UpdateWithFullCacheEviction);
+  FRIEND_TEST(S3DataUsageCacheTest, UpdateWithFullCacheNoEviction);
 };
 
 class DataUsageItem {
@@ -148,6 +154,7 @@ class DataUsageItem {
                     std::function<void()> on_success,
                     std::function<void()> on_failure);
 
+  friend S3DataUsageCache;
   friend class DataUsageItemTest;
   friend class S3DataUsageCacheTest;
 
@@ -161,6 +168,10 @@ class DataUsageItem {
   FRIEND_TEST(DataUsageItemTest, MultipleSaveSuccessful);
   FRIEND_TEST(DataUsageItemTest, MultipleSaveOneWriteFailed);
   FRIEND_TEST(DataUsageItemTest, MultipleSaveConsequent);
+
+  FRIEND_TEST(S3DataUsageCacheTest, UpdateWithEmptyCache);
+  FRIEND_TEST(S3DataUsageCacheTest, UpdateWithFullCacheEviction);
+  FRIEND_TEST(S3DataUsageCacheTest, UpdateWithFullCacheNoEviction);
 };
 
 class DataUsageItemFactory {

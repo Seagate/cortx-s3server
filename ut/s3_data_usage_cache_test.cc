@@ -37,6 +37,7 @@ using ::testing::_;
 // using ::testing::DefaultValue;
 // using ::testing::HasSubstr;
 using ::testing::Eq;
+using ::testing::Ne;
 using ::testing::StrEq;
 using ::testing::StartsWith;
 
@@ -55,6 +56,7 @@ class DataUsageItemTest : public testing::Test {
   unsigned n_failure_called;
   std::shared_ptr<DataUsageItem> item_under_test;
 
+ public:
   DataUsageItemTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr0 = new EvhtpWrapper();
@@ -81,7 +83,6 @@ class DataUsageItemTest : public testing::Test {
         mock_kvs_writer_factory, mock_s3_motr_api));
   }
 
- public:
   void item_state_changed(DataUsageItem *item, DataUsageItemState prev,
                           DataUsageItemState curr) {
     ASSERT_TRUE(item);
@@ -92,6 +93,50 @@ class DataUsageItemTest : public testing::Test {
 
   void success_cb() { n_success_called++; }
   void failure_cb() { n_failure_called++; }
+};
+
+class MockDataUsageItemFactory : public DataUsageItemFactory {
+ public:
+  virtual ~MockDataUsageItemFactory() {}
+  virtual std::shared_ptr<DataUsageItem> create_data_usage_item(
+      std::shared_ptr<RequestObject> req, const std::string &key_in_cache,
+      std::function<void(DataUsageItem *, DataUsageItemState,
+                         DataUsageItemState)> subscriber) override {
+    std::shared_ptr<MockS3Motr> mock_s3_motr_api =
+        std::make_shared<MockS3Motr>();
+    //EXPECT_CALL(*mock_s3_motr_api, m0_h_ufid_next(_))
+    //    .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+    std::shared_ptr<MockS3MotrKVSReaderFactory> mock_kvs_reader_factory =
+        std::make_shared<MockS3MotrKVSReaderFactory>(req, mock_s3_motr_api);
+    std::shared_ptr<MockS3MotrKVSWriterFactory> mock_kvs_writer_factory =
+        std::make_shared<MockS3MotrKVSWriterFactory>(req, mock_s3_motr_api);
+    return std::make_shared<DataUsageItem>(
+        req, key_in_cache, subscriber, mock_kvs_reader_factory,
+        mock_kvs_writer_factory, mock_s3_motr_api);
+  }
+};
+
+class S3DataUsageCacheTest : public testing::Test {
+ protected:
+  std::shared_ptr<MockS3RequestObject> mock_request0;
+  std::shared_ptr<MockS3RequestObject> mock_request1;
+  S3DataUsageCache *cache_under_test;
+
+ public:
+  S3DataUsageCacheTest() {
+    evhtp_request_t *req = NULL;
+    EvhtpInterface *evhtp_obj_ptr0 = new EvhtpWrapper();
+    EvhtpInterface *evhtp_obj_ptr1 = new EvhtpWrapper();
+    mock_request0 = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr0);
+    mock_request1 = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr1);
+    cache_under_test = S3DataUsageCache::get_instance();
+    std::shared_ptr<MockDataUsageItemFactory> mock_item_factory =
+        std::make_shared<MockDataUsageItemFactory>();
+    cache_under_test->set_max_cache_size(1);
+    cache_under_test->set_item_factory(mock_item_factory);
+  }
+
+  void cb() {};
 };
 
 TEST_F(DataUsageItemTest, Constructor) {
@@ -146,10 +191,8 @@ TEST_F(DataUsageItemTest, SimpleSuccessfulSave) {
       .WillRepeatedly(ReturnRef(nice_json));
   std::ostringstream json_to_write_stream;
   json_to_write_stream << "{"
-                        <<"\"bytes_count\":" <<bytes_expected
-                        << ","
-                        << "\"objects_count\":" << objects_expected
-                        << "}\n";
+                       << "\"bytes_count\":" << bytes_expected << ","
+                       << "\"objects_count\":" << objects_expected << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream.str(), _, _))
       .Times(1);
@@ -179,10 +222,8 @@ TEST_F(DataUsageItemTest, SimpleSaveMissingKey) {
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   std::ostringstream json_to_write_stream;
   json_to_write_stream << "{"
-                        <<"\"bytes_count\":" <<bytes_expected
-                        << ","
-                        << "\"objects_count\":" << objects_expected
-                        << "}\n";
+                       << "\"bytes_count\":" << bytes_expected << ","
+                       << "\"objects_count\":" << objects_expected << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream.str(), _, _))
       .Times(1);
@@ -240,10 +281,8 @@ TEST_F(DataUsageItemTest, SimpleSaveFailedToWrite) {
       .WillRepeatedly(ReturnRef(nice_json));
   std::ostringstream json_to_write_stream;
   json_to_write_stream << "{"
-                        <<"\"bytes_count\":" << bytes_expected
-                        << ","
-                        << "\"objects_count\":" << objects_expected
-                        << "}\n";
+                       << "\"bytes_count\":" << bytes_expected << ","
+                       << "\"objects_count\":" << objects_expected << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream.str(), _, _))
       .Times(1);
@@ -288,20 +327,16 @@ TEST_F(DataUsageItemTest, MultipleSaveSuccessful) {
 
   std::ostringstream json_to_write_stream1;
   json_to_write_stream1 << "{"
-                        <<"\"bytes_count\":" << bytes_expected1
-                        << ","
-                        << "\"objects_count\":" << objects_expected1
-                        << "}\n";
+                        << "\"bytes_count\":" << bytes_expected1 << ","
+                        << "\"objects_count\":" << objects_expected1 << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream1.str(), _, _))
       .Times(1);
 
   std::ostringstream json_to_write_stream2;
   json_to_write_stream2 << "{"
-                        <<"\"bytes_count\":" << bytes_expected2
-                        << ","
-                        << "\"objects_count\":" << objects_expected2
-                        << "}\n";
+                        << "\"bytes_count\":" << bytes_expected2 << ","
+                        << "\"objects_count\":" << objects_expected2 << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream2.str(), _, _))
       .Times(1);
@@ -359,20 +394,16 @@ TEST_F(DataUsageItemTest, MultipleSaveOneWriteFailed) {
 
   std::ostringstream json_to_write_stream1;
   json_to_write_stream1 << "{"
-                        <<"\"bytes_count\":" << bytes_expected1
-                        << ","
-                        << "\"objects_count\":" << objects_expected1
-                        << "}\n";
+                        << "\"bytes_count\":" << bytes_expected1 << ","
+                        << "\"objects_count\":" << objects_expected1 << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream1.str(), _, _))
       .Times(1);
 
   std::ostringstream json_to_write_stream2;
   json_to_write_stream2 << "{"
-                        <<"\"bytes_count\":" << bytes_expected2
-                        << ","
-                        << "\"objects_count\":" << objects_expected2
-                        << "}\n";
+                        << "\"bytes_count\":" << bytes_expected2 << ","
+                        << "\"objects_count\":" << objects_expected2 << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream2.str(), _, _))
       .Times(1);
@@ -431,20 +462,16 @@ TEST_F(DataUsageItemTest, MultipleSaveConsequent) {
 
   std::ostringstream json_to_write_stream1;
   json_to_write_stream1 << "{"
-                        <<"\"bytes_count\":" << bytes_expected1
-                        << ","
-                        << "\"objects_count\":" << objects_expected1
-                        << "}\n";
+                        << "\"bytes_count\":" << bytes_expected1 << ","
+                        << "\"objects_count\":" << objects_expected1 << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream1.str(), _, _))
       .Times(1);
 
   std::ostringstream json_to_write_stream2;
   json_to_write_stream2 << "{"
-                        <<"\"bytes_count\":" << bytes_expected2
-                        << ","
-                        << "\"objects_count\":" << objects_expected2
-                        << "}\n";
+                        << "\"bytes_count\":" << bytes_expected2 << ","
+                        << "\"objects_count\":" << objects_expected2 << "}\n";
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, motr_key, json_to_write_stream2.str(), _, _))
       .Times(1);
@@ -474,4 +501,64 @@ TEST_F(DataUsageItemTest, MultipleSaveConsequent) {
   EXPECT_EQ(item_under_test->bytes_count, bytes_expected2);
   EXPECT_EQ(item_under_test->state, DataUsageItemState::inactive);
   EXPECT_EQ(saved_state, DataUsageItemState::inactive);
+}
+
+TEST_F(S3DataUsageCacheTest, SetMaxCacheSize) {
+  cache_under_test->set_max_cache_size(1);
+  EXPECT_EQ(cache_under_test->max_cache_size, 1);
+}
+
+TEST_F(S3DataUsageCacheTest, UpdateWithEmptyCache) {
+  std::string test_account_name0 = "ut_account0";
+  mock_request0->set_account_name(test_account_name0);
+  cache_under_test->set_max_cache_size(1);
+  S3DataUsageCache::update_data_usage(
+      mock_request0, nullptr, 1, 100,
+      std::bind(&S3DataUsageCacheTest::cb, this),
+      std::bind(&S3DataUsageCacheTest::cb, this));
+  EXPECT_NE(cache_under_test->items.find(test_account_name0),
+            cache_under_test->items.end());
+}
+
+TEST_F(S3DataUsageCacheTest, UpdateWithFullCacheNoEviction) {
+  std::string test_account_name0 = "ut_account0";
+  std::string test_account_name1 = "ut_account1";
+  mock_request0->set_account_name(test_account_name0);
+  mock_request1->set_account_name(test_account_name1);
+  cache_under_test->set_max_cache_size(1);
+  S3DataUsageCache::update_data_usage(
+      mock_request0, nullptr, 1, 100,
+      std::bind(&S3DataUsageCacheTest::cb, this),
+      std::bind(&S3DataUsageCacheTest::cb, this));
+  S3DataUsageCache::update_data_usage(
+      mock_request1, nullptr, 2, 200,
+      std::bind(&S3DataUsageCacheTest::cb, this),
+      std::bind(&S3DataUsageCacheTest::cb, this));
+  EXPECT_NE(cache_under_test->items.find(test_account_name0),
+            cache_under_test->items.end());
+  EXPECT_EQ(cache_under_test->items.find(test_account_name1),
+            cache_under_test->items.end());
+}
+
+TEST_F(S3DataUsageCacheTest, UpdateWithFullCacheEviction) {
+  std::string test_account_name0 = "ut_account0";
+  std::string test_account_name1 = "ut_account1";
+  mock_request0->set_account_name(test_account_name0);
+  mock_request1->set_account_name(test_account_name1);
+  cache_under_test->set_max_cache_size(1);
+  S3DataUsageCache::update_data_usage(
+      mock_request0, nullptr, 1, 100,
+      std::bind(&S3DataUsageCacheTest::cb, this),
+      std::bind(&S3DataUsageCacheTest::cb, this));
+  ASSERT_NE(cache_under_test->items.find(test_account_name0),
+            cache_under_test->items.end());
+  cache_under_test->items[test_account_name0]->set_state(DataUsageItemState::inactive);
+  S3DataUsageCache::update_data_usage(
+      mock_request1, nullptr, 2, 200,
+      std::bind(&S3DataUsageCacheTest::cb, this),
+      std::bind(&S3DataUsageCacheTest::cb, this));
+  EXPECT_EQ(cache_under_test->items.find(test_account_name0),
+            cache_under_test->items.end());
+  EXPECT_NE(cache_under_test->items.find(test_account_name1),
+            cache_under_test->items.end());
 }
