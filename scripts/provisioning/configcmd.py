@@ -450,7 +450,7 @@ class ConfigCmd(SetupCmd):
   def get_msgbus_partition_count(self):
     """get total consumers (* 2) which will act as partition count."""
     consumer_count = 0
-    search_values = self.search_confvalue("node", "services", self.service_bgworker)
+    search_values = self.search_confvalue("node", "services", self.bg_delete_service)
     consumer_count = len(search_values)
     self.logger.info(f"consumer_count : {consumer_count}")
 
