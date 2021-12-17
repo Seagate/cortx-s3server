@@ -90,23 +90,23 @@ class ConfigCmd(SetupCmd):
       self.process_common()
       self.logger.info("common config completed")
       # Do not change sequence of the services as it is mentioned as per dependencies.
-      if "haproxy" in self.services:
+      if self.service_haproxy in self.services:
         self.logger.info("haproxy config started")
         self.process_haproxy()
         self.logger.info("haproxy config completed")
-      if "s3server" in self.services:
+      if self.service_s3server in self.services:
         self.logger.info("s3server config started")
         self.process_s3server()
         self.logger.info("s3server config completed")
-      if "authserver" in self.services:
+      if self.service_authserver in self.services:
         self.logger.info("authserver config started")
         self.process_authserver()
         self.logger.info("authserver config completed")
-      if "bgscheduler" in self.services:
+      if self.service_bgscheduler in self.services:
         self.logger.info("s3bgschedular config started")
         self.process_s3bgschedular()
         self.logger.info("s3bgschedular config completed")
-      if "bgworker" in self.services:
+      if self.service_bgworker in self.services:
         self.logger.info("s3bgworker config started")
         self.process_s3bgworker()
         self.logger.info("s3bgworker config completed")
@@ -450,7 +450,7 @@ class ConfigCmd(SetupCmd):
   def get_msgbus_partition_count(self):
     """get total consumers (* 2) which will act as partition count."""
     consumer_count = 0
-    search_values = self.search_confvalue("node", "services", self.bg_delete_service)
+    search_values = self.search_confvalue("node", "services", self.service_bgworker)
     consumer_count = len(search_values)
     self.logger.info(f"consumer_count : {consumer_count}")
 
