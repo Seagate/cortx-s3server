@@ -27,6 +27,7 @@ import os
 import socket
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from cortx.utils.log import Log
 
 #Logger details
 s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
@@ -83,7 +84,8 @@ def main():
   args = parser.parse_args()
 
   logger_dir_path = create_logger_directory(args.config)
-  logger = create_logger(logger_dir_path)
+  create_logger('s3deployment', logger_dir_path, 'INFO')
+  // better rename it to init_logger
 
   try:
     if args.command == 'post_install':
@@ -147,37 +149,10 @@ def main():
 
   return 0
 
-def create_logger(log_dir_path):
+def create_logger(file_name, log_dir_path, log_level):
     """Create logger, file handler, console handler and formatter."""
     # create logger with "S3 deployment logger"
-    logger = logging.getLogger(s3deployment_logger_name)
-    logger.setLevel(logging.DEBUG)
-
-    s3deployment_log_file = os.path.join(log_dir_path, "s3deployment.log")
-    #with maxBytes to 5242880, will allow base file s3deployment.log to rotate after every 5MB.
-    #with a backupCount of 5, will get s3deployment.log, s3deployment.log.1, s3deployment.log.2, up to s3deployment.log.5.
-    #The file being written to is always s3deployment.log.
-    fhandler = logging.handlers.RotatingFileHandler(s3deployment_log_file, mode='a',
-                                                    maxBytes = 5242880,
-                                                    backupCount = 5, encoding=None,
-                                                    delay=False )
-    fhandler.setLevel(logging.DEBUG)
-
-    # create console handler with a higher log level
-    chandler = logging.StreamHandler(sys.stdout)
-    chandler.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter(s3deployment_log_format)
-
-    # create formatter and add it to the handlers
-    fhandler.setFormatter(formatter)
-    chandler.setFormatter(formatter)
-
-    # add the handlers to the logger
-    logger.addHandler(fhandler)
-    logger.addHandler(chandler)
-
-    return logger
+    Log.init(file_name, log_dir_path, level=log_level)
 
 def create_logger_directory(config_file):
     """Create log directory if not exists."""

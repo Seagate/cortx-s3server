@@ -85,7 +85,7 @@ def main():
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
     create_logger_directory(s3_single_entry_log_directory)
-    logger = create_logger(s3_single_entry_log_file, s3_single_entry_logger_name, s3_single_entry_log_format)
+    create_logger(s3_single_entry_logger_name, s3_single_entry_log_directory, 'INFO')
 
     # Service mapping
     service = args.service
@@ -250,35 +250,36 @@ def read_config_value(config_file_path,
 
     return config_value
 
-def create_logger(s3_single_entry_log_file, s3_single_entry_logger_name, s3_single_entry_log_format):
+def create_logger(file_name, log_dir_path, log_level):
     """Create logger, file handler, console handler and formatter."""
     # create logger with "S3 deployment logger"
-    logger = logging.getLogger(s3_single_entry_logger_name)
-    logger.setLevel(logging.DEBUG)
+    # logger = logging.getLogger(s3_single_entry_logger_name)
+    # logger.setLevel(logging.DEBUG)
     # maxBytes 5242880 will allow base file s3_single_entry.log to rotate 
     # after every 5MB. With a backupCount of 5, files will be generated 
     # like s3_single_entry.log, s3_single_entry.log.1 and up to s3.log.5.
     # The file being written to is always s3_single_entry.log.
-    fhandler = logging.handlers.RotatingFileHandler(s3_single_entry_log_file, \
-                                                    mode='a',\
-                                                    maxBytes = 5242880,\
-                                                    backupCount = 5,\
-                                                    encoding=None, delay=False)
-    fhandler.setLevel(logging.DEBUG)
+    # fhandler = logging.handlers.RotatingFileHandler(s3_single_entry_log_file, \
+    #                                                 mode='a',\
+    #                                                 maxBytes = 5242880,\
+    #                                                 backupCount = 5,\
+    #                                                 encoding=None, delay=False)
+    # fhandler.setLevel(logging.DEBUG)
 
     # create console handler with a higher log level
-    chandler = logging.StreamHandler(sys.stdout)
-    chandler.setLevel(logging.DEBUG)
+    # chandler = logging.StreamHandler(sys.stdout)
+    # chandler.setLevel(logging.DEBUG)
 
-    formatter = logging.Formatter(s3_single_entry_log_format)
+    # formatter = logging.Formatter(s3_single_entry_log_format)
 
     # create formatter and add it to the handlers
-    fhandler.setFormatter(formatter)
-    chandler.setFormatter(formatter)
+    # fhandler.setFormatter(formatter)
+    # chandler.setFormatter(formatter)
 
     # add the handlers to the logger
-    logger.addHandler(fhandler)
-    logger.addHandler(chandler)
+    # logger.addHandler(fhandler)
+    # logger.addHandler(chandler)
+    Log.init(file_name, log_dir_path, level=log_level)
 
     return logger
 
