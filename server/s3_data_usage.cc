@@ -30,6 +30,10 @@ extern struct s3_motr_idx_layout data_usage_accounts_index_layout;
 
 std::unique_ptr<S3DataUsageCache> S3DataUsageCache::singleton;
 
+S3DataUsageCache::S3DataUsageCache() {
+  item_factory = std::make_shared<DataUsageItemFactory>();
+}
+
 S3DataUsageCache *S3DataUsageCache::get_instance() {
   s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   if (!singleton) {
@@ -45,6 +49,11 @@ void S3DataUsageCache::set_max_cache_size(size_t max_size) {
   s3_log(S3_LOG_INFO, "", "Set data usage cache size to %zu", max_size);
   max_cache_size = max_size;
   s3_log(S3_LOG_DEBUG, "", "%s Exit\n", __func__);
+}
+
+void S3DataUsageCache::set_item_factory(
+    std::shared_ptr<DataUsageItemFactory> factory) {
+  item_factory = std::move(factory);
 }
 
 std::string S3DataUsageCache::generate_cache_key(
@@ -94,8 +103,8 @@ std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
   auto subscriber = std::bind(&S3DataUsageCache::item_state_changed, this,
                               std::placeholders::_1, std::placeholders::_2,
                               std::placeholders::_3);
-  std::shared_ptr<DataUsageItem> item(
-      new DataUsageItem(req, key_in_cache, subscriber));
+  std::shared_ptr<DataUsageItem> item =
+      item_factory->create_data_usage_item(req, key_in_cache, subscriber);
   items.emplace(key_in_cache, std::move(item));
 
   s3_log(S3_LOG_DEBUG, req_id, "%s Exit", __func__);

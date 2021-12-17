@@ -38,17 +38,19 @@ enum class DataUsageItemState {
 };
 
 class DataUsageItem;
+class DataUsageItemFactory;
 
 class S3DataUsageCache {
   static std::unique_ptr<S3DataUsageCache> singleton;
   static std::string generate_cache_key(std::shared_ptr<RequestObject> req);
 
   std::map<std::string, std::shared_ptr<DataUsageItem> > items;
+  std::shared_ptr<DataUsageItemFactory> item_factory;
   // The list of items that are not running any Motr command now.
   std::list<DataUsageItem *> inactive_items;
   size_t max_cache_size;
 
-  S3DataUsageCache() {}
+  S3DataUsageCache();
   std::shared_ptr<DataUsageItem> get_item(std::shared_ptr<RequestObject> req);
   bool shrink(const std::string &request_id);
   void item_state_changed(DataUsageItem *item, DataUsageItemState prev_state,
@@ -67,6 +69,7 @@ class S3DataUsageCache {
   S3DataUsageCache &operator=(const S3DataUsageCache &) = delete;
 
   void set_max_cache_size(size_t max_size);
+  void set_item_factory(std::shared_ptr<DataUsageItemFactory> factory);
   virtual ~S3DataUsageCache() {}
 };
 
@@ -139,12 +142,14 @@ class DataUsageItem {
                 std::shared_ptr<S3MotrKVSWriterFactory> kvs_writer_factory =
                     nullptr,
                 std::shared_ptr<MotrAPI> motr_api = nullptr);
-  void save(std::shared_ptr<RequestObject> req, int64_t objects_count_increment,
-            int64_t bytes_count_increment, std::function<void()> on_success,
-            std::function<void()> on_failure);
+  virtual void save(std::shared_ptr<RequestObject> req,
+                    int64_t objects_count_increment,
+                    int64_t bytes_count_increment,
+                    std::function<void()> on_success,
+                    std::function<void()> on_failure);
 
-  friend S3DataUsageCache;
   friend class DataUsageItemTest;
+  friend class S3DataUsageCacheTest;
 
   FRIEND_TEST(DataUsageItemTest, Constructor);
   FRIEND_TEST(DataUsageItemTest, GetItemRequestId);
@@ -156,4 +161,15 @@ class DataUsageItem {
   FRIEND_TEST(DataUsageItemTest, MultipleSaveSuccessful);
   FRIEND_TEST(DataUsageItemTest, MultipleSaveOneWriteFailed);
   FRIEND_TEST(DataUsageItemTest, MultipleSaveConsequent);
+};
+
+class DataUsageItemFactory {
+ public:
+  virtual ~DataUsageItemFactory() {}
+  virtual std::shared_ptr<DataUsageItem> create_data_usage_item(
+      std::shared_ptr<RequestObject> req, const std::string &key_in_cache,
+      std::function<void(DataUsageItem *, DataUsageItemState,
+                         DataUsageItemState)> subscriber) {
+    return std::make_shared<DataUsageItem>(req, key_in_cache, subscriber);
+  }
 };
