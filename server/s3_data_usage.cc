@@ -125,8 +125,13 @@ std::string S3DataUsageCache::generate_cache_key(
 
 std::string get_server_id() {
   s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, "", "%s Exit\n", __func__);
-  return "1";
+  extern struct m0_config motr_conf;
+  // static std::string s3server_ID = motr_conf.mc_process_fid;
+  // FID is not properly integrated in dev env, so will be using Motr EP
+  // address:
+  static std::string s3server_ID = motr_conf.mc_local_addr;
+  s3_log(S3_LOG_DEBUG, "", "%s Exit, ret %s\n", __func__, s3server_ID.c_str());
+  return s3server_ID;
 }
 
 std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
