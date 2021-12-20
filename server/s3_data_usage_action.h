@@ -22,8 +22,10 @@
 #include "s3_request_object.h"
 #include "s3_action_base.h"
 class S3DataUsageAction : public S3Action {
-  std::string schema = "hello this is not implemented yet.";
+  std::string json_response;
   std::shared_ptr<S3RequestObject> request;
+
+  void prepare_the_response();
 
  public:
   S3DataUsageAction(std::shared_ptr<S3RequestObject> req);

@@ -25,16 +25,26 @@
 #include <iostream>
 
 S3DataUsageAction::S3DataUsageAction(std::shared_ptr<S3RequestObject> req)
-    : S3Action(req, true, nullptr, true, true), schema("hii") {
-
+    : S3Action(req, true, nullptr, true, true), request(req) {
   setup_steps();
 }
+
 S3DataUsageAction::~S3DataUsageAction() {
   s3_log(S3_LOG_DEBUG, "", "%s\n", __func__);
 }
-void S3DataUsageAction::setup_steps() { send_response_to_s3_client(); }
+
+void S3DataUsageAction::prepare_the_response() {
+  json_response =
+      "[ \"12345\": { \"bytes_count\": 123456789 }, \"54321\": { "
+      "\"bytes_count\": 987654321 } ]";
+}
+
+void S3DataUsageAction::setup_steps() {
+  prepare_the_response();
+  send_response_to_s3_client();
+}
 
 void S3DataUsageAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "", "%s Entry \n", __func__);
-  request->send_response(S3HttpSuccess200, schema);
+  request->send_response(S3HttpSuccess200, json_response);
 }
