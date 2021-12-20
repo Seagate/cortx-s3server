@@ -152,6 +152,10 @@ class S3SupportBundle:
             for file in self.files:
                 tar.add(file)
         tar.close()
+
+        # cleanup temp dir
+        shutil.rmtree(self.tmp_dir)
+
         print(f"S3 support bundle generated successfully at {tar_file_name} !!!")
 
 def main():
