@@ -26,26 +26,41 @@ from s3confstore.cortx_s3_confstore import S3CortxConfStore
 class S3SupportBundle:
     """ Generate support bundle for S3."""
 
-    bundle_id = None
-    target_path = None
-    cluster_conf = None
-    services = None
-    files = []
-    tmp_dir = None
+    def __init__(self, bundle_id: str, target_path: str, cluster_conf: str, services: str):
+        """Constructor."""
+        self.bundle_id = bundle_id
+        self.target_path = target_path
+        self.cluster_conf = cluster_conf
+        self.services = services
+        self.files = []
+        self.tmp_dir = None
 
-    # Constant service names from utils.
-    self.service_haproxy = Const.SERVICE_S3_HAPROXY.value
-    self.service_s3server = Const.SERVICE_S3_SERVER.value
-    self.service_authserver = Const.SERVICE_S3_AUTHSERVER.value
-    self.service_bgscheduler = Const.SERVICE_S3_BGSCHEDULER.value
-    self.service_bgworker = Const.SERVICE_S3_BGWORKER.value
+        # Constant service names from utils.
+        self.service_haproxy = Const.SERVICE_S3_HAPROXY.value
+        self.service_s3server = Const.SERVICE_S3_SERVER.value
+        self.service_authserver = Const.SERVICE_S3_AUTHSERVER.value
+        self.service_bgscheduler = Const.SERVICE_S3_BGSCHEDULER.value
+        self.service_bgworker = Const.SERVICE_S3_BGWORKER.value
+
+        # parse services param
+        self.services = self.services.split(",")
+        print(f"Services: {self.services}")
+
+        # load config file
+        s3_cluster_confstore = S3CortxConfStore(f'yaml://{self.cluster_conf}', 'clustr_conf_idx')
+        self.base_config_path = s3_cluster_confstore.get_config("cortx>common>storage>local")
+        print(f"Services: {self.base_config_path}")
+        self.base_log_dir_path = s3_cluster_confstore.get_config("cortx>common>storage>log")
+        print(f"Services: {self.base_log_dir_path}")
 
     def generate_bundle_common(self):
         """ Generate support bundle for the S3 common logs"""
         print("Collect Support logs for common started")
         # Collect s3cluster config file if available
+        files.append(os.path.join(self.base_config_path, "s3/s3backgrounddelete/s3_cluster.yaml"))
 
         # Collect S3 deployment log
+        files.append(os.path.join(self.base_config_path, "s3/s3deployment/s3deployment.log"))
 
         # Collect disk usage info
         disk_usage = os.path.join (self.tmp_dir, "disk_usage.txt")
@@ -113,9 +128,6 @@ class S3SupportBundle:
         self.tmp_dir = os.path.join(self.target_path, "s3", "temp_data")
         print(f"tmp_dir: {self.tmp_dir}")
         os.makedirs(self.tmp_dir, exist_ok=True)
-
-        # parse services param
-        self.services = self.services.split(",")
 
         # common logs for support bundle
         self.generate_bundle_common()
