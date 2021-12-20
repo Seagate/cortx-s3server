@@ -151,7 +151,6 @@ class S3Option {
   unsigned int motr_reconnect_retry_count;
   unsigned int motr_reconnect_sleep_time;
   unsigned int motr_init_max_timeout;
-
   unsigned bucket_metadata_cache_max_size;
   unsigned bucket_metadata_cache_expire_sec;
   unsigned bucket_metadata_cache_refresh_sec;
@@ -241,8 +240,8 @@ class S3Option {
     s3_retry_after_sec = 30;   // 30 seconds
     is_s3_shutting_down = false;
 
-    log_dir = "/var/log/seagate/s3";
-    audit_log_dir = "/var/log/seagate/s3";
+    log_dir = "/var/log/cortx/s3";
+    audit_log_dir = "/var/log/cortx/s3";
     s3_version = "1";
     log_level = FLAGS_s3loglevel;
     audit_log_conf_file = FLAGS_audit_config;

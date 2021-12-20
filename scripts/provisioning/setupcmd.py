@@ -24,7 +24,10 @@ import shutil
 import glob
 import socket
 import ldap
+import uuid
+import urllib
 from os import path
+from ast import literal_eval
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from cortx.utils.validator.v_pkg import PkgV
@@ -46,13 +49,7 @@ class SetupCmd(object):
   rootdn_passwd = None
   cluster_id = None
   machine_id = None
-  ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
-  _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
-  s3_tmp_dir = "/opt/seagate/cortx/s3/tmp"
-  auth_conf_file = "/opt/seagate/cortx/auth/resources/authserver.properties"
-  s3_cluster_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
-  BG_delete_config_file = "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 
   #TODO
   # add the service name and HA service name in the following dictionary
@@ -65,20 +62,65 @@ class SetupCmd(object):
   #                's3authserver': 's3auth'}
   ha_service_map = {}
 
-  def __init__(self,config: str):
+  def __init__(self,config: str, services: str):
     """Constructor."""
+    self.services = services
     self.endpoint = None
     self._url = None
     self._provisioner_confstore = None
     self._s3_confkeys_store = None
     self.machine_id = None
     self.cluster_id = None
-    self.ldap_user = "sgiamadmin"
+    self.base_config_file_path = "/etc/cortx"
+    self.base_log_file_path = "/var/log/cortx"
+    self.consul_confstore = None
+
+    # validate supported services
+    lookup_service = ["haproxy", "s3server", "authserver", "bgscheduler", "bgworker"]
+    if self.services is None:
+      self.services = "haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+
+    self.bg_delete_service = "bgworker"
+    if -1 != self.services.find("bg_"):
+      self.bg_delete_service = "bg_consumer"
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    services_map = {
+                "io": "s3server,haproxy",
+                "auth": "authserver",
+                "bg_producer": "bgscheduler",
+                "bg_consumer": "bgworker"}
+    for service in services_map:
+        if -1 != self.services.find(service):
+          if (service == "auth") and (-1 != services.find("authserver")):
+            continue
+          self.services = self.services.replace(service, services_map[service])
+    ######### End
+
+    self.services = self.services.split(",")
+
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    if "openldap" in  self.services:
+         self.services.remove("openldap")
+    ######### End
+
+    for service in self.services:
+      if service not in lookup_service:
+        raise Exception(f'ERROR: {service} service is not supported.')
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
 
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
+
+    # get all the param from the s3_prov_config file
+    self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
+    self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
+
+    # Get machine-id of current node from constore
+    self.machine_id = self._s3_confkeys_store.get_machine_id()
+    self.logger.info(f'Machine id : {self.machine_id}')
 
     if config is None:
       self.logger.warning(f'Empty Config url')
@@ -90,12 +132,25 @@ class SetupCmd(object):
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
+    self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
+    self.logger.info(f'config file path : {self.base_config_file_path}')
+    self.s3_tmp_dir = os.path.join(self.base_config_file_path, "s3/tmp")
+    self.logger.info(f'tmp dir : {self.s3_tmp_dir}')
 
-    # Get machine-id of current node from constore
-    self.machine_id = self._provisioner_confstore.get_machine_id()
-    self.logger.info(f'Machine id : {self.machine_id}')
+    # Consul URL 
+    try:
+        consul_endpoint_url=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTS", "fqdn", "http")
+        consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTS", "port", "http")
+        consul_protocol='consul://'
+        # consul url will be : consul://consul-server.default.svc.cluster.local:8500
+        consul_url= f'{consul_protocol}'+ f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
+    except S3PROVError:
+        # endpoint entry is not found in confstore hence fetch endpoint url from default value.
+        consul_url=self.get_confvalue_with_defaults("DEFAULT_CONFIG>CONFSTORE_CONSUL_ENDPOINTS")
+        self.logger.info(f'consul endpoint url entry (http://<consul-fqdn>:<port>) is missing for protocol type: http from confstore, hence using default value as {consul_url}')
 
-    self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
+    self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
+    self.consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
 
   @property
   def url(self) -> str:
@@ -134,6 +189,10 @@ class SetupCmd(object):
       return value
     return None
 
+  def search_confvalue(self, parent_key:str, key_to_search:str, value_to_search: str):
+    assert self.provisioner_confstore != None
+    return self.provisioner_confstore.search(parent_key, key_to_search, value_to_search)
+
   def read_endpoint_value(self):
     if self.endpoint is None:
       self.endpoint = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_ENDPOINT_KEY')
@@ -168,7 +227,7 @@ class SetupCmd(object):
       self.logger.error(f'read ldap credentials failed, error: {e}')
       raise e
 
-  def update_rootdn_credentials(self):
+  def update_rootdn_credentials(self, s3_cluster_file : str):
     """Set rootdn username and password to opfile."""
     try:
       s3cipher_obj = CortxS3Cipher(None,
@@ -188,10 +247,8 @@ class SetupCmd(object):
       if encrypted_rootdn_pass is None:
         raise S3PROVError('password cannot be None.')
 
-      op_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
-
       key = 'cluster_config>rootdn_user'
-      opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_rootdn_idx')
+      opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', str(uuid.uuid1()))
       opfileconfstore.set_config(f'{key}', f'{self.ldap_root_user}', True)
 
       key = 'cluster_config>rootdn_pass'
@@ -201,7 +258,7 @@ class SetupCmd(object):
       self.logger.error(f'update rootdn credentials failed, error: {e}')
       raise e
 
-  def update_cluster_id(self, op_file: str = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
+  def update_cluster_id(self, op_file: str):
     """Set 'cluster_id' to op_file."""
     try:
       if path.isfile(f'{op_file}') == False:
@@ -227,7 +284,10 @@ class SetupCmd(object):
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if services:
-      ServiceV().validate('isrunning', services)
+      for service in services:
+        pid = os.popen('pidof '+service).read()
+        if pid is None:
+          raise Exception('Validation failed for service %s' % (service))
     if rpms:
       PkgV().validate('rpms', rpms)
     if files:
@@ -239,8 +299,6 @@ class SetupCmd(object):
       raise FileNotFoundError(f'pre-requisite json file: {self._preqs_conf_file} not found')
     _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'{phase_name}')
 
-    if self.ldap_user != "sgiamadmin":
-      raise ValueError('Username should be "sgiamadmin"')
     try:
       prereqs_block = _prereqs_confstore.get_config(f'{phase_name}')
       if prereqs_block is not None:
@@ -261,24 +319,16 @@ class SetupCmd(object):
     value = self.get_confvalue(key)
     if not value:
       raise Exception(f'Empty value for key : {key}')
-    else:
-      address_token = ["hostname", "public_fqdn", "private_fqdn"]
-      for token in address_token:
-        if key.find(token) != -1:
-          NetworkV().validate('connectivity',[value])
-          break
 
   def extract_yardstick_list(self, phase_name: str):
     """Extract keylist to be used as yardstick for validating keys of each phase."""
     # The s3 prov config file has below pairs :
     # "Key Constant" : "Actual Key"
     # Example of "Key Constant" :
-    #   CONFSTORE_SITE_COUNT_KEY
     #   PREPARE
     #   CONFIG>CONFSTORE_LDAPADMIN_USER_KEY
     #   INIT
     # Example of "Actual Key" :
-    #   cluster>cluster-id>site>storage_set_count
     #   cortx>software>openldap>sgiam>user
     #
     # When we call get_all_keys on s3 prov config
@@ -336,11 +386,6 @@ class SetupCmd(object):
 
   def phase_keys_validate(self, arg_file: str, phase_name: str):
     """Validate keys of each phase derived from s3_prov_config and compare with argument file."""
-    storage_set_count_str = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY')
-    if storage_set_count_str is not None:
-      storage_set_val = int(storage_set_count_str)
-    else:
-      storage_set_val = 0
     # Set phase name to upper case required for inheritance
     phase_name = phase_name.upper()
     # Extract keys from yardstick file for current phase considering inheritance
@@ -349,7 +394,8 @@ class SetupCmd(object):
     # Set argument file confstore
     argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
     # Extract keys from argument file
-    arg_keys_list = argument_file_confstore.get_all_keys()
+    arg_keys_list = argument_file_confstore.get_all_keys(key_index = False)
+    self.logger.info(f"template_list -> {arg_keys_list}")
     # Below algorithm uses tokenization
     # of both yardstick and argument key
     # based on delimiter to generate
@@ -367,10 +413,16 @@ class SetupCmd(object):
         key_yard = key_yard.replace("machine-id", self.machine_id)
       if "cluster-id" in key_yard:
         key_yard = key_yard.replace("cluster-id", self.cluster_id)
-      if "server_nodes" in key_yard:
+      if "node-id" in key_yard:
+        key_yard = key_yard.replace("node-id", self.machine_id)
+      if "nodes" in key_yard:
+        storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT')
+        self.logger.info(f"storage_set_count : {storage_set_count}")
         index = 0
-        while index < storage_set_val:
-          key_yard_server_nodes = self.get_confvalue(key_yard.replace("storage-set-count", str(index)))
+        while index < int(storage_set_count):
+          key_yard_server_nodes_key = key_yard.replace("storage_set_count", str(index))
+          self.logger.info(f"key_yard_server_nodes_key : {key_yard_server_nodes_key}")
+          key_yard_server_nodes = self.get_confvalue(key_yard_server_nodes_key)
           if key_yard_server_nodes is None:
             raise Exception("Validation for server_nodes failed")
           index += 1
@@ -467,15 +519,6 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
-  def delete_mdb_files(self):
-    """Deletes ldap mdb files."""
-    for files in os.listdir(self.ldap_mdb_folder):
-      path = os.path.join(self.ldap_mdb_folder,files)
-      if os.path.isfile(path) or os.path.islink(path):
-        os.unlink(path)
-      elif os.path.isdir(path):
-        shutil.rmtree(path)
-
   def validate_config_files(self, phase_name: str):
     """Validate the sample file and config file keys.
     Both files should have same keys.
@@ -484,56 +527,62 @@ class SetupCmd(object):
     self.logger.info(f'validating S3 config files for {phase_name}.')
     upgrade_items = {
     's3' : {
-          'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
-          'SampleFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
+          'configFile' : self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'yaml://'
       },
       'auth' : {
-          'configFile' : "/opt/seagate/cortx/auth/resources/authserver.properties",
-          'SampleFile' : "/opt/seagate/cortx/auth/resources/authserver.properties.sample",
+          'configFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'properties://'
       },
       'keystore' : {
-          'configFile' : "/opt/seagate/cortx/auth/resources/keystore.properties",
-          'SampleFile' : "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
+          'configFile' : self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'properties://'
       },
       'bgdelete' : {
-          'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-          'SampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
+          'configFile' : self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'yaml://'
       },
       'cluster' : {
-          'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
-          'SampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+          'configFile' : self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'yaml://'
       }
     }
 
     for upgrade_item in upgrade_items:
-      configFile = upgrade_items[upgrade_item]['configFile']
-      SampleFile = upgrade_items[upgrade_item]['SampleFile']
-      filetype = upgrade_items[upgrade_item]['fileType']
-      self.logger.info(f'validating config file {str(configFile)}.')
+      self.validate_config_file(upgrade_items[upgrade_item]['configFile'],
+                              upgrade_items[upgrade_item]['SampleFile'],
+                              upgrade_items[upgrade_item]['fileType'])
 
-      # new sample file
-      conf_sample = filetype + SampleFile
-      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample + "validator")
-      conf_sample_keys = cs_conf_sample.get_all_keys()
+  def validate_config_file(self, configFile: str, SampleFile: str, filetype: str):
+    """Validate the sample file and config file keys.
+    Both files should have same keys.
+    if keys mismatch then there is some issue in the config file."""
 
-      # active config file
-      conf_file =  filetype + configFile
-      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file + "validator")
-      conf_file_keys = cs_conf_file.get_all_keys()
+    self.logger.info(f'validating config file {str(configFile)}.')
 
-      # compare the keys of sample file and config file
-      if conf_sample_keys.sort() == conf_file_keys.sort():
-          self.logger.info(f'config file {str(configFile)} validated successfully.')
-      else:
-          self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
-          self.logger.error(f'sample file keys: {str(conf_sample_keys)}')
-          self.logger.error(f'config file keys: {str(conf_file_keys)}')
-          raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.')
+    # new sample file
+    conf_sample = filetype + SampleFile
+    cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample + "validator")
+    conf_sample_keys = cs_conf_sample.get_all_keys()
+
+    # active config file
+    conf_file =  filetype + configFile
+    cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file + "validator")
+    conf_file_keys = cs_conf_file.get_all_keys()
+
+    # compare the keys of sample file and config file
+    if conf_sample_keys.sort() == conf_file_keys.sort():
+        self.logger.info(f'config file {str(configFile)} validated successfully.')
+    else:
+        self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
+        self.logger.error(f'sample file keys: {str(conf_sample_keys)}')
+        self.logger.error(f'config file keys: {str(conf_file_keys)}')
+        raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.')
 
   def DeleteDirContents(self, dirname: str,  skipdirs: list = []):
     """Delete files and directories inside given directory.
@@ -580,7 +629,8 @@ class SetupCmd(object):
 
   def get_iam_admin_credentials(self):
     """Used for reset and cleanup phase to get the iam-admin user and decrypted passwd."""
-    opfileconfstore = S3CortxConfStore(f'properties://{self.auth_conf_file}', 'read_ldap_idx')
+    auth_conf_file = self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+    opfileconfstore = S3CortxConfStore(f'properties://{auth_conf_file}', 'read_ldap_idx')
     s3cipher_obj = CortxS3Cipher(None,
                               False,
                               0,
@@ -592,11 +642,12 @@ class SetupCmd(object):
     if enc_ldap_passwd != None:
       self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, enc_ldap_passwd)
 
-  def get_ldap_root_credentials(self):
+  def read_ldap_root_credentials(self):
     """Used for reset and cleanup phase to get the ldap root user and decrypted passwd."""
     key = 'cluster_config>rootdn_user'
 
-    opfileconfstore = S3CortxConfStore(f'yaml://{self.s3_cluster_file}', 'read_rootdn_idx')
+    s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+    opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', str(uuid.uuid1()))
     self.ldap_root_user = opfileconfstore.get_config(f'{key}')
 
     key = 'cluster_config>rootdn_pass'
@@ -614,7 +665,8 @@ class SetupCmd(object):
 
   def get_config_param_for_BG_delete_account(self):
     """To get the config parameters required in init and reset phase."""
-    opfileconfstore = S3CortxConfStore(f'yaml://{self.BG_delete_config_file}', 'read_bg_delete_config_idx')
+    BG_delete_config_file = self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
+    opfileconfstore = S3CortxConfStore(f'yaml://{BG_delete_config_file}', 'read_bg_delete_config_idx')
 
     param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'const_cipher_secret_str', 'const_cipher_access_str']
     bgdelete_acc_input_params_dict = {}
@@ -625,24 +677,135 @@ class SetupCmd(object):
 
     return bgdelete_acc_input_params_dict
 
-  def delete_replication_config(self):
-    conn = ldap.initialize("ldapi://")
-    conn.sasl_non_interactive_bind_s('EXTERNAL')
+  def copy_config_files(self, config_files: list):
+    """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
+    # copy all the config files from the /opt/seagate/cortx to /etc/cortx
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
+      self.logger.info(f"Dest config file: {dest_config_file}")
+      os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
+      shutil.copy(config_file, dest_config_file)
+      self.logger.info("Config file copied successfully to /etc/cortx")
 
-    dn = "cn=config"
-    self.deleteattribute(conn, dn, "olcServerID")
+  def make_sample_old_files(self, config_files: list):
+    """ Copy from /opt/seagate/cortx to make '.old' files in /etc/cortx/s3/tmp."""
+    # for given config files at /opt/seagate/cortx, make '.old' in /etc/cortx/s3/tmp
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      old_file_name = os.path.basename(config_file) + '.old'
+      old_config_file = os.path.join(self.s3_tmp_dir, old_file_name)
+      self.logger.info(f"Dest config file: {old_config_file}")
+      os.makedirs(os.path.dirname(old_config_file), exist_ok=True)
+      shutil.copy(config_file, old_config_file)
+      self.logger.info("Config file copied successfully to /etc/cortx/s3/tmp")
 
-    dn = "olcDatabase={0}config,cn=config"
-    self.deleteattribute(conn, dn, "olcSyncrepl")
-    self.deleteattribute(conn, dn, "olcMirrorMode")
+  def modify_attribute(self, dn, attribute, value):
+        # Open a connection
+        ldap_conn = ldap.initialize("ldapi:///")
+        # Bind/authenticate with a user with apropriate rights to add objects
+        ldap_conn.sasl_non_interactive_bind_s('EXTERNAL')
+        mod_attrs = [(ldap.MOD_REPLACE, attribute, bytes(str(value), 'utf-8'))]
+        try:
+            ldap_conn.modify_s(dn, mod_attrs)
+        except:
+            self.logger.error('Error while modifying attribute- '+ attribute )
+            raise Exception('Error while modifying attribute' + attribute)
+        ldap_conn.unbind_s()
 
-    dn = "olcDatabase={2}mdb,cn=config"
-    self.deleteattribute(conn, dn, "olcSyncrepl")
-    self.deleteattribute(conn, dn, "olcMirrorMode")
+  def search_and_delete_attribute(self, dn, attr_to_delete):
+        conn = ldap.initialize("ldapi://")
+        conn.sasl_non_interactive_bind_s('EXTERNAL')
+        ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+        total = self.get_record_count(dn, attr_to_delete)
+        count = 0
+        # Below will perform delete operation
+        while (count < total):
+            ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+            for result1,result2 in ldap_result_id:
+                if(result2):
+                    for value in result2[attr_to_delete]:
+                        if(value and (('dc=s3,dc=seagate,dc=com' in value.decode('UTF-8')) or ('cn=sgiamadmin,dc=seagate,dc=com' in value.decode('UTF-8')))):
+                            mod_attrs = [( ldap.MOD_DELETE, attr_to_delete, value )]
+                            try:
+                                conn.modify_s(dn, mod_attrs)
+                                break
+                            except Exception as e:
+                                print(e)
+            count = count + 1
+        conn.unbind_s()   
 
-  def deleteattribute(self, conn, dn, attr_to_delete):
-    mod_attrs = [(ldap.MOD_DELETE, attr_to_delete, None)]
+  def get_record_count(self, dn, attr_to_delete):
+        conn = ldap.initialize("ldapi://")
+        conn.sasl_non_interactive_bind_s('EXTERNAL')
+        ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+        total = 0
+        # Below will count the entries
+        for result1,result2 in ldap_result_id:
+            if(result2):
+                for value in result2[attr_to_delete]:
+                    if(value and (('dc=s3,dc=seagate,dc=com' in value.decode('UTF-8')) or ('cn=sgiamadmin,dc=seagate,dc=com' in value.decode('UTF-8')))):
+                        total = total + 1
+        conn.unbind_s()
+        return total
+
+  def get_endpoint(self, confstore_key, expected_token,  endpoint_type):
+    """1.Fetch confstore value from given key i.e. confstore_key
+    2.Parse endpoint string based on expected endpoint type i.e. endpoint_type
+    3.Return specific value as mentioned as per parameter i.e. expected_token.
+      this expected_token must has value from ['scheme', 'fqdn', 'port']
+    Examples:
+    fetch_ldap_host = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "fqdn", "ldap")
+    fetch_ldap_port = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "port", "ldap")
+    """
+    confstore_key_value = self.get_confvalue_with_defaults(confstore_key)
+    # Checking if the value is a string or not.
+    if isinstance(confstore_key_value, str):
+      confstore_key_value = literal_eval(confstore_key_value)
+
+    # Checking if valid token name is expected or not.
+    allowed_token_list = ['scheme', 'fqdn', 'port']
+    if not expected_token in allowed_token_list:
+      raise S3PROVError(f"Incorrect token string {expected_token} received for {confstore_key} for specified endpoint type : {endpoint_type}")
+
+    endpoint = self.get_endpoint_for_scheme(confstore_key_value, endpoint_type)
+    if endpoint is None:
+      raise S3PROVError(f"{confstore_key} does not have any specified endpoint type : {endpoint_type}")
+    if expected_token not in endpoint:
+      raise S3PROVError(f"{confstore_key} does not specify endpoint fqdn {endpoint} for endpoint type {endpoint_type}")
+    return endpoint[expected_token]
+
+  def get_endpoint_for_scheme(self, value_to_update, scheme):
+    """Scan list of endpoints, and return parsed endpoint for a given scheme."""
+    if not isinstance(value_to_update, str):
+      lst=value_to_update
+    else:
+      lst=[value_to_update]
+    for endpoint_str in lst:
+      endpoint = self.parse_endpoint(endpoint_str)
+      if endpoint['scheme'] == scheme:
+        return endpoint
+    return None
+
+  def parse_endpoint(self, endpoint_str):
+    """Parse endpoint string and return dictionary with components:
+      * scheme,
+      * fqdn,
+      * and optionally port, if present in the string.
+
+    Examples:
+
+    'https://s3.seagate.com:443' -> {'scheme': 'https', 'fqdn': 's3.seagate.com', 'port': '443'}
+    'https://s3.seagate.com'     -> {'scheme': 'https', 'fqdn': 's3.seagate.com'}
+    'http://s3.seagate.com:80'   -> {'scheme': 'http', 'fqdn': 's3.seagate.com', 'port': '80'}
+    'http://127.0.0.1:80'        -> {'scheme': 'http', 'fqdn': '127.0.0.1', 'port': '80'}
+    """
     try:
-      conn.modify_s(dn, mod_attrs)
-    except:
-      self.logger.info('Attribute '+ attr_to_delete + ' is not configured for dn '+ dn)
+      result1 = urllib.parse.urlparse(endpoint_str)
+      result2 = result1.netloc.split(':')
+      result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
+      if len(result2) > 1:
+        result['port'] = result2[1]
+    except Exception as e:
+      raise S3PROVError(f'Failed to parse endpoing {endpoint_str}.  Exception: {e}')
+    return result

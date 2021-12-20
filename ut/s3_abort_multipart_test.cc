@@ -301,7 +301,7 @@ TEST_F(S3AbortMultipartActionTest, Send200SuccessToS3Client) {
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(1);
   action_under_test->send_response_to_s3_client();

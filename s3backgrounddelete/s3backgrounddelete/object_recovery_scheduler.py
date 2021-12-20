@@ -41,21 +41,23 @@ from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
+from s3backgrounddelete.cortx_s3_signal import SigTermHandler
 #from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to message_bus queue."""
 
-    def __init__(self, producer_name):
+    def __init__(self, producer_name:str,base_config_path:str = "/etc/cortx",config_type:str = "yaml://"):
         """Initialise logger and configuration."""
         self.data = None
-        self.config = CORTXS3Config()
+        self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type)
         self.create_logger_directory()
         self.create_logger()
         self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Scheduler")
         self.producer = None
         self.producer_name = producer_name
+        self.term_signal = SigTermHandler()
 
     @staticmethod
     def isObjectLeakEntryOlderThan(leakRecord, OlderInMins = 15):
@@ -78,6 +80,9 @@ class ObjectRecoveryScheduler(object):
                     self.logger)
             threshold = self.config.get_threshold()
             self.logger.debug("Threshold is : " + str(threshold))
+            if self.term_signal.shutdown_signal == True:
+                self.logger.info("Shutting down s3backgroundproducer service.")
+                sys.exit(0)
             count = self.producer.get_count()
             self.logger.debug("Count of unread msgs is : " + str(count))
 
@@ -89,17 +94,20 @@ class ObjectRecoveryScheduler(object):
                 return
             # Cleanup all entries and enqueue only 1000 entries
             #PurgeAPI Here
+            if self.term_signal.shutdown_signal == True:
+                self.logger.info("Shutting down s3backgroundproducer service.")
+                sys.exit(0)
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
                 self.config, connectionType=CONNECTION_TYPE_PRODUCER, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
-            if result:
+            if result and not self.term_signal.shutdown_signal:
                 self.logger.info("Index listing result :" +
                                  str(index_response.get_index_content()))
                 probable_delete_json = index_response.get_index_content()
                 probable_delete_oid_list = probable_delete_json["Keys"]
                 is_truncated = probable_delete_json["IsTruncated"]
-                if (probable_delete_oid_list is not None):
+                if (probable_delete_oid_list is not None and not self.term_signal.shutdown_signal):
                     for record in probable_delete_oid_list:
                         # Check if record is older than the pre-configured 'time to process' delay
                         leak_processing_delay = self.config.get_leak_processing_delay_in_mins()
@@ -151,6 +159,17 @@ class ObjectRecoveryScheduler(object):
         self.logger.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
 
+        def one_sec_run(scheduler):
+            pass
+
+        def divide_interval():
+            for _ in range(int(self.config.get_schedule_interval()) - 1):
+                if self.term_signal.shutdown_signal == True:
+                    break
+                scheduled_run.enter(1,
+                                   1, one_sec_run, (scheduled_run,))
+                scheduled_run.run()
+
         def periodic_run(scheduler):
             """Add key value to queue using scheduler."""
             if self.config.get_messaging_platform() == MESSAGE_BUS:
@@ -159,12 +178,13 @@ class ObjectRecoveryScheduler(object):
                 self.logger.error(
                 "Invalid argument specified in messaging_platform use 'message_bus'")
                 return
+            divide_interval()
+            scheduled_run.enter(1,
+                           1, periodic_run, (scheduled_run,))
 
-            scheduled_run.enter(
-                self.config.get_schedule_interval(), 1, periodic_run, (scheduler,))
-
-        scheduled_run.enter(self.config.get_schedule_interval(),
-                            1, periodic_run, (scheduled_run,))
+        divide_interval()
+        scheduled_run.enter(1,
+                           1, periodic_run, (scheduled_run,))
         scheduled_run.run()
 
     def create_logger(self):
@@ -192,7 +212,7 @@ class ObjectRecoveryScheduler(object):
 
     def create_logger_directory(self):
         """Create log directory if not exsists."""
-        self._logger_directory = os.path.join(self.config.get_logger_directory())
+        self._logger_directory = os.path.join(self.config.get_scheduler_logger_directory())
         if not os.path.isdir(self._logger_directory):
             try:
                 os.mkdir(self._logger_directory)

@@ -4,6 +4,16 @@ import sys
 import os
 from s3backgrounddelete.object_recovery_processor import ObjectRecoveryProcessor
 
+if (len(sys.argv)>1):
+  base_config_path = str(sys.argv[1])
+else:
+  base_config_path = "/etc/cortx"
+
+if (len(sys.argv)>2):
+  config_type = str(sys.argv[2])
+else:
+  config_type = "yaml://"
+
 # Start the consumer to listen continuously
-processor = ObjectRecoveryProcessor()
+processor = ObjectRecoveryProcessor(base_config_path,config_type)
 processor.consume()

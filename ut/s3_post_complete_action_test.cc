@@ -29,6 +29,7 @@
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_common.h"
+#include "s3_motr_kvs_writer.h"
 
 extern int s3log_level;
 
@@ -185,7 +186,8 @@ class S3PostCompleteActionTest : public testing::Test {
   void dummy_put_keyval(const struct s3_motr_idx_layout&,
                         const std::map<std::string, std::string>&,
                         std::function<void(void)> on_success,
-                        std::function<void(void)> on_failed) {
+                        std::function<void(void)> on_failed,
+                        S3MotrKVSWriter::CallbackType) {
     action_under_test_ptr->next();
   }
   void dummy_delete_object(std::function<void(void)> on_success,
@@ -810,7 +812,7 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _))
+              put_keyval(_, _, _, _, _))
       .Times(1)
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));
@@ -999,7 +1001,7 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_pvid())
       .WillRepeatedly(Return(pv_id));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _))
+              put_keyval(_, _, _, _, _))
       .Times(1)
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));

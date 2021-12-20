@@ -73,6 +73,7 @@ mkdir -p $S3_INSTALL_LOCATION/install/ldap/rsyslog.d
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication/cleanup
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
+mkdir -p $S3_INSTALL_LOCATION/install/logrotate
 mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
 mkdir -p $S3_INSTALL_LOCATION/conf
@@ -93,6 +94,9 @@ mkdir -p $S3_MINI_PROV_CFG_LOCATION
 
 # Copy the haproxy dependencies
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
+
+# Copy the logrotate dependencies
+cp -R scripts/s3-logrotate/* $S3_INSTALL_LOCATION/install/logrotate
 
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
@@ -133,10 +137,14 @@ cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/preparecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/preupgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/postupgradecmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/upgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/starthaproxy.sh $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
 cp -f scripts/swupdate/merge.py $S3_INSTALL_LOCATION/bin
+cp -f scripts/swupdate/merge_pre_post.py $S3_INSTALL_LOCATION/bin
+cp -f scripts/env/common/third-party-rpms.txt $S3_INSTALL_LOCATION/bin
 
 # Copy the mini-provisioner config files
 cp scripts/provisioning/s3setup_prereqs.json $S3_MINI_PROV_CFG_LOCATION/
@@ -191,15 +199,6 @@ cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
 
 # Copy the s3 service file for systemctl multiple instance support.
 cp ./system/s3server@.service $SERVICE_FILE_LOCATION
-
-# Copy the s3 log rotate script for retaining recent modified log files
-cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
-
-# Copy m0trace log rotation script for retaining recent m0trace files
-cp -f scripts/s3-logrotate/s3m0tracelogfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
-
-# Copy addb log rotation script for retaining recent addb files
-cp -f scripts/s3-logrotate/s3addblogfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 
 # Copy s3server support bundle script
 cp -f scripts/s3-support-bundles/s3_bundle_generate.sh $S3_INSTALL_LOCATION/scripts/
@@ -296,16 +295,20 @@ cp -f scripts/ldap/rsyslog.d/slapdlog.conf $S3_INSTALL_LOCATION/install/ldap/rsy
 cp -f scripts/ldap/s3slapdindex.ldif $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/cn={1}s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/cn=s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
+
 cp -f scripts/ldap/iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/s3-iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-admin.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-constraints.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ldap-init.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/s3-ldap-init.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/olcDatabase={2}mdb.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ppolicy-default.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ppolicymodule.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ppolicyoverlay.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/setup_ldap.sh $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/s3_setup_ldap.sh $S3_INSTALL_LOCATION/install/ldap/
 
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/
@@ -331,12 +334,6 @@ cp ./scripts/rsyslog-tcp-audit.conf $RSYSLOG_CFG_DIR_LOCATION
 
 # Copy elasticsearch config
 cp ./scripts/elasticsearch/elasticsearch.conf $RSYSLOG_CFG_DIR_LOCATION
-
-# Copy audit logrotate config
-cp ./scripts/s3-logrotate/s3auditlog $LOGROTATE_CFG_DIR_LOCATION
-
-# Copy openldap logrotate config
-cp ./scripts/ldap/logrotate/openldap $LOGROTATE_CFG_DIR_LOCATION
 
 # Copy the keepalived config
 cp ./scripts/keepalived/keepalived.conf.main $KEEPALIVED_CFG_DIR_LOCATION

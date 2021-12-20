@@ -36,7 +36,14 @@ class CORTXClusterConfig(object):
 
     def __init__(self):
         """Load and initialise configuration."""
-        self._load_and_fetch_config()
+        if os.path.isfile("/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
+            # Load s3_cluster.yaml file from /etc/cortx.
+            bgdelete_conf_file ='yaml://' + "/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
+            if CORTXClusterConfig.s3confstore is None:
+                CORTXClusterConfig.s3confstore = S3CortxConfStore(config=bgdelete_conf_file, index= str(uuid.uuid1()))
+        else:
+            self._load_and_fetch_config()
+
 
     @staticmethod
     def get_conf_dir():

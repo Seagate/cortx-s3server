@@ -55,12 +55,11 @@ class S3CortxConfStore:
       # Update the index backend.
       Conf.save(self.default_index)
 
-  def get_all_keys(self):
+  def get_all_keys(self, key_index: bool = True):
     """Get all the key value pairs from confstore."""
-    # TODO recurse flag will be deprecated in future.
     # Do changes in all places wherever its applicable
     # refer validate_config_files() and phase_keys_validate() in setupcmd.py
-    return Conf.get_keys(self.default_index, recurse = True)
+    return Conf.get_keys(self.default_index, recurse = True, key_index = key_index)
 
   def delete_key(self, key: str, save: bool = False):
     """Deletes the specified key."""
@@ -87,6 +86,10 @@ class S3CortxConfStore:
     """Get machine id from the constore"""
     return Conf.machine_id
 
+  def search(self, parent_key:str, key_to_search:str, value_to_search: str):
+    """Search the values for given key under the parent key."""
+    return Conf.search(self.default_index, parent_key, key_to_search, value_to_search)
+
   @staticmethod
   def validate_configfile(configfile: str):
     """Validate the 'configfile' url, if its a valid file and of supported format."""
@@ -94,6 +97,10 @@ class S3CortxConfStore:
     if not configfile.strip():
       print("Invalid configfile path: {}".format(configfile))
       sys.exit(1)
+
+    if "consul" == urlparse(configfile).scheme:
+      print("kv store is consul. Skipping validation")
+      return
 
     if os.path.isfile(urlparse(configfile).path) != True:
       print("config file: {} does not exist".format(configfile))

@@ -34,18 +34,20 @@ from logging import handlers
 
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
+from s3backgrounddelete.cortx_s3_signal import SigTermHandler
 
 class ObjectRecoveryProcessor(object):
     """Provides consumer for object recovery"""
 
-    def __init__(self):
+    def __init__(self,base_config_path:str = "/etc/cortx",config_type:str = "yaml://"):
         """Initialise Server, config and create logger."""
         self.server = None
-        self.config = CORTXS3Config()
+        self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type)
         self.create_logger_directory()
         self.create_logger()
         self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Processor")
+        self.term_signal = SigTermHandler()
 
     def consume(self):
         """Consume the objects from object recovery queue."""
@@ -65,7 +67,7 @@ class ObjectRecoveryProcessor(object):
 
             self.logger.info("Consumer started at " +
                             str(datetime.datetime.now()))
-            self.server.receive_data()
+            self.server.receive_data(self.term_signal)
         except BaseException:
             if self.server:
                 self.server.close()
@@ -103,7 +105,7 @@ class ObjectRecoveryProcessor(object):
 
     def create_logger_directory(self):
         """Create log directory if not exsists."""
-        self._logger_directory = os.path.join(self.config.get_logger_directory())
+        self._logger_directory = os.path.join(self.config.get_processor_logger_directory())
         if not os.path.isdir(self._logger_directory):
             try:
                 os.mkdir(self._logger_directory)
