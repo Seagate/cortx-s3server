@@ -20,11 +20,25 @@
 
 package com.seagates3.model;
 
+import java.util.List;
+
 public class Requestor {
 
     private String id, name;
     private Account account;
     private AccessKey accessKey;
+    private
+     User user;
+    private
+     List<String> policyDocuments;
+
+    public
+     List<String> getPolicyDocuments() { return policyDocuments; }
+
+    public
+     void setPolicyDocuments(List<String> policyDocuments) {
+       this.policyDocuments = policyDocuments;
+     }
 
     /*
      * Return the requestor id.
@@ -77,4 +91,10 @@ public class Requestor {
     public Boolean isFederatedUser() {
         return accessKey.getToken() != null;
     }
+
+    public
+     User getUser() { return user; }
+
+    public
+     void setUser(User user) { this.user = user; }
 }

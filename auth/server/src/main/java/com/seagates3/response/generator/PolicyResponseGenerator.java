@@ -134,4 +134,10 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
       return new XMLResponseFormatter().formatGetResponse(
           "GetPolicy", "Policy", policyMembers, AuthServerConfig.getReqId());
     }
+
+   public
+    ServerResponse deletePolicyConflict(String errorMessage) {
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "DeleteConflict",
+                            errorMessage);
+    }
 }

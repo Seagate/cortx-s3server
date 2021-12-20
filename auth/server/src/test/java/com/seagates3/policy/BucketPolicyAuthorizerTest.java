@@ -52,7 +52,7 @@ class BucketPolicyAuthorizerTest {
   @BeforeClass public static void setUpBeforeClass()
       throws NoSuchMethodException,
       SecurityException {
-    isConditionMatching = BucketPolicyAuthorizer.class.getDeclaredMethod(
+    isConditionMatching = PolicyAuthorizer.class.getDeclaredMethod(
         "isConditionMatching", List.class, Map.class);
     isConditionMatching.setAccessible(true);
   }

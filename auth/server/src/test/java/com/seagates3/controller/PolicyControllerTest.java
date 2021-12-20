@@ -142,6 +142,18 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                         response.getResponseStatus());
   }
+  @Test public void deletePolicyConflictException() throws DataAccessException {
+    policy.setAttachmentCount(1);
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
+    Mockito.doThrow(new DataAccessException("failed to delete policy\n"))
+        .when(mockPolicyDao)
+        .delete (policy);
+    ServerResponse response = policyController.delete ();
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
   @Test public void listPoliciesSuccess() throws DataAccessException {
     List<Policy> policyList = new ArrayList<>();
     Map<String, Object> parameters = new HashMap<>();

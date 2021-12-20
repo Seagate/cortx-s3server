@@ -19,5 +19,5 @@
 dn: olcDatabase={2}mdb,cn=config
 changeType: modify
 replace: olcDbIndex
-olcDbIndex: o,canonicalId,ak,s3UserId,ou,cn,mail,surname,givenname eq,pres
+olcDbIndex: o,canonicalId,ak,s3UserId,policyArn,ou,cn,mail,surname,givenname eq,pres
 olcDbIndex: objectClass eq,pres
