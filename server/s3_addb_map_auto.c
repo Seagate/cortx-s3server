@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 235;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 239;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
