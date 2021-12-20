@@ -1,0 +1,278 @@
+diff --git a/s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample b/s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
+index f227385..61ec5e6 100644
+--- a/s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
++++ b/s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
+@@ -53,6 +53,7 @@ logconfig:                                  # Section for scheduler & processor
+    console_log_level: 40                                                                      # Sets the threshold for console loggers to level specified. https://docs.python.org/3/library/logging.html#levels
+    log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"                         # Sets the specifed log format https://docs.python.org/3/library/logging.html#logging.Formatter
+    max_bytes: 5242880                                                                         # Max size of a log files is set to 5mb
++   max_size: 5                                                                                # Max size in MB of a log files is set to 5
+    backup_count: 5                                                                            # Max number of log files that can exist
+ 
+ indexid:
+diff --git a/s3backgrounddelete/s3backgrounddelete/cortx_s3_config.py b/s3backgrounddelete/s3backgrounddelete/cortx_s3_config.py
+index cb965c9..ae1de78 100755
+--- a/s3backgrounddelete/s3backgrounddelete/cortx_s3_config.py
++++ b/s3backgrounddelete/s3backgrounddelete/cortx_s3_config.py
+@@ -343,6 +343,16 @@ class CORTXS3Config(object):
+                 "Could not parse maxBytes from config file " +
+                 self._conf_file)
+ 
++    def get_max_size_in_mb(self):
++        """Return maximum size in MB for a log file"""
++        try:
++          max_size = self.s3confstore.get_config('logconfig>max_size')
++          return int(max_size)
++        except:
++            raise KeyError(
++                "Could not parse max size from config file " +
++                self._conf_file)
++
+     def get_backup_count(self):
+         """Return count of log files"""
+         try:
+diff --git a/s3backgrounddelete/s3backgrounddelete/object_recovery_processor.py b/s3backgrounddelete/s3backgrounddelete/object_recovery_processor.py
+index 354dd5e..a140b9a 100755
+--- a/s3backgrounddelete/s3backgrounddelete/object_recovery_processor.py
++++ b/s3backgrounddelete/s3backgrounddelete/object_recovery_processor.py
+@@ -45,7 +45,13 @@ class ObjectRecoveryProcessor(object):
+         self.server = None
+         self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type)
+         self.create_logger_directory()
+-        self.create_logger()
++        Log.init(self.config.get_processor_logger_name(),
++                 self.config.get_processor_logger_directory(),
++                 level=self.config.get_file_log_level(),
++                 backup_count=self.config.get_backup_count(),
++                 file_size_in_mb=self.config.get_max_size_in_mb(),
++                 syslog_server=None, syslog_port=None,
++                 console_output=True)
+         self.signal = DynamicConfigHandler(self)
+         self.logger.info("Initialising the Object Recovery Processor")
+         self.term_signal = SigTermHandler()
+@@ -74,32 +80,6 @@ class ObjectRecoveryProcessor(object):
+                 self.server.close()
+             self.logger.error("main except:" + str(traceback.format_exc()))
+ 
+-    def create_logger(self):
+-        """Create logger, file handler, formatter."""
+-        # Create logger with "object_recovery_processor"
+-        # self.logger = logging.getLogger(
+-        #     self.config.get_processor_logger_name())
+-        # self.logger.setLevel(self.config.get_file_log_level())
+-        # create file handler which logs even debug messages
+-        # fhandler = logging.handlers.RotatingFileHandler(self.config.get_processor_logger_file(), mode='a',
+-        #                                                 maxBytes = self.config.get_max_bytes(),
+-        #                                                 backupCount = self.config.get_backup_count(), encoding=None,
+-                                                        delay=False )
+-        # fhandler.setLevel(self.config.get_file_log_level())
+-        # create console handler with a higher log level
+-        # chandler = logging.StreamHandler()
+-        # chandler.setLevel(self.config.get_console_log_level())
+-        # create formatter and add it to the handlers
+-        # formatter = logging.Formatter(self.config.get_log_format())
+-        # fhandler.setFormatter(formatter)
+-        # chandler.setFormatter(formatter)
+-        # add the handlers to the logger
+-        # self.logger.addHandler(fhandler)
+-        # self.logger.addHandler(chandler)
+-        Log.init(self.config.get_processor_logger_name(),
+-                 self.config.get_processor_logger_directory(),
+-                 level=self.config.get_file_log_level())
+-
+     def close(self):
+         """Stop processor."""
+         self.logger.info("Stopping the processor")
+diff --git a/s3backgrounddelete/s3backgrounddelete/object_recovery_scheduler.py b/s3backgrounddelete/s3backgrounddelete/object_recovery_scheduler.py
+index b52d5d2..c635906 100755
+--- a/s3backgrounddelete/s3backgrounddelete/object_recovery_scheduler.py
++++ b/s3backgrounddelete/s3backgrounddelete/object_recovery_scheduler.py
+@@ -53,7 +53,13 @@ class ObjectRecoveryScheduler(object):
+         self.data = None
+         self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type)
+         self.create_logger_directory()
+-        self.create_logger()
++        Log.init(self.config.get_scheduler_logger_name(),
++                 self.config.get_scheduler_logger_directory(),
++                 level=self.config.get_file_log_level(),
++                 backup_count=self.config.get_backup_count(),
++                 file_size_in_mb=self.config.get_max_size_in_mb(),
++                 syslog_server=None, syslog_port=None,
++                 console_output=True)
+         self.signal = DynamicConfigHandler(self)
+         self.logger.info("Initialising the Object Recovery Scheduler")
+         self.producer = None
+@@ -188,32 +194,6 @@ class ObjectRecoveryScheduler(object):
+                            1, periodic_run, (scheduled_run,))
+         scheduled_run.run()
+ 
+-    def create_logger(self):
+-        """Create logger, file handler, console handler and formatter."""
+-        # create logger with "object_recovery_scheduler"
+-        # self.logger = logging.getLogger(
+-        #     self.config.get_scheduler_logger_name())
+-        # self.logger.setLevel(self.config.get_file_log_level())
+-        # https://docs.python.org/3/library/logging.handlers.html#logging.handlers.RotatingFileHandler
+-        # fhandler = logging.handlers.RotatingFileHandler(self.config.get_scheduler_logger_file(), mode='a',
+-        #                                                 maxBytes = self.config.get_max_bytes(),
+-        #                                                 backupCount = self.config.get_backup_count(), encoding=None,
+-                                                        delay=False )
+-        # fhandler.setLevel(self.config.get_file_log_level())
+-        # create console handler with a higher log level
+-        # chandler = logging.StreamHandler()
+-        # chandler.setLevel(self.config.get_console_log_level())
+-        # create formatter and add it to the handlers
+-        # formatter = logging.Formatter(self.config.get_log_format())
+-        # fhandler.setFormatter(formatter)
+-        # chandler.setFormatter(formatter)
+-        # add the handlers to the logger
+-        # self.logger.addHandler(fhandler)
+-        # self.logger.addHandler(chandler)
+-        Log.init(self.config.get_scheduler_logger_name(),
+-                 self.config.get_scheduler_logger_directory(),
+-                 level=self.config.get_file_log_level())
+-
+     def create_logger_directory(self):
+         """Create log directory if not exsists."""
+         self._logger_directory = os.path.join(self.config.get_scheduler_logger_directory())
+diff --git a/scripts/provisioning/s3_prov_config.yaml b/scripts/provisioning/s3_prov_config.yaml
+index ce0f11a..66981a2 100644
+--- a/scripts/provisioning/s3_prov_config.yaml
++++ b/scripts/provisioning/s3_prov_config.yaml
+@@ -102,6 +102,7 @@ TEST:
+ #Default values of optional params
+ 
+ DEFAULT_POST_INSTALL:
++  CONFSTORE_S3_LOGGER_NAME: "s3deployment"
+ DEFAULT_PREPARE:
+ DEFAULT_CONFIG:
+   CONFSTORE_LDAPADMIN_USER_KEY: "sgiamadmin"
+diff --git a/scripts/provisioning/s3_setup b/scripts/provisioning/s3_setup
+index 67e157b..9ec7ad8 100755
+--- a/scripts/provisioning/s3_setup
++++ b/scripts/provisioning/s3_setup
+@@ -83,9 +83,18 @@ def main():
+ 
+   args = parser.parse_args()
+ 
+-  logger_dir_path = create_logger_directory(args.config)
+-  create_logger('s3deployment', logger_dir_path, 'INFO')
+-  // better rename it to init_logger
++  # Get the machine id from confstore
++  s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
++  s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
++
++  s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
++  s3_logger_name = s3_confkeys_store.get_config('DEFAULT_POST_INSTALL>CONFSTORE_S3_LOGGER_NAME')
++  s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), s3_logger_name)
++
++  create_logger_directory(s3deployment_log_directory)
++  Log.init(s3_logger_name, s3deployment_log_directory,
++           level='INFO', backup_count=5, file_size_in_mb=5,
++           syslog_server=None, syslog_port=None, console_output=True)
+ 
+   try:
+     if args.command == 'post_install':
+@@ -149,27 +158,14 @@ def main():
+ 
+   return 0
+ 
+-def create_logger(file_name, log_dir_path, log_level):
+-    """Create logger, file handler, console handler and formatter."""
+-    # create logger with "S3 deployment logger"
+-    Log.init(file_name, log_dir_path, level=log_level)
+-
+-def create_logger_directory(config_file):
+-    """Create log directory if not exists."""
+-    # Get the machine id from confstore
+-    s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
+-    s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
+-
+-    s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
+-    s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment")
+-
++def create_logger_directory(s3deployment_log_directory):
++  """Create log directory if not exists."""
++  _logger_directory = os.path.join(s3_single_entry_log_directory)
++  if not os.path.isdir(_logger_directory):
+     try:
+-        os.makedirs(s3deployment_log_directory, exist_ok=True)
++      os.makedirs(_logger_directory)
+     except BaseException:
+-        raise Exception(f"{s3deployment_log_directory} Could not be created")
+-
+-    #returning log_dir_path to be used by s3_deployment_log_file in create_logger function
+-    return s3deployment_log_directory
++      raise Exception(f"{s3deployment_log_directory} Could not be created")
+ 
+ if __name__ == '__main__':
+   sys.exit(main())
+diff --git a/scripts/provisioning/s3_start b/scripts/provisioning/s3_start
+index dfc9788..6f82ef8 100755
+--- a/scripts/provisioning/s3_start
++++ b/scripts/provisioning/s3_start
+@@ -75,17 +75,15 @@ def main():
+     base_logdir_path = prov_confkeys_store.get_config(logdir_key)
+ 
+     #Logging path details
+-    s3_single_entry_log_directory = \
+-        os.path.join(base_logdir_path, "s3", machine_id, "s3deployment")
+-    s3_single_entry_log_file = \
+-        os.path.join(s3_single_entry_log_directory, "s3deployment.log")
+-    s3_single_entry_logger_name = \
+-        "s3deployment-logger-" + "[" + machine_id + "]"
+-    s3_single_entry_log_format = \
+-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
++    s3_single_entry_logger_name = s3_confkeys_store.get_config\
++        ('DEFAULT_POST_INSTALL>CONFSTORE_S3_LOGGER_NAME')
++    s3_single_entry_log_directory = os.path.join\
++        (base_logdir_path, "s3", machine_id, s3_single_entry_logger_name)
+ 
+     create_logger_directory(s3_single_entry_log_directory)
+-    create_logger(s3_single_entry_logger_name, s3_single_entry_log_directory, 'INFO')
++    Log.init(s3_single_entry_logger_name, s3_single_entry_log_directory,
++             level='INFO', backup_count=5, file_size_in_mb=5,
++             syslog_server=None, syslog_port=None, console_output=True)
+ 
+     # Service mapping
+     service = args.service
+@@ -250,39 +248,6 @@ def read_config_value(config_file_path,
+ 
+     return config_value
+ 
+-def create_logger(file_name, log_dir_path, log_level):
+-    """Create logger, file handler, console handler and formatter."""
+-    # create logger with "S3 deployment logger"
+-    # logger = logging.getLogger(s3_single_entry_logger_name)
+-    # logger.setLevel(logging.DEBUG)
+-    # maxBytes 5242880 will allow base file s3_single_entry.log to rotate 
+-    # after every 5MB. With a backupCount of 5, files will be generated 
+-    # like s3_single_entry.log, s3_single_entry.log.1 and up to s3.log.5.
+-    # The file being written to is always s3_single_entry.log.
+-    # fhandler = logging.handlers.RotatingFileHandler(s3_single_entry_log_file, \
+-    #                                                 mode='a',\
+-    #                                                 maxBytes = 5242880,\
+-    #                                                 backupCount = 5,\
+-    #                                                 encoding=None, delay=False)
+-    # fhandler.setLevel(logging.DEBUG)
+-
+-    # create console handler with a higher log level
+-    # chandler = logging.StreamHandler(sys.stdout)
+-    # chandler.setLevel(logging.DEBUG)
+-
+-    # formatter = logging.Formatter(s3_single_entry_log_format)
+-
+-    # create formatter and add it to the handlers
+-    # fhandler.setFormatter(formatter)
+-    # chandler.setFormatter(formatter)
+-
+-    # add the handlers to the logger
+-    # logger.addHandler(fhandler)
+-    # logger.addHandler(chandler)
+-    Log.init(file_name, log_dir_path, level=log_level)
+-
+-    return logger
+-
+ def create_logger_directory(s3_single_entry_log_directory):
+     """Create log directory if not exsists."""
+     _logger_directory = os.path.join(s3_single_entry_log_directory)

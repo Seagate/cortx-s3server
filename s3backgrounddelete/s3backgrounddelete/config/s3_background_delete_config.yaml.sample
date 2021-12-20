@@ -53,6 +53,7 @@ logconfig:                                  # Section for scheduler & processor 
    console_log_level: 40                                                                      # Sets the threshold for console loggers to level specified. https://docs.python.org/3/library/logging.html#levels
    log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"                         # Sets the specifed log format https://docs.python.org/3/library/logging.html#logging.Formatter
    max_bytes: 5242880                                                                         # Max size of a log files is set to 5mb
+   max_size: 5                                                                                # Max size in MB of a log files is set to 5
    backup_count: 5                                                                            # Max number of log files that can exist
 
 indexid:

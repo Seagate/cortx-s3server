@@ -102,6 +102,7 @@ TEST:
 #Default values of optional params
 
 DEFAULT_POST_INSTALL:
+  CONFSTORE_S3_LOGGER_NAME: "s3deployment"
 DEFAULT_PREPARE:
 DEFAULT_CONFIG:
   CONFSTORE_LDAPADMIN_USER_KEY: "sgiamadmin"

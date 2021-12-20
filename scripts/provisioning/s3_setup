@@ -83,9 +83,18 @@ def main():
 
   args = parser.parse_args()
 
-  logger_dir_path = create_logger_directory(args.config)
-  create_logger('s3deployment', logger_dir_path, 'INFO')
-  // better rename it to init_logger
+  # Get the machine id from confstore
+  s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
+  s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
+
+  s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
+  s3_logger_name = s3_confkeys_store.get_config('DEFAULT_POST_INSTALL>CONFSTORE_S3_LOGGER_NAME')
+  s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), s3_logger_name)
+
+  create_logger_directory(s3deployment_log_directory)
+  Log.init(s3_logger_name, s3deployment_log_directory,
+           level='INFO', backup_count=5, file_size_in_mb=5,
+           syslog_server=None, syslog_port=None, console_output=True)
 
   try:
     if args.command == 'post_install':
@@ -149,27 +158,14 @@ def main():
 
   return 0
 
-def create_logger(file_name, log_dir_path, log_level):
-    """Create logger, file handler, console handler and formatter."""
-    # create logger with "S3 deployment logger"
-    Log.init(file_name, log_dir_path, level=log_level)
-
-def create_logger_directory(config_file):
-    """Create log directory if not exists."""
-    # Get the machine id from confstore
-    s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
-    s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
-
-    s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
-    s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment")
-
+def create_logger_directory(s3deployment_log_directory):
+  """Create log directory if not exists."""
+  _logger_directory = os.path.join(s3_single_entry_log_directory)
+  if not os.path.isdir(_logger_directory):
     try:
-        os.makedirs(s3deployment_log_directory, exist_ok=True)
+      os.makedirs(_logger_directory)
     except BaseException:
-        raise Exception(f"{s3deployment_log_directory} Could not be created")
-
-    #returning log_dir_path to be used by s3_deployment_log_file in create_logger function
-    return s3deployment_log_directory
+      raise Exception(f"{s3deployment_log_directory} Could not be created")
 
 if __name__ == '__main__':
   sys.exit(main())

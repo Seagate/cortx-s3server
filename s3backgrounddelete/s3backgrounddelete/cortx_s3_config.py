@@ -343,6 +343,16 @@ class CORTXS3Config(object):
                 "Could not parse maxBytes from config file " +
                 self._conf_file)
 
+    def get_max_size_in_mb(self):
+        """Return maximum size in MB for a log file"""
+        try:
+          max_size = self.s3confstore.get_config('logconfig>max_size')
+          return int(max_size)
+        except:
+            raise KeyError(
+                "Could not parse max size from config file " +
+                self._conf_file)
+
     def get_backup_count(self):
         """Return count of log files"""
         try:
