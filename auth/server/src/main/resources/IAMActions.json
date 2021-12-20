@@ -1,22 +1,38 @@
 {
-	"iam": [
-		"ChangePassword",
-		"CreateAccessKey",
-		"CreateLoginProfile",
-		"CreatePolicy",
-		"CreateUser",
-		"DeleteAccessKey",
-		"DeleteLoginProfile",
-		"DeletePolicy",
-		"DeleteUser",
-		"GetLoginProfile",
-		"GetPolicy",
-		"GetUser",
-		"ListAccessKeys",
-		"ListPolicies",
-		"ListUsers",
-		"UpdateAccessKey",
-		"UpdateLoginProfile",
-		"UpdateUser"
-	]
+        "iam:ChangePassword": [
+        ],
+        "iam:CreateAccessKey": [
+        ],
+        "iam:CreateLoginProfile": [
+        ],
+        "iam:CreatePolicy": [
+        ],
+        "iam:CreateUser": [
+        ],
+        "iam:DeleteAccessKey": [
+        ],
+        "iam:DeleteLoginProfile": [
+        ],
+        "iam:DeletePolicy": [
+        ],
+        "iam:DeleteUser": [
+        ],
+        "iam:GetLoginProfile": [
+        ],
+        "iam:GetPolicy": [
+        ],
+        "iam:GetUser": [
+        ],
+        "iam:ListAccessKeys": [
+        ],
+        "iam:ListPolicies": [
+        ],
+        "iam:ListUsers": [
+        ],
+        "iam:UpdateAccessKey": [
+        ],
+        "iam:UpdateLoginProfile": [
+        ],
+        "iam:UpdateUser": [
+        ]
 }

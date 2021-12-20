@@ -479,5 +479,9 @@ public class AuthServerConfig {
     static String getPolicyVersion() {
       return authServerConfig.getProperty("policyVersion");
     }
+   public
+    static boolean isEnableIamPolicy() {
+      return Boolean.valueOf(authServerConfig.getProperty("enableIamPolicy"));
+    }
 }
 

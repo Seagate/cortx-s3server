@@ -148,8 +148,6 @@ class AccessControlList {
           if ((canonicalId != null &&
                canonicalId.equals(account.getCanonicalId())) ||
               (emailId != null && emailId.equals(account.getEmail())) ||
-              (uri != null &&
-               groupImpl.findByPathAndAccount(account, uri).exists()) ||
               (isUserAuthenticated &&
                groupImpl.isPartOfAuthenticatedUsersGroup(uri)) ||
               (groupImpl.isPartOfAllUsersGroup(uri))) {

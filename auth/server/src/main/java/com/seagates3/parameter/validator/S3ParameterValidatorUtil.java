@@ -456,4 +456,19 @@ public class S3ParameterValidatorUtil {
         return !(groupName.length() < 1
                 || groupName.length() > MAX_GROUP_NAME_LENGTH);
     }
+
+   public
+    static Boolean isValidPolicyARN(String arn) {
+      if (arn == null) {
+        return false;
+      }
+      String arn_regex_pattern = "arn:aws:iam:[\\w-/]*:[\\w-/]*:[\\w-/]*";
+      Pattern pattern = Pattern.compile(arn_regex_pattern);
+      Matcher match = pattern.matcher(arn);
+      if (!match.matches()) {
+        return false;
+      }
+
+      return !(arn.length() < MIN_ARN_LENGTH || arn.length() > MAX_ARN_LENGTH);
+    }
 }

@@ -142,3 +142,15 @@ class AwsIamTest(PyCliTest):
             cmd = cmd + " --path-prefix " + kwargs.get("path_prefix")
         self.with_cli(cmd)
         return self
+
+    def create_access_key(self, user_name):
+        self.with_cli("aws iam create-access-key " + "--user-name " + user_name)
+        return self
+
+    def delete_access_key(self, ak):
+        self.with_cli("aws iam delete-access-key " + "--access-key-id " + ak)
+        return self
+
+    def list_access_keys(self, user_name):
+        self.with_cli("aws iam list-access-keys " + "--user-name " + user_name)
+        return self

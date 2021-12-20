@@ -26,4 +26,19 @@ class APIRequestParamsConstants {
 
  public
   final static String VERSIONID = "VersionId";
+  final static String POLICY_IDS = "policyIds";
+ public
+  final static String ACCOUNT_NAME = "accountName";
+ public
+  final static String S3_ACTION = "S3Action";
+ public
+  final static String ACTION = "Action";
+ public
+  final static String CLIENT_ABSOLUTE_URI = "ClientAbsoluteUri";
+ public
+  final static String POLICYARN = "PolicyARN";
+ public
+  final static String AUTHORIZE = "Authorize";
+ public
+  final static String IAM_PREFIX = "iam:";
 }

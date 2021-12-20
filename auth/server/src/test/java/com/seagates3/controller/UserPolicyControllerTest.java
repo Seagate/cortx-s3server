@@ -72,8 +72,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  private
   User user;
  private
-  User nullUser;
- private
   User userWithPolicy;
  private
   Policy policy;
@@ -92,10 +90,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor.setAccount(s3Account);
 
     user = buildUser();
-    nullUser = buildUser();
+    User nullUser = buildUser();
     nullUser.setId(null);
     userWithPolicy = buildUserWithPolicy();
     policy = buildPolicy();
+
+    requestor.setUser(user);
 
     userAttachedPolicies = new ArrayList<Policy>();
     userAttachedPolicies.add(policy);
@@ -356,7 +356,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
 
   @Test public void listAttachedUserPoliciesSucess() throws Exception {
-    Mockito.doReturn(user).when(userDAO).find(ACCOUNT_NAME, USER_NAME);
     Mockito.doReturn(userAttachedPolicies).when(policyDAO).findByIds(
         Mockito.anyMapOf(String.class, Object.class));
     UserPolicyController userPolicyController =
@@ -378,7 +377,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   @Test public void listAttachedUserPoliciesWithPathSucess() throws Exception {
     requestBody.put("PathPrefix", PATH_PREFIX);
-    Mockito.doReturn(user).when(userDAO).find(ACCOUNT_NAME, USER_NAME);
     Mockito.doReturn(userAttachedPolicies).when(policyDAO).findByIds(
         Mockito.anyMapOf(String.class, Object.class));
     UserPolicyController userPolicyController =
@@ -396,50 +394,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "RequestId></ResponseMetadata></ListAttachedUserPoliciesResponse>";
     Assert.assertEquals(expectedResponseBody, response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
-  }
-
-  @Test public void listAttachedUserPoliciesFailureWithUserNull()
-      throws Exception {
-    requestBody.put("PathPrefix", PATH_PREFIX);
-    Mockito.doReturn(null).when(userDAO).find(ACCOUNT_NAME, USER_NAME);
-    Mockito.doReturn(userAttachedPolicies).when(policyDAO).findByIds(
-        Mockito.anyMapOf(String.class, Object.class));
-    UserPolicyController userPolicyController =
-        new UserPolicyController(requestor, requestBody);
-    ServerResponse response = userPolicyController.list();
-    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
-                        response.getResponseStatus());
-  }
-
-  @Test public void listAttachedUserPoliciesFailureWithUserIdNull()
-      throws Exception {
-    requestBody.put("PathPrefix", PATH_PREFIX);
-    Mockito.doReturn(nullUser).when(userDAO).find(ACCOUNT_NAME, USER_NAME);
-    Mockito.doReturn(userAttachedPolicies).when(policyDAO).findByIds(
-        Mockito.anyMapOf(String.class, Object.class));
-    UserPolicyController userPolicyController =
-        new UserPolicyController(requestor, requestBody);
-    ServerResponse response = userPolicyController.list();
-    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
-                        response.getResponseStatus());
-  }
-
-  @Test public void listAttachedUserPoliciesFailureWithDataAccessException()
-      throws Exception {
-    Mockito.doThrow(DataAccessException.class).when(userDAO).find(ACCOUNT_NAME,
-                                                                  USER_NAME);
-
-    ServerResponse serverResponse = Mockito.mock(ServerResponse.class);
-    Mockito.doReturn(HttpResponseStatus.INTERNAL_SERVER_ERROR)
-        .when(serverResponse)
-        .getResponseStatus();
-
-    UserPolicyController userPolicyController =
-        new UserPolicyController(requestor, requestBody);
-    ServerResponse response = userPolicyController.list();
-
-    Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
-                        response.getResponseStatus());
   }
 
  private
@@ -471,3 +425,4 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     return policy;
   }
 }
+

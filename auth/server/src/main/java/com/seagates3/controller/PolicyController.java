@@ -131,21 +131,23 @@ public class PolicyController extends AbstractController {
     @Override public ServerResponse delete () {
       Policy policy = null;
       try {
-        policy = policyDAO.findByArn(requestBody.get("PolicyARN"),
-                                     requestor.getAccount());
+        policy = policyDAO.findByArn(
+            requestBody.get(APIRequestParamsConstants.POLICYARN),
+            requestor.getAccount());
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to find the requested policy in ldap- " +
-                     requestBody.get("PolicyARN"));
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
         return responseGenerator.internalServerError();
       }
       if (policy == null || !policy.exists()) {
-        LOGGER.error(requestBody.get("PolicyARN") + "Policy does not exists");
+        LOGGER.error(requestBody.get(APIRequestParamsConstants.POLICYARN) +
+                     "Policy does not exists");
         return responseGenerator.noSuchEntity();
       }
       if (policy.getAttachmentCount() > 0) {
         LOGGER.error(
-            requestBody.get("PolicyARN") +
+            requestBody.get(APIRequestParamsConstants.POLICYARN) +
             " cannot be deleted because it is attached to the entities.");
         return responseGenerator.deletePolicyConflict(
             "Cannot delete a policy attached to entities.");
@@ -157,7 +159,7 @@ public class PolicyController extends AbstractController {
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to delete requested policy- " +
-                     requestBody.get("PolicyARN"));
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
         return responseGenerator.internalServerError();
       }
       return responseGenerator.generateDeleteResponse();
@@ -202,16 +204,18 @@ public class PolicyController extends AbstractController {
     @Override public ServerResponse get() {
       Policy policy = null;
       try {
-        policy = policyDAO.findByArn(requestBody.get("PolicyARN"),
-                                     requestor.getAccount());
+        policy = policyDAO.findByArn(
+            requestBody.get(APIRequestParamsConstants.POLICYARN),
+            requestor.getAccount());
       }
       catch (DataAccessException ex) {
         LOGGER.error("Failed to get requested policy- " +
-                     requestBody.get("PolicyARN"));
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
         return responseGenerator.internalServerError();
       }
       if (policy == null || !policy.exists()) {
-        LOGGER.error("Policy does not exists- " + requestBody.get("PolicyARN"));
+        LOGGER.error("Policy does not exists- " +
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
         return responseGenerator.noSuchEntity();
       }
       LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
