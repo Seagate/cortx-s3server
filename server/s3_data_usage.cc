@@ -196,6 +196,8 @@ DataUsageItem::DataUsageItem(
   motr_key = cache_key + "/" + get_server_id();
   state_cb = subscriber;
   state = DataUsageItemState::empty;
+  objects_count = 0;
+  bytes_count = 0;
   current_objects_increment = 0;
   current_bytes_increment = 0;
   pending_objects_increment = 0;
@@ -256,21 +258,30 @@ void DataUsageItem::save(std::shared_ptr<RequestObject> req,
   // The first request that makes the cache item active is tracked by own id.
   // Pending requests are tracked by the id of the first pending request.
   if (state != DataUsageItemState::active) {
-    assert(current_request == nullptr);
     current_request = std::move(req);
     s3_log(S3_LOG_INFO, req_id, "The request can be tracked by its own ID");
   } else {
-    if (!pending_request) {
-      pending_request = std::move(req);
+    // If the current callbacks queue is empty, the item is reading counters
+    // from the KVS. It means that increments for the particular request will be
+    // written with the current ones when the read operation is done.
+    if (current_callbacks.size() == 0) {
       s3_log(S3_LOG_INFO, req_id,
-             "The request can be tracked by its own ID after request %s is "
-             "complete",
-             get_item_request_id().c_str());
-    } else {
-      s3_log(S3_LOG_INFO, req_id,
-             "The request can be tracked by ID %s after request %s is complete",
-             pending_request->get_stripped_request_id().c_str(),
+             "The request can be tracked by the current request ID %s",
              current_request->get_stripped_request_id().c_str());
+    } else {
+      if (!pending_request) {
+        pending_request = std::move(req);
+        s3_log(S3_LOG_INFO, req_id,
+               "The request can be tracked by its own ID after request %s is "
+               "complete",
+               get_item_request_id().c_str());
+      } else {
+        s3_log(
+            S3_LOG_INFO, req_id,
+            "The request can be tracked by ID %s after request %s is complete",
+            pending_request->get_stripped_request_id().c_str(),
+            current_request->get_stripped_request_id().c_str());
+      }
     }
   }
 
@@ -380,6 +391,7 @@ void DataUsageItem::kvs_read_failure() {
   } else {
     // Any other read error is fatal for this item, have to do the re-read.
     fail_all();
+    set_state(DataUsageItemState::failed);
   }
   s3_log(S3_LOG_DEBUG, req_id, "%s Exit\n", __func__);
 }
