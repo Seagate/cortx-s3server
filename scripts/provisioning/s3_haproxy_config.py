@@ -27,6 +27,7 @@ import urllib.parse
 from ast import literal_eval
 from setupcmd import S3PROVError
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from cortx.utils.log import Log
 
 class S3HaproxyConfig:
   """HAProxy configration for S3."""
@@ -36,22 +37,6 @@ class S3HaproxyConfig:
 
   def __init__(self, confstore: str):
     """Constructor."""
-
-    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-    self.logger = logging.getLogger(s3deployment_logger_name)
-    if self.logger.hasHandlers():
-      self.logger.info("Logger has valid handler")
-    else:
-      self.logger.setLevel(logging.DEBUG)
-      # create console handler with a higher log level
-      chandler = logging.StreamHandler(sys.stdout)
-      chandler.setLevel(logging.DEBUG)
-      s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-      formatter = logging.Formatter(s3deployment_log_format)
-      # create formatter and add it to the handlers
-      chandler.setFormatter(formatter)
-      # add the handlers to the logger
-      self.logger.addHandler(chandler)
 
     if not confstore.strip():
       self.logger.error(f'config url:[{confstore}] must be a valid url path')

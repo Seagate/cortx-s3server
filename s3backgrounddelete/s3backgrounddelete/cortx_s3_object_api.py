@@ -25,26 +25,22 @@ from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 from s3backgrounddelete.cortx_s3_success_response import CORTXS3SuccessResponse
 from s3backgrounddelete.cortx_s3_client import CORTXS3Client
 from s3backgrounddelete.cortx_s3_util import CORTXS3Util
+from cortx.utils.log import Log
 #from s3backgrounddelete.IEMutil import IEMutil
 
 # CORTXS3ObjectApi supports object REST-API's Put, Get & Delete
 class CORTXS3ObjectApi(CORTXS3Client):
     """CORTXS3ObjectApi provides object REST-API's Get, Put and Delete."""
-    _logger = None
 
-    def __init__(self, config, connectionType, logger=None, connection=None):
-        """Initialise logger and config."""
-        if (logger is None):
-            self._logger = logging.getLogger("CORTXS3ObjectApi")
-        else:
-            self._logger = logger
+    def __init__(self, config, connectionType, connection=None):
+        """Initialise config."""
         self.config = config
         self.s3_util = CORTXS3Util(self.config, connectionType)
 
         if (connection is None):
-            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType, logger = self._logger)
+            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType)
         else:
-            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType, logger=self._logger, connection=connection)
+            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType, connection=connection)
 
 
     def put(self, oid, value):

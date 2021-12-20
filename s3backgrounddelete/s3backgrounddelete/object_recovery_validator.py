@@ -29,6 +29,7 @@ from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_CONSUMER
 from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
+from cortx.utils.log import Log
 import math
 
 #zero/null object oid in base64 encoded format
@@ -38,25 +39,21 @@ class ObjectRecoveryValidator:
     """This class is implementation of Validator for object recovery."""
 
     def __init__(self, config, probable_delete_records,
-                 logger=None, objectapi=None, kvapi=None, indexapi=None):
+                 objectapi=None, kvapi=None, indexapi=None):
         """Initialise Validator"""
         self.config = config
         self.current_obj_in_VersionList = None
         self.probable_delete_records = probable_delete_records
-        if(logger is None):
-            self._logger = logging.getLogger("ObjectRecoveryValidator")
-        else:
-            self._logger = logger
         if(objectapi is None):
-            self._objectapi = CORTXS3ObjectApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
+            self._objectapi = CORTXS3ObjectApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER)
         else:
             self._objectapi = objectapi
         if(kvapi is None):
-            self._kvapi = CORTXS3KVApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
+            self._kvapi = CORTXS3KVApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER)
         else:
             self._kvapi = kvapi
         if(indexapi is None):
-            self._indexapi = CORTXS3IndexApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
+            self._indexapi = CORTXS3IndexApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER)
         else:
             self._indexapi = indexapi
 

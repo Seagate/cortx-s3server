@@ -37,6 +37,7 @@ from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
 from cortx.utils.cortx.const import Const
 import logging
+from cortx.utils.log import Log
 
 class S3PROVError(Exception):
   """Parent class for the s3 provisioner error classes."""
@@ -116,9 +117,6 @@ class SetupCmd(object):
     for service in self.services:
       if service not in lookup_service:
         raise Exception(f'ERROR: {service} service is not supported.')
-
-    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-    self.logger = logging.getLogger(s3deployment_logger_name)
 
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 

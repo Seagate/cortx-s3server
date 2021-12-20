@@ -29,10 +29,6 @@ from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from cortx.utils.log import Log
 
-#Logger details
-s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
 def main():
 
   parser = argparse.ArgumentParser("S3server setup command")
@@ -87,13 +83,16 @@ def main():
   s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
   s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
 
-  s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
-  s3_logger_name = s3_confkeys_store.get_config('DEFAULT_POST_INSTALL>CONFSTORE_S3_LOGGER_NAME')
-  s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), s3_logger_name)
+  log_dir_path = s3_provkeys_store.get_config('cortx>common>storage>log')
+  s3_logger_name = s3_confkeys_store.get_config('S3_DEPLOYMENT_LOGGER_NAME')
+  s3_logger_backup_count = s3_confkeys_store.get_config('S3_DEPLOYMENT_LOGGER_BACKUP_COUNT')
+  s3_logger_max_size_mb = s3_confkeys_store.get_config('S3_DEPLOYMENT_LOGGER_MAX_SIZE_MB')
+  s3deployment_log_directory = os.path.join(log_dir_path, "s3", s3_confkeys_store.get_machine_id(), s3_logger_name)
 
   create_logger_directory(s3deployment_log_directory)
-  Log.init(s3_logger_name, s3deployment_log_directory,
-           level='INFO', backup_count=5, file_size_in_mb=5,
+  Log.init(s3_logger_name, s3deployment_log_directory, level='INFO',
+           backup_count=s3_logger_backup_count,
+           file_size_in_mb=s3_logger_max_size_mb,
            syslog_server=None, syslog_port=None, console_output=True)
 
   try:

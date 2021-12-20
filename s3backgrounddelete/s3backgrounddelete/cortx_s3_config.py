@@ -333,24 +333,14 @@ class CORTXS3Config(object):
                 "Could not parse global instance index-id from config file " +
                 self._conf_file)
 
-    def get_max_bytes(self):
-        """Return maximum bytes for a log file"""
+    def get_max_log_size_mb(self):
+        """Return maximum log size in mb for a log file"""
         try:
-          max_bytes = self.s3confstore.get_config('logconfig>max_bytes')
-          return int(max_bytes)
+          max_log_size_mb = self.s3confstore.get_config('logconfig>max_log_size_mb')
+          return int(max_log_size_mb)
         except:
             raise KeyError(
-                "Could not parse maxBytes from config file " +
-                self._conf_file)
-
-    def get_max_size_in_mb(self):
-        """Return maximum size in MB for a log file"""
-        try:
-          max_size = self.s3confstore.get_config('logconfig>max_size')
-          return int(max_size)
-        except:
-            raise KeyError(
-                "Could not parse max size from config file " +
+                "Could not parse max log size in mb from config file " +
                 self._conf_file)
 
     def get_backup_count(self):

@@ -57,7 +57,7 @@ class ObjectRecoveryScheduler(object):
                  self.config.get_scheduler_logger_directory(),
                  level=self.config.get_file_log_level(),
                  backup_count=self.config.get_backup_count(),
-                 file_size_in_mb=self.config.get_max_size_in_mb(),
+                 file_size_in_mb=self.config.get_max_log_size_mb(),
                  syslog_server=None, syslog_port=None,
                  console_output=True)
         self.signal = DynamicConfigHandler(self)
@@ -83,8 +83,7 @@ class ObjectRecoveryScheduler(object):
 
             if not self.producer:
                 self.producer = ObjectRecoveryMsgbus(
-                    self.config,
-                    self.logger)
+                    self.config)
             threshold = self.config.get_threshold()
             self.logger.debug("Threshold is : " + str(threshold))
             if self.term_signal.shutdown_signal == True:

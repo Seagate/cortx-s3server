@@ -27,6 +27,7 @@ from s3backgrounddelete.cortx_s3_client import CORTXS3Client
 from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 from s3backgrounddelete.cortx_s3_success_response import CORTXS3SuccessResponse
 from s3backgrounddelete.cortx_s3_util import CORTXS3Util
+from cortx.utils.log import Log
 #from s3backgrounddelete.IEMutil import IEMutil
 
 
@@ -34,22 +35,17 @@ from s3backgrounddelete.cortx_s3_util import CORTXS3Util
 
 class CORTXS3IndexApi(CORTXS3Client):
     """CORTXS3IndexApi provides index REST-API's List and Put."""
-    _logger = None
 
-    def __init__(self, config, connectionType, logger=None, connection=None):
-        """Initialise logger and config."""
-        if (logger is None):
-            self._logger = logging.getLogger("CORTXS3IndexApi")
-        else:
-            self._logger = logger
+    def __init__(self, config, connectionType, connection=None):
+        """Initialise config."""
         self.config = config
         self.s3_util = CORTXS3Util(self.config, connectionType)
 
         #for testing scenarios, pass the mocked http connection object in init method..
         if (connection is None):
-            super(CORTXS3IndexApi, self).__init__(self.config, connectionType, logger = self._logger)
+            super(CORTXS3IndexApi, self).__init__(self.config, connectionType)
         else:
-            super(CORTXS3IndexApi, self).__init__(self.config, connectionType, logger = self._logger, connection=connection)
+            super(CORTXS3IndexApi, self).__init__(self.config, connectionType, connection=connection)
 
 
     def list(self, index_id, max_keys=1000, next_marker=None, additional_Query_params=None):

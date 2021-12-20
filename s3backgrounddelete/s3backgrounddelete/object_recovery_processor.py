@@ -49,7 +49,7 @@ class ObjectRecoveryProcessor(object):
                  self.config.get_processor_logger_directory(),
                  level=self.config.get_file_log_level(),
                  backup_count=self.config.get_backup_count(),
-                 file_size_in_mb=self.config.get_max_size_in_mb(),
+                 file_size_in_mb=self.config.get_max_log_size_mb(),
                  syslog_server=None, syslog_port=None,
                  console_output=True)
         self.signal = DynamicConfigHandler(self)

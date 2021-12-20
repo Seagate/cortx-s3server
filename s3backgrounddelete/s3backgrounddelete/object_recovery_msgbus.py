@@ -25,6 +25,7 @@ import time
 import traceback
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
+from cortx.utils.log import Log
 
 class ObjectRecoveryMsgbus(object):
 
@@ -33,7 +34,6 @@ class ObjectRecoveryMsgbus(object):
     def __init__(self, config, logger):
         """Initialize MessageBus."""
         self._config = config
-        self._logger = logger
         self.__msgbuslib = S3CortxMsgBus()
         self.__isproducersetupcomplete = False
         self.__isconsumersetupcomplete = False
@@ -57,7 +57,7 @@ class ObjectRecoveryMsgbus(object):
 
             if probable_delete_records:
                 validator = ObjectRecoveryValidator(
-                    self._config, probable_delete_records, self._logger)
+                    self._config, probable_delete_records)
                 validator.process_results()
 
         except (KeyError, ValueError) as ex:    # Bad formatted message. Will discard it

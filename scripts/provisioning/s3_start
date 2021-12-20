@@ -76,13 +76,18 @@ def main():
 
     #Logging path details
     s3_single_entry_logger_name = s3_confkeys_store.get_config\
-        ('DEFAULT_POST_INSTALL>CONFSTORE_S3_LOGGER_NAME')
+        ('S3_DEPLOYMENT_LOGGER_NAME')
+    s3_single_entry_logger_backup_count = s3_confkeys_store.get_config\
+        ('S3_DEPLOYMENT_LOGGER_BACKUP_COUNT')
+    s3_single_entry_logger_max_size_mb = s3_confkeys_store.get_config\
+        ('S3_DEPLOYMENT_LOGGER_MAX_SIZE_MB')
     s3_single_entry_log_directory = os.path.join\
         (base_logdir_path, "s3", machine_id, s3_single_entry_logger_name)
 
     create_logger_directory(s3_single_entry_log_directory)
     Log.init(s3_single_entry_logger_name, s3_single_entry_log_directory,
-             level='INFO', backup_count=5, file_size_in_mb=5,
+             level='INFO', backup_count=s3_single_entry_logger_backup_count,
+             file_size_in_mb=s3_single_entry_logger_max_size_mb,
              syslog_server=None, syslog_port=None, console_output=True)
 
     # Service mapping
