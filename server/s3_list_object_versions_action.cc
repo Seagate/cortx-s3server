@@ -103,6 +103,7 @@ void S3ListObjectVersionsAction::fetch_bucket_info_failed() {
 void S3ListObjectVersionsAction::validate_request() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
+  bool send_response = false;
   // Fetch input parameters
   bucket_name = request->get_bucket_name();
   s3_log(S3_LOG_DEBUG, request_id, "bucket name = %s\n", bucket_name.c_str());
@@ -114,21 +115,44 @@ void S3ListObjectVersionsAction::validate_request() {
   request_key_marker = request->get_query_string_value("key-marker");
   s3_log(S3_LOG_DEBUG, request_id, "request_key_marker = %s\n",
          request_key_marker.c_str());
-
   last_key = request_key_marker;  // As requested by user
+
+  // Validate the input max-keys
   std::string max_k = request->get_query_string_value("max-keys");
   if (max_k.empty()) {
     max_keys = 1000;
   } else {
-    if (!S3CommonUtilities::stoul(max_k, max_keys)) {
+    int max_keys_temp;
+    if ((!S3CommonUtilities::stoi(max_k, max_keys_temp)) ||
+        (max_keys_temp < 0)) {
       s3_log(S3_LOG_DEBUG, request_id, "invalid max-keys = %s\n",
              max_k.c_str());
       // TODO: Add invalid argument details to the response.
       set_s3_error("InvalidArgument");
-      send_response_to_s3_client();
-      return;
+      send_response = true;
+    } else {
+      max_keys = max_keys_temp;
     }
   }
+
+  // Validate the input encoding-type
+  if (request->has_query_param_key("encoding-type")) {
+    std::string encoding_type =
+        request->get_query_string_value("encoding-type");
+    if (encoding_type != "url") {
+      s3_log(S3_LOG_DEBUG, request_id, "invalid encoding-type = %s\n",
+             encoding_type.c_str());
+      // TODO: Add invalid argument details to the response.
+      set_s3_error("InvalidArgument");
+      send_response = true;
+    }
+  }
+
+  if (send_response) {
+      send_response_to_s3_client();
+      return;
+  }
+
   s3_log(S3_LOG_DEBUG, request_id, "max-keys = %s\n", max_k.c_str());
   next();
 }
@@ -261,6 +285,8 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
   }
 
   for (auto& kv : kvps) {
+    // Remove /version_id from the key.
+    std::string key = kv.first.substr(0, kv.first.find_last_of("/"));
     if (break_out) {
       add_next_marker_version(kv.first, kv.second.second);
       break;
@@ -276,11 +302,11 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       // Filter by prefix, if prefix specified
       if (!request_prefix.empty()) {
         // Filter out by prefix
-        if (kv.first.find(request_prefix) == std::string::npos) {
+        if (key.find(request_prefix) == std::string::npos) {
           // Key does not start with specified prefix; key filtered out.
           // Prefix does not match.
           // Check if fetched key is lexicographically greater than prefix
-          if (kv.first > request_prefix) {
+          if (key > request_prefix) {
             // No further prefix match will occur (as items in Motr storage are
             // arranaged in lexical order).
             no_further_prefix_match = true;
@@ -299,7 +325,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
           }
         }
       }
-      size_t common_prefix_pos = kv.first.find(last_common_prefix);
+      size_t common_prefix_pos = key.find(last_common_prefix);
       if (common_prefix_pos == std::string::npos) {
         // As we didn't find key with same common prefix, it means we have one
         // more key added to the list.
@@ -327,12 +353,12 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       add_object_version(kv.first, kv.second.second);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
-      if (kv.first.find(request_prefix) == 0) {
+      if (key.find(request_prefix) == 0) {
         add_object_version(kv.first, kv.second.second);
       } else {
         // Prefix does not match.
         // Check if fetched key is lexicographically greater than prefix
-        if (kv.first > request_prefix) {
+        if (key > request_prefix) {
           // No further prefix match will occur (as items in Motr storage are
           // arranged in lexical order)
           no_further_prefix_match = true;
@@ -345,7 +371,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
         }
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
-      delimiter_pos = kv.first.find(request_delimiter);
+      delimiter_pos = key.find(request_delimiter);
       if (delimiter_pos == std::string::npos) {
         add_object_version(kv.first, kv.second.second);
       } else {
@@ -356,8 +382,8 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
         // with common prefix.
         s3_log(S3_LOG_DEBUG, request_id,
                "Delimiter %s found at pos %zu in string %s\n",
-               request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
-        std::string common_prefix = kv.first.substr(0, delimiter_pos + 1);
+               request_delimiter.c_str(), delimiter_pos, key.c_str());
+        std::string common_prefix = key.substr(0, delimiter_pos + 1);
         skip_remaining_common_prefixes = false;
         // Before adding common prefix, check if this is the first time we add
         // this key to common_prefixes. If so, skip remaining keys that belong
@@ -388,10 +414,9 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       }
     } else {
       // Both prefix and delimiter are not empty
-      bool prefix_match = (kv.first.find(request_prefix) == 0) ? true : false;
+      bool prefix_match = (key.find(request_prefix) == 0) ? true : false;
       if (prefix_match) {
-        delimiter_pos =
-            kv.first.find(request_delimiter, request_prefix.length());
+        delimiter_pos = key.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
           add_object_version(kv.first, kv.second.second);
         } else {
@@ -402,8 +427,8 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
           // with common prefix.
           s3_log(S3_LOG_DEBUG, request_id,
                  "Delimiter %s found at pos %zu in string %s\n",
-                 request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
-          std::string common_prefix = kv.first.substr(0, delimiter_pos + 1);
+                 request_delimiter.c_str(), delimiter_pos, key.c_str());
+          std::string common_prefix = key.substr(0, delimiter_pos + 1);
           skip_remaining_common_prefixes = false;
           // Before adding common prefix, check if this is the first time we
           // add this key to common_prefixes.
@@ -435,7 +460,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       } else {
         // Prefix does not match.
         // Check if fetched key is lexicographically greater than prefix
-        if (kv.first > request_prefix) {
+        if (key > request_prefix) {
           // No further prefix match will occur (as items in Motr storage are
           // arranaged in lexical order)
           no_further_prefix_match = true;
