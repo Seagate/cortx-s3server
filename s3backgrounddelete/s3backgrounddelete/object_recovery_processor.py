@@ -65,8 +65,7 @@ class ObjectRecoveryProcessor(object):
                 from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
 
                 self.server = ObjectRecoveryMsgbus(
-                    self.config,
-                    self.logger)
+                    self.config)
             else:
                 self.logger.error(
                 "Invalid argument : " + self.config.get_messaging_platform() + "specified in messaging_platform.")

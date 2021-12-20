@@ -31,7 +31,7 @@ class ObjectRecoveryMsgbus(object):
 
     """This class is implementation of msgbus for object recovery."""
 
-    def __init__(self, config, logger):
+    def __init__(self, config):
         """Initialize MessageBus."""
         self._config = config
         self.__msgbuslib = S3CortxMsgBus()
