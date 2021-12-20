@@ -356,7 +356,7 @@ class ConfigCmd(SetupCmd):
                   self.logger.info(f'Setting confstore value for key :{openldap_key} and value as :{self.machine_id}')
                   self.consul_confstore.set_config(f'{openldap_key}', f'{self.machine_id}', True)
                   self.logger.info('Updated confstore with latest value')
-                  time.sleep(5)
+                  time.sleep(3)
                   continue
               if opendldap_val == self.machine_id:
                   self.logger.info(f'Found lock acquired successfully hence processing with openldap schema push')
@@ -364,8 +364,10 @@ class ConfigCmd(SetupCmd):
                   break
               if opendldap_val != self.machine_id:
                   self.logger.info(f'openldap lock is already acquired by {opendldap_val}, Hence skipping openldap schema configuration')
-                  ldap_lock = False
-                  break
+                  # this is necessary - this makes sure that openldap schema is pushed before proceeding further (for account creation)
+                  # else it happens that account creation is attempted before schema was pushed on given openldap server
+                  time.sleep(3)
+                  continue
 
           except Exception as e:
               self.logger.error(f'Exception occured while connecting consul service endpoint {e}')
