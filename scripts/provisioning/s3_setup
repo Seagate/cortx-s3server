@@ -159,7 +159,7 @@ def main():
 
 def create_logger_directory(s3deployment_log_directory):
   """Create log directory if not exists."""
-  _logger_directory = os.path.join(s3_single_entry_log_directory)
+  _logger_directory = os.path.join(s3deployment_log_directory)
   if not os.path.isdir(_logger_directory):
     try:
       os.makedirs(_logger_directory)
