@@ -146,16 +146,147 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
     send_response_to_s3_client();
     return;
   }
-  if (MaxPartCopySourcePartSize <
+  std::string range_header_value = request->get_header_value("x-amz-copy-source-range");
+  if (range_header_value.empty()) {
+    // Range is not specified, read complete object
+    s3_log(S3_LOG_DEBUG, request_id, "Range is not specified\n");
+    if (MaxPartCopySourcePartSize <
       additional_object_metadata->get_content_length()) {
-    s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
-    set_s3_error("InvalidRequest");
-    send_response_to_s3_client();
-  } else {
-    total_data_to_copy = additional_object_metadata->get_content_length();
-    next();
+        s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
+        set_s3_error("InvalidRequest");
+        send_response_to_s3_client();
+    } 
+    else {
+      total_data_to_copy = additional_object_metadata->get_content_length();
+      next();
+    }
+  }
+  else{
+    // parse the Range header value
+    // eg: bytes=0-1024 value
+    s3_log(S3_LOG_DEBUG, request_id, "Range found(%s)\n",
+           range_header_value.c_str());
+    if (validate_range_header(range_header_value)) {
+      next();
+    } else {
+      set_s3_error("InvalidRange");
+      send_response_to_s3_client();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+bool S3GetObjectAction::validate_range_header(
+    const std::string& range_value) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // The header can consist of 'blank' character(s) only
+  if (std::find_if_not(range_value.begin(), range_value.end(), &::isspace) ==
+      range_value.end()) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "\"Range:\" header consists of blank symbol(s) only");
+    return true;
+  }
+  // parse the Range header value
+  // eg: bytes=0-1024 value
+  std::size_t pos = range_value.find('=');
+  // return false when '=' not found
+  if (pos == std::string::npos) {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+
+  std::string bytes_unit = S3CommonUtilities::trim(range_value.substr(0, pos));
+  std::string byte_range_set = range_value.substr(pos + 1);
+
+  // check bytes_unit has bytes string or not
+  if (bytes_unit != "bytes") {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+
+  if (byte_range_set.empty()) {
+    // found range as bytes=
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+  // byte_range_set has multi range
+  pos = byte_range_set.find(',');
+  if (pos != std::string::npos) {
+    // found ,
+    // in this case, AWS returns full object and hence we do too
+    s3_log(S3_LOG_INFO, stripped_request_id, "unsupported multirange(%s)\n",
+           byte_range_set.c_str());
+    // initialize the first and last offset values with actual object offsets
+    // to read complete object
+    first_byte_offset_to_read = 0;
+    last_byte_offset_to_read = content_length - 1;
+    return true;
+  }
+  pos = byte_range_set.find('-');
+  if (pos == std::string::npos) {
+    // not found -
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+
+  std::string first_byte = byte_range_set.substr(0, pos);
+  std::string last_byte = byte_range_set.substr(pos + 1);
+
+  // trip leading and trailing space
+  first_byte = S3CommonUtilities::trim(first_byte);
+  last_byte = S3CommonUtilities::trim(last_byte);
+
+  // invalid pre-condition checks
+  // 1. first and last byte offsets are empty
+  // 2. first/last byte is not empty and it has invalid data like char
+  if ((first_byte.empty() && last_byte.empty()) ||
+      (!first_byte.empty() &&
+       !S3CommonUtilities::string_has_only_digits(first_byte)) ||
+      (!last_byte.empty() &&
+       !S3CommonUtilities::string_has_only_digits(last_byte))) {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+  // Return last 'nnn' bytes from object.
+  if (first_byte.empty()) {
+    first_byte_offset_to_read = content_length - atol(last_byte.c_str());
+    last_byte_offset_to_read = content_length - 1;
+  } else if (last_byte.empty()) {
+    // Return from 'nnn' bytes to content_length-1 from object.
+    first_byte_offset_to_read = atol(first_byte.c_str());
+    last_byte_offset_to_read = content_length - 1;
+  } else {
+    // both are not empty
+    first_byte_offset_to_read = atol(first_byte.c_str());
+    last_byte_offset_to_read = atol(last_byte.c_str());
+  }
+  // last_byte_offset_to_read is greater than or equal to the current length of
+  // the entity-body, last_byte_offset_to_read is taken to be equal to
+  // one less than the current length of the entity- body in bytes.
+  if (last_byte_offset_to_read > content_length - 1) {
+    last_byte_offset_to_read = content_length - 1;
+  }
+  // Range validation
+  // If a syntactically valid byte-range-set includes at least one byte-
+  // range-spec whose first-byte-pos is less than the current length of the
+  // entity-body, or at least one suffix-byte-range-spec with a non-zero
+  // suffix-length, then the byte-range-set is satisfiable.
+  if ((first_byte_offset_to_read >= content_length) ||
+      (first_byte_offset_to_read > last_byte_offset_to_read)) {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+  // valid range
+  s3_log(S3_LOG_DEBUG, request_id, "valid range(%zu-%zu) found\n",
+         first_byte_offset_to_read, last_byte_offset_to_read);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  return true;
 }
 
 // TODO: Add this function to a common class

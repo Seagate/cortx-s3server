@@ -115,6 +115,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   void check_part_details();
   void fetch_multipart_metadata();
   void fetch_multipart_failed();
+  bool validate_range_header();
   void validate_multipart_partcopy_request();
   void fetch_part_info();
   void fetch_part_info_success();
