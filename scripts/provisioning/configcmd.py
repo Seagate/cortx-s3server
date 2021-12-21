@@ -678,7 +678,6 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>scheduler_logger_directory", self.update_bgdelete_scheduler_log_dir)
-    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>scheduler_log_file", self.update_bgdelete_scheduler_log_file_path)
     self.logger.info("Update s3 bgdelete scheduler config file completed")
 
   def update_s3_bgdelete_worker_configs(self):
@@ -686,7 +685,6 @@ class ConfigCmd(SetupCmd):
     self.logger.info("Update s3 bgdelete worker config file started")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT", "cortx_s3>consumer_endpoint", self.update_bgdelete_consumer_endpoint)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_logger_directory", self.update_bgdelete_processor_log_dir)
-    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_log_file", self.update_bgdelete_processor_log_file_path)
     self.logger.info("Update s3 bgdelete worker config file completed")
 
   def update_bgdelete_producer_endpoint(self, value_to_update, additional_param):
@@ -716,23 +714,11 @@ class ConfigCmd(SetupCmd):
     self.logger.info(f"update_bgdelete_scheduler_log_dir : {bgdelete_log_dir_path}")
     return bgdelete_log_dir_path
 
-  def update_bgdelete_scheduler_log_file_path(self, value_to_update, additional_param):
-    """ Update s3 bgdelete scheduler log dir path."""
-    bgdelete_scheduler_log_file_path = os.path.join(value_to_update, "s3/s3backgrounddelete/object_recovery_scheduler.log")
-    self.logger.info(f"update_bgdelete_scheduler_log_file_path : {bgdelete_scheduler_log_file_path}")
-    return bgdelete_scheduler_log_file_path
-
   def update_bgdelete_processor_log_dir(self, value_to_update, additional_param):
     """ Update s3 bgdelete processor log dir path."""
     bgdelete_log_dir_path = os.path.join(value_to_update, "s3", self.machine_id, "s3backgrounddelete")
     self.logger.info(f"update_bgdelete_processor_log_dir : {bgdelete_log_dir_path}")
     return bgdelete_log_dir_path
-
-  def update_bgdelete_processor_log_file_path(self, value_to_update, additional_param):
-    """ Update s3 bgdelete processor log dir path."""
-    bgdelete_processor_log_file_path = os.path.join(value_to_update, "s3", self.machine_id, "s3backgrounddelete/object_recovery_processor.log")
-    self.logger.info(f"update_bgdelete_processor_log_file_path : {bgdelete_processor_log_file_path}")
-    return bgdelete_processor_log_file_path
 
   def update_s3_cluster_configs(self):
     """ Update s3 cluster configs."""

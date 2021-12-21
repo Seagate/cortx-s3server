@@ -28,6 +28,7 @@ import uuid
 
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from cortx.utils.log import Log
 
 try:
     from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -43,7 +44,6 @@ class CORTXS3Config(object):
 
     def __init__(self,base_cfg_path:str = "/etc/cortx",cfg_type:str = "yaml://"):
         """Initialise logger and configuration."""
-        self.logger = logging.getLogger(__name__ + "CORTXS3Config")
         self.s3bdg_access_key = None
         self.s3bgd_secret_key = None
         self.logger.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
@@ -155,27 +155,6 @@ class CORTXS3Config(object):
                 "Could not parse processor loggername from config file " +
                 self._conf_file)
 
-    def get_scheduler_logger_file(self):
-        """Return logger file for scheduler from config file or KeyError."""
-        try:
-          scheduler_log_file = self.s3confstore.get_config('logconfig>scheduler_log_file')
-          return scheduler_log_file
-        except:
-            raise KeyError(
-                "Could not parse scheduler logfile from config file " +
-                self._conf_file)
-
-    def get_processor_logger_file(self):
-        """Return logger file for processor from config file or KeyError."""
-        try:
-          processor_log_file = self.s3confstore.get_config('logconfig>processor_log_file')
-          return processor_log_file
-        except:
-            raise KeyError(
-                "Could not parse processor loggerfile from config file " +
-                self._conf_file)
-
-
     def get_file_log_level(self):
         """Return file log level from config file or KeyError."""
         try:
@@ -184,26 +163,6 @@ class CORTXS3Config(object):
         except:
             raise KeyError(
                 "Could not parse file loglevel from config file " +
-                self._conf_file)
-
-    def get_console_log_level(self):
-        """Return console log level from config file or KeyError."""
-        try:
-          console_log_level = self.s3confstore.get_config('logconfig>console_log_level')
-          return int(console_log_level)
-        except:
-            raise KeyError(
-                "Could not parse console loglevel from config file " +
-                self._conf_file)
-
-    def get_log_format(self):
-        """Return log format from config file or KeyError."""
-        try:
-          log_format = self.s3confstore.get_config('logconfig>log_format')
-          return log_format
-        except:
-            raise KeyError(
-                "Could not parse log format from config file " +
                 self._conf_file)
 
     def get_cortx_s3_endpoint(self):

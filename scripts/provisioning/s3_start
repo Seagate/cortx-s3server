@@ -182,25 +182,11 @@ def main():
       logger.info(f"Starting S3 Background delete Producer...")
       os.system(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh {base_config_path} yaml://")
 
-      # Read the log directory path from s3 bgdelete config file
-      s3_bgdelete_producer_log_file_path = read_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "logconfig>scheduler_log_file")
-      logger.info(f"s3_bgdelete_producer_log_file_path : {s3_bgdelete_producer_log_file_path}")
-
-      # Print last few line of S3 bgdelete producer log  file
-      os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
-
     elif service == service_bgworker:
       # Start the Background Consumer
       logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path} yaml://")
       logger.info(f"Starting S3 Background delete Consumer...")
       os.system(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path} yaml://")
-
-      # Read the log directory path from s3 bgdelete config file
-      s3_bgdelete_consumer_log_file_path = read_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "logconfig>processor_log_file")
-      logger.info(f"s3_bgdelete_consumer_log_file_path : {s3_bgdelete_consumer_log_file_path}")
-
-      # Print last few line of S3 bgdelete consumer log  file
-      os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
 
     elif service == service_haproxy:
       haproxy_log_path = os.path.join(base_logdir_path, 's3', machine_id, 'haproxy/haproxy.log')
