@@ -39,11 +39,11 @@ public class AccessKeyParameterValidator extends AbstractParameterValidator {
         if (requestBody.containsKey("UserName")) {
             return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
         }
-        
-       return isAccessKeySecretKeyCombinationValid(
-                  requestBody.get("AccessKey"), requestBody.get("SecretKey"));
+
+        return isAccessKeySecretKeyCombinationValid(
+            requestBody.get("AccessKey"), requestBody.get("SecretKey"));
     }
-    
+
     /**
      * Validate access key and secret key combination. Either both valid values
      * of access key and secret key should be provided or not provided at all.

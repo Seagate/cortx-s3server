@@ -98,12 +98,12 @@ public class AccessKeyController extends AbstractController {
 
         AccessKey accessKey = new AccessKey();
         accessKey.setUserId(user.getId());
-        if(userAccessKey != null) {
-        	accessKey.setId(userAccessKey);
-        	accessKey.setSecretKey(userSecretKey);
+        if (userAccessKey != null) {
+          accessKey.setId(userAccessKey);
+          accessKey.setSecretKey(userSecretKey);
         } else {
-        	accessKey.setId(KeyGenUtil.createUserAccessKeyId(true));
-        	accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
+          accessKey.setId(KeyGenUtil.createUserAccessKeyId(true));
+          accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
         }
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
