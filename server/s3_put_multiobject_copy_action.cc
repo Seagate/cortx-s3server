@@ -176,7 +176,7 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-bool S3GetObjectAction::validate_range_header(
+bool S3PutMultipartCopyAction::validate_range_header(
     const std::string& range_value) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // The header can consist of 'blank' character(s) only
@@ -254,16 +254,16 @@ bool S3GetObjectAction::validate_range_header(
   }
   // Return last 'nnn' bytes from object.
   if (first_byte.empty()) {
-    first_byte_offset_to_read = content_length - atol(last_byte.c_str());
+    first_byte_offset_to_read = content_length - strtol(last_byte.c_str(), 0, 10);
     last_byte_offset_to_read = content_length - 1;
   } else if (last_byte.empty()) {
     // Return from 'nnn' bytes to content_length-1 from object.
-    first_byte_offset_to_read = atol(first_byte.c_str());
+    first_byte_offset_to_read = strtol(first_byte.c_str(), 0, 10);
     last_byte_offset_to_read = content_length - 1;
   } else {
     // both are not empty
-    first_byte_offset_to_read = atol(first_byte.c_str());
-    last_byte_offset_to_read = atol(last_byte.c_str());
+    first_byte_offset_to_read = strtol(first_byte.c_str(), 0, 10);
+    last_byte_offset_to_read = strtol(last_byte.c_str(), 0, 10);
   }
   // last_byte_offset_to_read is greater than or equal to the current length of
   // the entity-body, last_byte_offset_to_read is taken to be equal to
