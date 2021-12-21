@@ -158,8 +158,6 @@ class MockDataUsageItemFactory : public DataUsageItemFactory {
                          DataUsageItemState)> subscriber) override {
     std::shared_ptr<MockS3Motr> mock_s3_motr_api =
         std::make_shared<MockS3Motr>();
-    //EXPECT_CALL(*mock_s3_motr_api, m0_h_ufid_next(_))
-    //    .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
     std::shared_ptr<MockS3MotrKVSReaderFactory> mock_kvs_reader_factory =
         std::make_shared<MockS3MotrKVSReaderFactory>(req, mock_s3_motr_api);
     std::shared_ptr<MockS3MotrKVSWriterFactory> mock_kvs_writer_factory =
@@ -194,8 +192,8 @@ class S3DataUsageCacheTest : public testing::Test {
     mock_request0->set_account_name(test_account_name0);
     mock_request1 = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr1);
     test_account_name1 = "ut_account1";
-    objects_increment0 = 2;
-    bytes_increment0 = 20;
+    objects_increment1 = 2;
+    bytes_increment1 = 20;
     mock_request1->set_account_name(test_account_name1);
     cache_under_test = S3DataUsageCache::get_instance();
     std::shared_ptr<MockDataUsageItemFactory> mock_item_factory =

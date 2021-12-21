@@ -30,9 +30,8 @@ extern struct s3_motr_idx_layout data_usage_accounts_index_layout;
 
 std::unique_ptr<S3DataUsageCache> S3DataUsageCache::singleton;
 
-S3DataUsageCache::S3DataUsageCache() {
-  item_factory = std::make_shared<DataUsageItemFactory>();
-}
+S3DataUsageCache::S3DataUsageCache()
+    : item_factory(std::make_shared<DataUsageItemFactory>()) {}
 
 S3DataUsageCache *S3DataUsageCache::get_instance() {
   s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
