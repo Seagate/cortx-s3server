@@ -53,7 +53,7 @@ class ObjectRecoveryProcessor(object):
                  syslog_server=None, syslog_port=None,
                  console_output=True)
         self.signal = DynamicConfigHandler(self)
-        self.logger.info("Initialising the Object Recovery Processor")
+        Log.info("Initialising the Object Recovery Processor")
         self.term_signal = SigTermHandler()
 
     def consume(self):
@@ -67,21 +67,21 @@ class ObjectRecoveryProcessor(object):
                 self.server = ObjectRecoveryMsgbus(
                     self.config)
             else:
-                self.logger.error(
+                Log.error(
                 "Invalid argument : " + self.config.get_messaging_platform() + "specified in messaging_platform.")
                 return
 
-            self.logger.info("Consumer started at " +
+            Log.info("Consumer started at " +
                             str(datetime.datetime.now()))
             self.server.receive_data(self.term_signal)
         except BaseException:
             if self.server:
                 self.server.close()
-            self.logger.error("main except:" + str(traceback.format_exc()))
+            Log.error("main except:" + str(traceback.format_exc()))
 
     def close(self):
         """Stop processor."""
-        self.logger.info("Stopping the processor")
+        Log.info("Stopping the processor")
         self.server.close()
         # perform an orderly shutdown by flushing and closing all handlers
         logging.shutdown()

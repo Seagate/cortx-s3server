@@ -98,61 +98,61 @@ def main():
   try:
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
-      logger.info('post_install started.')
+      Log.info('post_install started.')
       PostInstallCmd(args.config, args.services).process()
-      logger.info('post_install successful.')
+      Log.info('post_install successful.')
     elif args.command == 'prepare':
       from preparecmd import PrepareCmd
-      logger.info('prepare started.')
+      Log.info('prepare started.')
       PrepareCmd(args.config, args.services).process()
-      logger.info('prepare successful.')
+      Log.info('prepare successful.')
     elif args.command == 'config':
       from configcmd import ConfigCmd
-      logger.info('config started.')
+      Log.info('config started.')
       ConfigCmd(args.config, args.services).process()
-      logger.info('config successful.')
+      Log.info('config successful.')
     elif args.command == 'init':
       from initcmd import InitCmd
-      logger.info('init started.')
+      Log.info('init started.')
       InitCmd(args.config, args.services).process()
-      logger.info('init successful.') 
+      Log.info('init successful.') 
     elif args.command == 'test':
       from testcmd import TestCmd
-      logger.info('test started.')
+      Log.info('test started.')
       test_plan = None
       if args.plan:
         test_plan = args.plan
       TestCmd(args.config, test_plan).process()
-      logger.info('PASS: S3-Sanity test passed.')
+      Log.info('PASS: S3-Sanity test passed.')
     elif args.command == 'reset':
       from resetcmd import ResetCmd
-      logger.info('reset started.')
+      Log.info('reset started.')
       ResetCmd(args.config, args.services).process()
-      logger.info('reset successful.')
+      Log.info('reset successful.')
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
-      logger.info('cleanup started.')
+      Log.info('cleanup started.')
       CleanupCmd(args.config, args.services).process(args.pre_factory)
-      logger.info('cleanup successful.')
+      Log.info('cleanup successful.')
     elif args.command == 'preupgrade':
       from preupgradecmd import PreUpgradeCmd
-      logger.info('pre-upgrade started.')
+      Log.info('pre-upgrade started.')
       PreUpgradeCmd(args.config, args.services).process()
-      logger.info('pre-upgrade successful.')
+      Log.info('pre-upgrade successful.')
     elif args.command == 'postupgrade':
       from postupgradecmd import PostUpgradeCmd
-      logger.info('post-upgrade started.')
+      Log.info('post-upgrade started.')
       PostUpgradeCmd(args.config, args.services).process()
-      logger.info('post-upgrade successful.')
+      Log.info('post-upgrade successful.')
     elif args.command == 'upgrade':
       from upgradecmd import UpgradeCmd
-      logger.info('upgrade started.')
+      Log.info('upgrade started.')
       # Uncomment following call to enable upgrade.
       # UpgradeCmd(args.config, args.services, args.commit).process()
-      logger.info('upgrade successful.')
+      Log.info('upgrade successful.')
   except Exception as e:
-    logger.error(f"{str(e)}")
-    logger.error(f"{traceback.format_exc()}")
+    Log.error(f"{str(e)}")
+    Log.error(f"{traceback.format_exc()}")
     return errno.EINVAL
 
   return 0
@@ -162,7 +162,7 @@ def create_logger_directory(s3deployment_log_directory):
   _logger_directory = os.path.join(s3deployment_log_directory)
   if not os.path.isdir(_logger_directory):
     try:
-      os.makedirs(_logger_directory)
+      os.makedirs(_logger_directory, exist_ok=True)
     except BaseException:
       raise Exception(f"{s3deployment_log_directory} Could not be created")
 

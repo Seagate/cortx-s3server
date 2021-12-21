@@ -47,10 +47,10 @@ class CORTXS3KVApi(CORTXS3Client):
     def put(self, index_id=None, object_key_name=None, value=""):
         """Perform PUT request and generate response."""
         if index_id is None:
-            self._logger.error("Index Id is required.")
+            Log.error("Index Id is required.")
             return False, None
         if object_key_name is None:
-            self._logger.error("Key is required")
+            Log.error("Key is required")
             return False, None
 
         query_params = ""
@@ -69,7 +69,7 @@ class CORTXS3KVApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
         if(headers['Authorization'] is None):
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -81,29 +81,29 @@ class CORTXS3KVApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
 
 
         if response['status'] == 200:
-            self._logger.info("Key value details added successfully.")
+            Log.info("Key value details added successfully.")
             return True, CORTXS3SuccessResponse(response['body'])
         else:
-            self._logger.info('Failed to add key value details.')
+            Log.info('Failed to add key value details.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def get(self, index_id=None, object_key_name=None):
         """Perform GET request and generate response."""
         if index_id is None:
-            self._logger.error("Index Id is required.")
+            Log.error("Index Id is required.")
             return False, None
         if object_key_name is None:
-            self._logger.error("Key is required")
+            Log.error("Key is required")
             return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
@@ -122,7 +122,7 @@ class CORTXS3KVApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('GET', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -133,28 +133,28 @@ class CORTXS3KVApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
-            self._logger.info("Get kv operation successfully.")
+            Log.info("Get kv operation successfully.")
             return True, CORTXS3GetKVResponse(
                 object_key_name, response['body'])
         else:
-            self._logger.info('Failed to get kv details.')
+            Log.info('Failed to get kv details.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def delete(self, index_id=None, object_key_name=None):
         """Perform DELETE request and generate response."""
         if index_id is None:
-            self._logger.error("Index Id is required.")
+            Log.error("Index Id is required.")
             return False, None
         if object_key_name is None:
-            self._logger.error("Key is required")
+            Log.error("Key is required")
             return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
@@ -173,7 +173,7 @@ class CORTXS3KVApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -184,16 +184,16 @@ class CORTXS3KVApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
-            self._logger.info('Key value deleted.')
+            Log.info('Key value deleted.')
             return True, CORTXS3SuccessResponse(response['body'])
         else:
-            self._logger.info('Failed to delete key value.')
+            Log.info('Failed to delete key value.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])

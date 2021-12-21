@@ -61,7 +61,7 @@ class ObjectRecoveryScheduler(object):
                  syslog_server=None, syslog_port=None,
                  console_output=True)
         self.signal = DynamicConfigHandler(self)
-        self.logger.info("Initialising the Object Recovery Scheduler")
+        Log.info("Initialising the Object Recovery Scheduler")
         self.producer = None
         self.producer_name = producer_name
         self.term_signal = SigTermHandler()
@@ -77,7 +77,7 @@ class ObjectRecoveryScheduler(object):
 
     def add_kv_to_msgbus(self, marker = None):
         """Add object key value to msgbus topic."""
-        self.logger.info("Inside add_kv_to_msgbus.")
+        Log.info("Inside add_kv_to_msgbus.")
         try:
             from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
 
@@ -85,30 +85,30 @@ class ObjectRecoveryScheduler(object):
                 self.producer = ObjectRecoveryMsgbus(
                     self.config)
             threshold = self.config.get_threshold()
-            self.logger.debug("Threshold is : " + str(threshold))
+            Log.debug("Threshold is : " + str(threshold))
             if self.term_signal.shutdown_signal == True:
-                self.logger.info("Shutting down s3backgroundproducer service.")
+                Log.info("Shutting down s3backgroundproducer service.")
                 sys.exit(0)
             count = self.producer.get_count()
-            self.logger.debug("Count of unread msgs is : " + str(count))
+            Log.debug("Count of unread msgs is : " + str(count))
 
             if ((int(count) < threshold) or (threshold == 0)):
-                self.logger.debug("Count of unread messages is less than threshold value.Hence continuing...")
+                Log.debug("Count of unread messages is less than threshold value.Hence continuing...")
             else:
                 #do nothing
-                self.logger.info("Queue has more messages than threshold value. Hence skipping addition of further entries.")
+                Log.info("Queue has more messages than threshold value. Hence skipping addition of further entries.")
                 return
             # Cleanup all entries and enqueue only 1000 entries
             #PurgeAPI Here
             if self.term_signal.shutdown_signal == True:
-                self.logger.info("Shutting down s3backgroundproducer service.")
+                Log.info("Shutting down s3backgroundproducer service.")
                 sys.exit(0)
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
-                self.config, connectionType=CONNECTION_TYPE_PRODUCER, logger=self.logger).list(
+                self.config, connectionType=CONNECTION_TYPE_PRODUCER, logger=Log).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
             if result and not self.term_signal.shutdown_signal:
-                self.logger.info("Index listing result :" +
+                Log.info("Index listing result :" +
                                  str(index_response.get_index_content()))
                 probable_delete_json = index_response.get_index_content()
                 probable_delete_oid_list = probable_delete_json["Keys"]
@@ -120,49 +120,49 @@ class ObjectRecoveryScheduler(object):
                         try:
                             objLeakVal = json.loads(record["Value"])
                         except ValueError as error:
-                            self.logger.error(
+                            Log.error(
                             "Failed to parse JSON data for: " + str(record) + " due to: " + error)
                             continue
 
                         if (objLeakVal is None):
-                            self.logger.error("No value associated with " + str(record) + ". Skipping entry")
+                            Log.error("No value associated with " + str(record) + ". Skipping entry")
                             continue
 
                         # Check if object leak entry is older than 15mins or a preconfigured duration
                         if (not ObjectRecoveryScheduler.isObjectLeakEntryOlderThan(objLeakVal, leak_processing_delay)):
-                            self.logger.info("Object leak entry " + record["Key"] +
+                            Log.info("Object leak entry " + record["Key"] +
                                             " is NOT older than " + str(leak_processing_delay) +
                                             "mins. Skipping entry")
                             continue
 
-                        self.logger.info(
+                        Log.info(
                             "Object recovery queue sending data :" +
                             str(record))
                         ret = self.producer.send_data(record, producer_id = self.producer_name)
                         if not ret:
                             # TODO - Do Audit logging
-                            self.logger.error(
+                            Log.error(
                                 "Object recovery queue send data "+ str(record) +
                                 " failed :")
                         else:
-                            self.logger.info(
+                            Log.info(
                                 "Object recovery queue send data successfully :" +
                                 str(record))
                 else:
-                    self.logger.info(
+                    Log.info(
                         "Index listing result empty. Ignoring adding entry to object recovery queue")
             else:
-                self.logger.error("Failed to retrive Index listing:")
+                Log.error("Failed to retrive Index listing:")
         except Exception as exception:
-            self.logger.error(
+            Log.error(
                 "add_kv_to_msgbus send data exception: {}".format(exception))
-            self.logger.debug(
+            Log.debug(
                 "traceback : {}".format(traceback.format_exc()))
 
     def schedule_periodically(self):
         """Schedule producer to add key value to message_bus queue on hourly basis."""
         # Run producer periodically on hourly basis
-        self.logger.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
+        Log.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
 
         def one_sec_run(scheduler):
@@ -181,7 +181,7 @@ class ObjectRecoveryScheduler(object):
             if self.config.get_messaging_platform() == MESSAGE_BUS:
                 self.add_kv_to_msgbus()
             else:
-                self.logger.error(
+                Log.error(
                 "Invalid argument specified in messaging_platform use 'message_bus'")
                 return
             divide_interval()

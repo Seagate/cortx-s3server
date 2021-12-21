@@ -51,10 +51,10 @@ class CORTXS3IndexApi(CORTXS3Client):
     def list(self, index_id, max_keys=1000, next_marker=None, additional_Query_params=None):
         """Perform LIST request and generate response."""
         if index_id is None:
-            self._logger.error("Index Id is required.")
+            Log.error("Index Id is required.")
             return False, None
 
-        self._logger.info("Processing request in IndexAPI")
+        Log.info("Processing request in IndexAPI")
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
@@ -87,7 +87,7 @@ class CORTXS3IndexApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('GET', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
         try:
             response = super(
@@ -97,24 +97,24 @@ class CORTXS3IndexApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
-            self._logger.info('Successfully listed Index details.')
+            Log.info('Successfully listed Index details.')
             return True, CORTXS3ListIndexResponse(response['body'])
         else:
-            self._logger.info('Failed to list Index details.')
+            Log.info('Failed to list Index details.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def put(self, index_id):
         """Perform PUT request and generate response."""
         if index_id is None:
-            self._logger.info("Index Id is required.")
+            Log.info("Index Id is required.")
             return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
@@ -129,7 +129,7 @@ class CORTXS3IndexApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('PUT', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -140,24 +140,24 @@ class CORTXS3IndexApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 201:
-            self._logger.info('Successfully added Index.')
+            Log.info('Successfully added Index.')
             return True, CORTXS3SuccessResponse(response['body'])
         else:
-            self._logger.info('Failed to add Index.')
+            Log.info('Failed to add Index.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def delete(self, index_id):
         """Perform DELETE request and generate response."""
         if index_id is None:
-            self._logger.info("Index Id is required.")
+            Log.info("Index Id is required.")
             return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
@@ -172,7 +172,7 @@ class CORTXS3IndexApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -183,17 +183,17 @@ class CORTXS3IndexApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
-            self._logger.info('Successfully deleted Index.')
+            Log.info('Successfully deleted Index.')
             return True, CORTXS3SuccessResponse(response['body'])
         else:
-            self._logger.info('Failed to delete Index.')
+            Log.info('Failed to delete Index.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
@@ -201,7 +201,7 @@ class CORTXS3IndexApi(CORTXS3Client):
     def head(self, index_id):
             """Perform HEAD request and generate response."""
             if index_id is None:
-                self._logger.error("Index id is required.")
+                Log.error("Index id is required.")
                 return False, None
 
             # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
@@ -217,7 +217,7 @@ class CORTXS3IndexApi(CORTXS3Client):
             headers = self.s3_util.prepare_signed_header('HEAD', request_uri, query_params, body)
 
             if headers['Authorization'] is None:
-                self._logger.error("Failed to generate v4 signature")
+                Log.error("Failed to generate v4 signature")
                 return False, None
 
             try:
@@ -229,18 +229,18 @@ class CORTXS3IndexApi(CORTXS3Client):
                     headers=headers)
             except ConnectionRefusedError as ex:
                 #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-                self._logger.error(repr(ex))
+                Log.error(repr(ex))
                 return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
             except Exception as ex:
-                self._logger.error(repr(ex))
+                Log.error(repr(ex))
                 return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
             if response['status'] == 200:
-                self._logger.info("HEAD Index called successfully with status code: "\
+                Log.info("HEAD Index called successfully with status code: "\
                     + str(response['status']) + " response body: " + str(response['body']))
                 return True, CORTXS3SuccessResponse(response['body'])
             else:
-                self._logger.info("Failed to do HEAD Index with status code: "\
+                Log.info("Failed to do HEAD Index with status code: "\
                     + str(response['status']) + " response body: " + str(response['body']))
                 return False, CORTXS3ErrorResponse(
                     response['status'], response['reason'], response['body'])
