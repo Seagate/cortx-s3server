@@ -474,7 +474,6 @@ TEST_F(S3DeleteObjectActionTest, MetadataHandlerInEnabledState) {
   action_under_test->metadata_handler();
 }
 
-// test delete delete marker
 TEST_F(S3DeleteObjectActionTest, DeleteHandlerDeleteDeleteMarker) {
   CREATE_OBJECT_METADATA;
 
