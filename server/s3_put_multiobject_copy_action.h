@@ -79,6 +79,8 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   int part_number;
   std::string upload_id;
   size_t total_data_to_copy = 0;
+  size_t first_byte_offset_to_copy;
+  size_t last_byte_offset_to_copy;
   unsigned motr_write_payload_size;
   bool if_source_and_destination_same();
   S3Timer s3_timer;
@@ -115,7 +117,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   void check_part_details();
   void fetch_multipart_metadata();
   void fetch_multipart_failed();
-  bool validate_range_header();
+  bool validate_range_header(const std::string& range_value);
   void validate_multipart_partcopy_request();
   void fetch_part_info();
   void fetch_part_info_success();

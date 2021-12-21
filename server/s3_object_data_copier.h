@@ -91,7 +91,8 @@ class S3ObjectDataCopier {
             struct m0_fid pvid,
             std::function<bool(void)> check_shutdown_and_rollback,
             std::function<void(void)> on_success,
-            std::function<void(void)> on_failure);
+            std::function<void(void)> on_failure,
+            size_t first_byte_offset = 0);
 
   void copy_part_fragment(
       std::vector<struct s3_part_frag_context> fragment_context_list,
