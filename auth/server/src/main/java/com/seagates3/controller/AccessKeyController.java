@@ -99,6 +99,15 @@ public class AccessKeyController extends AbstractController {
         AccessKey accessKey = new AccessKey();
         accessKey.setUserId(user.getId());
         if(userAccessKey != null) {
+        	try {
+				AccessKey existingAccessKey = accessKeyDAO.find(userAccessKey);
+				if(existingAccessKey.exists()) {
+					return accessKeyResponseGenerator.entityAlreadyExists();
+				}
+			} catch (DataAccessException e) {
+				LOGGER.error("Exception occurred while fetching accessKey for " +userSecretKey);
+				return accessKeyResponseGenerator.internalServerError();
+			}
         	accessKey.setId(userAccessKey);
         	accessKey.setSecretKey(userSecretKey);
         } else {

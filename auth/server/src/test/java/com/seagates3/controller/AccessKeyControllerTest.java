@@ -100,6 +100,37 @@ public class AccessKeyControllerTest {
 
         accessKeyController = new AccessKeyController(requestor, requestBody);
     }
+    
+    /**
+     * Create Access Key controller object and mock AccessKeyDAO and UserDAO for
+     * create Access Key API.
+     *
+     * @param userName User name attribute.
+     * @throws Exception
+     */
+    private void createAccessKeyController_CreateAPI_UserCred()
+            throws Exception {
+        Requestor requestor = new Requestor();
+        requestor.setAccount(ACCOUNT);
+        requestor.setName(REQUESTOR_NAME);
+
+        Map<String, String> requestBody = new TreeMap<>(
+                String.CASE_INSENSITIVE_ORDER);
+        requestBody.put("AccessKey", ACCESS_KEY_ID);
+        requestBody.put("SecretKey", SECRET_KEY);
+
+        userDAO = Mockito.mock(UserDAO.class);
+        accessKeyDAO = Mockito.mock(AccessKeyDAO.class);
+
+        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.USER
+        );
+        PowerMockito.doReturn(accessKeyDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.ACCESS_KEY
+        );
+
+        accessKeyController = new AccessKeyController(requestor, requestBody);
+    }
 
     /**
      * Create Access Key controller object and mock AccessKeyDAO and UserDAO for
@@ -1204,6 +1235,67 @@ public class AccessKeyControllerTest {
         ServerResponse response = accessKeyController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR, response.getResponseStatus());
+    }  
+    
+    @Test
+    public void createAccessKey_UserCred() throws Exception {
+    	createAccessKeyController_CreateAPI_UserCred();
+    	User user = new User();
+        user.setAccountName(ACCOUNT_NAME);
+        user.setName(USER_NAME);
+        user.setId("123");
+        
+        AccessKey existingAccessKey = new AccessKey();
+        
+
+        Mockito.doReturn(user).when(userDAO).find(ACCOUNT_NAME, REQUESTOR_NAME);
+        Mockito.doReturn(existingAccessKey).when(accessKeyDAO).find(Mockito.anyString());
+        Mockito.doReturn(0).when(accessKeyDAO).getCount("123");
+        Mockito.doNothing().when(accessKeyDAO).save(Mockito.any(AccessKey.class));
+    	ServerResponse response = accessKeyController.create();
+    	Assert.assertEquals(HttpResponseStatus.CREATED,
+                response.getResponseStatus());
+    	
+    }
+    
+    @Test
+    public void createAccessKey_UserCred_AccessKeyExists() throws Exception {
+    	createAccessKeyController_CreateAPI_UserCred();
+    	User user = new User();
+        user.setAccountName(ACCOUNT_NAME);
+        user.setName(USER_NAME);
+        user.setId("123");
+        
+        AccessKey existingAccessKey = new AccessKey();
+        existingAccessKey.setId(ACCESS_KEY_ID);
+        existingAccessKey.setUserId("123");
+
+        Mockito.doReturn(user).when(userDAO).find(ACCOUNT_NAME, REQUESTOR_NAME);
+        Mockito.doReturn(existingAccessKey).when(accessKeyDAO).find(Mockito.anyString());
+        Mockito.doReturn(0).when(accessKeyDAO).getCount("123");
+        Mockito.doNothing().when(accessKeyDAO).save(Mockito.any(AccessKey.class));
+    	ServerResponse response = accessKeyController.create();
+    	Assert.assertEquals(HttpResponseStatus.CONFLICT,
+                response.getResponseStatus());
+    	
+    }
+    
+    @Test
+    public void createAccessKey_UserCred_AccessKeyException() throws Exception {
+    	createAccessKeyController_CreateAPI_UserCred();
+    	User user = new User();
+        user.setAccountName(ACCOUNT_NAME);
+        user.setName(USER_NAME);
+        user.setId("123");
+        
+        Mockito.doReturn(user).when(userDAO).find(ACCOUNT_NAME, REQUESTOR_NAME);
+        Mockito.doThrow(DataAccessException.class).when(accessKeyDAO).find(Mockito.anyString());
+        Mockito.doReturn(0).when(accessKeyDAO).getCount("123");
+        Mockito.doNothing().when(accessKeyDAO).save(Mockito.any(AccessKey.class));
+    	ServerResponse response = accessKeyController.create();
+    	Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                response.getResponseStatus());
+    	
     }
 }
 
