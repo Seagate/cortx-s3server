@@ -34,7 +34,7 @@ class S3SupportBundle:
         self.services = services
         self.files = []
         self.tmp_dir = None
-
+        self.s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
         # Constant service names from utils.
         self.service_haproxy = Const.SERVICE_S3_HAPROXY.value
         self.service_s3server = Const.SERVICE_S3_SERVER.value
@@ -116,6 +116,18 @@ class S3SupportBundle:
     def generate_bundle_haproxy(self):
         """ Generate support bundle for the haproxy logs"""
         print("Collect Support logs for haproxy started")
+
+        files.append("/etc/haproxy/haproxy.cfg")
+        files.append(os.path.join(self.base_config_path, "haproxy.log"))
+        files.append(os.path.join(self.base_config_path, "haproxy-status.log"))
+
+        # load s3 prov config file to find the haproxy path for k8s 
+        s3_prov_confstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 's3_prov_conf_idx')
+        s3_haproxy_log = s3_prov_confstore.get_config("S3_HAPROXY_LOG_SYMLINK")
+        print(f"s3_haproxy_log: {s3_haproxy_log}")
+        files.append(s3_haproxy_log)
+        # TBD 
+        # # get process id of haproxy
         print("Collect Support logs for haproxy completed")
 
     def generate_bundle(self):
@@ -142,6 +154,7 @@ class S3SupportBundle:
         if self.service_bgworker in self.services:
             self.generate_bundle_bgworker()
 
+        print("Generating Support bundle...")
         # Generate bundle using tar
         tar_name = "s3_" + self.bundle_id
         print(f"tar_name: {tar_name}")
