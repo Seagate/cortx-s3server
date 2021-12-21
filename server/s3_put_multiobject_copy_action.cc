@@ -148,30 +148,31 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
   }
   std::string range_header_value =
       request->get_header_value("x-amz-copy-source-range");
+  source_object_size = additional_object_metadata->get_content_length();
+  
   if (range_header_value.empty()) {
     // Range is not specified, read complete object
     s3_log(S3_LOG_DEBUG, request_id, "Range is not specified\n");
-    if (MaxPartCopySourcePartSize <
-        additional_object_metadata->get_content_length()) {
+    if (MaxPartCopySourcePartSize < source_object_size) {
       s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
       set_s3_error("InvalidRequest");
       send_response_to_s3_client();
-    } else {
-      total_data_to_copy = additional_object_metadata->get_content_length();
-      next();
-    }
+    }else {
+      last_byte_offset_to_copy = source_object_size -1;
+    } 
   } else {
     // parse the Range header value
     // eg: bytes=0-1024 value
     s3_log(S3_LOG_DEBUG, request_id, "Range found(%s)\n",
            range_header_value.c_str());
-    if (validate_range_header(range_header_value)) {
-      next();
-    } else {
+    if (!validate_range_header(range_header_value)) {
       set_s3_error("InvalidRange");
       send_response_to_s3_client();
     }
   }
+  total_data_to_copy = last_byte_offset_to_copy - first_byte_offset_to_copy;
+  s3_log(S3_LOG_DEBUG, request_id, "valid range(%zu-%zu) found\n",
+          first_byte_offset_to_copy, last_byte_offset_to_copy);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -247,13 +248,15 @@ bool S3PutMultipartCopyAction::validate_range_header(
     return false;
   }
 
-  // valid range
   first_byte_offset_to_copy = strtol(first_byte.c_str(), 0, 10);
   last_byte_offset_to_copy = strtol(last_byte.c_str(), 0, 10);
 
-  total_data_to_copy = last_byte_offset_to_copy - first_byte_offset_to_copy;
-  s3_log(S3_LOG_DEBUG, request_id, "valid range(%zu-%zu) found\n",
-          first_byte_offset_to_copy, last_byte_offset_to_copy);
+  if ((first_byte_offset_to_copy >= source_object_size) ||
+      (first_byte_offset_to_copy > last_byte_offset_to_copy)) {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return true;
 }
@@ -471,7 +474,7 @@ void S3PutMultipartCopyAction::copy_part_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (!total_data_to_copy) {
-    s3_log(S3_LOG_DEBUG, stripped_request_id, "Source object is empty");
+    s3_log(S3_LOG_DEBUG, stripped_request_id, "Source object/specified range is empty");
     next();
     return;
   }
@@ -698,10 +701,7 @@ void S3PutMultipartCopyAction::send_response_to_s3_client() {
       if (if_source_and_destination_same()) {  // Source and Destination same
         error.set_auth_error_message(
             InvalidRequestPartCopySourceAndDestinationSame);
-      } else if (additional_object_metadata->get_content_length() >
-                 MaxPartCopySourcePartSize) {  // Source object size greater
-                                               // than
-                                               // 5GB
+      } else if (source_object_size > MaxPartCopySourcePartSize) {  // Source object size greater than 5GB
         error.set_auth_error_message(
             InvalidRequestSourcePartSizeGreaterThan5GB);
       }
