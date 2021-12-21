@@ -262,6 +262,37 @@ TEST_F(DataUsageItemTest, SimpleSuccessfulSave) {
   EXPECT_EQ(n_success_called, 1);
 }
 
+TEST_F(DataUsageItemTest, SimpleSaveNegativeCounters) {
+  int64_t negative_objects_expected = -1;
+  int64_t negative_bytes_expected = -1;
+  int64_t negative_objects_increment =
+      negative_objects_expected - mock_motr_objects_count;
+  int64_t negative_bytes_increment =
+      negative_bytes_expected - mock_motr_bytes_count;
+  std::string json_expected =
+      create_json_string(negative_objects_expected, negative_bytes_expected);
+
+  EXPECT_CALL(*(mock_kvs_reader_factory->mock_motr_kvs_reader),
+              get_keyval(_, item_motr_key, _, _)).Times(1);
+  EXPECT_CALL(*(mock_kvs_reader_factory->mock_motr_kvs_reader), get_value())
+      .Times(1)
+      .WillRepeatedly(ReturnRef(mock_motr_json));
+  EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, item_motr_key, json_expected, _, _, _)).Times(1);
+
+  item_under_test->save(mock_request0, negative_objects_increment,
+                        negative_bytes_increment,
+                        std::bind(&DataUsageItemTest::success_cb, this),
+                        std::bind(&DataUsageItemTest::failure_cb, this));
+  item_under_test->kvs_read_success();
+  item_under_test->kvs_write_success();
+  EXPECT_EQ(item_under_test->objects_count, negative_objects_expected);
+  EXPECT_EQ(item_under_test->bytes_count, negative_bytes_expected);
+  EXPECT_EQ(item_under_test->state, DataUsageItemState::inactive);
+  EXPECT_EQ(saved_state, DataUsageItemState::inactive);
+  EXPECT_EQ(n_success_called, 1);
+}
+
 TEST_F(DataUsageItemTest, SimpleSaveMissingKey) {
   int64_t objects_expected = objects_increment0;
   int64_t bytes_expected = bytes_increment0;
@@ -417,6 +448,27 @@ TEST_F(DataUsageItemTest, MultipleSaveOneWriteFailed) {
   EXPECT_EQ(item_under_test->bytes_count, bytes_expected2);
   EXPECT_EQ(item_under_test->state, DataUsageItemState::inactive);
   EXPECT_EQ(saved_state, DataUsageItemState::inactive);
+}
+
+TEST_F(DataUsageItemTest, Annihilation) {
+  EXPECT_CALL(*(mock_kvs_reader_factory->mock_motr_kvs_reader),
+              get_keyval(_, item_motr_key, _, _)).Times(1);
+  EXPECT_CALL(*(mock_kvs_reader_factory->mock_motr_kvs_reader), get_value())
+      .Times(1)
+      .WillRepeatedly(ReturnRef(mock_motr_json));
+  EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, item_motr_key, _, _, _, _)).Times(0);
+
+  item_under_test->save(mock_request0, 1, 1,
+                        std::bind(&DataUsageItemTest::success_cb, this),
+                        std::bind(&DataUsageItemTest::failure_cb, this));
+  item_under_test->save(mock_request0, -1, -1,
+                        std::bind(&DataUsageItemTest::success_cb, this),
+                        std::bind(&DataUsageItemTest::failure_cb, this));
+  item_under_test->kvs_read_success();
+  EXPECT_EQ(item_under_test->state, DataUsageItemState::inactive);
+  EXPECT_EQ(saved_state, DataUsageItemState::inactive);
+  EXPECT_EQ(n_success_called, 2);
 }
 
 TEST_F(DataUsageItemTest, MultipleSaveConsequent) {

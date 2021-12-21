@@ -162,11 +162,13 @@ class DataUsageItem {
   FRIEND_TEST(DataUsageItemTest, GetItemRequestId);
   FRIEND_TEST(DataUsageItemTest, SetState);
   FRIEND_TEST(DataUsageItemTest, SimpleSuccessfulSave);
+  FRIEND_TEST(DataUsageItemTest, SimpleSaveNegativeCounters);
   FRIEND_TEST(DataUsageItemTest, SimpleSaveMissingKey);
   FRIEND_TEST(DataUsageItemTest, SimpleSaveFailedToRead);
   FRIEND_TEST(DataUsageItemTest, SimpleSaveFailedToWrite);
   FRIEND_TEST(DataUsageItemTest, MultipleSaveSuccessful);
   FRIEND_TEST(DataUsageItemTest, MultipleSaveOneWriteFailed);
+  FRIEND_TEST(DataUsageItemTest, Annihilation);
   FRIEND_TEST(DataUsageItemTest, MultipleSaveConsequent);
 
   FRIEND_TEST(S3DataUsageCacheTest, UpdateWithEmptyCache);
