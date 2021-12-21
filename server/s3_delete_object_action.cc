@@ -473,7 +473,7 @@ void S3DeleteObjectAction::startcleanup() {
       done();
     } else if (s3_del_obj_action_state ==
                S3DeleteObjectActionState::deleteMarkerAdded) {
-      // Nothing to clean up
+      // Nothing to clean up, operation done
       done();
     } else {
       s3_log(S3_LOG_INFO, stripped_request_id, "Possible bug\n");
