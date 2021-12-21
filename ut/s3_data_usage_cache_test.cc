@@ -248,8 +248,7 @@ TEST_F(DataUsageItemTest, SimpleSuccessfulSave) {
       .Times(1)
       .WillRepeatedly(ReturnRef(mock_motr_json));
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write0, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write0, _, _, _)).Times(1);
 
   item_under_test->save(mock_request0, objects_increment0, bytes_increment0,
                         std::bind(&DataUsageItemTest::success_cb, this),
@@ -275,8 +274,7 @@ TEST_F(DataUsageItemTest, SimpleSaveMissingKey) {
   std::string json_to_write =
       create_json_string(objects_expected, bytes_expected);
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write, _, _, _)).Times(1);
 
   item_under_test->save(mock_request0, objects_increment0, bytes_increment0,
                         std::bind(&DataUsageItemTest::success_cb, this),
@@ -298,7 +296,7 @@ TEST_F(DataUsageItemTest, SimpleSaveFailedToRead) {
       .Times(1)
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, _, _, _)).Times(0);
+              put_keyval(_, item_motr_key, _, _, _, _)).Times(0);
 
   item_under_test->save(mock_request0, objects_increment0, bytes_increment0,
                         std::bind(&DataUsageItemTest::success_cb, this),
@@ -319,8 +317,7 @@ TEST_F(DataUsageItemTest, SimpleSaveFailedToWrite) {
       .Times(1)
       .WillRepeatedly(ReturnRef(mock_motr_json));
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write0, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write0, _, _, _)).Times(1);
 
   item_under_test->save(mock_request0, objects_increment0, bytes_increment0,
                         std::bind(&DataUsageItemTest::success_cb, this),
@@ -342,11 +339,9 @@ TEST_F(DataUsageItemTest, MultipleSaveSuccessful) {
       .Times(1)
       .WillRepeatedly(ReturnRef(mock_motr_json));
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write01, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write01, _, _, _)).Times(1);
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write012, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write012, _, _, _)).Times(1);
 
   item_under_test->save(mock_request0, objects_increment0, bytes_increment0,
                         std::bind(&DataUsageItemTest::success_cb, this),
@@ -387,11 +382,9 @@ TEST_F(DataUsageItemTest, MultipleSaveOneWriteFailed) {
       .Times(1)
       .WillRepeatedly(ReturnRef(mock_motr_json));
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write01, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write01, _, _, _)).Times(1);
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write2, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write2, _, _, _)).Times(1);
 
   item_under_test->save(mock_request0, objects_increment0, bytes_increment0,
                         std::bind(&DataUsageItemTest::success_cb, this),
@@ -433,11 +426,9 @@ TEST_F(DataUsageItemTest, MultipleSaveConsequent) {
       .Times(1)
       .WillRepeatedly(ReturnRef(mock_motr_json));
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write01, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write01, _, _, _)).Times(1);
   EXPECT_CALL(*(mock_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, item_motr_key, json_to_write012, _, _))
-      .Times(1);
+              put_keyval(_, item_motr_key, json_to_write012, _, _, _)).Times(1);
 
   item_under_test->save(mock_request0, objects_increment0, bytes_increment0,
                         std::bind(&DataUsageItemTest::success_cb, this),
