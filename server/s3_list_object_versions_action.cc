@@ -122,7 +122,7 @@ void S3ListObjectVersionsAction::validate_request() {
   if (max_k.empty()) {
     max_keys = 1000;
   } else {
-    int max_keys_temp;
+    int max_keys_temp = 0;
     if ((!S3CommonUtilities::stoi(max_k, max_keys_temp)) ||
         (max_keys_temp < 0)) {
       s3_log(S3_LOG_DEBUG, request_id, "invalid max-keys = %s\n",
@@ -414,7 +414,7 @@ void S3ListObjectVersionsAction::get_next_versions_successful() {
       }
     } else {
       // Both prefix and delimiter are not empty
-      bool prefix_match = (key.find(request_prefix) == 0) ? true : false;
+      bool prefix_match = key.find(request_prefix) == 0;
       if (prefix_match) {
         delimiter_pos = key.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {

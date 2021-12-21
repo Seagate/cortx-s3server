@@ -196,22 +196,18 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def list_object_versions(self, bucket_name, **kwargs_options):
+    def list_object_versions(self, bucket_name, kwargs_options=None):
         self.bucket_name = bucket_name
-        cmd = "aws s3api " + "list-object-versions " + "--bucket " + bucket_name
-        if("prefix" in kwargs_options.keys()):
-            cmd = cmd + " --prefix " + kwargs_options['prefix']
-        if("delimiter" in kwargs_options.keys()):
-            cmd = cmd + " --delimiter " + kwargs_options['delimiter']
-        if("page-size" in kwargs_options.keys()):
-           cmd = cmd + " --page-size " + str(kwargs_options['page-size'])
-        if("starting-token" in kwargs_options.keys()):
-            cmd = cmd + " --starting-token " + kwargs_options['starting-token']
-        if("max-items" in kwargs_options.keys()):
-            cmd = cmd + " --max-items " + str(kwargs_options['max-items'])
-        if("encoding" in kwargs_options.keys()):
-            cmd = cmd + " --encoding-type " + str(kwargs_options['encoding'])
-
+        extra_args = ""
+        if kwargs_options is not None:
+            for arg in ("prefix", "delimiter", "page-size", "starting-token", "max-items", "encoding"):
+                value = kwargs_options.get(arg)
+                if value is not None:
+                    if arg != "encoding":
+                        extra_args += f" --{arg} {value}"
+                    else:
+                        extra_args += f" --{arg}-type {value}"
+        cmd = f"aws s3api list-object-versions --bucket {bucket_name}{extra_args}"
         self.with_cli(cmd)
         return self
 
