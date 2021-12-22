@@ -95,10 +95,13 @@ class S3ListObjectVersionsTest : public testing::Test {
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3Motr> s3_motr_api_mock;
 
-  struct s3_motr_idx_layout index_layout;
+  struct s3_motr_idx_layout index_layout {
+    { 0x11ffff, 0x1ffff }
+  };
   std::map<std::string, std::pair<int, std::string>> return_keys_values;
-  std::map<std::string, std::string> input_headers;
-  std::string bucket_name, object_name;
+  std::map<std::string, std::string> input_headers{{"Authorization", "1"}};
+  std::string bucket_name{"seagatebucket"};
+  std::string object_name{"none"};
 };
 
 void S3ListObjectVersionsTest::SetUp() {
@@ -113,15 +116,15 @@ void S3ListObjectVersionsTest::SetUp() {
 
 TEST_F(S3ListObjectVersionsTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
-  EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
-  EXPECT_TRUE(action_under_test_ptr->s3_motr_kvs_reader_factory != nullptr);
-  EXPECT_TRUE(action_under_test_ptr->object_metadata_factory != nullptr);
+  EXPECT_THAT(action_under_test_ptr->bucket_metadata_factory, NotNull());
+  EXPECT_THAT(action_under_test_ptr->s3_motr_kvs_reader_factory, NotNull());
+  EXPECT_THAT(action_under_test_ptr->object_metadata_factory, NotNull());
   EXPECT_FALSE(action_under_test_ptr->fetch_successful);
   EXPECT_FALSE(action_under_test_ptr->response_is_truncated);
   EXPECT_EQ(0, action_under_test_ptr->key_count);
-  EXPECT_EQ("", action_under_test_ptr->last_key);
-  EXPECT_EQ("", action_under_test_ptr->last_object_checked);
-  EXPECT_EQ(0, action_under_test_ptr->versions_list.size());
+  EXPECT_THAT(action_under_test_ptr->last_key, IsEmpty());
+  EXPECT_THAT(action_under_test_ptr->last_object_checked, IsEmpty());
+  EXPECT_THAT(action_under_test_ptr->versions_list, IsEmpty());
 }
 
 TEST_F(S3ListObjectVersionsTest, FetchBucketInfo) {
@@ -292,13 +295,10 @@ TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessful) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
-  return_keys_values.insert(
-      std::make_pair("testkey0", std::make_pair(10, "keyval")));
-  return_keys_values.insert(
-      std::make_pair("testkey1", std::make_pair(10, "keyval")));
-  return_keys_values.insert(
-      std::make_pair("testkey2", std::make_pair(10, "keyval")));
-
+  auto value = std::make_pair(10, "keyval");
+  return_keys_values["testkey0"] = value;
+  return_keys_values["testkey1"] = value;
+  return_keys_values["testkey2"] = value;
   action_under_test_ptr->max_keys = 3;
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
@@ -317,12 +317,10 @@ TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessfulJsonError) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
-  return_keys_values.insert(
-      std::make_pair("testkey0", std::make_pair(10, "keyval")));
-  return_keys_values.insert(
-      std::make_pair("testkey1", std::make_pair(10, "keyval")));
-  return_keys_values.insert(
-      std::make_pair("testkey2", std::make_pair(10, "keyval")));
+  auto value = std::make_pair(10, "keyval");
+  return_keys_values["testkey0"] = value;
+  return_keys_values["testkey1"] = value;
+  return_keys_values["testkey2"] = value;
 
   action_under_test_ptr->max_keys = 3;
 
@@ -336,7 +334,7 @@ TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessfulJsonError) {
       S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->clear_tasks();
   action_under_test_ptr->get_next_versions_successful();
-  EXPECT_EQ(0, action_under_test_ptr->versions_list.size());
+  EXPECT_THAT(action_under_test_ptr->versions_list, IsEmpty());
 }
 
 TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessfulPrefix) {
