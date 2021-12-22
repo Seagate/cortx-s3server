@@ -28,16 +28,15 @@
 # common prameter/values used by every service
 ##############################################
 
-s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
-base_log_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_log_key")
-echo "base_log_file_path: $base_log_file_path"
-
-s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
-base_config_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_config_key")
-echo "base_config_file_path: $base_config_file_path"
-
+base_log_file_path=""
+base_config_file_path=""
 pid_value=$$
-tmp_dir="$s3_bundle_location/s3_support_bundle_$pid_value"
+tmp_dir=""
+s3_motr_dir=""
+s3_core_dir=""
+s3_core_files=""
+s3_m0trace_files=""
+first_s3_m0trace_file=""
 
 ## Add file/directory locations for bundling
 args=()
@@ -211,8 +210,8 @@ collect_s3server() {
     fi
 
     # Collect s3 core files if available
-    collect_core_files
     s3_core_files="$tmp_dir/s3_core_files"
+    collect_core_files
     if [ -d "$s3_core_files" ];
     then
         args+=($s3_core_files)
@@ -221,8 +220,8 @@ collect_s3server() {
     # remove debug rpms
     rpm -qa | grep "cortx" | grep "debuginfo" | xargs yum remove -y > /dev/null
 
-    collect_first_m0trace_file
     first_s3_m0trace_file="$tmp_dir/first_s3_m0trace_file"
+    collect_first_m0trace_file
     if [ -d "$first_s3_m0trace_file" ];
     then
         args+=($first_s3_m0trace_file)
@@ -233,8 +232,8 @@ collect_s3server() {
     # check if s3server name with compgen globpat is available
     if compgen -G $s3_motr_dir > /dev/null;
     then
-        collect_m0trace_files
         s3_m0trace_files="$tmp_dir/s3_m0trace_files"
+        collect_m0trace_files
         if [ -d "$s3_m0trace_files" ];
         then
             args+=($s3_m0trace_files)
@@ -596,7 +595,7 @@ while getopts "b:t:c:s:" opt; do
   esac
 done
 
-if [ -z "$bundle_id" ] || [ -z "$bundle_path" ] || [ -z "$confstore_url" ] ; then
+if [ -z "$bundle_id" ] || [ -z "$bundle_path" ] || [ -z "$confstore_url" ] || [ -z "$services" ]; then
   usage
 fi
 
@@ -608,7 +607,19 @@ echo "services: $services"
 
 if [ "$services" = "" ]; then
   services="haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+  echo "services: $services"
 fi
+
+s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
+base_log_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_log_key")
+echo "base_log_file_path: $base_log_file_path"
+
+s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
+base_config_file_path=$(s3confstore "yaml://$confstore_url" getkey --key="$s3server_base_config_key")
+echo "base_config_file_path: $base_config_file_path"
+
+pid_value=$$
+tmp_dir="$s3_bundle_location/s3_support_bundle_$pid_value"
 
 # TBD Mapping logic of old vs new service names
 
