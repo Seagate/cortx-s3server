@@ -149,7 +149,7 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
   std::string range_header_value =
       request->get_header_value("x-amz-copy-source-range");
   source_object_size = additional_object_metadata->get_content_length();
-  
+
   if (range_header_value.empty()) {
     // Range is not specified, read complete object
     s3_log(S3_LOG_DEBUG, request_id, "Range is not specified\n");
@@ -157,9 +157,9 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
       s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
       set_s3_error("InvalidRequest");
       send_response_to_s3_client();
-    }else {
-      last_byte_offset_to_copy = source_object_size -1;
-    } 
+    } else {
+      last_byte_offset_to_copy = source_object_size - 1;
+    }
   } else {
     // parse the Range header value
     // eg: bytes=0-1024 value
@@ -172,7 +172,7 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
   }
   total_data_to_copy = last_byte_offset_to_copy - first_byte_offset_to_copy;
   s3_log(S3_LOG_DEBUG, request_id, "valid range(%zu-%zu) found\n",
-          first_byte_offset_to_copy, last_byte_offset_to_copy);
+         first_byte_offset_to_copy, last_byte_offset_to_copy);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -474,7 +474,8 @@ void S3PutMultipartCopyAction::copy_part_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (!total_data_to_copy) {
-    s3_log(S3_LOG_DEBUG, stripped_request_id, "Source object/specified range is empty");
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "Source object/specified range is empty");
     next();
     return;
   }
@@ -701,7 +702,9 @@ void S3PutMultipartCopyAction::send_response_to_s3_client() {
       if (if_source_and_destination_same()) {  // Source and Destination same
         error.set_auth_error_message(
             InvalidRequestPartCopySourceAndDestinationSame);
-      } else if (source_object_size > MaxPartCopySourcePartSize) {  // Source object size greater than 5GB
+      } else if (source_object_size >
+                 MaxPartCopySourcePartSize) {  // Source object size greater
+                                               // than 5GB
         error.set_auth_error_message(
             InvalidRequestSourcePartSizeGreaterThan5GB);
       }

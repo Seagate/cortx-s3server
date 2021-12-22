@@ -151,7 +151,7 @@ void S3ObjectDataCopier::read_data_block_success() {
     }
     return;
   }
-  // Calculating actial size of data that has just been read
+  // Calculating actual size of data that has just been read
 
   for (size_t i = 0, n = data_blocks_read.size(); i < n; ++i) {
     const auto motr_block_size = data_blocks_read[i].second;
@@ -351,7 +351,8 @@ void S3ObjectDataCopier::copy(
       request_object, src_obj_id, layout_id, pvid, motr_api);
   // motr_reader->set_last_index(0);
 
-  size_t block_start_offset = first_byte_offset - (first_byte_offset % motr_unit_size);
+  size_t block_start_offset =
+      first_byte_offset - (first_byte_offset % motr_unit_size);
   motr_reader->set_last_index(block_start_offset);
 
   bytes_left_to_read = object_size;
