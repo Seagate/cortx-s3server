@@ -46,6 +46,13 @@ class CORTXS3Config(object):
         """Initialise configuration."""
         self.s3bdg_access_key = None
         self.s3bgd_secret_key = None
+        Log.init(self.get_processor_logger_name(),
+                 self.get_processor_logger_directory(),
+                 level=self.get_file_log_level(),
+                 backup_count=self.get_backup_count(),
+                 file_size_in_mb=self.get_max_log_size_mb(),
+                 syslog_server=None, syslog_port=None,
+                 console_output=True)
         Log.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
         if os.path.isfile(os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")):
             # Load config.yaml file through confstore.
