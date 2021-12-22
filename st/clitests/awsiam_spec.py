@@ -146,7 +146,7 @@ def iam_policy_crud_tests():
         .command_should_fail().command_error_should_have("NoSuchEntity")
 
     #get-policy-version with wrong policy arn
-    AwsIamTest('Get Policy Version').get_policy_version("arn:seagate:iam::893266879798:policy/iampolicy67", "v1").execute_test(negative_case=True) \
+    AwsIamTest('Get Policy Version').get_policy_version("arn:aws:iam::893266879798:policy/iampolicy67", "v1").execute_test(negative_case=True) \
         .command_should_fail().command_error_should_have("NoSuchEntity")
 
     #list-policies
@@ -370,7 +370,7 @@ def user_policy_tests():
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
 
     #detach-user-policy with non existing policy
-    result = AwsIamTest('Detach User Policy').detach_user_policy("testUser", "arn:seagate:iam::103947660857:policy/oiuou") \
+    result = AwsIamTest('Detach User Policy').detach_user_policy("testUser", "arn:aws:iam::103947660857:policy/oiuou") \
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
 
     #detach-user-policy with non attached policy
