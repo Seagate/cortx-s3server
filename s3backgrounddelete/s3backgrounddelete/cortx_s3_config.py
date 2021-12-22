@@ -46,11 +46,11 @@ class CORTXS3Config(object):
         """Initialise configuration."""
         self.s3bdg_access_key = None
         self.s3bgd_secret_key = None
-        Log.init(self.get_processor_logger_name(),
-                 self.get_processor_logger_directory(),
-                 level=self.get_file_log_level(),
-                 backup_count=self.get_backup_count(),
-                 file_size_in_mb=self.get_max_log_size_mb(),
+        Log.init("object_recovery_scheduler",
+                 "/var/log/cortx/s3/s3backgrounddelete",
+                 level='INFO',
+                 backup_count=5,
+                 file_size_in_mb=5,
                  syslog_server=None, syslog_port=None,
                  console_output=True)
         Log.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
