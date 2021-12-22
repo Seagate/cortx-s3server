@@ -24,18 +24,15 @@
 #include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
+#include "mock_s3_bucket_metadata.h"
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
 
 #include "s3_data_usage.h"
 
-// using ::testing::Return;
 using ::testing::Invoke;
 using ::testing::ReturnRef;
 using ::testing::_;
-// using ::testing::AtLeast;
-// using ::testing::DefaultValue;
-// using ::testing::HasSubstr;
 using ::testing::Eq;
 using ::testing::Ne;
 using ::testing::StrEq;
@@ -171,11 +168,15 @@ class MockDataUsageItemFactory : public DataUsageItemFactory {
 class S3DataUsageCacheTest : public testing::Test {
  protected:
   std::shared_ptr<MockS3RequestObject> mock_request0;
-  std::string test_account_name0;
+  std::string test_account_id0;
+  std::string bucket_name0;
+  std::shared_ptr<MockS3BucketMetadata> mock_bucket_metadata0;
   int64_t objects_increment0;
   int64_t bytes_increment0;
   std::shared_ptr<MockS3RequestObject> mock_request1;
-  std::string test_account_name1;
+  std::string test_account_id1;
+  std::string bucket_name1;
+  std::shared_ptr<MockS3BucketMetadata> mock_bucket_metadata1;
   int64_t objects_increment1;
   int64_t bytes_increment1;
   S3DataUsageCache *cache_under_test;
@@ -186,15 +187,27 @@ class S3DataUsageCacheTest : public testing::Test {
     EvhtpInterface *evhtp_obj_ptr0 = new EvhtpWrapper();
     EvhtpInterface *evhtp_obj_ptr1 = new EvhtpWrapper();
     mock_request0 = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr0);
-    test_account_name0 = "ut_account0";
+    bucket_name0 = "ut_bucket0";
+    EXPECT_CALL(*mock_request0, get_bucket_name()).Times(1)
+        .WillRepeatedly(ReturnRef(bucket_name0));
+    test_account_id0 = "ut_account_id0";
+    mock_bucket_metadata0 =
+        std::make_shared<MockS3BucketMetadata>(mock_request0);
+    EXPECT_CALL(*mock_bucket_metadata0, get_bucket_owner_account_id())
+        .WillRepeatedly(ReturnRef(test_account_id0));
     objects_increment0 = 1;
     bytes_increment0 = 10;
-    mock_request0->set_account_name(test_account_name0);
     mock_request1 = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr1);
-    test_account_name1 = "ut_account1";
+    bucket_name1 = "ut_bucket1";
+    EXPECT_CALL(*mock_request1, get_bucket_name()).Times(1)
+        .WillRepeatedly(ReturnRef(bucket_name1));
+    test_account_id1 = "ut_account_id1";
+    mock_bucket_metadata1 =
+        std::make_shared<MockS3BucketMetadata>(mock_request1);
+    EXPECT_CALL(*mock_bucket_metadata1, get_bucket_owner_account_id())
+        .WillRepeatedly(ReturnRef(test_account_id1));
     objects_increment1 = 2;
     bytes_increment1 = 20;
-    mock_request1->set_account_name(test_account_name1);
     cache_under_test = S3DataUsageCache::get_instance();
     std::shared_ptr<MockDataUsageItemFactory> mock_item_factory =
         std::make_shared<MockDataUsageItemFactory>();
@@ -522,43 +535,45 @@ TEST_F(S3DataUsageCacheTest, SetMaxCacheSize) {
 
 TEST_F(S3DataUsageCacheTest, UpdateWithEmptyCache) {
   S3DataUsageCache::update_data_usage(
-      mock_request0, nullptr, objects_increment0, bytes_increment0,
-      std::bind(&S3DataUsageCacheTest::cb, this),
+      mock_request0, mock_bucket_metadata0, objects_increment0,
+      bytes_increment0, std::bind(&S3DataUsageCacheTest::cb, this),
       std::bind(&S3DataUsageCacheTest::cb, this));
-  EXPECT_NE(cache_under_test->items.find(test_account_name0),
+  EXPECT_NE(cache_under_test->items.find(test_account_id0),
             cache_under_test->items.end());
 }
 
 TEST_F(S3DataUsageCacheTest, UpdateWithFullCacheNoEviction) {
   S3DataUsageCache::update_data_usage(
-      mock_request0, nullptr, objects_increment0, bytes_increment0,
-      std::bind(&S3DataUsageCacheTest::cb, this),
+      mock_request0, mock_bucket_metadata0, objects_increment0,
+      bytes_increment0, std::bind(&S3DataUsageCacheTest::cb, this),
       std::bind(&S3DataUsageCacheTest::cb, this));
   S3DataUsageCache::update_data_usage(
-      mock_request1, nullptr, objects_increment1, bytes_increment1,
-      std::bind(&S3DataUsageCacheTest::cb, this),
+      mock_request1, mock_bucket_metadata1, objects_increment1,
+      bytes_increment1, std::bind(&S3DataUsageCacheTest::cb, this),
       std::bind(&S3DataUsageCacheTest::cb, this));
-  EXPECT_NE(cache_under_test->items.find(test_account_name0),
+  EXPECT_NE(cache_under_test->items.find(test_account_id0),
             cache_under_test->items.end());
-  EXPECT_EQ(cache_under_test->items.find(test_account_name1),
+  EXPECT_EQ(cache_under_test->items.find(test_account_id1),
             cache_under_test->items.end());
 }
 
 TEST_F(S3DataUsageCacheTest, UpdateWithFullCacheEviction) {
   S3DataUsageCache::update_data_usage(
-      mock_request0, nullptr, objects_increment0, bytes_increment0,
-      std::bind(&S3DataUsageCacheTest::cb, this),
+      mock_request0, mock_bucket_metadata0, objects_increment0,
+      bytes_increment0, std::bind(&S3DataUsageCacheTest::cb, this),
       std::bind(&S3DataUsageCacheTest::cb, this));
-  ASSERT_NE(cache_under_test->items.find(test_account_name0),
+  ASSERT_NE(cache_under_test->items.find(test_account_id0),
             cache_under_test->items.end());
-  cache_under_test->items[test_account_name0]
+  cache_under_test->items[test_account_id0]
       ->set_state(DataUsageItemState::inactive);
   S3DataUsageCache::update_data_usage(
-      mock_request1, nullptr, objects_increment1, bytes_increment1,
-      std::bind(&S3DataUsageCacheTest::cb, this),
+      mock_request1, mock_bucket_metadata1, objects_increment1,
+      bytes_increment1, std::bind(&S3DataUsageCacheTest::cb, this),
       std::bind(&S3DataUsageCacheTest::cb, this));
-  EXPECT_EQ(cache_under_test->items.find(test_account_name0),
+  EXPECT_EQ(cache_under_test->items.find(test_account_id0),
             cache_under_test->items.end());
-  EXPECT_NE(cache_under_test->items.find(test_account_name1),
+  EXPECT_NE(cache_under_test->items.find(test_account_id1),
             cache_under_test->items.end());
+  // Satisfy gmock by manually deleting item for the test_account_id1
+  cache_under_test->items.erase(test_account_id1);
 }

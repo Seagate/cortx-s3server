@@ -56,11 +56,12 @@ void S3DataUsageCache::set_item_factory(
 }
 
 std::string S3DataUsageCache::generate_cache_key(
-    std::shared_ptr<RequestObject> req) {
+    std::shared_ptr<RequestObject> req, std::shared_ptr<S3BucketMetadata> src) {
   const std::string &req_id = req->get_stripped_request_id();
   s3_log(S3_LOG_DEBUG, req_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, req_id, "%s Exit\n", __func__);
-  return req->get_account_name();
+  std::string key = src->get_bucket_owner_account_id();
+  s3_log(S3_LOG_DEBUG, req_id, "%s Exit, ret %s\n", __func__, key.c_str());
+  return key;
 }
 
 std::string get_server_id() {
@@ -82,11 +83,12 @@ std::string get_server_id() {
 }
 
 std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
-    std::shared_ptr<RequestObject> req) {
+    std::shared_ptr<RequestObject> req,
+    std::shared_ptr<S3BucketMetadata> bkt_md) {
   const std::string &req_id = req->get_stripped_request_id();
   s3_log(S3_LOG_DEBUG, req_id, "%s Entry", __func__);
 
-  std::string key_in_cache = generate_cache_key(req);
+  std::string key_in_cache = generate_cache_key(req, bkt_md);
   const bool f_new = (items.end() == items.find(key_in_cache));
 
   if (items.size() + f_new > max_cache_size) {
@@ -175,7 +177,7 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
                                ", bytes_count_increment=%" PRId64,
          __func__, objects_count_increment, bytes_count_increment);
   S3DataUsageCache *cache = S3DataUsageCache::get_instance();
-  std::shared_ptr<DataUsageItem> item(cache->get_item(req));
+  std::shared_ptr<DataUsageItem> item(cache->get_item(req, src));
   if (item) {
     item->save(req, objects_count_increment, bytes_count_increment, on_success,
                on_failure);

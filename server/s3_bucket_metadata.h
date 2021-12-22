@@ -93,7 +93,7 @@ class S3BucketMetadata {
   const std::string& get_creation_time();
   const std::string& get_location_constraint();
   const std::string& get_owner_id();
-  const std::string& get_bucket_owner_account_id();
+  virtual const std::string& get_bucket_owner_account_id();
   const std::string& get_encoded_bucket_acl() const;
 
   virtual bool check_bucket_tags_exists() const;
