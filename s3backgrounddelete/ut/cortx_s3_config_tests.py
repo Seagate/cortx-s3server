@@ -70,9 +70,9 @@ def test_get_processor_logger_name_failure():
 def test_get_log_level_success():
     """Test file log level in logconfig."""
     config = CORTXS3Config()
-    config.s3confstore.set_config('logconfig>file_log_level', 20, False)
+    config.s3confstore.set_config('logconfig>file_log_level', "INFO", False)
     file_log_level = config.s3confstore.get_config('logconfig>file_log_level')
-    assert file_log_level == 20
+    assert file_log_level == "INFO"
 
 def test_get_log_level_failure():
     """

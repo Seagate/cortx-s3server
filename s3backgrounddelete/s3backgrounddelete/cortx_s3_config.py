@@ -166,7 +166,7 @@ class CORTXS3Config(object):
         """Return file log level from config file or KeyError."""
         try:
           log_level = self.s3confstore.get_config('logconfig>file_log_level')
-          return int(log_level)
+          return log_level
         except:
             raise KeyError(
                 "Could not parse file loglevel from config file " +
