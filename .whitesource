@@ -1,6 +1,7 @@
 {
   "scanSettings": {
-    "configMode": "LOCAL"
+    "configMode": "LOCAL",
+    "baseBranches": ["main","kubernetes"]
   },
   "checkRunSettings": {
     "displayMode": "diff",
