@@ -556,7 +556,7 @@ def iam_policy_authorization_tests():
 
 if __name__ == '__main__':
 
-    # Do not change the order. 
+    # Do not change the order.
     user_tests()
     iam_policy_crud_tests()
     test_max_iam_policy_limit_value_of_auth_config()
