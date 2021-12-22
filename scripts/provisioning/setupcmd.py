@@ -35,6 +35,7 @@ from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
 from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
+from cortx.utils.cortx.const import Const
 import logging
 
 class S3PROVError(Exception):
@@ -75,24 +76,31 @@ class SetupCmd(object):
     self.base_log_file_path = "/var/log/cortx"
     self.consul_confstore = None
 
-    # validate supported services
-    lookup_service = ["haproxy", "s3server", "authserver", "bgscheduler", "bgworker"]
-    if self.services is None:
-      self.services = "haproxy,s3server,authserver,bgscheduler,bgworker"
+    # Constant service names from utils.
+    self.service_haproxy = Const.SERVICE_S3_HAPROXY.value
+    self.service_s3server = Const.SERVICE_S3_SERVER.value
+    self.service_authserver = Const.SERVICE_S3_AUTHSERVER.value
+    self.service_bgscheduler = Const.SERVICE_S3_BGSCHEDULER.value
+    self.service_bgworker = Const.SERVICE_S3_BGWORKER.value
 
-    self.bg_delete_service = "bgworker"
+    # validate supported services
+    lookup_service = [self.service_haproxy, self.service_s3server, self.service_authserver, self.service_bgscheduler, self.service_bgworker]
+    if self.services is None:
+      self.services = str(f"{self.service_haproxy},{self.service_s3server},{self.service_authserver},{self.service_bgscheduler},{self.service_bgworker}")
+
+    self.bg_delete_service = self.service_bgworker
     if -1 != self.services.find("bg_"):
       self.bg_delete_service = "bg_consumer"
     # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
     ######### start
     services_map = {
-                "io": "s3server,haproxy",
-                "auth": "authserver",
-                "bg_producer": "bgscheduler",
-                "bg_consumer": "bgworker"}
+                "io": str(f"{self.service_s3server},{self.service_haproxy}"),
+                "auth": self.service_authserver,
+                "bg_producer": self.service_bgscheduler,
+                "bg_consumer": self.service_bgworker}
     for service in services_map:
         if -1 != self.services.find(service):
-          if (service == "auth") and (-1 != services.find("authserver")):
+          if (service == "auth") and (-1 != services.find(self.service_authserver)):
             continue
           self.services = self.services.replace(service, services_map[service])
     ######### End
