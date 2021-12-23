@@ -29,6 +29,7 @@ import socket
 import time
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from cortx.utils.cortx.const import Const
 
 def main():
   """
@@ -88,21 +89,29 @@ def main():
 
     # Service mapping
     service = args.service
+
+    # Constant service names from utils.
+    service_haproxy = Const.SERVICE_S3_HAPROXY.value
+    service_s3server = Const.SERVICE_S3_SERVER.value
+    service_authserver = Const.SERVICE_S3_AUTHSERVER.value
+    service_bgscheduler = Const.SERVICE_S3_BGSCHEDULER.value
+    service_bgworker = Const.SERVICE_S3_BGWORKER.value
+
     # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
     ######### start
     services_map = {
-                "s3server": "s3server",
-                "s3authserver": "authserver",
-                "s3bgproducer": "bgscheduler",
-                "s3bgconsumer": "bgworker",
-                "haproxy": "haproxy"}
+                "s3server": service_s3server,
+                "s3authserver": service_authserver,
+                "s3bgproducer": service_bgscheduler,
+                "s3bgconsumer": service_bgworker,
+                "haproxy": service_haproxy}
     logger.info(f"Input Service: {service}")
     if service in services_map:
         service = services_map[service]
     logger.info(f"Mapped Service: {service}")
     ######### end
 
-    if service == "s3server":
+    if service == service_s3server:
       if not args.index:
         raise Exception("provide instance id")
 
@@ -146,7 +155,7 @@ def main():
 
       # Print last few line of S3 server log file
       os.system(f"tail -f {s3_log_file_path}")
-    elif service == "authserver":
+    elif service == service_authserver:
       # Start S3 Auth Server
       logger.info(f"sh /opt/seagate/cortx/auth/startauth.sh {base_config_path}")
       logger.info(f"Starting S3 Auth Server...")
@@ -161,7 +170,7 @@ def main():
 
       # Print last few line of S3 authserver log  file
       os.system(f"tail -f {s3_auth_server_log_file_path}")
-    elif service == "bgscheduler":
+    elif service == service_bgscheduler:
       # Uncomment below two lines if you want return bgdelete schedule timings.
       # os.system("sed -i -e \"s,scheduler_schedule_interval:.*,scheduler_schedule_interval:\ 120,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # os.system("sed -i -e \"s,leak_processing_delay_in_mins:.*,leak_processing_delay_in_mins:\ 2,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
@@ -177,7 +186,7 @@ def main():
       # Print last few line of S3 bgdelete producer log  file
       os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
 
-    elif service == "bgworker":
+    elif service == service_bgworker:
       # Start the Background Consumer
       logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path} yaml://")
       logger.info(f"Starting S3 Background delete Consumer...")
@@ -190,7 +199,7 @@ def main():
       # Print last few line of S3 bgdelete consumer log  file
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
 
-    elif service == "haproxy":
+    elif service == service_haproxy:
       haproxy_log_path = os.path.join(base_logdir_path, 's3', machine_id, 'haproxy/haproxy.log')
       logger.info(f"haproxy_log_path: {haproxy_log_path}")
       # create haproxy log directory path if does not exist

@@ -55,17 +55,17 @@ class InitCmd(SetupCmd):
                               'yaml://')
     self.logger.info("validate s3 cluster config file completed")
 
-    if "haproxy" in self.services:
+    if self.service_haproxy in self.services:
       pass
 
-    if "s3server" in self.services:
+    if self.service_s3server in self.services:
       self.logger.info("validate s3 config file started")
       self.validate_config_file(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 'yaml://')
       self.logger.info("validate s3 config files completed")
 
-    if "authserver" in self.services:
+    if self.service_authserver in self.services:
       self.logger.info("validate auth config file started")
       self.validate_config_file(self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                               self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
@@ -75,14 +75,14 @@ class InitCmd(SetupCmd):
                               'properties://')
       self.logger.info("validate auth config files completed")
 
-    if "bgscheduler" in self.services:
+    if self.service_bgscheduler in self.services:
       self.logger.info("validate s3 bgdelete scheduler config file started")
       self.validate_config_file(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 'yaml://')
     self.logger.info("validate s3 bgdelete scheduler config files completed")
 
-    if "bgworker" in self.services:
+    if self.service_bgworker in self.services:
       self.logger.info("validate s3 bgdelete worker config file started")
       self.validate_config_file(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
