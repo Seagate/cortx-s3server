@@ -38,18 +38,19 @@ S3ListObjectVersionsAction::S3ListObjectVersionsAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3BucketAction(req, bucket_meta_factory),
-      encoding_type{req->get_query_string_value("encoding-type")},
-      s3_motr_api{motr_api ? std::move(motr_api)
-                           : std::make_shared<ConcreteMotrAPI>()},
       s3_motr_kvs_reader_factory{
           motr_kvs_reader_factory ? std::move(motr_kvs_reader_factory)
                                   : std::make_shared<S3MotrKVSReaderFactory>()},
-      bucket_metadata_factory{
-          bucket_meta_factory ? std::move(bucket_meta_factory)
-                              : std::make_shared<S3BucketMetadataFactory>()},
       object_metadata_factory{
           object_meta_factory ? std::move(object_meta_factory)
-                              : std::make_shared<S3ObjectMetadataFactory>()} {
+                              : std::make_shared<S3ObjectMetadataFactory>()},
+      s3_motr_api{motr_api ? std::move(motr_api)
+                           : std::make_shared<ConcreteMotrAPI>()},
+      encoding_type{req->get_query_string_value("encoding-type")} {
+
+      bucket_metadata_factory = {
+          bucket_meta_factory ? std::move(bucket_meta_factory)
+                              : std::make_shared<S3BucketMetadataFactory>()};
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "S3 API: List Object Versions.\n");
 
@@ -829,9 +830,8 @@ std::string S3ListObjectVersionsAction::get_encoded_key_value(
     return key_value;
   }
   std::string encoded_key_value;
-  const unique_ptr<char, void (*)(void*)> encoded_str(
-      evhttp_uriencode(key_value.c_str(), -1, 0), &free);
-
-  return encoded_str.get();
-  ;
+  char* encoded_str = evhttp_uriencode(key_value.c_str(), -1, 0);
+  encoded_key_value = encoded_str;
+  free(encoded_str);
+  return encoded_key_value;
 }
