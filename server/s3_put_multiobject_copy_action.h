@@ -152,8 +152,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
 
   // unit tests
   friend class S3PutMultipartCopyActionTest;
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, 
-              ConstructorTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, ConstructorTest);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               ValidateSourceBucketOrObjectEmpty);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
@@ -170,23 +169,18 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
               ValidateMetadataLengthNegativeCase);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               ValidateUserMetadataLengthNegativeCase);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
-              FetchMultipartMetadata);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, FetchMultipartMetadata);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               FetchMultiPartMetadataNoSuchUploadFailed);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               FetchMultiPartMetadataInternalErrorFailed);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
-              CreatePart);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, CreatePart);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               CreatePartFailedTestWhileShutdown);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, 
-              CreatePartFailedTest);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, 
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, CreatePartFailedTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               CreatePartFailedToLaunchTest);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
-              SendErrorResponse);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
-              SaveMetadata);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SendErrorResponse);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SaveMetadata);
 };
 #endif  // __S3_SERVER_S3_PUT_MULTIPART_COPY_ACTION_H__

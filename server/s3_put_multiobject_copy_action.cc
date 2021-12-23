@@ -49,8 +49,7 @@ S3PutMultipartCopyAction::S3PutMultipartCopyAction(
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory)
     : S3PutObjectActionBase(std::move(req), nullptr,
-                            std::move(object_meta_factory), nullptr,
-                            nullptr,
+                            std::move(object_meta_factory), nullptr, nullptr,
                             nullptr) {
   part_number = get_part_number();
   upload_id = request->get_query_string_value("uploadId");
