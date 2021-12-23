@@ -356,6 +356,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
 
   @Test public void listAttachedUserPoliciesSucess() throws Exception {
+    Mockito.doReturn(user).when(userDAO).find(ACCOUNT_NAME, USER_NAME);
     Mockito.doReturn(userAttachedPolicies).when(policyDAO).findByIds(
         Mockito.anyMapOf(String.class, Object.class));
     UserPolicyController userPolicyController =
@@ -377,6 +378,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   @Test public void listAttachedUserPoliciesWithPathSucess() throws Exception {
     requestBody.put("PathPrefix", PATH_PREFIX);
+    Mockito.doReturn(user).when(userDAO).find(ACCOUNT_NAME, USER_NAME);
     Mockito.doReturn(userAttachedPolicies).when(policyDAO).findByIds(
         Mockito.anyMapOf(String.class, Object.class));
     UserPolicyController userPolicyController =

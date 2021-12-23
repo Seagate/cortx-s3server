@@ -535,7 +535,7 @@ def iam_policy_authorization_tests():
 
 if __name__ == '__main__':
 
-    #user_tests()
-    #iam_policy_crud_tests()
+    user_tests()
+    iam_policy_crud_tests()
     user_policy_tests()
-    #iam_policy_authorization_tests()
+    iam_policy_authorization_tests()
