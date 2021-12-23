@@ -58,7 +58,7 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
 
    public
     ServerResponse limitExceeded(String errorMessage) {
-      return formatResponse(HttpResponseStatus.BAD_REQUEST, "LimitExceeded",
+      return formatResponse(HttpResponseStatus.CONFLICT, "LimitExceeded",
                             errorMessage);
     }
 
