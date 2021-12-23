@@ -32,6 +32,7 @@
 #include "s3_log.h"
 #include "s3_post_complete_action.h"
 #include "s3_post_multipartobject_action.h"
+#include "s3_put_multiobject_copy_action.h"
 #include "s3_put_chunk_upload_object_action.h"
 #include "s3_put_multiobject_action.h"
 #include "s3_put_object_acl_action.h"
@@ -189,18 +190,43 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PostMultipartObjectAction) {
   S3Option::get_instance()->disable_murmurhash_oid();
 }
 
-TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyPart) {
+// TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyPart) {
+//   // Creation handler per test as it will be specific
+//   handler_under_test.reset(
+//       new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart));
+
+//   EXPECT_CALL(*(mock_request),
+// http_verb()).WillOnce(Return(S3HttpVerb::PUT));
+//   EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-copy-source")))
+//       .WillOnce(Return("someobj"));
+
+//   handler_under_test->create_action();
+
+//   EXPECT_TRUE(handler_under_test->_get_action() == nullptr);
+// }
+
+TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectCopyAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart));
 
   EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::PUT));
   EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-copy-source")))
-      .WillOnce(Return("someobj"));
-
+      .WillOnce(Return("/bkt1/obj1"));
+  EXPECT_CALL(*(mock_request), get_query_string_value(_))
+      .WillRepeatedly(Return("123"));
+  EXPECT_CALL(*(mock_request), is_chunked()).WillRepeatedly(Return(true));
+  S3Option::get_instance()->enable_murmurhash_oid();
   handler_under_test->create_action();
 
-  EXPECT_TRUE(handler_under_test->_get_action() == nullptr);
+  EXPECT_FALSE((dynamic_cast<S3PutMultipartCopyAction *>(
+                   handler_under_test->_get_action().get())) == nullptr);
+  handler_under_test->_get_action()->i_am_done();
+  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction) {

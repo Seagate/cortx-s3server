@@ -139,7 +139,7 @@ class S3ObjectAPIHandler : public S3APIHandler {
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldNotHaveAction4OtherHttpOps);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PostCompleteAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PostMultipartObjectAction);
-  FRIEND_TEST(S3ObjectAPIHandlerTest, DoesNotSupportCopyPart);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectCopyAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3GetMultipartPartAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3AbortMultipartAction);

@@ -35,7 +35,9 @@
 #include "s3_object_metadata.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
+#include "s3_object_metadata.h"
 #include "s3_motr_writer.h"
+#include "s3_motr_reader.h"
 #include "s3_part_metadata.h"
 #include "s3_probable_delete_record.h"
 #include "s3_timer.h"
@@ -147,5 +149,36 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   void delete_old_object();
   void remove_old_object_version_metadata();
   void delete_new_object();
+
+  // unit tests
+  friend class S3PutMultipartCopyActionTest;
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, 
+              ConstructorTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              ValidateSourceBucketOrObjectEmpty);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              ValidateSourceAndDestinationAreSame);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              SourcePartSizeGreaterThanMaxLimit);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              ValidatePartCopyRequestSuccess);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              ValidateObjectKeyLengthNegativeCase);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              CheckPartNumberFailedInvalidPartTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              ValidateMetadataLengthNegativeCase);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              ValidateUserMetadataLengthNegativeCase);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              FetchMultipartMetadata);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              FetchMultiPartMetadataNoSuchUploadFailed);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              FetchMultiPartMetadataInternalErrorFailed);
+//   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+//               CreatePart); 
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              SaveMetadata);
 };
 #endif  // __S3_SERVER_S3_PUT_MULTIPART_COPY_ACTION_H__
