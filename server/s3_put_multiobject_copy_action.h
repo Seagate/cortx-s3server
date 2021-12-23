@@ -127,13 +127,13 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   void fetch_part_info();
   void fetch_part_info_success();
   void fetch_part_info_failed();
-  void create_part_object();
   void create_objects();
   void create_part();
   void create_part_object_successful();
   void create_part_object_failed();
   void initiate_part_copy();
   void copy_part_object();
+  void copy_multipart_source_object();
   bool copy_part_object_cb();
   void copy_part_object_success();
   void copy_part_object_failed();

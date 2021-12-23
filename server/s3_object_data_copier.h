@@ -54,6 +54,9 @@ class S3ObjectDataCopier {
   std::shared_ptr<S3MotrReader> motr_reader;
   bool copy_parts_fragment = 0;
   int vector_index;
+  unsigned int part_vector_index = 0;
+  bool copy_parts_fragment_in_single_source = false;
+  std::vector<struct s3_part_frag_context> part_fragment_context_list;
   S3BufferSequence data_blocks_read;  // Source's data has been read but not
                                       // taken for writing.
 
@@ -101,7 +104,15 @@ class S3ObjectDataCopier {
       std::function<void(int)> on_success_for_fragment,
       std::function<void(int)> on_failure_for_fragment);
 
-  const std::string& get_s3_error() { return s3_error; }
+  void copy_part_fragment_in_single_source(
+      std::vector<struct s3_part_frag_context> fragment_context_list,
+      std::function<bool(void)> check_shutdown_and_rollback,
+      std::function<void(void)> on_success,
+      std::function<void(void)> on_failure);
+
+  void set_next_part_context();
+
+  const std::string &get_s3_error() { return s3_error; }
   // Trims input 'buffer' to the expected size
   // Used when we need specific portion of 'buffer', discarding the remianing
   // data.
