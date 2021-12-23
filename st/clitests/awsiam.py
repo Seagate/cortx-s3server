@@ -107,6 +107,11 @@ class AwsIamTest(PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def get_policy_version(self, arn, version):
+        cmd = f"aws iam get-policy-version --policy-arn {arn} --version-id {version}"
+        self.with_cli(cmd)
+        return self
+
     def delete_policy(self, arn):
         cmd = "aws iam delete-policy --policy-arn " + arn
         self.with_cli(cmd)

@@ -149,6 +149,9 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void add_part_object_to_probable_dead_oid_list(
       const std::shared_ptr<S3ObjectMetadata> &,
       std::vector<std::unique_ptr<S3ProbableDeleteRecord>> &);
+  // Finally, when object md is saved, we would need S3 BD to
+  // process leak due to parallel PUT requests. So, add entry.
+  void add_oid_for_parallel_leak_check();
 
   // Rollback tasks
   void startcleanup() override;

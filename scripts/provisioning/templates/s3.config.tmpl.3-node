@@ -68,12 +68,11 @@ node:
     components:
       - name: s3
         services:
-          - io
-          - auth
-          - bg_consumer
-          - bg_producer
-          - openldap
+          - s3server
           - haproxy
+          - authserver
+          - s3bgschedular
+          - s3bgworker
   TMPL_MACHINE_ID_2:
     name: "POD-2"
     hostname: "TMPL_HOSTNAME_2"
@@ -82,12 +81,11 @@ node:
     components:
       - name: s3
         services:
-          - io
-          - auth
-          - bg_consumer
-          - bg_producer
-          - openldap
+          - s3server
           - haproxy
+          - authserver
+          - s3bgschedular
+          - s3bgworker
   TMPL_MACHINE_ID_3:
     name: "POD-3"
     hostname: "TMPL_HOSTNAME_3"
@@ -96,10 +94,9 @@ node:
     components:
       - name: s3
         services:
-          - io
-          - auth
-          - bg_consumer
-          - bg_producer
-          - openldap
+          - s3server
           - haproxy
+          - authserver
+          - s3bgschedular
+          - s3bgworker
 

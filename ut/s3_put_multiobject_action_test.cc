@@ -510,7 +510,7 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(1)

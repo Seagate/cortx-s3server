@@ -52,6 +52,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   S3PutPartActionState s3_put_action_state;
   struct m0_uint128 old_object_oid;
   int old_layout_id;
+  std::string old_pvid_str;
+  size_t old_part_size = 0;
   struct m0_uint128 new_object_oid;
   int layout_id;
   S3Timer s3_timer;
@@ -133,6 +135,10 @@ class S3PutMultiObjectAction : public S3ObjectAction {
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
+  // Finally, when object md is saved, we would need S3 BD to
+  // process leak due to parallel part PUT requests.
+  // Below function adds entry to probable index.
+  void add_oid_for_parallel_leak_check();
 
   void initiate_data_streaming();
   void consume_incoming_content();

@@ -223,9 +223,7 @@ Before your test your build, ensure that you have installed and configured the f
         * `AWS Secret Access Key [None]: <Secret Key generated in last step>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
-   2. Install the `awscli_plugin_endpoint` package if it's not installed:
-        ` pip install awscli-plugin-endpoint`
-   3. Configure the AWS Plugin Endpoint using:
+   2. Configure the AWS Plugin Endpoint using:
       ` aws configure set plugins.endpoint awscli_plugin_endpoint`
         - To configure AWS in SSL mode run:
             ` aws configure set s3.endpoint_url https://s3.seagate.com`
@@ -233,7 +231,7 @@ Before your test your build, ensure that you have installed and configured the f
         - To configure AWS in non-SSL mode, please run:
             ` aws configure set s3.endpoint_url http://s3.seagate.com`
             ` aws configure set s3api.endpoint_url http://s3.seagate.com`
-   4. Run the following command to view the contents of your AWS config file: 
+   3. Run the following command to view the contents of your AWS config file: 
       ` cat ~/.aws/config`
       
       1. For AWS in SSL mode, you'll need to configure the `[default]` section with the `ca_bundle=<path to ca.crt file>` parameter.
@@ -376,6 +374,7 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
+- Dec 17, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC-G2 cloud VM (Centos 7.9)
 - Nov 1, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC-G2 cloud VM (Centos 7.9)
 - Oct 29, 2021: Jalen Kan (jalen.j.kan@seagate.com) on VMWare Workstation Pro 16 (CentOS 7.9.2009).
 - Oct 7, 2021: Justin Woo (justin.woo@seagate.com), tested CentOS Linux release 7.9.2009 (Core)
