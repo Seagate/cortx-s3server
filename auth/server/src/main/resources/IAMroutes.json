@@ -26,6 +26,7 @@
     "GetLoginProfile": "UserLoginProfile#list",
     "GetTempAuthCredentials": "TempAuthCredentials#create",
     "GetPolicy": "Policy#get",
+    "GetPolicyVersion": "Policy#getPolicyVersion",
     "ListAccessKeys": "AccessKey#list",
     "ListRoles": "Role#list",
     "ListSAMLProviders": "SAMLProvider#list",

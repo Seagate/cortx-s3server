@@ -25,6 +25,8 @@ class APIRequestParamsConstants {
   final static String MARKER = "Marker";
 
  public
+  final static String VERSIONID = "VersionId";
+ public
   final static String POLICY_IDS = "policyIds";
  public
   final static String ACCOUNT_NAME = "accountName";
