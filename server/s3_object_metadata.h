@@ -288,7 +288,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   // delete marker handler
   virtual void set_delete_marker();
-  bool is_delete_marker() const {
+  virtual bool is_delete_marker() const {
     return is_delete_marker_;
   };
 

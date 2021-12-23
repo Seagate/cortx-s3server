@@ -40,6 +40,7 @@ class S3HeadObjectAction : public S3ObjectAction {
 
   void fetch_bucket_info_failed();
   void fetch_object_info_failed();
+  void validate_object_info();
   void send_response_to_s3_client();
 
   FRIEND_TEST(S3HeadObjectActionTest, ConstructorTest);
@@ -54,10 +55,16 @@ class S3HeadObjectAction : public S3ObjectAction {
               FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);
   FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoReturnedMissing);
   FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoFailedWithError);
+  FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoFailedEmptyVersionId);
+  FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoFailedInvalidVersionId);
+  FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoFailedKeyNotPresent);
+  FRIEND_TEST(S3HeadObjectActionTest, validateObjInfoWithDelMarker);
+  FRIEND_TEST(S3HeadObjectActionTest, validateObjInfoWithOutDelMarker);
   FRIEND_TEST(S3HeadObjectActionTest, SendResponseWhenShuttingDown);
   FRIEND_TEST(S3HeadObjectActionTest, SendErrorResponse);
   FRIEND_TEST(S3HeadObjectActionTest, SendAnyFailedResponse);
   FRIEND_TEST(S3HeadObjectActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3HeadObjectActionTest, SendSuccessResponseWhenVerEnabled);
 };
 
 #endif
