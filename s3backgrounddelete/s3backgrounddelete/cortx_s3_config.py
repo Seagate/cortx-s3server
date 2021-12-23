@@ -115,6 +115,7 @@ class CORTXS3Config(object):
             raise KeyError("Could not parse version from config file " + self._conf_file)
 
     def get_processor_logger_directory(self):
+
         """Return logger directory path for background delete from config file or KeyError."""
         try:
           log_directory = self.s3confstore.get_config('logconfig>processor_logger_directory')
@@ -389,16 +390,6 @@ class CORTXS3Config(object):
         except:
             raise KeyError(
                 "Could not parse bucket_metadata index_id from config file " +
-                self._conf_file)
-
-    def get_s3_instance_count(self):
-        """Return secret_key from config file or KeyError."""
-        try:
-          s3_instance_count = self.s3confstore.get_config('cortx_s3>s3_instance_count')
-          return int(s3_instance_count)
-        except:
-            raise KeyError(
-                "Could not find s3_instance_count from config file " +
                 self._conf_file)
 
     def get_s3_recovery_access_key(self):

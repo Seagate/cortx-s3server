@@ -24,7 +24,10 @@ import shutil
 import glob
 import socket
 import ldap
+import uuid
+import urllib
 from os import path
+from ast import literal_eval
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from cortx.utils.validator.v_pkg import PkgV
@@ -32,6 +35,7 @@ from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
 from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
+from cortx.utils.cortx.const import Const
 import logging
 
 class S3PROVError(Exception):
@@ -61,6 +65,7 @@ class SetupCmd(object):
 
   def __init__(self,config: str, services: str):
     """Constructor."""
+    self.services = services
     self.endpoint = None
     self._url = None
     self._provisioner_confstore = None
@@ -69,8 +74,48 @@ class SetupCmd(object):
     self.cluster_id = None
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
+    self.consul_confstore = None
 
-    self.services = services
+    # Constant service names from utils.
+    self.service_haproxy = Const.SERVICE_S3_HAPROXY.value
+    self.service_s3server = Const.SERVICE_S3_SERVER.value
+    self.service_authserver = Const.SERVICE_S3_AUTHSERVER.value
+    self.service_bgscheduler = Const.SERVICE_S3_BGSCHEDULER.value
+    self.service_bgworker = Const.SERVICE_S3_BGWORKER.value
+
+    # validate supported services
+    lookup_service = [self.service_haproxy, self.service_s3server, self.service_authserver, self.service_bgscheduler, self.service_bgworker]
+    if self.services is None:
+      self.services = str(f"{self.service_haproxy},{self.service_s3server},{self.service_authserver},{self.service_bgscheduler},{self.service_bgworker}")
+
+    self.bg_delete_service = self.service_bgworker
+    if -1 != self.services.find("bg_"):
+      self.bg_delete_service = "bg_consumer"
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    services_map = {
+                "io": str(f"{self.service_s3server},{self.service_haproxy}"),
+                "auth": self.service_authserver,
+                "bg_producer": self.service_bgscheduler,
+                "bg_consumer": self.service_bgworker}
+    for service in services_map:
+        if -1 != self.services.find(service):
+          if (service == "auth") and (-1 != services.find(self.service_authserver)):
+            continue
+          self.services = self.services.replace(service, services_map[service])
+    ######### End
+
+    self.services = self.services.split(",")
+
+    # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
+    ######### start
+    if "openldap" in  self.services:
+         self.services.remove("openldap")
+    ######### End
+
+    for service in self.services:
+      if service not in lookup_service:
+        raise Exception(f'ERROR: {service} service is not supported.')
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
@@ -99,6 +144,21 @@ class SetupCmd(object):
     self.logger.info(f'config file path : {self.base_config_file_path}')
     self.s3_tmp_dir = os.path.join(self.base_config_file_path, "s3/tmp")
     self.logger.info(f'tmp dir : {self.s3_tmp_dir}')
+
+    # Consul URL 
+    try:
+        consul_endpoint_url=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTS", "fqdn", "http")
+        consul_endpoint_port=self.get_endpoint("CONFIG>CONFSTORE_CONSUL_ENDPOINTS", "port", "http")
+        consul_protocol='consul://'
+        # consul url will be : consul://consul-server.default.svc.cluster.local:8500
+        consul_url= f'{consul_protocol}'+ f'{consul_endpoint_url}' + ':' + f'{consul_endpoint_port}'
+    except S3PROVError:
+        # endpoint entry is not found in confstore hence fetch endpoint url from default value.
+        consul_url=self.get_confvalue_with_defaults("DEFAULT_CONFIG>CONFSTORE_CONSUL_ENDPOINTS")
+        self.logger.info(f'consul endpoint url entry (http://<consul-fqdn>:<port>) is missing for protocol type: http from confstore, hence using default value as {consul_url}')
+
+    self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
+    self.consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
 
   @property
   def url(self) -> str:
@@ -196,7 +256,7 @@ class SetupCmd(object):
         raise S3PROVError('password cannot be None.')
 
       key = 'cluster_config>rootdn_user'
-      opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'write_rootdn_idx')
+      opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', str(uuid.uuid1()))
       opfileconfstore.set_config(f'{key}', f'{self.ldap_root_user}', True)
 
       key = 'cluster_config>rootdn_pass'
@@ -231,14 +291,13 @@ class SetupCmd(object):
     self.logger.info(f'Validations running from {self._preqs_conf_file}')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
-    if ("K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
-        if services:
-          for service in services:
-            pid = os.popen('pidof '+service).read()
-            if pid is None:
-              raise Exception('Validation failed for service %s' % (service))
-        if rpms:
-          PkgV().validate('rpms', rpms)
+    if services:
+      for service in services:
+        pid = os.popen('pidof '+service).read()
+        if pid is None:
+          raise Exception('Validation failed for service %s' % (service))
+    if rpms:
+      PkgV().validate('rpms', rpms)
     if files:
       PathV().validate('exists', files)
 
@@ -268,15 +327,6 @@ class SetupCmd(object):
     value = self.get_confvalue(key)
     if not value:
       raise Exception(f'Empty value for key : {key}')
-    else:
-      if ("K8" !=  str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
-        address_token = ["hostname", "public_fqdn", "private_fqdn"]
-      else :
-        address_token = []
-      for token in address_token:
-        if key.find(token) != -1:
-          NetworkV().validate('connectivity',[value])
-          break
 
   def extract_yardstick_list(self, phase_name: str):
     """Extract keylist to be used as yardstick for validating keys of each phase."""
@@ -605,7 +655,7 @@ class SetupCmd(object):
     key = 'cluster_config>rootdn_user'
 
     s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
-    opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'read_rootdn_idx')
+    opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', str(uuid.uuid1()))
     self.ldap_root_user = opfileconfstore.get_config(f'{key}')
 
     key = 'cluster_config>rootdn_pass'
@@ -706,3 +756,65 @@ class SetupCmd(object):
                         total = total + 1
         conn.unbind_s()
         return total
+
+  def get_endpoint(self, confstore_key, expected_token,  endpoint_type):
+    """1.Fetch confstore value from given key i.e. confstore_key
+    2.Parse endpoint string based on expected endpoint type i.e. endpoint_type
+    3.Return specific value as mentioned as per parameter i.e. expected_token.
+      this expected_token must has value from ['scheme', 'fqdn', 'port']
+    Examples:
+    fetch_ldap_host = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "fqdn", "ldap")
+    fetch_ldap_port = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "port", "ldap")
+    """
+    confstore_key_value = self.get_confvalue_with_defaults(confstore_key)
+    # Checking if the value is a string or not.
+    if isinstance(confstore_key_value, str):
+      confstore_key_value = literal_eval(confstore_key_value)
+
+    # Checking if valid token name is expected or not.
+    allowed_token_list = ['scheme', 'fqdn', 'port']
+    if not expected_token in allowed_token_list:
+      raise S3PROVError(f"Incorrect token string {expected_token} received for {confstore_key} for specified endpoint type : {endpoint_type}")
+
+    endpoint = self.get_endpoint_for_scheme(confstore_key_value, endpoint_type)
+    if endpoint is None:
+      raise S3PROVError(f"{confstore_key} does not have any specified endpoint type : {endpoint_type}")
+    if expected_token not in endpoint:
+      raise S3PROVError(f"{confstore_key} does not specify endpoint fqdn {endpoint} for endpoint type {endpoint_type}")
+    return endpoint[expected_token]
+
+  def get_endpoint_for_scheme(self, value_to_update, scheme):
+    """Scan list of endpoints, and return parsed endpoint for a given scheme."""
+    if not isinstance(value_to_update, str):
+      lst=value_to_update
+    else:
+      lst=[value_to_update]
+    for endpoint_str in lst:
+      endpoint = self.parse_endpoint(endpoint_str)
+      if endpoint['scheme'] == scheme:
+        return endpoint
+    return None
+
+  def parse_endpoint(self, endpoint_str):
+    """Parse endpoint string and return dictionary with components:
+      * scheme,
+      * fqdn,
+      * and optionally port, if present in the string.
+
+    Examples:
+
+    'https://s3.seagate.com:443' -> {'scheme': 'https', 'fqdn': 's3.seagate.com', 'port': '443'}
+    'https://s3.seagate.com'     -> {'scheme': 'https', 'fqdn': 's3.seagate.com'}
+    'http://s3.seagate.com:80'   -> {'scheme': 'http', 'fqdn': 's3.seagate.com', 'port': '80'}
+    'http://127.0.0.1:80'        -> {'scheme': 'http', 'fqdn': '127.0.0.1', 'port': '80'}
+    """
+    try:
+      result1 = urllib.parse.urlparse(endpoint_str)
+      result2 = result1.netloc.split(':')
+      result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
+      if len(result2) > 1:
+        result['port'] = result2[1]
+    except Exception as e:
+      raise S3PROVError(f'Failed to parse endpoing {endpoint_str}.  Exception: {e}')
+    return result
+

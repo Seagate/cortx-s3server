@@ -148,9 +148,7 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
-// Motr callbacks, run in motr thread
-void s3_motr_op_stable(struct m0_op *op) {
-  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
+std::string s3_motr_op_common(struct m0_op *op) {
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
@@ -192,6 +190,20 @@ void s3_motr_op_stable(struct m0_op *op) {
     S3PostToMainLoop((void *)user_ctx)(motr_op_done_on_main_thread, request_id);
 #endif  // S3_GOOGLE_TEST
   }
+  return request_id;
+}
+
+// Motr callbacks, run in motr thread
+void s3_motr_op_stable(struct m0_op *op) {
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
+  std::string request_id = s3_motr_op_common(op);
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+}
+
+// Motr callbacks, run in motr thread
+void s3_motr_op_executed(struct m0_op *op) {
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
+  std::string request_id = s3_motr_op_common(op);
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
