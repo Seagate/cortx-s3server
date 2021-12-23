@@ -48,10 +48,10 @@ S3PutMultipartCopyAction::S3PutMultipartCopyAction(
     std::shared_ptr<S3MotrReaderFactory> motr_s3_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory)
-    : S3PutObjectActionBase(std::move(req), std::move(bucket_meta_factory),
+    : S3PutObjectActionBase(std::move(req), nullptr,
                             std::move(object_meta_factory), nullptr,
-                            std::move(motr_s3_writer_factory),
-                            std::move(kv_writer_factory)) {
+                            nullptr,
+                            nullptr) {
   part_number = get_part_number();
   upload_id = request->get_query_string_value("uploadId");
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);

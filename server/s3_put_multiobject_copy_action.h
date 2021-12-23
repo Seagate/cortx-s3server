@@ -176,8 +176,16 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
               FetchMultiPartMetadataNoSuchUploadFailed);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               FetchMultiPartMetadataInternalErrorFailed);
-//   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
-//               CreatePart); 
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              CreatePart);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              CreatePartFailedTestWhileShutdown);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, 
+              CreatePartFailedTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, 
+              CreatePartFailedToLaunchTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              SendErrorResponse);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               SaveMetadata);
 };
