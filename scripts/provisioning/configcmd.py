@@ -90,23 +90,23 @@ class ConfigCmd(SetupCmd):
       self.process_common()
       self.logger.info("common config completed")
       # Do not change sequence of the services as it is mentioned as per dependencies.
-      if "haproxy" in self.services:
+      if self.service_haproxy in self.services:
         self.logger.info("haproxy config started")
         self.process_haproxy()
         self.logger.info("haproxy config completed")
-      if "s3server" in self.services:
+      if self.service_s3server in self.services:
         self.logger.info("s3server config started")
         self.process_s3server()
         self.logger.info("s3server config completed")
-      if "authserver" in self.services:
+      if self.service_authserver in self.services:
         self.logger.info("authserver config started")
         self.process_authserver()
         self.logger.info("authserver config completed")
-      if "bgscheduler" in self.services:
+      if self.service_bgscheduler in self.services:
         self.logger.info("s3bgschedular config started")
         self.process_s3bgschedular()
         self.logger.info("s3bgschedular config completed")
-      if "bgworker" in self.services:
+      if self.service_bgworker in self.services:
         self.logger.info("s3bgworker config started")
         self.process_s3bgworker()
         self.logger.info("s3bgworker config completed")
@@ -356,7 +356,7 @@ class ConfigCmd(SetupCmd):
                   self.logger.info(f'Setting confstore value for key :{openldap_key} and value as :{self.machine_id}')
                   self.consul_confstore.set_config(f'{openldap_key}', f'{self.machine_id}', True)
                   self.logger.info('Updated confstore with latest value')
-                  time.sleep(5)
+                  time.sleep(3)
                   continue
               if opendldap_val == self.machine_id:
                   self.logger.info(f'Found lock acquired successfully hence processing with openldap schema push')
@@ -364,8 +364,10 @@ class ConfigCmd(SetupCmd):
                   break
               if opendldap_val != self.machine_id:
                   self.logger.info(f'openldap lock is already acquired by {opendldap_val}, Hence skipping openldap schema configuration')
-                  ldap_lock = False
-                  break
+                  # this is necessary - this makes sure that openldap schema is pushed before proceeding further (for account creation)
+                  # else it happens that account creation is attempted before schema was pushed on given openldap server
+                  time.sleep(3)
+                  continue
 
           except Exception as e:
               self.logger.error(f'Exception occured while connecting consul service endpoint {e}')

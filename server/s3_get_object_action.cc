@@ -132,6 +132,22 @@ void S3GetObjectAction::fetch_object_info_failed() {
 
 void S3GetObjectAction::validate_object_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (object_metadata->is_delete_marker()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object is a delete marker.");
+    request->set_out_header_value("x-amz-delete-marker", "true");
+    request->set_out_header_value("x-amz-version-id",
+                                  object_metadata->get_obj_version_id());
+
+    if (request->has_query_param_key("versionId")) {
+      request->set_out_header_value("Allow", "DELETE");
+      set_s3_error("MethodNotAllowed");
+    } else {
+      set_s3_error("NoSuchKey");
+    }
+    send_response_to_s3_client();
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
+  }
   content_length = object_metadata->get_content_length();
   request->set_object_size(content_length);
   // as per RFC last_byte_offset_to_read is taken to be equal to one less than
