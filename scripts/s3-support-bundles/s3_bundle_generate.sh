@@ -606,7 +606,7 @@ echo "confstore_url: $confstore_url"
 echo "services: $services"
 
 if [ "$services" = "" ]; then
-  services="haproxy,s3server,authserver,bgschedular,bgworker"
+  services="haproxy,s3server,authserver,bgscheduler,bgworker"
   echo "services: $services"
 fi
 
@@ -621,14 +621,27 @@ echo "base_config_file_path: $base_config_file_path"
 pid_value=$$
 tmp_dir="$s3_bundle_location/s3_support_bundle_$pid_value"
 
-# TBD Mapping logic of old vs new service names
-
 IFS=',' #setting comma as delimiter  
 read -a servicelist <<<"$services"
+
+# validate serivce name is valid or not.
+for service in "${servicelist[@]}"; #accessing each element of array
+do
+  if [ "$service" != "haproxy" ] && \
+     [ "$service" != "s3server" ] && \
+     [ "$service" != "authserver" ] && \
+     [ "$service" != "bgscheduler" ] && \
+     [ "$service" != "bgworker" ]; then
+    echo "Service $service is not supported"
+    exit 1
+  fi
+done
+
+# collect common logs
+collect_common
 for service in "${servicelist[@]}"; #accessing each element of array
 do
   echo "Service name: $service"
-  collect_common
   if [ "$service" = "haproxy" ]; then
     collect_haproxy
   fi
