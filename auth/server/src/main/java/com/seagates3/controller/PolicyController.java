@@ -20,11 +20,13 @@
 
 package com.seagates3.controller;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.constants.APIRequestParamsConstants;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.PolicyDAO;
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Account;
 import com.seagates3.model.Policy;
 import com.seagates3.model.Requestor;
 import com.seagates3.policy.IAMPolicyValidator;
@@ -67,9 +69,29 @@ public class PolicyController extends AbstractController {
     @Override
     public ServerResponse create() {
         Policy policy;
-        String policyName = requestBody.get("PolicyName");
+        int existingPoliciesCount;
+        String policyName =
+            requestBody.get(APIRequestParamsConstants.POLICY_NAME);
+        Account account = requestor.getAccount();
+        int maxIAMpolicyLimit = AuthServerConfig.getMaxIAMPolicyLimit();
         try {
-          policy = policyDAO.find(requestor.getAccount(), policyName);
+          existingPoliciesCount = getExistingPoliciesCount(account);
+
+          if (existingPoliciesCount >= maxIAMpolicyLimit) {
+            LOGGER.error("Maximum allowed Policy limit has exceeded (i.e." +
+                         maxIAMpolicyLimit + ")");
+            return responseGenerator.limitExceeded(
+                "The request was rejected because it attempted to create " +
+                "policy beyond the current limit (i.e " + maxIAMpolicyLimit +
+                " )");
+          }
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to get total policy count from ldap " + ex);
+          return responseGenerator.internalServerError();
+        }
+        try {
+          policy = policyDAO.find(account, policyName);
         } catch (DataAccessException ex) {
           LOGGER.error("Failed to create policy- " + policyName);
             return responseGenerator.internalServerError();
@@ -88,11 +110,11 @@ public class PolicyController extends AbstractController {
         LOGGER.debug("Validation successful for IAM policy: " + policyName);
         policy = new Policy();
         policy.setName(policyName);
-        policy.setAccount(requestor.getAccount());
+        policy.setAccount(account);
         policy.setPolicyId(KeyGenUtil.createId());
         policy.setPolicyDoc(requestBody.get("PolicyDocument"));
 
-        String arn = ARNUtil.createARN(requestor.getAccount().getId(), "policy",
+        String arn = ARNUtil.createARN(account.getId(), "policy",
                                        requestBody.get("PolicyName"));
         policy.setARN(arn);
 
@@ -119,6 +141,25 @@ public class PolicyController extends AbstractController {
           LOGGER.error("Exception while saving the policy- " +
                        requestBody.get("PolicyName"));
             return responseGenerator.internalServerError();
+        }
+
+        // Handle multi-threaded/ multi-node create() API calls.
+        try {
+          existingPoliciesCount = getExistingPoliciesCount(account);
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to get total policy count from ldap:" + ex);
+          return responseGenerator.internalServerError();
+        }
+        try {
+          if (existingPoliciesCount > maxIAMpolicyLimit) {
+            policyDAO.delete (policy);
+            return responseGenerator.internalServerError();
+          }
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to create user entry -" + ex);
+          return responseGenerator.internalServerError();
         }
 
         return responseGenerator.generateCreateResponse(policy);
@@ -222,6 +263,13 @@ public class PolicyController extends AbstractController {
       return responseGenerator.generateGetResponse(policy);
     }
 
+   private
+    int getExistingPoliciesCount(Account account) throws DataAccessException {
+      Map<String, Object> apiParameters = new HashMap<>();
+      List<Policy> policyList = null;
+      policyList = policyDAO.findAll(account, apiParameters);
+      return policyList.size();
+    }
     /**
      * Get policy version for requesting ARN and Version ID
      *
