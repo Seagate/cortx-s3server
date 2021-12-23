@@ -68,12 +68,11 @@ node:
     components:
       - name: s3
         services:
-          - io
-          - auth
-          - bg_consumer
-          - bg_producer
-          - openldap
+          - s3server
           - haproxy
+          - authserver
+          - s3bgschedular
+          - s3bgworker
   1114a50a6bf6f9c93ebd3c49d07d3fd5:
     name: "POD-2"
     hostname: "ssc-vm-0081.colo.seagate.com"
@@ -82,12 +81,11 @@ node:
     components:
       - name: s3
         services:
-          - io
-          - auth
-          - bg_consumer
-          - bg_producer
-          - openldap
+          - s3server
           - haproxy
+          - authserver
+          - s3bgschedular
+          - s3bgworker
   1114a50a6bf6f9c93ebd3c49d07d3fd6:
     name: "POD-3"
     hostname: "ssc-vm-0082.colo.seagate.com"
@@ -96,10 +94,9 @@ node:
     components:
       - name: s3
         services:
-          - io
-          - auth
-          - bg_consumer
-          - bg_producer
-          - openldap
+          - s3server
           - haproxy
+          - authserver
+          - s3bgschedular
+          - s3bgworker
 

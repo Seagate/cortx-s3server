@@ -11,6 +11,7 @@ You can easily manage data and access controls using CORTX-S3 Server data manage
 ## Get CORTX-S3 Server ready!
 
 Refer to the [CORTX-S3 Server Quickstart Guide](docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md) to build and test the CORTX-S3 Server.
+For container based deployments, please refer [CORTX on AWS and Kubernetes - Quick Install Guide](https://github.com/Seagate/cortx-k8s/blob/stable/doc/cortx-aws-k8s-installation.md)
 
 ## Contribute to CORTX-S3 Server
 

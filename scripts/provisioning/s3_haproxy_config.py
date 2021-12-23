@@ -185,6 +185,23 @@ class S3HaproxyConfig:
       self.configure_haproxy_k8()
     else : 
       self.configure_haproxy_legacy()
+      # ToDO
+      # This code needs to be enable for mono lithic vm deployment
+
+      # update the haproxy log rotate config file in /etc/logrotate.d/haproxy
+      #self.find_and_replace("/etc/logrotate.d/haproxy", "/var/log/cortx", self.base_log_file_path)
+      #self.find_and_replace("/etc/rsyslog.d/haproxy.conf", "/var/log/cortx", self.base_log_file_path)
+
+      # reload haproxy service
+      #try:
+      #  self.logger.info("Reloading haproxy service...")
+      #  service_list = ["haproxy"]
+      #  self.reload_services(service_list)
+      #except Exception as e:
+      #  self.logger.error(f'Failed to reload haproxy service, error: {e}')
+      #  raise e
+      #self.logger.info("Reloaded haproxy service...")
+
 
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")
@@ -289,14 +306,16 @@ defaults
 #----------------------------------------------------------------------
 # FrontEnd S3 Configuration
 #----------------------------------------------------------------------
-frontend s3-main
+
+frontend s3-main-frontend
     # s3 server port
 '''
     backend_s3main_text = '''
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorithm
 #----------------------------------------------------------------------
-backend s3-main
+
+backend s3-main-backend
     balance static-rr                                     #Balance algorithm
     http-response set-header Server SeagateS3
     # Check the S3 server application is up and healthy - 200 status code
@@ -338,7 +357,8 @@ backend s3-auth
          "   bind 0.0.0.0:%s ssl crt %s\n"
          "\n"
          "   option forwardfor\n"
-         "   default_backend s3-main\n"
+
+         "   default_backend s3-main-backend\n"
          "\n"
          "   # s3 bgdelete server port\n"
          "   bind 0.0.0.0:%s\n"
@@ -428,13 +448,13 @@ backend s3-auth
 #----------------------------------------------------------------------
 # FrontEnd S3 Configuration
 #----------------------------------------------------------------------
-frontend s3-main
+frontend s3-main-frontend
     # s3 server port
 '''
     backend_s3main_text = '''
 
     option forwardfor
-    default_backend s3-main
+    default_backend s3-main-backend
 
     # s3 auth server port
     bind 0.0.0.0:9080
@@ -447,7 +467,7 @@ frontend s3-main
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorithm
 #----------------------------------------------------------------------
-backend s3-main
+backend s3-main-backend
     balance static-rr                                     #Balance algorithm
     http-response set-header Server SeagateS3
     # Check the S3 server application is up and healthy - 200 status code

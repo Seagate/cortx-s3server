@@ -685,7 +685,9 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
       }
     }  // End of For
     // Add one more entry for parent multipart object to erase it
-    // from version index once it is marked for deletion
+    // from version index once it is marked for deletion.
+    // Further, such entry for new object can be used by S3 BD to check
+    // leak due to parallel multipart complete requests.
     std::string oid_str =
         S3M0Uint128Helper::to_string(object_metadata->get_oid());
     // For multiart parent object, size is 0 (as it is dummy object)
@@ -704,7 +706,8 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
         bucket_metadata->get_object_list_index_layout().oid,
         bucket_metadata->get_objects_version_list_index_layout().oid,
         object_metadata->get_version_key_in_index(), false /* force_delete */,
-        true, {0ULL, 0ULL}, 1, total_parts /* Total parts in parent object */,
+        true, part_list_index_oid, 1,
+        total_parts /* Total parts in parent object */,
         bucket_metadata->get_extended_metadata_index_layout().oid,
         object_metadata->get_obj_version_key(), {0ULL, 0ULL}));
     parts_probable_del_rec_list.push_back(std::move(probable_del_rec));
@@ -1144,6 +1147,9 @@ void S3PostCompleteAction::startcleanup() {
       ACTION_TASK_ADD(S3PostCompleteAction::mark_old_oid_for_deletion, this);
       ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
     }
+    // Add new oid for parallel leak check in S3 Background delete service
+    ACTION_TASK_ADD(S3PostCompleteAction::add_oid_for_parallel_leak_check,
+                    this);
     ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record, this);
   } else if (s3_post_complete_action_state ==
              S3PostCompleteActionState::abortedSinceValidationFailed) {
@@ -1437,17 +1443,58 @@ void S3PostCompleteAction::remove_new_ext_metadata_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
+void S3PostCompleteAction::add_oid_for_parallel_leak_check() {
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
+  std::map<std::string, std::string> oid_key_val_mp;
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+  std::string oid_str =
+      S3M0Uint128Helper::to_string(new_object_metadata->get_oid());
+  // For parallel leak check, assume size as 0 (as it is dummy leak entry)
+  // This entry in probable delete list index helps S3 BD to process
+  // object leak caused due to parallel upload requests.
+  S3CommonUtilities::size_based_bucketing_of_objects(oid_str, 0);
+  std::unique_ptr<S3ProbableDeleteRecord> delete_rec;
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Adding new multipart object for parallel leak check, with key [%s]\n",
+         oid_str.c_str());
+  const std::shared_ptr<S3ObjectExtendedMetadata>& new_object_ext_metadata =
+      new_object_metadata->get_extended_object_metadata();
+  unsigned int total_parts =
+      new_object_ext_metadata ? new_object_ext_metadata->get_part_count() : 0;
+
+  delete_rec.reset(new S3ProbableDeleteRecord(
+      oid_str, old_object_oid, new_object_metadata->get_object_name(),
+      new_object_metadata->get_oid(), new_object_metadata->get_layout_id(),
+      new_object_metadata->get_pvid_str(),
+      bucket_metadata->get_object_list_index_layout().oid,
+      bucket_metadata->get_objects_version_list_index_layout().oid,
+      new_object_metadata->get_version_key_in_index(), false /* force_delete */,
+      false, {0ULL, 0ULL}, 1, total_parts,
+      bucket_metadata->get_extended_metadata_index_layout().oid,
+      new_object_metadata->get_obj_version_key(), {0ULL, 0ULL}));
+
+  oid_key_val_mp[delete_rec->get_key()] = delete_rec->to_json();
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
+                             oid_key_val_mp,
+                             std::bind(&S3PostCompleteAction::next, this),
+                             std::bind(&S3PostCompleteAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3PostCompleteAction::remove_new_oid_probable_record() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!new_oid_str.empty());
 
   if (new_parts_probable_del_rec_list.size() == 0) {
-    next();
     return;
   }
   std::vector<std::string> keys_to_delete;
   for (auto& probable_rec : new_parts_probable_del_rec_list) {
-    keys_to_delete.push_back(probable_rec->get_key());
+    const std::string& key = probable_rec->get_key();
+    keys_to_delete.push_back(key);
   }
 
   if (!motr_kv_writer) {
