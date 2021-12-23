@@ -77,9 +77,9 @@ def get_aws_cli_object(raw_aws_cli_output):
         cli_obj["prefix"] = common_prefixes
     if (content_keys is not None):
         cli_obj["keys"] = content_keys
-    if (content_keys is not None):
+    if (versions is not None):
         cli_obj["versions"] = versions
-    if (content_keys is not None):
+    if (delete_markers is not None):
         cli_obj["delete_markers"] = delete_markers
 
     return cli_obj
