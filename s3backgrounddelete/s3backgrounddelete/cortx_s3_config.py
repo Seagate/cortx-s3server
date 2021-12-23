@@ -28,7 +28,6 @@ import uuid
 
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
-from cortx.utils.log import Log
 
 try:
     from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -46,14 +45,6 @@ class CORTXS3Config(object):
         """Initialise configuration."""
         self.s3bdg_access_key = None
         self.s3bgd_secret_key = None
-        Log.init("object_recovery_scheduler",
-                 "/var/log/cortx/s3/s3backgrounddelete",
-                 level='INFO',
-                 backup_count=5,
-                 file_size_in_mb=5,
-                 syslog_server=None, syslog_port=None,
-                 console_output=True)
-        Log.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
         if os.path.isfile(os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")):
             # Load config.yaml file through confstore.
             bgdelete_conf_file = cfg_type + os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")
@@ -85,11 +76,7 @@ class CORTXS3Config(object):
                 self._conf_file)
 
         if not os.access(self._conf_file, os.R_OK):
-            Log.error(
-                "Failed to read " +
-                self._conf_file +
-                " it doesn't have read access")
-            sys.exit()
+            raise Exception("Could not read conf file " + self._conf_file)
         with open(self._conf_file, 'r') as file_config:
             self._config = yaml.safe_load(file_config)
         # Load config.yaml file through confstore.
@@ -105,13 +92,11 @@ class CORTXS3Config(object):
             self.s3bdg_access_key = self.generate_key(None, True, 22, "s3backgroundaccesskey")
         except CipherInvalidToken as err:
             self.s3bdg_access_key = None
-            Log.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
 
         try:
             self.s3bgd_secret_key = self.generate_key(None, False, 40, "s3backgroundsecretkey")
         except CipherInvalidToken as err:
             self.s3bgd_secret_key = None
-            Log.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
 
     def get_config_version(self):
         """Return version of S3 background delete config file or KeyError."""
