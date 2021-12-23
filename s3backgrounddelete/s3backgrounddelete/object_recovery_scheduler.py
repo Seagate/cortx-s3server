@@ -51,7 +51,7 @@ class ObjectRecoveryScheduler(object):
     def __init__(self, producer_name:str,base_config_path:str = "/etc/cortx",config_type:str = "yaml://"):
         """Initialise logger and configuration."""
         self.data = None
-        self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type)
+        self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type, log_init=False)
         self.create_logger_directory()
         Log.init(self.config.get_scheduler_logger_name(),
                  self.config.get_scheduler_logger_directory(),

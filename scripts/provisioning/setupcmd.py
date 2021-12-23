@@ -36,7 +36,6 @@ from cortx.utils.validator.v_path import PathV
 from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
 from cortx.utils.cortx.const import Const
-import logging
 from cortx.utils.log import Log
 
 class S3PROVError(Exception):

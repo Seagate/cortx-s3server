@@ -43,7 +43,7 @@ class ObjectRecoveryProcessor(object):
     def __init__(self,base_config_path:str = "/etc/cortx",config_type:str = "yaml://"):
         """Initialise Server, config and create logger."""
         self.server = None
-        self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type)
+        self.config = CORTXS3Config(base_cfg_path = base_config_path,cfg_type = config_type, log_init=False)
         self.create_logger_directory()
         Log.init(self.config.get_processor_logger_name(),
                  self.config.get_processor_logger_directory(),
