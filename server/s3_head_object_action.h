@@ -59,6 +59,7 @@ class S3HeadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoFailedInvalidVersionId);
   FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoFailedKeyNotPresent);
   FRIEND_TEST(S3HeadObjectActionTest, validateObjInfoWithDelMarker);
+  FRIEND_TEST(S3HeadObjectActionTest, validateObjInfoWithVerIdAndDelMarker);
   FRIEND_TEST(S3HeadObjectActionTest, validateObjInfoWithOutDelMarker);
   FRIEND_TEST(S3HeadObjectActionTest, SendResponseWhenShuttingDown);
   FRIEND_TEST(S3HeadObjectActionTest, SendErrorResponse);

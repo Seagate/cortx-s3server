@@ -1802,7 +1802,7 @@ AwsTest('Aws can not get object with empty versionId')\
     .command_error_should_have("Version id cannot be the empty string")
 
 #************ Head object with version IDs *******
-AwsTest('Aws can head object without specifing versionId')\
+AwsTest('Aws can head object without specifying versionId')\
     .head_object(bucket, file).execute_test()\
     .command_is_successful()\
     .command_response_should_have(version_id)

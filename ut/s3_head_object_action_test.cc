@@ -304,6 +304,22 @@ TEST_F(S3HeadObjectActionTest, validateObjInfoWithDelMarker) {
       .WillRepeatedly(Return(false));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(2));
   action_under_test->validate_object_info();
+  EXPECT_STREQ("NoSuchKey",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3HeadObjectActionTest, validateObjInfoWithVerIdAndDelMarker) {
+  CREATE_OBJECT_METADATA;
+  action_under_test->object_metadata =
+      object_meta_factory->mock_object_metadata;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .WillOnce(Return(true));
+  EXPECT_CALL(*(mock_request), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(2));
+  action_under_test->validate_object_info();
+  EXPECT_STREQ("MethodNotAllowed",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3HeadObjectActionTest, validateObjInfoWithOutDelMarker) {
