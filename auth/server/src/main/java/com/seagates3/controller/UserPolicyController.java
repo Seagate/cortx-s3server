@@ -123,7 +123,7 @@ class UserPolicyController extends AbstractController {
     ServerResponse serverResponse = null;
 
     try {
-      User user = requestor.getUser();
+      User user = userDAO.find(requestor.getAccount().getName(), userName);
       checkIfUserExists(user, userName);
       Map<String, Object> dataMap = new HashMap<String, Object>();
       if (pathPrefix != null) {
