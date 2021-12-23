@@ -363,8 +363,8 @@ collect_authserver() {
 }
 
 # collect s3 bgdelete scheduler logs
-collect_s3bgschedular() {
-    echo "collect s3bgschedular logs started"
+collect_bgscheduler() {
+    echo "collect bgscheduler logs started"
 
     # Collect backgrounddelete config file if available
     backgrounddelete_config="$base_config_file_path/s3/s3backgrounddelete/config.yaml"
@@ -380,12 +380,12 @@ collect_s3bgschedular() {
         args+=($backgrounddelete_producer_logdir)
     fi
 
-    echo "collect s3bgschedular logs completed"
+    echo "collect bgscheduler logs completed"
 }
 
 # collect s3 bgdelete worker logs
-collect_s3bgworker() {
-    echo "collect s3bgworker logs started"
+collect_bgworker() {
+    echo "collect bgworker logs started"
 
     # Collect backgrounddelete config file if available
     backgrounddelete_config="$base_config_file_path/s3/s3backgrounddelete/config.yaml"
@@ -401,7 +401,7 @@ collect_s3bgworker() {
         args+=($backgrounddelete_consumer_logdir)
     fi
 
-    echo "collect s3bgworker logs completed"
+    echo "collect bgworker logs completed"
 }
 
 # Collect call stack of latest <s3_core_files_max_count> s3server core files
@@ -595,7 +595,7 @@ while getopts "b:t:c:s:" opt; do
   esac
 done
 
-if [ -z "$bundle_id" ] || [ -z "$bundle_path" ] || [ -z "$confstore_url" ] || [ -z "$services" ]; then
+if [ -z "$bundle_id" ] || [ -z "$bundle_path" ] || [ -z "$confstore_url" ]; then
   usage
 fi
 
@@ -606,7 +606,7 @@ echo "confstore_url: $confstore_url"
 echo "services: $services"
 
 if [ "$services" = "" ]; then
-  services="haproxy,s3server,authserver,s3bgschedular,s3bgworker"
+  services="haproxy,s3server,authserver,bgschedular,bgworker"
   echo "services: $services"
 fi
 
@@ -638,18 +638,18 @@ do
   if [ "$service" = "authserver" ]; then
     collect_authserver
   fi
-  if [ "$service" = "s3bgschedular" ]; then
-    collect_s3bgschedular
+  if [ "$service" = "bgscheduler" ]; then
+    collect_bgscheduler
   fi
-  if [ "$service" = "s3bgworker" ]; then
-    collect_s3bgworker
+  if [ "$service" = "bgworker" ]; then
+    collect_bgworker
   fi
 
 done
 
 # Build tar.gz file with bundleid at bundle_path location
 # Create folder with component name at given destination
-bundle_name="s3_$bundle_id.tar.xz"
+bundle_name="s3_$bundle_id.tar.gz"
 s3_bundle_location=$bundle_path/s3
 
 mkdir -p $s3_bundle_location
@@ -659,10 +659,9 @@ echo "Generating tar..."
 
 #TODO migrate to gzip
 echo $args
-tar -cvJf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-changed
+tar -czvf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-changed
 
 # Clean up temp files
 cleanup_tmp_files
 
 echo "S3 support bundle generated successfully at $s3_bundle_location/$bundle_name !!!"
-exit
