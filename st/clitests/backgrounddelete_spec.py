@@ -748,6 +748,10 @@ print("Running Processor...")
 processor.consume()
 print("Processor has stopped...")
 
+# ************* Verify cleanup of probable delete index******
+result = S3kvTest('Kvtest list global probable delete list index').list_root_probable_dead_object_list_index().execute_test()
+assert result.status.stdout is ""
+
 # ****** Delete object "object1" using s3-background-delete-svc account*****
 AwsTest('Delete object "object1"').delete_object("seagatebucket", "object1") \
    .execute_test().command_is_successful()
