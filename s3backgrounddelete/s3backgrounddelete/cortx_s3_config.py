@@ -61,7 +61,7 @@ class CORTXS3Config(object):
                    file_size_in_mb=self.get_max_log_size_mb(),
                    syslog_server=None, syslog_port=None,
                    console_output=True)
-        Log.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
+          Log.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
         self.cache_credentials()
 
     @staticmethod
