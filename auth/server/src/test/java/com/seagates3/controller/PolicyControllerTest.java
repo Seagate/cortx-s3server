@@ -55,7 +55,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     policy.setAccount(account);
     policy.setARN("arn:aws:iam::352620587691:policy/policy1");
     policy.setCreateDate("2021/12/12 12:23:34");
-    policy.setDefaultVersionId("0");
+    policy.setDefaultVersionId("v1");
     policy.setAttachmentCount(0);
     policy.setPermissionsBoundaryUsageCount(0);
     policy.setIsPolicyAttachable("true");
@@ -83,6 +83,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestor.setAccount(account);
     requestBody.put("PolicyName", "policy1");
     requestBody.put("PolicyARN", "arn:aws:iam::352620587691:policy/policy1");
+    requestBody.put("PolicyArn", "arn:aws:iam::352620587691:policy/policy1");
     requestBody.put(
         "PolicyDocument",
         "{\r\n" + "\"Version\": \"2012-10-17\",\r\n" +
@@ -93,6 +94,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             "      \"Effect\": \"Allow\",\r\n" +
             "      \"Resource\": \"arn:aws:iam::352620587691:buck1\"\r\n" +
             "	  \r\n" + "    }\r\n" + "\r\n" + "  ]\r\n" + "}");
+    requestBody.put("VersionId", "v1");
 
     PowerMockito.doReturn(mockPolicyDao)
         .when(DAODispatcher.class, "getResourceDAO", DAOResource.POLICY);
@@ -216,6 +218,44 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.doNothing().when(mockPolicyDao).save(any(Policy.class));
     ServerResponse response = policyController.create();
     Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                        response.getResponseStatus());
+  }
+  @Test public void getPolicyVersionSuccessful() throws DataAccessException {
+    policy.setPolicyDoc(
+        "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
+        "\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":" +
+        "\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
+    ServerResponse response = policyController.getPolicyVersion();
+    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+  }
+  @Test public void getPolicyVersionFailure() throws DataAccessException {
+    requestBody.put("VersionId", "v2");
+    policy.setPolicyDoc(
+        "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
+        "\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":" +
+        "\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
+    ServerResponse response = policyController.getPolicyVersion();
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                        response.getResponseStatus());
+  }
+  @Test public void getPolicyVersionNotAttachableFailure()
+      throws DataAccessException {
+    policy.setIsPolicyAttachable("false");
+    policy.setPolicyDoc(
+        "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":" +
+        "\"Stmt1632740110513\",\"Action\":[\"s3:PutBucketAcl\"],\"Effect\":" +
+        "\"Allow\",\"Resource\":\"arn:aws:s3:::buck9090\"}]}");
+    Mockito.when(mockPolicyDao.findByArn(
+                     "arn:aws:iam::352620587691:policy/policy1", account))
+        .thenReturn(policy);
+    ServerResponse response = policyController.getPolicyVersion();
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 }
