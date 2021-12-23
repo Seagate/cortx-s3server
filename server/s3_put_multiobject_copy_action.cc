@@ -171,8 +171,12 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
     }
   }
   total_data_to_copy = last_byte_offset_to_copy - first_byte_offset_to_copy;
-  s3_log(S3_LOG_DEBUG, request_id, "valid range(%zu-%zu) found\n",
+  s3_log(S3_LOG_DEBUG, request_id, "Validated range: %zu-%zu\n",
          first_byte_offset_to_copy, last_byte_offset_to_copy);
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Total data to copy in part [%d]: %zu bytes\n", part_number,
+         total_data_to_copy);
+  next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
