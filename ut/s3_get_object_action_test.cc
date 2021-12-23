@@ -334,6 +334,39 @@ TEST_F(S3GetObjectActionTest, FetchObjectInfoFailedKeyNotPresent) {
   EXPECT_STREQ("NoSuchKey", action_under_test->get_s3_error_code().c_str());
 }
 
+TEST_F(S3GetObjectActionTest, LatestObjectIsDeleteMarker) {
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*(ptr_mock_request), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+
+  action_under_test->validate_object_info();
+  EXPECT_TRUE(action_under_test->get_s3_error_code() == "NoSuchKey");
+}
+
+TEST_F(S3GetObjectActionTest, RequestedObjectVersionIdBelongsToDeleteMarker) {
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(true));
+  EXPECT_CALL(*(ptr_mock_request), has_query_param_key("versionId"))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+
+  action_under_test->validate_object_info();
+  EXPECT_TRUE(action_under_test->get_s3_error_code() == "MethodNotAllowed");
+}
+
 TEST_F(S3GetObjectActionTest, ValidateObjectOfSizeZero) {
   CREATE_OBJECT_METADATA;
 
@@ -351,6 +384,9 @@ TEST_F(S3GetObjectActionTest, ValidateObjectOfSizeZero) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
@@ -394,6 +430,9 @@ TEST_F(S3GetObjectActionTest,
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -427,6 +466,9 @@ TEST_F(
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -460,6 +502,9 @@ TEST_F(
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -492,6 +537,9 @@ TEST_F(S3GetObjectActionTest,
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -525,6 +573,9 @@ TEST_F(
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -557,6 +608,9 @@ TEST_F(S3GetObjectActionTest,
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -589,7 +643,9 @@ TEST_F(S3GetObjectActionTest,
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
-
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
@@ -621,6 +677,9 @@ TEST_F(S3GetObjectActionTest,
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -653,6 +712,9 @@ TEST_F(S3GetObjectActionTest,
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -686,6 +748,9 @@ TEST_F(S3GetObjectActionTest,
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -719,6 +784,9 @@ TEST_F(
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -753,6 +821,9 @@ TEST_F(S3GetObjectActionTest,
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
@@ -781,6 +852,9 @@ TEST_F(S3GetObjectActionTest,
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
@@ -808,6 +882,9 @@ TEST_F(S3GetObjectActionTest,
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
@@ -836,6 +913,9 @@ TEST_F(S3GetObjectActionTest,
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
@@ -864,6 +944,9 @@ TEST_F(S3GetObjectActionTest,
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
@@ -892,6 +975,9 @@ TEST_F(S3GetObjectActionTest,
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
@@ -917,6 +1003,9 @@ TEST_F(S3GetObjectActionTest,
               get_content_length_str()).WillRepeatedly(Return("8000"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -987,6 +1076,9 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
       .WillOnce(Return(S3MotrReaderOpState::success));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
@@ -1045,6 +1137,9 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
   EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
       .WillOnce(Return(S3MotrReaderOpState::success));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
@@ -1106,6 +1201,9 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
   EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
       .WillOnce(Return(S3MotrReaderOpState::success));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
@@ -1169,6 +1267,9 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfGivenRange) {
   EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
       .WillOnce(Return(S3MotrReaderOpState::success));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .Times(1)
+      .WillOnce(Return(false));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
