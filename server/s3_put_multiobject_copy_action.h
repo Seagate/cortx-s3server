@@ -174,13 +174,19 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
               FetchMultiPartMetadataNoSuchUploadFailed);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               FetchMultiPartMetadataInternalErrorFailed);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, CreatePart);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+  FRIEND_TEST(S3PutMultipartCopyActionTestWithMockAuth, CreatePart);
+  FRIEND_TEST(S3PutMultipartCopyActionTestWithMockAuth,
               CreatePartFailedTestWhileShutdown);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, CreatePartFailedTest);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+  FRIEND_TEST(S3PutMultipartCopyActionTestWithMockAuth, CreatePartFailedTest);
+  FRIEND_TEST(S3PutMultipartCopyActionTestWithMockAuth,
               CreatePartFailedToLaunchTest);
-  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SendErrorResponse);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SaveMetadata);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SendErrorResponse);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SendSuccessResponse);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SendSuccessResponseAtEnd);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SendSuccessResponseSpread);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SendFailedResponseAtEnd);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, SendFailedResponseSpread);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, DestinationAuthorization);
 };
 #endif  // __S3_SERVER_S3_PUT_MULTIPART_COPY_ACTION_H__

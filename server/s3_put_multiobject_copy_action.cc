@@ -638,7 +638,9 @@ void S3PutMultipartCopyAction::send_response_to_s3_client() {
 
     request->send_response(http_status_code, std::move(response_xml));
   }
+#ifndef S3_GOOGLE_TEST
   startcleanup();
+#endif  // S3_GOOGLE_TEST
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
