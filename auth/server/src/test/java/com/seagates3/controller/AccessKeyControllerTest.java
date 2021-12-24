@@ -109,7 +109,7 @@ public class AccessKeyControllerTest {
      * @throws Exception
      */
    private
-    void createAccessKeyController_CreateAPI_UserCred() throws Exception {
+    void createAPIUserCred() throws Exception {
       Requestor requestor = new Requestor();
       requestor.setAccount(ACCOUNT);
       requestor.setName(REQUESTOR_NAME);
@@ -1235,8 +1235,8 @@ public class AccessKeyControllerTest {
         Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR, response.getResponseStatus());
     }
 
-    @Test public void createAccessKey_UserCred() throws Exception {
-      createAccessKeyController_CreateAPI_UserCred();
+    @Test public void createAccessKeyUserCred() throws Exception {
+      createAPIUserCred();
       User user = new User();
       user.setAccountName(ACCOUNT_NAME);
       user.setName(USER_NAME);
@@ -1254,9 +1254,9 @@ public class AccessKeyControllerTest {
                           response.getResponseStatus());
     }
 
-    @Test public void createAccessKey_UserCred_AccessKeyExists()
+    @Test public void createAccessKeyUserCredAccessKeyExists()
         throws Exception {
-      createAccessKeyController_CreateAPI_UserCred();
+      createAPIUserCred();
       User user = new User();
       user.setAccountName(ACCOUNT_NAME);
       user.setName(USER_NAME);
@@ -1276,9 +1276,9 @@ public class AccessKeyControllerTest {
                           response.getResponseStatus());
     }
 
-    @Test public void createAccessKey_UserCred_AccessKeyException()
+    @Test public void createAccessKeyUserCredAccessKeyException()
         throws Exception {
-      createAccessKeyController_CreateAPI_UserCred();
+      createAPIUserCred();
       User user = new User();
       user.setAccountName(ACCOUNT_NAME);
       user.setName(USER_NAME);
