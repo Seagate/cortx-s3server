@@ -406,7 +406,7 @@ class ConfigCmd(SetupCmd):
           Log.error(f'error of setup_ldap.sh: {stderr} {node_machine_id}')
           raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
         else:
-          Log.warning(f'warning of setup_ldap.sh: {stderr} {node_machine_id}')
+          Log.warn(f'warning of setup_ldap.sh: {stderr} {node_machine_id}')
 
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
@@ -485,7 +485,7 @@ class ConfigCmd(SetupCmd):
       Log.error(f'error of create_auth_jks_password.sh: {stderr}')
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
     else:
-      Log.warning(f'warning of create_auth_jks_password.sh: {stderr}')
+      Log.warn(f'warning of create_auth_jks_password.sh: {stderr}')
       Log.info(' Successfully set auth JKS keystore password.')
 
   def create_bgdelete_account(self, ldap_endpoint_fqdn: str):
@@ -500,7 +500,7 @@ class ConfigCmd(SetupCmd):
         Log.error(f'Failed to create backgrounddelete service account, error: {e}')
         raise(e)
       else:
-        Log.warning("backgrounddelete service account already exist")
+        Log.warn("backgrounddelete service account already exist")
 
   def update_config_value(self, config_file_path : str,
                           config_file_type : str,

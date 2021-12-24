@@ -128,7 +128,7 @@ class SetupCmd(object):
     Log.info(f'Machine id : {self.machine_id}')
 
     if config is None:
-      Log.warning(f'Empty Config url')
+      Log.warn(f'Empty Config url')
       return
 
     if not config.strip():
