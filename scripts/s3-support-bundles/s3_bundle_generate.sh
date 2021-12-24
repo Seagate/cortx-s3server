@@ -118,7 +118,8 @@ collect_haproxy() {
     # collect rotated logs for haproxy and ldap along with live log
     haproxy_log="$base_log_file_path/haproxy.log"
     haproxy_status_log="$base_log_file_path/haproxy-status.log"
-    haproxy_log_k8s=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_LOG_SYMLINK")
+    machine_id=$(cat /etc/machine-id)
+    haproxy_log_k8s="$base_log_file_path/s3/$machine_id/haproxy/haproxy.log"
 
     # Collect haproxy config file if available
     if [ -f "$haproxy_config" ];
