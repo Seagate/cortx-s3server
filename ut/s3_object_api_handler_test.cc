@@ -423,4 +423,3 @@ TEST_F(S3ObjectAPIHandlerTest, NoAction) {
 
   EXPECT_TRUE(handler_under_test->_get_action() == nullptr);
 }
-

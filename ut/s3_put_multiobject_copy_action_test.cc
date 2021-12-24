@@ -153,8 +153,7 @@ class S3PutMultipartCopyActionTestNoMockAuth
 class S3PutMultipartCopyActionTestWithMockAuth
     : public S3PutMultipartCopyActionTest {
  protected:
-  S3PutMultipartCopyActionTestWithMockAuth()
-      : S3PutMultipartCopyActionTest() {
+  S3PutMultipartCopyActionTestWithMockAuth() : S3PutMultipartCopyActionTest() {
     S3Option::get_instance()->enable_auth();
     EXPECT_CALL(*ptr_mock_request, is_chunked()).WillRepeatedly(Return(true));
 
@@ -565,8 +564,7 @@ TEST_F(S3PutMultipartCopyActionTestNoMockAuth, SendSuccessResponse) {
   action_under_test->additional_object_metadata =
       object_meta_factory->mock_object_metadata;
 
-  action_under_test->motr_writer =
-      motr_writer_factory->mock_motr_writer;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   // Simulate success
   action_under_test->s3_copy_part_action_state =
@@ -579,10 +577,8 @@ TEST_F(S3PutMultipartCopyActionTestNoMockAuth, SendSuccessResponse) {
       .Times(1);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_last_modified_iso()).Times(1);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _))
-    .Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(200, _))
-    .Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
 
@@ -596,8 +592,7 @@ TEST_F(S3PutMultipartCopyActionTestNoMockAuth, SendSuccessResponseAtEnd) {
       S3PutObjectActionState::metadataSaved;
   action_under_test->additional_object_metadata =
       object_meta_factory->mock_object_metadata;
-  action_under_test->motr_writer = 
-      motr_writer_factory->mock_motr_writer;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_content_md5())
       .Times(1);
@@ -652,7 +647,8 @@ TEST_F(S3PutMultipartCopyActionTestNoMockAuth, SendFailedResponseAtEnd) {
 }
 
 TEST_F(S3PutMultipartCopyActionTestNoMockAuth, SendFailedResponseSpread) {
-  action_under_test->s3_copy_part_action_state = S3PutObjectActionState::writeFailed;
+  action_under_test->s3_copy_part_action_state =
+      S3PutObjectActionState::writeFailed;
   action_under_test->set_s3_error("InternalError");
   action_under_test->response_started = true;
 
@@ -667,12 +663,11 @@ TEST_F(S3PutMultipartCopyActionTestNoMockAuth, SendFailedResponseSpread) {
 TEST_F(S3PutMultipartCopyActionTestNoMockAuth, DestinationAuthorization) {
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
-    S3PutMultipartCopyActionTest::func_callback_one, this);
+                         S3PutMultipartCopyActionTest::func_callback_one, this);
   action_under_test->bucket_metadata =
       action_under_test->bucket_metadata_factory->create_bucket_metadata_obj(
           ptr_mock_request);
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_state())
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   std::string MockJsonResponse("Mockresponse");
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
