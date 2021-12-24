@@ -224,6 +224,33 @@ class AwsTest(S3PyCliTest):
                       + " --part-number " + part_number + " --body " + filename + " --upload-id " + upload_id)
         return self
 
+    def upload_part_copy(self, bucket_name, key_name, part_num, upload_id, copy_source, byte_range=None):
+        self.bucket_name = bucket_name
+        self.key_name = key_name
+        self.part_number = part_num
+        self.upload_id = upload_id
+        self.copy_source = copy_source
+        self.byte_range = byte_range
+        cmd = f"aws s3api upload-part-copy --bucket {bucket_name} --key {key_name} " + \
+              f"--part-number {part_num} --upload-id {upload_id} --copy-source {copy_source}" + \
+              (f"--byte-range {byte_range}" if byte_range else "")
+        self.with_cli(cmd)
+        return self
+
+    def list_parts(self, bucket_name, key_name, upload_id, page_size=None):
+        cmd = f"aws s3api list-parts --bucket {bucket_name} --key {key_name} --upload-id {upload_id}" +\
+              (f"--page-size {page_size}" if page_size else "")
+        self.with_cli(cmd)
+        return self
+
+    def list_multipart_uploads(self, bucket_name, delimiter=None, prefix=None, page_size=None):
+        cmd = f"aws s3api list-multipart-uploads --bucket {bucket_name} " +\
+              (f"--delimiter {delimiter}" if delimiter else "") +\
+              (f"--prefix {prefix}" if prefix else "") +\
+              (f"--page-size {page_size}" if page_size else "")
+        self.with_cli(cmd)
+        return self
+
     def complete_multipart_upload(self, bucket_name, key_name, parts, upload_id):
         self.key_name = key_name
         self.bucket_name = bucket_name

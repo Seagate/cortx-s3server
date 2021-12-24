@@ -1137,6 +1137,208 @@ AwsTest('Aws can delete destination bucket').delete_bucket("destination-seagateb
     .execute_test().command_is_successful()
 
 # **********************************************************************************************
+# ************ Multipart UploadPartCopy API Support ********************************************
+
+# 0. Create Source Bucket
+AwsTest('Aws can create source bucket')\
+    .create_bucket("mpcp-src-bucket")\
+    .execute_test().command_is_successful()
+
+# 1. Upload simple objects in source objects.
+AwsTest('Aws can put first simple object')\
+    .put_object("mpcp-src-bucket", "simpleobj1", 5242880)\
+    .execute_test().command_is_successful()
+AwsTest('Aws can put second simple object')\
+    .put_object("mpcp-src-bucket", "simpleobj2", 5242880)\
+    .execute_test().command_is_successful()
+AwsTest('Aws can put third simple object')\
+    .put_object("mpcp-src-bucket", "simpleobj3", 1048576)\
+    .execute_test().command_is_successful()
+
+# 2. Create Destination Bucket
+AwsTest('Aws can create destination bucket')\
+    .create_bucket("mpcp-dest-bucket")\
+    .execute_test().command_is_successful()
+
+# 3. Create multipart upload
+result = AwsTest('Aws can create multipart session')\
+            .create_multipart_upload("mpcp-dest-bucket", "mpobject",
+                11534336, "test=uploadpartcopytest")\
+            .execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print("Upload Id: ", upload_id)
+
+# 4. Copy simple objects as seperate parts in multipart uplaod session. 
+result = AwsTest('Aws can copy object as first part')\
+            .upload_part_copy("mpcp-dest-bucket", "mpobject", "1" ,
+                              upload_id, "mpcp-src-bucket/simpleobj1")\
+            .execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+if '"' in e_tag_1:
+    e_tag_1 = e_tag_1.split('"')[1] 
+print("Etag: ", e_tag_1)
+
+result = AwsTest('Aws can copy object as second part')\
+            .upload_part_copy("mpcp-dest-bucket", "mpobject", "2" ,
+                              upload_id, "mpcp-src-bucket/simpleobj2")\
+            .execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+if '"' in e_tag_2:
+    e_tag_2 = e_tag_2.split('"')[1]
+print("Etag: ", e_tag_2)
+
+result = AwsTest('Aws can copy object as third part')\
+            .upload_part_copy("mpcp-dest-bucket", "mpobject", "3" ,
+                              upload_id, "mpcp-src-bucket/simpleobj3")\
+            .execute_test().command_is_successful()
+e_tag_3 = result.status.stdout
+if '"' in e_tag_3:
+    e_tag_3 = e_tag_3.split('"')[1]
+print("Etag: ", e_tag_3)
+
+# Validate list-parts working with UploadPartCopy API
+result = AwsTest('Aws can list parts')\
+            .list_parts("mpcp-dest-bucket", "mpobject", upload_id)\
+            .execute_test().command_is_successful()\
+            .command_response_should_have(e_tag_1)\
+            .command_response_should_have(e_tag_2)\
+            .command_response_should_have(e_tag_3)
+
+# Validate list-mulipart-uploads working with UploadPartCopy API
+result = AwsTest('Aws can list multipart uploads')\
+            .list_multipart_uploads("mpcp-dest-bucket",)\
+            .execute_test().command_is_successful()\
+            .command_response_should_have(upload_id)
+
+parts = "Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"}," +\
+               "{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}," +\
+               "{ETag="+e_tag_3.strip('\n')+",PartNumber="+str(3)+"}]"
+print(parts)
+
+# 5. Complete multipart upload
+result = AwsTest('Aws can complete multipart upload session')\
+            .complete_multipart_upload("mpcp-dest-bucket", "mpobject", parts, upload_id)\
+            .execute_test().command_is_successful()\
+            .command_response_should_have("mpcp-dest-bucket/mpobject")
+
+AwsTest('delete dest mpcpobj').delete_object("mpcp-dest-bucket", 'mpobject').execute_test().command_is_successful()
+
+print("Copy simple objects as parts using multipart API successful.")
+
+# ***********************************************************************
+# *** Fail multipart upload if part is less than 5MB except last part ***
+
+# 1. Create multipart upload
+result = AwsTest('Aws can create multipart session')\
+            .create_multipart_upload("mpcp-dest-bucket", "mpobject",
+                6291456, "test=uploadpartcopytest")\
+            .execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print("Upload Id: ", upload_id)
+
+# 2. Copy simple objects as 2 seperate parts in multipart uplaod session. 
+result = AwsTest('Aws can copy object as first part')\
+            .upload_part_copy("mpcp-dest-bucket", "mpobject", "1" ,
+                              upload_id, "mpcp-src-bucket/simpleobj3")\
+            .execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+if '"' in e_tag_1:
+    e_tag_1 = e_tag_1.split('"')[1] 
+print("Etag: ", e_tag_1)
+
+result = AwsTest('Aws can copy object as second part')\
+            .upload_part_copy("mpcp-dest-bucket", "mpobject", "2" ,
+                              upload_id, "mpcp-src-bucket/simpleobj2")\
+            .execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+if '"' in e_tag_2:
+    e_tag_2 = e_tag_2.split('"')[1]
+print("Etag: ", e_tag_2)
+
+parts = "Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"}," +\
+               "{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+# 3. Complete multipart upload
+result = AwsTest('Aws can complete multipart upload session')\
+            .complete_multipart_upload("mpcp-dest-bucket", "mpobject", parts, upload_id)\
+            .execute_test(negative_case=True).command_should_fail()\
+            .command_error_should_have("EntityTooSmall")
+
+result = AwsTest('Aws can abort multipard session')\
+            .abort_multipart_upload("mpcp-dest-bucket", "mpobject", upload_id)\
+            .execute_test().command_is_successful()
+
+# *********************************************************************
+# *** multipart upload copy in same bucket with different key names ***
+# 1. Create multipart upload
+result = AwsTest('Aws can create multipart session')\
+            .create_multipart_upload("mpcp-src-bucket", "merged1and3",
+                6291456, "test=uploadpartcopytest")\
+            .execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print("Upload Id: ", upload_id)
+
+# 2. Copy simple objects as 2 seperate parts in multipart uplaod session. 
+result = AwsTest('Aws can copy object as first part')\
+            .upload_part_copy("mpcp-src-bucket", "merged1and3", "1" ,
+                              upload_id, "mpcp-src-bucket/simpleobj1")\
+            .execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+if '"' in e_tag_1:
+    e_tag_1 = e_tag_1.split('"')[1] 
+print("Etag: ", e_tag_1)
+
+result = AwsTest('Aws can copy object as second part')\
+            .upload_part_copy("mpcp-src-bucket", "merged1and3", "2" ,
+                              upload_id, "mpcp-src-bucket/simpleobj3")\
+            .execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+if '"' in e_tag_2:
+    e_tag_2 = e_tag_2.split('"')[1]
+print("Etag: ", e_tag_2)
+
+parts = "Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"}," +\
+               "{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
+print(parts)
+
+# 3. Complete multipart upload
+result = AwsTest('Aws can complete multipart upload session')\
+            .complete_multipart_upload("mpcp-src-bucket", "merged1and3", parts, upload_id)\
+            .execute_test().command_is_successful()
+
+# *******************************************************************
+# *** multipart upload copy when source and destination are same. ***
+
+# 1. Create Multipart Upload sesseion.
+result = AwsTest('Aws can create multipart session')\
+            .create_multipart_upload("mpcp-src-bucket", "simpleobj1",
+                6291456, "test=uploadpartcopytest")\
+            .execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print("Upload Id: ", upload_id)
+
+# 2. Copy simple objects as 2 seperate parts in multipart uplaod session. 
+result = AwsTest('Aws can copy object as first part')\
+            .upload_part_copy("mpcp-src-bucket", "simpleobj1", "1" ,
+                              upload_id, "mpcp-src-bucket/simpleobj1")\
+            .execute_test(negative_case=True).command_should_fail()\
+            .command_error_should_have("InvalidRequest")
+
+result = AwsTest('Aws can abort multipard session')\
+            .abort_multipart_upload("mpcp-src-bucket", "simpleobj1", upload_id)\
+            .execute_test().command_is_successful()
+
+# Clenup : delete all the objects and bukcets created for UploadPartCopy API
+AwsTest('delete src obj 1').delete_object("mpcp-src-bucket", 'simpleobj1').execute_test().command_is_successful()
+AwsTest('delete src obj 2').delete_object("mpcp-src-bucket", 'simpleobj2').execute_test().command_is_successful()
+AwsTest('delete src obj 3').delete_object("mpcp-src-bucket", 'simpleobj3').execute_test().command_is_successful()
+AwsTest('delete merged obj').delete_object("mpcp-src-bucket", 'merged1and3').execute_test().command_is_successful()
+
+AwsTest('Aws can delete src bucket').delete_bucket("mpcp-src-bucket").execute_test().command_is_successful()
+AwsTest('Aws can delete dest bucket').delete_bucket("mpcp-dest-bucket").execute_test().command_is_successful()
+
+# **********************************************************************************************
 
 # ************ Put object with specified content-type ******************************************
 in_headers = {
