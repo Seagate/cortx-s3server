@@ -49,6 +49,8 @@ def get_aws_cli_object(raw_aws_cli_output):
     raw_lines = raw_aws_cli_output.split('\n')
     common_prefixes = []
     content_keys = []
+    versions = []
+    delete_markers = []
     for _, item in enumerate(raw_lines):
         if (item.startswith("COMMONPREFIXES")):
             # E.g. COMMONPREFIXES  quax/
@@ -58,6 +60,12 @@ def get_aws_cli_object(raw_aws_cli_output):
             # E.g. CONTENTS\t"98b5e3f766f63787ea1ddc35319cedf7"\tasdf\t2020-09-25T11:42:54.000Z\t3072\tSTANDARD
             line = item.split('\t')
             content_keys.append(line[2])
+        elif (item.startswith("VERSIONS")):
+            line = item.split('\t')
+            versions.append(line[3])
+        elif (item.startswith("DELETEMARKERS")):
+            line = item.split('\t')
+            delete_markers.append(line[3])
         elif (item.startswith("NEXTTOKEN")):
             # E.g. NEXTTOKEN       eyJDb250aW51YXRpb25Ub2tlbiI6IG51bGwsICJib3RvX3RydW5jYXRlX2Ftb3VudCI6IDN9
             line = item.split('\t')
@@ -69,6 +77,10 @@ def get_aws_cli_object(raw_aws_cli_output):
         cli_obj["prefix"] = common_prefixes
     if (content_keys is not None):
         cli_obj["keys"] = content_keys
+    if (versions is not None):
+        cli_obj["versions"] = versions
+    if (delete_markers is not None):
+        cli_obj["delete_markers"] = delete_markers
 
     return cli_obj
 
@@ -1841,6 +1853,308 @@ AwsTest('Aws can delete the latest version of the object (DeleteMarker)')\
 #     .execute_test()\
 #     .command_is_successful()
 
+#*********************List Object Versions***************************
+#******** Create Bucket ********
+AwsTest('Aws can create bucket')\
+    .create_bucket("versionlistbucket")\
+    .execute_test()\
+    .command_is_successful()
+
+AwsTest('Aws can enable versioning on bucket')\
+    .put_bucket_versioning("versionlistbucket", "Enabled")\
+    .execute_test()\
+    .command_is_successful()
+
+'''
+Create following keys (both, regular and heirarchical) into a bucket:
+----
+asdf
+bo0
+boo/0...boo/1
+boo#
+boo+
+fo0
+foo/0...foo/2
+foo#123
+foo+123
+qua0
+quax/0...quax/3
+quax#
+quax+
+-----
+'''
+# Step 0: Create directory with above structure.
+# Create temporary 's3listobjvertest' directory
+obj_list = []
+temp_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "s3listobjvertest")
+os.makedirs(temp_dir, exist_ok=True)
+# Clear contents of 's3listobjvertest' directory
+upload_content = temp_dir + "/*"
+os.system("rm -rf " + upload_content)
+# List of directories to create
+dirs = ['boo', 'foo', 'quax']
+filesize = 1024
+object_range = [2, 3, 4]
+index = 0
+for child_dir in dirs:
+    out_dir = os.path.join(temp_dir, child_dir)
+    os.makedirs(out_dir, exist_ok=True)
+    # Create files within directory
+    for i in range(object_range[index]):
+        filename = str(i)
+        key = "%s/%s" % (child_dir, filename)
+        file_to_create = os.path.join(out_dir, filename)
+        with open(file_to_create, 'wb+') as fout:
+            fout.write(os.urandom(filesize))
+        obj_list.append(key)
+    index = index + 1
+
+# Create remaining root level files
+file_list = ['asdf', 'bo0', 'boo#', 'boo+', 'fo0', 'foo#123', 'foo+123', 'qua0', 'quax#', 'quax+']
+for root_file in file_list:
+    file_to_create = os.path.join(temp_dir, root_file)
+    key = root_file
+    with open(file_to_create, 'wb+') as fout:
+        fout.write(os.urandom(filesize))
+    obj_list.append(key)
+
+# Step 1: Upload folder recrusively.
+#  Step 1.1: Create above keys into bucket 'versionlistbucket'
+AwsTest('Aws Upload folder recursively')\
+    .upload_objects("versionlistbucket", temp_dir)\
+    .execute_test()\
+    .command_is_successful()
+
+#  Step 1.2: Create object list file
+object_list_file = create_object_list_file("obj_list.json", obj_list, "true")
+
+# Step 2: Test plain request with no parameters
+# Command:= aws s3api list-object-versions --bucket <bucket>
+# Expected output:
+#   asdf, bo0, boo#, boo+, boo/0...boo/1, fo0, foo#123, foo+123,
+#   foo/0...foo/2, qua0, quax#, quax+, quax/0...quax/3
+expected_versions_list = ['asdf', 'bo0', 'boo#', 'boo+', 'boo/0', 'boo/1',
+    'fo0', 'foo#123', 'foo+123', 'foo/0', 'foo/1', 'foo/2', 'qua0', 'quax#',
+    'quax+','quax/0', 'quax/1', 'quax/2', 'quax/3']
+result = AwsTest("Aws list object versions with no parameters")\
+    .list_object_versions("versionlistbucket")\
+    .execute_test()\
+    .command_is_successful()
+
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get versions from the response
+object_versions = list_versions_response["versions"]
+print(f"Response: {list_versions_response} Versions received: {object_versions}")
+assert object_versions == expected_versions_list, "Failed to match expected versions in the list"
+
+# Step 3: Test page-size = 2 (max-keys)
+# Command:= aws s3api list-object-versions --bucket <bucket> --page-size 2
+# Expected output:
+#   asdf, bo0, boo#, boo+, boo/0...boo/1, fo0, foo#123, foo+123,
+#   foo/0...foo/2, qua0, quax#, quax+, quax/0...quax/3
+expected_versions_list = ['asdf', 'bo0', 'boo#', 'boo+', 'boo/0', 'boo/1',
+    'fo0', 'foo#123', 'foo+123', 'foo/0', 'foo/1', 'foo/2', 'qua0', 'quax#',
+    'quax+','quax/0', 'quax/1', 'quax/2', 'quax/3']
+page_size = 2
+result = AwsTest(f"Aws list object versions with max-keys {page_size}")\
+    .list_object_versions("versionlistbucket", {"page-size":page_size})\
+    .execute_test()\
+    .command_is_successful()
+
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get versions from the response
+object_versions = list_versions_response["versions"]
+print(f"Response: {list_versions_response} Versions received: {object_versions}")
+assert object_versions == expected_versions_list, "Failed to match expected versions in the list"
+
+# Step 4: Test prefix which is not present
+# Command:= aws s3api list-object-versions --bucket <bucket> --prefix "abcd"
+# Expected output: No versions should be returned
+prefix = "abcd"
+result = AwsTest(f"Aws list object versions with prefix {prefix}")\
+    .list_object_versions("versionlistbucket", {"prefix":prefix})\
+    .execute_test()\
+    .command_is_successful()
+
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get versions from the response
+object_versions = list_versions_response["versions"]
+print(f"Response: {list_versions_response} Versions received: {object_versions}")
+assert not object_versions, "Failed: no versions expected in the list"
+
+# Step 5: Test prefix = "boo"
+# Command:= aws s3api list-object-versions --bucket <bucket> --prefix "boo"
+# Expected output:
+#   boo#, # boo+, boo/0..boo/1
+prefix = "boo"
+expected_versions_list = ['boo#', 'boo+', 'boo/0', 'boo/1']
+result = AwsTest(f"Aws list object versions with prefix {prefix}")\
+    .list_object_versions("versionlistbucket", {"prefix":prefix})\
+    .execute_test()\
+    .command_is_successful()
+
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get versions from the response
+object_versions = list_versions_response["versions"]
+print(f"Response: {list_versions_response} Versions received: {object_versions}")
+assert object_versions == expected_versions_list, "Failed to match expected versions in the list"
+
+# Step 6: Test delimiter which is not present
+# Command:= aws s3api list-object-versions --bucket <bucket> --delimiter "="
+# Expected output:
+#   asdf, bo0, boo#, boo+, boo/0...boo/1, fo0, foo#123, foo+123,
+#   foo/0...foo/2, qua0, quax#, quax+, quax/0...quax/3
+expected_versions_list = ['asdf', 'bo0', 'boo#', 'boo+', 'boo/0', 'boo/1',
+    'fo0', 'foo#123', 'foo+123', 'foo/0', 'foo/1', 'foo/2', 'qua0', 'quax#',
+    'quax+','quax/0', 'quax/1', 'quax/2', 'quax/3']
+delimiter = "="
+result = AwsTest(f"Aws list object versions with delimiter {delimiter}")\
+    .list_object_versions("versionlistbucket", {"delimiter":delimiter})\
+    .execute_test()\
+    .command_is_successful()
+
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get versions from the response
+object_versions = list_versions_response["versions"]
+print(f"Response: {list_versions_response} Versions received: {object_versions}")
+assert object_versions == expected_versions_list, "Failed to match expected versions in the list"
+
+# Step 7: Test delimiter = "/"
+# Command:= aws s3api list-object-versions --bucket <bucket> --delimiter "/"
+# Expected output:
+#   asdf, bo0, boo#, boo+, fo0, foo#123, foo+123, qua0, quax#, quax+
+#   <Items under COMMONPREFIXES are as follows>
+#     boo/, foo/, quax/
+delimiter = "/"
+expected_versions_list = ['asdf', 'bo0', 'boo#', 'boo+', 'fo0', 'foo#123', 'foo+123', 'qua0', 'quax#', 'quax+']
+expected_common_prefixes = ['boo/', 'foo/', 'quax/']
+result = AwsTest(f"Aws list object versions with delimiter {delimiter}")\
+    .list_object_versions("versionlistbucket", {"delimiter":delimiter})\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get keys from the response
+object_versions = list_versions_response["versions"]
+common_prefixes = list_versions_response["prefix"]
+print(f"Response: {list_versions_response} Versions received: {object_versions} Common prefixes received: {common_prefixes}")
+assert object_versions == expected_versions_list, "Failed to match expected versions in the list"
+assert common_prefixes == expected_common_prefixes, "Failed to match expected common prefixes in the list"
+
+# Step 8: Test prefix = "foo" and delimiter = "/"
+# Command:= aws s3api list-object-versions --bucket <bucket> --page-size 2 --prefix "foo" --delimiter "/"
+# Expected output:
+#   foo#123, foo+123
+#   foo/ (Under COMMONPREFIXES)
+prefix = "foo"
+delimiter = "/"
+page_size = 2
+expected_versions_list = ['foo#123', 'foo+123']
+expected_common_prefixes = ['foo/']
+result = AwsTest(f"Aws list object versions with prefix {prefix} and delimiter {delimiter}")\
+    .list_object_versions("versionlistbucket", {"prefix":prefix,"delimiter":delimiter,"page-size":page_size})\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get versions/common prefixes from the response
+object_versions = list_versions_response["versions"]
+common_prefixes = list_versions_response["prefix"]
+print(f"Response: {list_versions_response} Versions received: {object_versions} Common prefixes received: {common_prefixes}")
+assert object_versions == expected_versions_list, "Failed to match expected versions in the list"
+assert common_prefixes == expected_common_prefixes, "Failed to match expected common prefixes in the list"
+
+# Step 9: Test max-items(max-keys) and key-marker parameters
+# Step 9.1: Command:= aws s3api list-object-versions --bucket <bucket> --max-items 1 --prefix "boo" --delimiter "/"
+# Expected part1 output:
+#  boo#
+#  boo/ (Under COMMONPREFIXES)
+prefix = "boo"
+max_items = 1
+expected_versions_list_part1 = ['boo#']
+expected_versions_list_part2 = ['boo+']
+expected_common_prefixes = ['boo/']
+result = AwsTest(f"Aws list object versions with prefix {prefix}, delimiter {delimiter} and max-items {max_items}")\
+    .list_object_versions("versionlistbucket", {"prefix":prefix, "delimiter":delimiter, "max-items":max_items})\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get keys from the response
+object_versions = list_versions_response["versions"]
+common_prefixes = list_versions_response["prefix"]
+print(f"Response: {list_versions_response} Versions received: {object_versions} Common prefixes received: {common_prefixes}")
+assert object_versions == expected_versions_list_part1, "Failed to match expected versions in the list"
+assert common_prefixes == expected_common_prefixes, "Failed to match expected common prefixes in the list"
+# Verify that NextToken is in the response and it is not empty
+assert "next_token" in list_versions_response, "NextToken is not present"
+assert list_versions_response["next_token"].strip(), "NextToken is empty"
+next_token = list_versions_response["next_token"]
+
+# Step 9.2: command:= aws s3api list-object-versions --bucket <bucket> --max-items 2 --prefix "boo" --delimiter "/" --starting-token <next_token>
+# Expected part2 output:
+#  boo+
+max_items = 2
+result = AwsTest(f"Aws list object versions with prefix {prefix}, delimiter {delimiter}, max-items {max_items} and starting-token {next_token}")\
+    .list_object_versions("versionlistbucket", {"prefix":prefix, "delimiter":delimiter, "max-items":max_items, "starting-token":next_token})\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get keys from the response
+object_versions = list_versions_response["versions"]
+print(f"Response: {list_versions_response} Versions received: {object_versions} Common prefixes received: {common_prefixes}")
+assert object_versions == expected_versions_list_part2, "Failed to match expected versions in the list"
+
+# Step 10: Test negative max-keys value
+# Command:= aws s3api list-object-versions --bucket <bucket> --max-keys -10
+# Expected output: Invalid parameter error is returned
+page_size = -10
+result = AwsTest(f"Aws list object versions with max-keys {page_size}")\
+    .list_object_versions("versionlistbucket", {"page-size":page_size})\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("InvalidArgument")\
+
+# Step 11: Test invalid encoding-type value
+# Command:= aws s3api list-object-versions --bucket <bucket> --encoding-type abcd
+# Expected output: Invalid parameter error is returned
+encoding = "abcd"
+result = AwsTest(f"Aws list object versions with encoding_type {encoding}")\
+    .list_object_versions("versionlistbucket", {"encoding":encoding})\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("InvalidArgument")\
+
+# Step 12: Delete all created objects in bucket 'versionlistbucket'
+AwsTest('Aws delete objects')\
+    .delete_multiple_objects("versionlistbucket", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+delete_object_list_file(object_list_file)
+os.system("rm -rf " + upload_content)
+os.rmdir(temp_dir)
+
+AwsTest('Aws can delete bucket')\
+    .delete_bucket("versionlistbucket")\
+    .execute_test()\
+    .command_is_successful()
 
 ################################################################################
 

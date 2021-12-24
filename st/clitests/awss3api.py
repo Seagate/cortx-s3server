@@ -196,6 +196,21 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def list_object_versions(self, bucket_name, kwargs_options=None):
+        self.bucket_name = bucket_name
+        extra_args = ""
+        if kwargs_options is not None:
+            for arg in ("prefix", "delimiter", "page-size", "starting-token", "max-items", "encoding"):
+                value = kwargs_options.get(arg)
+                if value is not None:
+                    if arg != "encoding":
+                        extra_args += f" --{arg} {value}"
+                    else:
+                        extra_args += f" --{arg}-type {value}"
+        cmd = f"aws s3api list-object-versions --bucket {bucket_name}{extra_args}"
+        self.with_cli(cmd)
+        return self
+
     def delete_object_tagging(self, bucket_name, object_name):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api " + "delete-object-tagging " + "--bucket " + bucket_name + " --key " + object_name)
