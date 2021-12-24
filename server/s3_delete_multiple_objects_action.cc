@@ -227,9 +227,9 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
   objects_metadata.clear();
   extended_oids_to_delete.clear();
   objects_metadata_with_extends.clear();
+  objects_metadata_with_extends_index = 0;
   extended_layout_id_for_objs_to_delete.clear();
   extended_pv_ids_to_delete.clear();
-  objects_metadata_with_extends.clear();
 
   bool atleast_one_json_error = false;
   bool all_had_json_error = true;
@@ -296,7 +296,8 @@ void S3DeleteMultipleObjectsAction::fetch_objects_extended_info() {
   if (objects_metadata_with_extends.size() == 0) {
     add_object_oid_to_probable_dead_oid_list();
   } else {
-    object_metadata = objects_metadata_with_extends[index++];
+    object_metadata =
+        objects_metadata_with_extends[objects_metadata_with_extends_index++];
     // Read the extended parts of the object from extended index table
     std::shared_ptr<S3ObjectExtendedMetadata> extended_obj_metadata =
         object_metadata_factory->create_object_ext_metadata_obj(
@@ -320,7 +321,8 @@ void S3DeleteMultipleObjectsAction::fetch_objects_extended_info() {
 
 void S3DeleteMultipleObjectsAction::fetch_objects_extended_info_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (index < objects_metadata_with_extends.size()) {
+  if (objects_metadata_with_extends_index <
+      objects_metadata_with_extends.size()) {
     fetch_objects_extended_info();
   } else {
     add_object_oid_to_probable_dead_oid_list();
@@ -334,7 +336,8 @@ void S3DeleteMultipleObjectsAction::fetch_objects_extended_info_failed() {
          "Failed to fetch object %s metadata, this may remain stale\n",
          object_metadata->get_object_name().c_str());
   object_metadata->set_extended_object_metadata(nullptr);
-  if (index < objects_metadata_with_extends.size()) {
+  if (objects_metadata_with_extends_index <
+      objects_metadata_with_extends.size()) {
     fetch_objects_extended_info();
   } else {
     add_object_oid_to_probable_dead_oid_list();

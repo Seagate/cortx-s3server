@@ -26,6 +26,7 @@
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_motr_kvs_writer.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -131,6 +132,13 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
 
  public:
   void func_callback_one() { call_count_one += 1; }
+  void dummy_put_keyval(const struct s3_motr_idx_layout &,
+                        const std::map<std::string, std::string> &,
+                        std::function<void(void)> on_success,
+                        std::function<void(void)> on_failed,
+                        S3MotrKVSWriter::CallbackType) {
+    action_under_test->next();
+  }
 };
 
 class S3PutChunkUploadObjectActionTestNoAuth
@@ -730,7 +738,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
@@ -760,7 +768,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
@@ -1021,6 +1029,49 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendSuccessResponse) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(200, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, resume(_)).Times(1);
+  action_under_test->old_object_oid = {0x1ffff, 0x1ffff};
+  action_under_test->old_oid_str = "abcd";
+  action_under_test->new_oid_str = "abcd";
+  action_under_test->new_object_oid = oid;
+  action_under_test->layout_id = 9;
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->new_object_metadata->set_extended_object_metadata(
+      object_meta_factory->mock_object_extnd_metadata);
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .WillRepeatedly(Return(std::string("abcd")));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(9));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index())
+      .WillRepeatedly(Return(std::string("abcd/18133434")));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_obj_version_key())
+      .WillRepeatedly(Return(std::string("18133434")));
+  object_meta_factory->mock_object_metadata->set_pvid_str(
+      action_under_test->new_oid_str);
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_extnd_metadata),
+              get_part_count()).WillRepeatedly(Return(2));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _, _))
+      .Times(1)
+      .WillRepeatedly(Invoke(
+           this, &S3PutChunkUploadObjectActionTestBase::dummy_put_keyval));
 
   action_under_test->send_response_to_s3_client();
 }

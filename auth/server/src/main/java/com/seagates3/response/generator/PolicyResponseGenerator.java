@@ -58,7 +58,7 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
 
    public
     ServerResponse limitExceeded(String errorMessage) {
-      return formatResponse(HttpResponseStatus.BAD_REQUEST, "LimitExceeded",
+      return formatResponse(HttpResponseStatus.CONFLICT, "LimitExceeded",
                             errorMessage);
     }
 
@@ -139,5 +139,23 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
     ServerResponse deletePolicyConflict(String errorMessage) {
       return formatResponse(HttpResponseStatus.BAD_REQUEST, "DeleteConflict",
                             errorMessage);
+    }
+
+   public
+    ServerResponse generateGetPolicyVersionResponse(Policy policy) {
+
+      ArrayList<LinkedHashMap<String, String>> policyMembers =
+          new ArrayList<>();
+      LinkedHashMap responseElements;
+      responseElements = new LinkedHashMap();
+      responseElements.put("Document", policy.getPolicyDoc());
+      responseElements.put("VersionId", policy.getDefaultVersionid());
+      responseElements.put("IsDefaultVersion", "true");
+      responseElements.put("CreateDate", policy.getCreateDate());
+
+      policyMembers.add(responseElements);
+      return new XMLResponseFormatter().formatGetResponse(
+          "GetPolicyVersion", "PolicyVersion", policyMembers,
+          AuthServerConfig.getReqId());
     }
 }

@@ -161,7 +161,7 @@ TEST_F(MotrPutKeyValueActionTest, PutKeyValue) {
       ReturnRef(key));
 
   EXPECT_CALL(*(mock_motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, key, _, _, _)).Times(1);
+              put_keyval(_, key, _, _, _, _)).Times(1);
 
   action_under_test->put_key_value();
 }

@@ -1,0 +1,91 @@
+{
+  "post_install": {
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "files": [
+      "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties"
+    ]
+  },
+  "config": {
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslogd"],
+    "files": [
+      "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties"
+    ]
+  },
+  "init": {
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslogd"],
+    "files": [
+      "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+      "file:/etc/cortx/s3/conf/s3config.yaml",
+      "file:/etc/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/etc/cortx/auth/resources/keystore.properties",
+      "file:/etc/cortx/auth/resources/authserver.properties"
+    ]
+  },
+  "reset": {
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
+  },
+  "prepare": {
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
+  },
+  "cleanup": {
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
+  },
+  "test" :
+  {
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "s3cmd", "s3iamcli"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
+  },
+  "preupgrade" :
+  {
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "files": [
+      "file:/etc/cortx/s3/conf/s3config.yaml",
+      "file:/etc/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/etc/cortx/auth/resources/keystore.properties",
+      "file:/etc/cortx/auth/resources/authserver.properties",
+      "file:/etc/cortx/s3/conf/s3config.yaml.sample",
+      "file:/etc/cortx/s3/s3backgrounddelete/config.yaml.sample",
+      "file:/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+      "file:/etc/cortx/auth/resources/keystore.properties.sample",
+      "file:/etc/cortx/auth/resources/authserver.properties.sample"
+    ]
+  },
+  "postupgrade" :
+  {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "files": [
+      "file:/etc/cortx/s3/conf/s3config.yaml",
+      "file:/etc/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/etc/cortx/auth/resources/keystore.properties",
+      "file:/etc/cortx/auth/resources/authserver.properties",
+      "file:/etc/cortx/s3/conf/s3config.yaml.sample",
+      "file:/etc/cortx/s3/s3backgrounddelete/config.yaml.sample",
+      "file:/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+      "file:/etc/cortx/auth/resources/keystore.properties.sample",
+      "file:/etc/cortx/auth/resources/authserver.properties.sample"
+    ]
+  }
+}

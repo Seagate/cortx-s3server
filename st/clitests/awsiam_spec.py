@@ -20,6 +20,7 @@
 import os
 import sys
 import yaml
+import time
 from framework import Config
 from framework import S3PyCliTest
 from awsiam import AwsIamTest
@@ -30,6 +31,7 @@ from s3fi import S3fiTest
 import shutil
 from auth import AuthTest
 from ldap_setup import LdapInfo
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 def prepare_test_data_for_user_policies(username):
     policy_arns = []
@@ -137,6 +139,18 @@ def iam_policy_crud_tests():
     #get-policy
     AwsIamTest('Get Policy').get_policy(arn).execute_test().command_response_should_have("iampolicy")
 
+    #get-policy-version
+    AwsIamTest('Get Policy Version').get_policy_version(arn, "v1").execute_test() \
+        .command_is_successful().command_response_should_have("POLICYVERSION")
+
+    #get-policy-version with wrong version id
+    AwsIamTest('Get Policy Version').get_policy_version(arn, "v4").execute_test(negative_case=True) \
+        .command_should_fail().command_error_should_have("NoSuchEntity")
+
+    #get-policy-version with wrong policy arn
+    AwsIamTest('Get Policy Version').get_policy_version("arn:aws:iam::893266879798:policy/iampolicy67", "v1").execute_test(negative_case=True) \
+        .command_should_fail().command_error_should_have("NoSuchEntity")
+
     #list-policies
     result = AwsIamTest('List Policies').list_policies().execute_test()
     total_policies = get_policy_list_count(result.status.stdout, "POLICIES")
@@ -222,6 +236,41 @@ def iam_policy_crud_tests():
     samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
     result = AwsIamTest('Policy Validation-Duplicate SIDs').create_policy("invalidPolicy7",samplepolicy_testing)\
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+# Validate maxIAMPolicy limit values from authserver.properties file
+def test_max_iam_policy_limit_value_of_auth_config():
+    # Update config paramters with test data
+    print("Updating autherver.properties (/etc/cortx/auth/resources/authserver.properties) file with test values..")
+    s3confstore = S3CortxConfStore('properties:///etc/cortx/auth/resources/authserver.properties', 'index')
+    old_maxIAMPolicyValue=s3confstore.get_config('maxIAMPolicyLimit')
+    s3confstore.set_config('maxIAMPolicyLimit', '1', True)
+    os.system('systemctl restart s3authserver')
+    time.sleep(30) # sometime authserver takes more time to restart
+    print("auth config values are changed successfully..")
+
+    #create-policy
+    print("Creating policy for testing max iam policy limit")
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Create Policy').create_policy("iampolicy",samplepolicy_testing).execute_test()
+    result.command_response_should_have("iampolicy")
+    arn = (get_arn_from_policy_object(result.status.stdout))
+
+    #create-policy validation fails: Policy creation LimitExceeded
+    samplepolicy = os.path.join(os.path.dirname(__file__), 'policy_files', 'iam-policy.json')
+    samplepolicy_testing = "file://" + os.path.abspath(samplepolicy)
+    result = AwsIamTest('Policy Validation-Create Policy LimitExceeded').create_policy("iampolicy2",samplepolicy_testing)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("LimitExceeded")
+
+    #delete-policy
+    print("Deleting a policy created for testing max iam policy limit")
+    AwsIamTest('Delete Policy').delete_policy(arn).execute_test().command_is_successful()
+
+    # Restore config paramters
+    s3confstore.set_config('maxIAMPolicyLimit', old_maxIAMPolicyValue, True)
+    os.system('systemctl restart s3authserver')
+    time.sleep(30) # sometime authserver takes more time to restart
+    print("Reverted authserver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) with origional values successfully...")
 
 def user_policy_tests():
     #create-user
@@ -358,7 +407,7 @@ def user_policy_tests():
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
 
     #detach-user-policy with non existing policy
-    result = AwsIamTest('Detach User Policy').detach_user_policy("testUser", "arn:seagate:iam::103947660857:policy/oiuou") \
+    result = AwsIamTest('Detach User Policy').detach_user_policy("testUser", "arn:aws:iam::103947660857:policy/oiuou") \
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchEntity")
 
     #detach-user-policy with non attached policy
@@ -523,7 +572,9 @@ def iam_policy_authorization_tests():
 
 if __name__ == '__main__':
 
-    #user_tests()
-    #iam_policy_crud_tests()
+    # Do not change the order.
+    user_tests()
+    iam_policy_crud_tests()
+    test_max_iam_policy_limit_value_of_auth_config()
     user_policy_tests()
-    #iam_policy_authorization_tests()
+    iam_policy_authorization_tests()
