@@ -378,7 +378,7 @@ public class AccountImpl implements AccountDAO {
           LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
           LDAPUtils.BASE_DN);
 
-        LOGGER.info("Deleting account dn: " + dn);
+      LOGGER.info("Deleting account dn: " + dn);
 
         try {
             LDAPUtils.delete(dn);
@@ -486,7 +486,7 @@ public class AccountImpl implements AccountDAO {
           LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
           LDAPUtils.BASE_DN);
 
-        LOGGER.info("Creating Groups dn: " + dn);
+      LOGGER.info("Creating Groups dn: " + dn);
 
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
