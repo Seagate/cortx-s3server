@@ -22,14 +22,13 @@
 #include <json/json.h>
 
 #include "s3_api_handler.h"
+#include "s3_data_usage.h"
 #include "s3_data_usage_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
 #include "s3_option.h"
 
 extern struct s3_motr_idx_layout data_usage_accounts_index_layout;
-#define JSON_OBJECTS_COUNT "objects_count"
-#define JSON_BYTES_COUNT "bytes_count"
 
 S3DataUsageAction::S3DataUsageAction(
     std::shared_ptr<S3RequestObject> req,
@@ -70,43 +69,16 @@ void S3DataUsageAction::get_data_usage_counters() {
   s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
 }
 
-std::string extract_account_id_from_motr_key(const std::string& motr_key) {
-  const char account_id_delimeter = '/';
-  auto pos = motr_key.find(account_id_delimeter);
-  return (pos != std::string::npos ? motr_key.substr(0, pos) : "");
-}
-
-int from_json(std::string json, int64_t* p_objects_count,
-              int64_t* p_bytes_count) {
-  Json::Value newroot;
-  Json::Reader reader;
-  bool parsingSuccessful = reader.parse(json.c_str(), newroot);
-  if (!parsingSuccessful) {
-    return -1;
-  }
-
-  if (!newroot.isMember(JSON_OBJECTS_COUNT) ||
-      !newroot.isMember(JSON_BYTES_COUNT)) {
-    return -1;
-  }
-
-  if (p_objects_count) {
-    *p_objects_count = newroot[JSON_OBJECTS_COUNT].asInt64();
-  }
-  if (p_bytes_count) {
-    *p_bytes_count = newroot[JSON_BYTES_COUNT].asInt64();
-  }
-  return 0;
-}
-
 void S3DataUsageAction::get_next_keyval_success() {
   s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
   auto& kvps = motr_kvs_reader->get_key_values();
   for (auto& kv : kvps) {
     std::string key = kv.first;
     std::string json = kv.second.second;
-    s3_log(S3_LOG_DEBUG, request_id, "Read key = %s\n  value=%s", key.c_str(), json.c_str());
-    std::string account_id = extract_account_id_from_motr_key(key);
+    s3_log(S3_LOG_DEBUG, request_id, "Read key = %s\n  value=%s", key.c_str(),
+           json.c_str());
+    std::string account_id = DataUsageItem::extract_account_id_from_motr_key(
+        stripped_request_id, key);
     if (account_id.empty()) {
       s3_log(
           S3_LOG_ERROR, stripped_request_id,
@@ -115,14 +87,15 @@ void S3DataUsageAction::get_next_keyval_success() {
       continue;
     }
     int64_t bytes_counter;
-    if (from_json(json, nullptr, &bytes_counter) != 0) {
+    if (DataUsageItem::from_json(stripped_request_id, json, nullptr,
+                                 &bytes_counter) != 0) {
       s3_log(S3_LOG_ERROR, stripped_request_id,
              "Failed to extract the counters from json %s. Skipping the record",
              json.c_str());
       continue;
     }
 
-    if (counters.find(account_id) != counters.end()) {
+    if (counters.find(account_id) == counters.end()) {
       counters[account_id] = bytes_counter;
     } else {
       counters[account_id] += bytes_counter;
@@ -175,9 +148,8 @@ std::string S3DataUsageAction::create_json_response() {
   Json::Value root(Json::arrayValue);
   for (auto& cnt : counters) {
     Json::Value account;
-    Json::Value counters;
-    counters[JSON_BYTES_COUNT] = Json::Value((Json::Value::Int64)(cnt.second));
-    account[cnt.first] = counters;
+    account[cnt.first] =
+        DataUsageItem::to_json_value(stripped_request_id, nullptr, &cnt.second);
     root.append(account);
   }
   Json::FastWriter fastWriter;
