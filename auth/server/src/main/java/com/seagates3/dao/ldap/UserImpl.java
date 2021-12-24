@@ -21,6 +21,8 @@
 package com.seagates3.dao.ldap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,11 +62,11 @@ public class UserImpl implements UserDAO {
      user.setName(userName);
 
      String[] attrs = {
-         LDAPUtils.USER_ID,            LDAPUtils.PATH,
-         LDAPUtils.ARN,                LDAPUtils.ROLE_NAME,
-         LDAPUtils.OBJECT_CLASS,       LDAPUtils.CREATE_TIMESTAMP,
-         LDAPUtils.PASSWORD,           LDAPUtils.PASSWORD_RESET_REQUIRED,
-         LDAPUtils.PROFILE_CREATE_DATE};
+         LDAPUtils.USER_ID,             LDAPUtils.PATH,
+         LDAPUtils.ARN,                 LDAPUtils.ROLE_NAME,
+         LDAPUtils.OBJECT_CLASS,        LDAPUtils.CREATE_TIMESTAMP,
+         LDAPUtils.PASSWORD,            LDAPUtils.PASSWORD_RESET_REQUIRED,
+         LDAPUtils.PROFILE_CREATE_DATE, LDAPUtils.POLICY_ID};
 
      String userBaseDN = String.format(
          "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
@@ -145,6 +147,14 @@ public class UserImpl implements UserDAO {
        catch (Exception e) {
          LOGGER.debug("ARN value not found in ldap");
        }
+       try {
+         List<String> policyIds = new ArrayList<String>(Arrays.asList(
+             entry.getAttribute(LDAPUtils.POLICY_ID).getStringValueArray()));
+         user.setPolicyIds(policyIds);
+       }
+       catch (Exception e) {
+         LOGGER.debug("Policy Id value not found in ldap");
+       }
      }
      return user;
    }
@@ -170,7 +180,8 @@ public class UserImpl implements UserDAO {
 
      String[] attrs = {LDAPUtils.COMMON_NAME,  LDAPUtils.PATH,
                        LDAPUtils.ARN,          LDAPUtils.ROLE_NAME,
-                       LDAPUtils.OBJECT_CLASS, LDAPUtils.CREATE_TIMESTAMP};
+                       LDAPUtils.OBJECT_CLASS, LDAPUtils.CREATE_TIMESTAMP,
+                       LDAPUtils.POLICY_ID};
      String userBaseDN = String.format(
          "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
          LDAPUtils.USER_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
@@ -216,6 +227,15 @@ public class UserImpl implements UserDAO {
            ldapEntry.getAttribute(LDAPUtils.CREATE_TIMESTAMP).getStringValue());
        user.setCreateDate(createTime);
        user.setArn(ldapEntry.getAttribute(LDAPUtils.ARN).getStringValue());
+       try {
+         List<String> policyIds = new ArrayList<String>(
+             Arrays.asList(ldapEntry.getAttribute(LDAPUtils.POLICY_ID)
+                               .getStringValueArray()));
+         user.setPolicyIds(policyIds);
+       }
+       catch (Exception e) {
+         LOGGER.debug("Policy Id value not found in ldap");
+       }
      }
 
      return user;

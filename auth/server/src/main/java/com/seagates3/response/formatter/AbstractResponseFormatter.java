@@ -64,4 +64,10 @@ abstract class AbstractResponseFormatter {
 
  public
   abstract ServerResponse formatChangePasswordResponse(String operation);
+
+ public
+  abstract ServerResponse formatAttachUserPolicyResponse(String operation);
+
+ public
+  abstract ServerResponse formatDetachUserPolicyResponse(String operation);
 }

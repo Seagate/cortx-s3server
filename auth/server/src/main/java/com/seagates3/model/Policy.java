@@ -20,11 +20,21 @@
 
 package com.seagates3.model;
 
-public class Policy {
+import java.io.Serializable;
+
+public
+class Policy implements Serializable {
 
     private int attachmentCount;
+    private
+     int permissionsBoundaryUsageCount;
     private String description, path, name, policyDoc, policyId;
-    private String arn, defaultVersionId, createDate, updateDate;
+    private
+     String arn;
+    private
+     String defaultVersionId, createDate;
+    private
+     String updateDate, isPolicyAttachable;
     private Account account;
 
     /**
@@ -234,4 +244,38 @@ public class Policy {
     public boolean exists() {
         return policyId != null;
     }
+
+     /**
+       * returns permission boundary usage count
+       * @return
+       */
+    public
+     int getPermissionsBoundaryUsageCount() {
+       return permissionsBoundaryUsageCount;
+     }
+
+     /**
+      * sets the permission boundary count
+      * @param permissionsBoundaryUsageCount
+      */
+    public
+     void setPermissionsBoundaryUsageCount(int permissionsBoundaryUsageCount) {
+       this.permissionsBoundaryUsageCount = permissionsBoundaryUsageCount;
+     }
+
+     /**
+      * checks if policy is attachable to user or not
+      * @return
+      */
+    public
+     String getIsPolicyAttachable() { return isPolicyAttachable; }
+
+     /**
+      * sets whether policy is attachable or not
+      * @param isPolicyAttachable
+      */
+    public
+     void setIsPolicyAttachable(String isPolicyAttachable) {
+       this.isPolicyAttachable = isPolicyAttachable;
+     }
 }

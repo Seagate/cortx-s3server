@@ -91,3 +91,66 @@ class AwsIamTest(PyCliTest):
         self.user_name = user_name
         self.with_cli("aws iam " + "get-login-profile " + "--user-name " + user_name)
         return self
+
+    def create_policy(self, policy_name, policy):
+        cmd = "aws iam create-policy --policy-name " + policy_name + " --policy-document " + policy
+        self.with_cli(cmd)
+        return self
+
+    def create_policy_with_path(self, policy_name, policy, path):
+        cmd = "aws iam create-policy --policy-name " + policy_name + " --policy-document " + policy + " --path " + path
+        self.with_cli(cmd)
+        return self
+
+    def get_policy(self, arn):
+        cmd = "aws iam get-policy --policy-arn " + arn
+        self.with_cli(cmd)
+        return self
+
+    def get_policy_version(self, arn, version):
+        cmd = f"aws iam get-policy-version --policy-arn {arn} --version-id {version}"
+        self.with_cli(cmd)
+        return self
+
+    def delete_policy(self, arn):
+        cmd = "aws iam delete-policy --policy-arn " + arn
+        self.with_cli(cmd)
+        return self
+
+    def list_policies(self, **kwargs):
+        cmd = "aws iam list-policies"
+        if kwargs.get("path_prefix"):
+            cmd = cmd + " --path-prefix " + kwargs.get("path_prefix")
+        if kwargs.get("only_attached"):
+            cmd = cmd + " --only-attached "
+        self.with_cli(cmd)
+        return self
+
+    def attach_user_policy(self, user_name, policy_arn):
+        cmd = f"aws iam attach-user-policy --policy-arn {policy_arn} --user-name {user_name}"
+        self.with_cli(cmd)
+        return self
+
+    def detach_user_policy(self, user_name, policy_arn):
+        cmd = f"aws iam detach-user-policy --policy-arn {policy_arn} --user-name {user_name}"
+        self.with_cli(cmd)
+        return self
+
+    def list_attached_user_policies(self, user_name, **kwargs):
+        cmd = f"aws iam list-attached-user-policies --user-name {user_name}"
+        if kwargs.get("path_prefix"):
+            cmd = cmd + " --path-prefix " + kwargs.get("path_prefix")
+        self.with_cli(cmd)
+        return self
+
+    def create_access_key(self, user_name):
+        self.with_cli("aws iam create-access-key " + "--user-name " + user_name)
+        return self
+
+    def delete_access_key(self, ak):
+        self.with_cli("aws iam delete-access-key " + "--access-key-id " + ak)
+        return self
+
+    def list_access_keys(self, user_name):
+        self.with_cli("aws iam list-access-keys " + "--user-name " + user_name)
+        return self

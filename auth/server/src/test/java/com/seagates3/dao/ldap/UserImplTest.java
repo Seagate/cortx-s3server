@@ -59,15 +59,16 @@ import com.seagates3.model.User;
 
     private
      final String[] FIND_ATTRS = {
-         "s3userid",     "path",        "arn",
-         "rolename",     "objectclass", "createtimestamp",
-         "userPassword", "pwdReset",    "profileCreateDate"};
+         "s3userid",          "path",            "arn",          "rolename",
+         "objectclass",       "createtimestamp", "userPassword", "pwdReset",
+         "profileCreateDate", "policyId"};
     private
      final String[] FIND_ALL_ATTRS = {"s3userid",        "cn", "path",
                                       "createtimestamp", "arn"};
     private
      final String[] FIND_BYUSERID_ATTRS = {
-         "cn", "path", "arn", "rolename", "objectclass", "createtimestamp"};
+         "cn",          "path",            "arn",     "rolename",
+         "objectclass", "createtimestamp", "policyId"};
     private
      final int maxResults = 1000;
     private final String LDAP_DATE;

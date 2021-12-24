@@ -70,8 +70,8 @@ olcAttributeTypes: {20}( 1.3.6.1.4.99999.2.3.21 NAME 'defaultVersionId' DESC '
  Number of entities the policy is attached to.' EQUALITY caseExactMatch SYNTAX
   1.3.6.1.4.1.1466.115.121.1.15 )
 olcAttributeTypes: {21}( 1.3.6.1.4.99999.2.3.22 NAME 'isPolicyAttachable' DESC
-  'Indicates if the policy can be attched to an entity.' SYNTAX 1.3.6.1.4.1.14
- 66.115.121.1.7 )
+ 'Indicates if the policy can be attched to an entity.' SYNTAX 1.3.6.1.4.1.14
+ 66.115.121.1.15 )
 olcAttributeTypes: {22}( 1.3.6.1.4.99999.2.3.23 NAME 'groupName' DESC 'Name of
   the group.' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
 olcAttributeTypes: {23}( 1.3.6.1.4.99999.2.3.24 NAME 'inlinePolicy' DESC 'Inli
@@ -81,12 +81,23 @@ olcAttributeTypes: {24}( 1.3.6.1.4.99999.2.3.25 NAME 'profileCreateDate' DES
  C 'Login profile create Timestamp' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 )
 olcAttributeTypes: {25}( 1.3.6.1.4.99999.2.3.26 NAME 'arn' DESC 'Resource Name
  s' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+olcAttributeTypes: {26}( 1.3.6.1.4.99999.2.3.27 NAME 'policyArn' DESC 'PolicyA
+ RN' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+olcAttributeTypes: {27}( 1.3.6.1.4.99999.2.3.28 NAME 'createDate' DESC 'CreateD
+ ate' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+olcAttributeTypes: {28}( 1.3.6.1.4.99999.2.3.29 NAME 'updateDate' DESC 'UpdateD
+ ate' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+olcAttributeTypes: {29}( 1.3.6.1.4.99999.2.3.30 NAME 'permissionsBoundaryUsageC
+ ount' DESC 'PermissionsBoundaryUsageCount' EQUALITY caseExactMatch SYNTAX 1.3.
+ 6.1.4.1.1466.115.121.1.15 )
+olcAttributeTypes: {30}( 1.3.6.1.4.99999.2.3.31 NAME 'attachmentCount' DESC 'at
+ tachmentCount' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
 olcObjectClasses: {0}( 1.3.6.1.4.99999.2.4.1 NAME 'Account' DESC 'S3 Account'
  SUP top STRUCTURAL MUST ( o $ accountId $ mail $ canonicalId ) MAY ( userPass
  word $ profileCreateDate ) )
 olcObjectClasses: {1}( 1.3.6.1.4.99999.2.4.2 NAME 'iamUser' DESC 'S3 User' SUP
   top STRUCTURAL MUST ( cn $ s3userId ) MAY ( userPassword $ path $ inlinePoli
- cy $ policyId $ profileCreateDate $ arn ) )
+ cy $ policyId $ profileCreateDate $ arn $ groupId ) )
 olcObjectClasses: {2}( 1.3.6.1.4.99999.2.4.3 NAME 'iamFedUser' DESC 'S3 federa
  ted user' SUP top STRUCTURAL MUST ( cn $ s3userId ) MAY inlinePolicy )
 olcObjectClasses: {3}( 1.3.6.1.4.99999.2.4.4 NAME 'roleUser' DESC 'S3 Role use
@@ -103,7 +114,8 @@ olcObjectClasses: {7}( 1.3.6.1.4.99999.2.4.8 NAME 'role' DESC 'Role' SUP top S
  y $ policyId ) )
 olcObjectClasses: {8}( 1.3.6.1.4.99999.2.4.9 NAME 'policy' DESC 'Policy' SUP t
  op STRUCTURAL MUST ( policyName $ policyDoc $ policyId $ defaultVersionId $ p
- ath ) MAY description )
+ ath $ policyArn $ createDate $ updateDate $ permissionsBoundaryUsageCount $ a
+ ttachmentCount $ isPolicyAttachable ) MAY description )
 olcObjectClasses: {9}( 1.3.6.1.4.99999.2.4.10 NAME 'group' DESC 'Group' SUP to
  p STRUCTURAL MUST ( groupName $ groupId $ path ) MAY ( inlinePolicy $ policyI
- d ) )
+ d $ arn ) )

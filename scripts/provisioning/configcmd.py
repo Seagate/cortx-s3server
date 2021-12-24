@@ -86,6 +86,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
+
       self.logger.info("common config started")
       self.process_common()
       self.logger.info("common config completed")
@@ -313,6 +314,7 @@ class ConfigCmd(SetupCmd):
       self.logger.info("symbolic link is unlinked")
     os.symlink(src_path, dst_path)
     self.logger.info(f"symbolic link created successfully")
+
 
   def create_symbolic_link_fid(self):
     """ Create symbolic link of FID sysconfig file."""
@@ -602,6 +604,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY", "ldapLoginPW")
     self.logger.info("Update s3 authserver config file completed")
 
+
   def update_auth_ldap_host (self, value_to_update, additional_param):
     if type(value_to_update) is str:
       value_to_update = literal_eval(value_to_update)
@@ -671,6 +674,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info(f's3_auth_ldap_login_dn: {s3_auth_ldap_login_dn}')
     return s3_auth_ldap_login_dn
 
+
   def update_s3_bgdelete_scheduler_configs(self):
     """ Update s3 bgdelete scheduler configs."""
     self.logger.info("Update s3 bgdelete scheduler config file started")
@@ -688,6 +692,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_logger_directory", self.update_bgdelete_processor_log_dir)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_log_file", self.update_bgdelete_processor_log_file_path)
     self.logger.info("Update s3 bgdelete worker config file completed")
+
 
   def update_bgdelete_producer_endpoint(self, value_to_update, additional_param):
     if isinstance(value_to_update, str):

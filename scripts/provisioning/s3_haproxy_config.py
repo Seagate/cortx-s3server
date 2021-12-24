@@ -202,6 +202,7 @@ class S3HaproxyConfig:
       #  raise e
       #self.logger.info("Reloaded haproxy service...")
 
+
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")
 
@@ -305,6 +306,7 @@ defaults
 #----------------------------------------------------------------------
 # FrontEnd S3 Configuration
 #----------------------------------------------------------------------
+
 frontend s3-main-frontend
     # s3 server port
 '''
@@ -312,6 +314,7 @@ frontend s3-main-frontend
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorithm
 #----------------------------------------------------------------------
+
 backend s3-main-backend
     balance static-rr                                     #Balance algorithm
     http-response set-header Server SeagateS3
@@ -354,6 +357,7 @@ backend s3-auth
          "   bind 0.0.0.0:%s ssl crt %s\n"
          "\n"
          "   option forwardfor\n"
+
          "   default_backend s3-main-backend\n"
          "\n"
          "   # s3 bgdelete server port\n"

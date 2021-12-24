@@ -48,6 +48,7 @@ class InitCmd(SetupCmd):
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+
     # validate config files as per services.
     self.logger.info("validate s3 cluster config file started")
     self.validate_config_file(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),

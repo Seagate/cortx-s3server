@@ -817,3 +817,4 @@ class SetupCmd(object):
     except Exception as e:
       raise S3PROVError(f'Failed to parse endpoing {endpoint_str}.  Exception: {e}')
     return result
+

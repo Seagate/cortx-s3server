@@ -30,6 +30,7 @@ samlMetadataFileName=saml-metadata.xml
 # operations can be configured using below three paramters.
 maxAccountLimit=1000
 maxIAMUserLimit=1000
+maxIAMPolicyLimit=1000
 ldapSearchResultsSizeLimit=1000
 dataSource=ldap
 ldapHost=127.0.0.1
@@ -82,4 +83,11 @@ RsyslogHostname=127.0.0.1
 RsyslogPort=514
 # Rsyslog msgid to filter messages for S3AuthServer
 RsyslogMsgId=s3authserver-audit-logging
-
+# IAM policy store option
+# LDAP - IAM policy will be stored in LDAP
+# MOTR - IAM Policy will be stored in motr i/o or motr kvs
+authStore=LDAP
+# Policy Document Version
+policyVersion=2012-10-17
+#IAM Policy Feature Enable(true)/Disable(false) Switch
+enableIamPolicy=true

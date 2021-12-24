@@ -20,12 +20,17 @@
 
 package com.seagates3.controller;
 
+import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.constants.APIRequestParamsConstants;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.PolicyDAO;
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Account;
 import com.seagates3.model.Policy;
 import com.seagates3.model.Requestor;
+import com.seagates3.policy.IAMPolicyValidator;
+import com.seagates3.policy.PolicyValidator;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.PolicyResponseGenerator;
 import com.seagates3.util.ARNUtil;
@@ -36,10 +41,14 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.List;
+
 public class PolicyController extends AbstractController {
 
     PolicyDAO policyDAO;
     PolicyResponseGenerator responseGenerator;
+    PolicyValidator iamPolicyValidator = null;
     private final Logger LOGGER =
             LoggerFactory.getLogger(PolicyController.class.getName());
 
@@ -48,33 +57,65 @@ public class PolicyController extends AbstractController {
         super(requestor, requestBody);
 
         policyDAO = (PolicyDAO) DAODispatcher.getResourceDAO(DAOResource.POLICY);
+        iamPolicyValidator = new IAMPolicyValidator();
         responseGenerator = new PolicyResponseGenerator();
     }
 
     /**
-     * Create new role.
+     * Create new policy
      *
      * @return ServerReponse
      */
     @Override
     public ServerResponse create() {
         Policy policy;
+        int existingPoliciesCount;
+        String policyName =
+            requestBody.get(APIRequestParamsConstants.POLICY_NAME);
+        Account account = requestor.getAccount();
+        int maxIAMpolicyLimit = AuthServerConfig.getMaxIAMPolicyLimit();
         try {
-            policy = policyDAO.find(requestor.getAccount(),
-                    requestBody.get("PolicyName"));
+          existingPoliciesCount = getExistingPoliciesCount(account);
+
+          if (existingPoliciesCount >= maxIAMpolicyLimit) {
+            LOGGER.error("Maximum allowed Policy limit has exceeded (i.e." +
+                         maxIAMpolicyLimit + ")");
+            return responseGenerator.limitExceeded(
+                "The request was rejected because it attempted to create " +
+                "policy beyond the current limit (i.e " + maxIAMpolicyLimit +
+                " )");
+          }
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to get total policy count from ldap " + ex);
+          return responseGenerator.internalServerError();
+        }
+        try {
+          policy = policyDAO.find(account, policyName);
         } catch (DataAccessException ex) {
+          LOGGER.error("Failed to create policy- " + policyName);
             return responseGenerator.internalServerError();
         }
 
-        if (policy.exists()) {
+        if (policy != null && policy.exists()) {
             return responseGenerator.entityAlreadyExists();
         }
-
+        LOGGER.debug("Validating IAM policy: " + policyName);
+        ServerResponse response = iamPolicyValidator.validatePolicy(
+            null, requestBody.get("PolicyDocument"));
+        if (response != null) {
+          LOGGER.error("Validation failed for IAM policy: " + policyName);
+          return response;
+        }
+        LOGGER.debug("Validation successful for IAM policy: " + policyName);
+        policy = new Policy();
+        policy.setName(policyName);
+        policy.setAccount(account);
         policy.setPolicyId(KeyGenUtil.createId());
         policy.setPolicyDoc(requestBody.get("PolicyDocument"));
 
-        String arn = ARNUtil.createARN(requestor.getAccount().getId(), "policy",
-                policy.getPolicyId());
+        String arn = ARNUtil.createARN(account.getId(), "policy",
+                                       requestBody.get("PolicyName"));
         policy.setARN(arn);
 
         if (requestBody.containsKey("path")) {
@@ -97,10 +138,166 @@ public class PolicyController extends AbstractController {
         try {
             policyDAO.save(policy);
         } catch (DataAccessException ex) {
+          LOGGER.error("Exception while saving the policy- " +
+                       requestBody.get("PolicyName"));
             return responseGenerator.internalServerError();
+        }
+
+        // Handle multi-threaded/ multi-node create() API calls.
+        try {
+          existingPoliciesCount = getExistingPoliciesCount(account);
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to get total policy count from ldap:" + ex);
+          return responseGenerator.internalServerError();
+        }
+        try {
+          if (existingPoliciesCount > maxIAMpolicyLimit) {
+            policyDAO.delete (policy);
+            return responseGenerator.internalServerError();
+          }
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to create user entry -" + ex);
+          return responseGenerator.internalServerError();
         }
 
         return responseGenerator.generateCreateResponse(policy);
     }
+    /**
+       * Delete an IAM Policy.
+       *
+       * @return ServerResponse
+       */
+    @Override public ServerResponse delete () {
+      Policy policy = null;
+      try {
+        policy = policyDAO.findByArn(
+            requestBody.get(APIRequestParamsConstants.POLICYARN),
+            requestor.getAccount());
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to find the requested policy in ldap- " +
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
+        return responseGenerator.internalServerError();
+      }
+      if (policy == null || !policy.exists()) {
+        LOGGER.error(requestBody.get(APIRequestParamsConstants.POLICYARN) +
+                     "Policy does not exists");
+        return responseGenerator.noSuchEntity();
+      }
+      if (policy.getAttachmentCount() > 0) {
+        LOGGER.error(
+            requestBody.get(APIRequestParamsConstants.POLICYARN) +
+            " cannot be deleted because it is attached to the entities.");
+        return responseGenerator.deletePolicyConflict(
+            "Cannot delete a policy attached to entities.");
+      }
+      LOGGER.info("Deleting policy : " + policy.getName());
+      try {
+        policy.setAccount(requestor.getAccount());
+        policyDAO.delete (policy);
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to delete requested policy- " +
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
+        return responseGenerator.internalServerError();
+      }
+      return responseGenerator.generateDeleteResponse();
+    }
 
-}
+    /**
+     * List all the IAM policies for requesting account
+     *
+     * @return ServerResponse.
+     */
+    @Override public ServerResponse list() {
+      List<Policy> policyList = null;
+      Map<String, Object> apiParameters = new HashMap<>();
+      if (requestBody.containsKey(APIRequestParamsConstants.ONLY_ATTACHED)) {
+        apiParameters.put(
+            APIRequestParamsConstants.ONLY_ATTACHED,
+            requestBody.get(APIRequestParamsConstants.ONLY_ATTACHED));
+      }
+      if (requestBody.containsKey(APIRequestParamsConstants.PATH_PREFIX)) {
+        apiParameters.put(
+            APIRequestParamsConstants.PATH_PREFIX,
+            requestBody.get(APIRequestParamsConstants.PATH_PREFIX));
+      }
+      try {
+        policyList = policyDAO.findAll(requestor.getAccount(), apiParameters);
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to list policies for account - " +
+                     requestor.getAccount().getName());
+        return responseGenerator.internalServerError();
+      }
+      LOGGER.info("Listing policies of account : " +
+                  requestor.getAccount().getName());
+      return responseGenerator.generateListResponse(policyList);
+    }
+
+    /**
+     * Get policy for requesting ARN
+     *
+     * @return ServerResponse.
+     */
+    @Override public ServerResponse get() {
+      Policy policy = null;
+      try {
+        policy = policyDAO.findByArn(
+            requestBody.get(APIRequestParamsConstants.POLICYARN),
+            requestor.getAccount());
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to get requested policy- " +
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
+        return responseGenerator.internalServerError();
+      }
+      if (policy == null || !policy.exists()) {
+        LOGGER.error("Policy does not exists- " +
+                     requestBody.get(APIRequestParamsConstants.POLICYARN));
+        return responseGenerator.noSuchEntity();
+      }
+      LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
+      return responseGenerator.generateGetResponse(policy);
+    }
+
+   private
+    int getExistingPoliciesCount(Account account) throws DataAccessException {
+      Map<String, Object> apiParameters = new HashMap<>();
+      List<Policy> policyList = null;
+      policyList = policyDAO.findAll(account, apiParameters);
+      return policyList.size();
+    }
+    /**
+     * Get policy version for requesting ARN and Version ID
+     *
+     * @return ServerResponse.
+     */
+   public
+    ServerResponse getPolicyVersion() {
+      Policy policy = null;
+      String policyArn = requestBody.get(APIRequestParamsConstants.POLICY_ARN);
+      String versionId = requestBody.get(APIRequestParamsConstants.VERSIONID);
+      try {
+        policy = policyDAO.findByArn(policyArn, requestor.getAccount());
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to get requested policy- " + policyArn);
+        return responseGenerator.internalServerError();
+      }
+      if (policy == null || !policy.exists()) {
+        LOGGER.error("Policy does not exists- " + policyArn);
+        return responseGenerator.noSuchEntity();
+      }
+      if (!versionId.equals(policy.getDefaultVersionid()) ||
+          !"true".equalsIgnoreCase(policy.getIsPolicyAttachable())) {
+        return responseGenerator.noSuchEntity(
+            "Policy " + policyArn + " version " + versionId +
+            " does not exist or is not attachable.");
+      }
+      LOGGER.info("Getting policy with ARN -  : " + policy.getARN());
+      return responseGenerator.generateGetPolicyVersionResponse(policy);
+    }
+ }

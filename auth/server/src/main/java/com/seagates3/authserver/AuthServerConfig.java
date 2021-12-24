@@ -61,6 +61,8 @@ public class AuthServerConfig {
      static final String XSD_PATH = "/AmazonS3_V2.xsd";
     public
      static final int MAX_GRANT_SIZE = 100;
+    public
+     static final int USER_POLICY_ATTACH_QUOTA = 20;
     private static Logger logger;
 
     /**
@@ -468,6 +470,23 @@ public class AuthServerConfig {
    public
     static String getRsyslogMsgId() {
       return authServerConfig.getProperty("RsyslogMsgId");
+    }
+   public
+    static String getAuthStore() {
+      return authServerConfig.getProperty("authStore");
+    }
+   public
+    static String getPolicyVersion() {
+      return authServerConfig.getProperty("policyVersion");
+    }
+   public
+    static boolean isEnableIamPolicy() {
+      return Boolean.valueOf(authServerConfig.getProperty("enableIamPolicy"));
+    }
+   public
+    static int getMaxIAMPolicyLimit() {
+      return Integer.parseInt(
+          authServerConfig.getProperty("maxIAMPolicyLimit"));
     }
 }
 

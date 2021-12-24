@@ -40,7 +40,6 @@ public class S3ParameterValidatorUtil {
     final static int MAX_DESCRIPTION_LENGTH = 1000;
     final static int MAX_GROUP_NAME_LENGTH = 128;
     final static int MAX_ITEMS = 1000;
-    final static int MAX_POLICY_DOC_LENGTH = 5120;
     final static int MAX_POLICY_NAME_LENGTH = 128;
     final static int MAX_MARKER_LENGTH = 320;
     final static int MAX_NAME_LENGTH = 64;
@@ -66,10 +65,11 @@ public class S3ParameterValidatorUtil {
     final static String NAME_PATTERN = "[\\w+=,.@-]+";
     final static String PATH_PATTERN
             = "(\\u002F)|(\\u002F[\\u0021-\\u007F]+\\u002F)";
-    final static String PATH_PREFIX_PATTERN = "\\u002F[\\u0021-\\u007F]*";
+    final static String PATH_PREFIX_PATTERN = "((/[A-Za-z0-9\\.,\\+@=_-]+)*)/";
     final static String SAML_PROVIDER_NAME_PATTERN = "[\\w._-]+";
     final static String PASSWORD_PATTERN =
         "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+";
+    final static String ONLY_ATTACHED_PATTERN = "(true|false)";
 
     /**
      * Validate the name (user name, role name etc). Length of the name should
@@ -181,6 +181,18 @@ public class S3ParameterValidatorUtil {
         }
 
         return !(marker.length() < 1 || marker.length() > MAX_MARKER_LENGTH);
+    }
+
+    /**
+     * Validate the OnlyAttached param.
+     * It should be either true or false.
+     *
+     * @param onlyAttached onlyAttached to be validated.
+     * @return true if the onlyAttached is valid.
+     */
+   public
+    static boolean isValidOnlyAttached(String onlyAttached) {
+      return onlyAttached.matches(ONLY_ATTACHED_PATTERN);
     }
 
     /**
@@ -386,8 +398,8 @@ public class S3ParameterValidatorUtil {
     }
 
     /**
-     * Validate policy document. Length of the document should be between 1 and
-     * 5120 characters. It should match the patten
+     * Validate policy document. Length of the document should be greater
+     * than 1 characters. It should match the patten
      * "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+".
      *
      * @param policyDoc access key id to be validated.
@@ -402,8 +414,7 @@ public class S3ParameterValidatorUtil {
             return false;
         }
 
-        return !(policyDoc.length() < 1
-                || policyDoc.length() > MAX_POLICY_DOC_LENGTH);
+        return (policyDoc.length() > 1);
     }
 
     /**
@@ -444,5 +455,20 @@ public class S3ParameterValidatorUtil {
 
         return !(groupName.length() < 1
                 || groupName.length() > MAX_GROUP_NAME_LENGTH);
+    }
+
+   public
+    static Boolean isValidPolicyARN(String arn) {
+      if (arn == null) {
+        return false;
+      }
+      String arn_regex_pattern = "arn:aws:iam:[\\w-/]*:[\\w-/]*:[\\w-/]*";
+      Pattern pattern = Pattern.compile(arn_regex_pattern);
+      Matcher match = pattern.matcher(arn);
+      if (!match.matches()) {
+        return false;
+      }
+
+      return !(arn.length() < MIN_ARN_LENGTH || arn.length() > MAX_ARN_LENGTH);
     }
 }
