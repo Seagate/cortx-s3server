@@ -36,6 +36,7 @@ S3DataUsageAction::S3DataUsageAction(
     std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory,
     std::shared_ptr<MotrAPI> motr_api)
     : S3Action(req, true, nullptr, true, true), request(req) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_api) {
     motr_kvs_api = std::move(motr_api);
   } else {
@@ -53,6 +54,7 @@ S3DataUsageAction::S3DataUsageAction(
   last_key = "";
 
   setup_steps();
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
 }
 
 S3DataUsageAction::~S3DataUsageAction() {
@@ -60,14 +62,12 @@ S3DataUsageAction::~S3DataUsageAction() {
 }
 
 void S3DataUsageAction::get_data_usage_counters() {
-  // json_response =
-  //     "[ \"12345\": { \"bytes_count\": 123456789 }, \"54321\": { "
-  //     "\"bytes_count\": 987654321 } ]";
-
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   motr_kvs_reader->next_keyval(
       data_usage_accounts_index_layout, last_key, max_records_per_request,
       std::bind(&S3DataUsageAction::get_next_keyval_success, this),
       std::bind(&S3DataUsageAction::get_next_keyval_failure, this));
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
 }
 
 std::string extract_account_id_from_motr_key(const std::string& motr_key) {
@@ -159,17 +159,20 @@ void S3DataUsageAction::get_next_keyval_failure() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
 }
 
 void S3DataUsageAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, request_id, "Setting up the Data Usage action");
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
   ACTION_TASK_ADD(S3DataUsageAction::get_data_usage_counters, this);
   ACTION_TASK_ADD(S3DataUsageAction::send_response_to_s3_client, this);
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
 }
 
 void S3DataUsageAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "", "%s Entry \n", __func__);
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__),;
+  // Create response in the following format:
+  // ["account_id": {"bytes_count": <number>}, ...]
   Json::Value root(Json::arrayValue);
   for (auto& cnt : counters) {
     Json::Value account;
@@ -182,5 +185,5 @@ void S3DataUsageAction::send_response_to_s3_client() {
   Json::FastWriter fastWriter;
   std::string json = fastWriter.write(root);
   request->send_response(S3HttpSuccess200, json);
-  s3_log(S3_LOG_DEBUG, "", "%s Exit \n", __func__);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit\n", __func__);
 }
