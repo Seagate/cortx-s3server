@@ -90,20 +90,22 @@ int from_json(std::string json, int64_t* p_objects_count,
     return -1;
   }
 
-  *p_objects_count = newroot[JSON_OBJECTS_COUNT].asInt64();
-  *p_bytes_count = newroot[JSON_BYTES_COUNT].asInt64();
+  if (p_objects_count) {
+    *p_objects_count = newroot[JSON_OBJECTS_COUNT].asInt64();
+  }
+  if (p_bytes_count) {
+    *p_bytes_count = newroot[JSON_BYTES_COUNT].asInt64();
+  }
   return 0;
 }
 
 void S3DataUsageAction::get_next_keyval_success() {
   s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
   auto& kvps = motr_kvs_reader->get_key_values();
-  size_t length = kvps.size();
   for (auto& kv : kvps) {
     std::string key = kv.first;
     std::string json = kv.second.second;
-    s3_log(S3_LOG_DEBUG, request_id, "Read key = %s\n", key.c_str());
-    s3_log(S3_LOG_DEBUG, request_id, "Read Value = %s\n", json.c_str());
+    s3_log(S3_LOG_DEBUG, request_id, "Read key = %s\n  value=%s", key.c_str(), json.c_str());
     std::string account_id = extract_account_id_from_motr_key(key);
     if (account_id.empty()) {
       s3_log(
@@ -112,9 +114,8 @@ void S3DataUsageAction::get_next_keyval_success() {
           key.c_str());
       continue;
     }
-    int64_t objects_counter;
     int64_t bytes_counter;
-    if (from_json(json, &objects_counter, &bytes_counter) != 0) {
+    if (from_json(json, nullptr, &bytes_counter) != 0) {
       s3_log(S3_LOG_ERROR, stripped_request_id,
              "Failed to extract the counters from json %s. Skipping the record",
              json.c_str());
@@ -128,16 +129,14 @@ void S3DataUsageAction::get_next_keyval_success() {
     }
   }
 
+  size_t length = kvps.size();
   if (length < max_records_per_request) {
     // Read all, move forward.
     next();
   } else {
     // Read the next chunk of counter records.
     last_key = kvps.rbegin()->first;
-    motr_kvs_reader->next_keyval(
-        data_usage_accounts_index_layout, last_key, max_records_per_request,
-        std::bind(&S3DataUsageAction::get_next_keyval_success, this),
-        std::bind(&S3DataUsageAction::get_next_keyval_failure, this));
+    get_data_usage_counters();
   }
   s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit\n", __func__);
 }
