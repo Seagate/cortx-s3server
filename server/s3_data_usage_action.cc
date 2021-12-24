@@ -160,7 +160,27 @@ std::string S3DataUsageAction::create_json_response() {
 
 void S3DataUsageAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
-  std::string json = create_json_response();
-  request->send_response(S3HttpSuccess200, json);
+  bool error_happened = !get_s3_error_code().empty();
+
+  if (!error_happened) {
+    std::string json = create_json_response();
+    request->send_response(S3HttpSuccess200, json);
+  } else {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
+                  request->c_get_full_path());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable" ||
+        get_s3_error_code() == "InternalError") {
+      request->set_out_header_value("Connection", "close");
+    }
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
+    request->send_response(error.get_http_status_code(), response_xml);
+  }
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit\n", __func__);
 }
