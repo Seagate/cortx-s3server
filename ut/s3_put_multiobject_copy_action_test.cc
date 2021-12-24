@@ -677,3 +677,50 @@ TEST_F(S3PutMultipartCopyActionTestNoMockAuth, DestinationAuthorization) {
 
   EXPECT_EQ(1, call_count_one);
 }
+
+TEST_F(S3PutMultipartCopyActionTestNoMockAuth, FetchPartInfo) {
+  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), load(_, _, _)).Times(1);
+  action_under_test->fetch_part_info();
+}
+
+TEST_F(S3PutMultipartCopyActionTestNoMockAuth,
+       FetchPartInfoFailedMetadataMissing) {
+  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartCopyActionTest::func_callback_one, this);
+
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
+      .Times(1)
+      .WillOnce(Return(S3PartMetadataState::missing));
+
+  action_under_test->fetch_part_info_failed();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PutMultipartCopyActionTestNoMockAuth, FetchPartInfoValidationFailed) {
+  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartCopyActionTest::func_callback_one, this);
+
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
+      .Times(1)
+      .WillOnce(Return(S3PartMetadataState::failed));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+
+  action_under_test->fetch_part_info_failed();
+
+  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+  EXPECT_EQ(action_under_test->s3_copy_part_action_state,
+            S3PutObjectActionState::validationFailed);
+  EXPECT_EQ(0, call_count_one);
+}
