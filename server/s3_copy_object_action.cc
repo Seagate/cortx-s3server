@@ -510,6 +510,8 @@ void S3CopyObjectAction::revert_dest_data_usage() {
   s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
          inc_obj_size);
 
+  // FIXME: if this fails, counters become inconsistent. Do not see any way to
+  // work around, except full re-calculation of entire account.
   S3DataUsageCache::update_data_usage(
       request, bucket_metadata, inc_object_count, inc_obj_size,
       std::bind(&S3CopyObjectAction::save_object_metadata_failed, this),
