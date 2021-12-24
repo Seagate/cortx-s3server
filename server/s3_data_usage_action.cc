@@ -169,8 +169,8 @@ void S3DataUsageAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
 }
 
-void S3DataUsageAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__),;
+std::string S3DataUsageAction::create_json_response() {
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
   // Create response in the following format:
   // ["account_id": {"bytes_count": <number>}, ...]
   Json::Value root(Json::arrayValue);
@@ -181,9 +181,15 @@ void S3DataUsageAction::send_response_to_s3_client() {
     account[cnt.first] = counters;
     root.append(account);
   }
-
   Json::FastWriter fastWriter;
   std::string json = fastWriter.write(root);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit with ret %s\n", __func__, json.c_str());
+  return json;
+}
+
+void S3DataUsageAction::send_response_to_s3_client() {
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
+  std::string json = create_json_response();
   request->send_response(S3HttpSuccess200, json);
   s3_log(S3_LOG_DEBUG, "", "%s Exit\n", __func__);
 }

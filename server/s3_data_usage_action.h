@@ -49,4 +49,5 @@ class S3DataUsageAction : public S3Action {
   virtual ~S3DataUsageAction();
   void send_response_to_s3_client();
   void setup_steps();
+  std::string create_json_response();
 };
