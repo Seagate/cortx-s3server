@@ -329,7 +329,7 @@ public class AccountImpl implements AccountDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.CANONICAL_ID,
                 account.getCanonicalId()));
 
-        LOGGER.debug("Saving account dn: " + dn);
+        LOGGER.info("Saving account dn: " + dn);
 
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
@@ -354,7 +354,7 @@ public class AccountImpl implements AccountDAO {
                 LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
                 LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.BASE_DN);
 
-        LOGGER.debug("Deleting account dn: " + dn);
+        LOGGER.info("Deleting account dn: " + dn);
 
         try {
             LDAPUtils.delete(dn);
@@ -378,7 +378,7 @@ public class AccountImpl implements AccountDAO {
           LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
           LDAPUtils.BASE_DN);
 
-        LOGGER.debug("Deleting account dn: " + dn);
+        LOGGER.info("Deleting account dn: " + dn);
 
         try {
             LDAPUtils.delete(dn);
@@ -407,7 +407,7 @@ public class AccountImpl implements AccountDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
                 LDAPUtils.USER_OU));
 
-        LOGGER.debug("Creating user dn: " + dn);
+        LOGGER.info("Creating user dn: " + dn);
 
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
@@ -434,7 +434,7 @@ public class AccountImpl implements AccountDAO {
                 LDAPUtils.ORGANIZATIONAL_UNIT_CLASS));
         attributeSet.add(new LDAPAttribute("ou", "roles"));
 
-        LOGGER.debug("Creating role dn: " + dn);
+        LOGGER.info("Creating role dn: " + dn);
 
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
@@ -463,7 +463,7 @@ public class AccountImpl implements AccountDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
                 LDAPUtils.POLICY_OU));
 
-        LOGGER.debug("Creating Policy dn: " + dn);
+        LOGGER.info("Creating Policy dn: " + dn);
 
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
@@ -486,7 +486,7 @@ public class AccountImpl implements AccountDAO {
           LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
           LDAPUtils.BASE_DN);
 
-        LOGGER.debug("Creating Groups dn: " + dn);
+        LOGGER.info("Creating Groups dn: " + dn);
 
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,

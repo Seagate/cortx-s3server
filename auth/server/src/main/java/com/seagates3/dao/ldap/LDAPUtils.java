@@ -20,6 +20,8 @@
 
 package com.seagates3.dao.ldap;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,10 +200,7 @@ class LDAPUtils {
 
                 lc.add(newEntry);
             } catch (LDAPException ldapException) {
-                LOGGER.error("Error occurred while adding new entry. Cause: "
-                        + ldapException.getCause() + ". Message: "
-                        + ldapException.getMessage());
-                LOGGER.debug("Stacktrace: " + ldapException);
+                logErrorStackTrace("adding", newEntry.getDN(), ldapException);
                 IEMUtil.log(
                     IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                     "An error occurred while establishing ldap " +
@@ -241,10 +240,7 @@ class LDAPUtils {
 
                 lc.delete(dn);
             } catch (LDAPException ldapException) {
-                LOGGER.error("Error occurred while deleting entry. Cause: "
-                        + ldapException.getCause() + ". Message: "
-                        + ldapException.getMessage());
-                LOGGER.debug("Stacktrace: " + ldapException);
+            	logErrorStackTrace("deleting", dn, ldapException);
                 IEMUtil.log(
                     IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                     "An error occurred while establishing ldap " +
@@ -398,5 +394,13 @@ class LDAPUtils {
         finally { lc.disconnect(); }
       }
     }
+   
+   private static void logErrorStackTrace(String operation, String dn, LDAPException ex) {
+       LOGGER.error(String.format("Error occurred while %s entry with dn %s. Cause: %s. Message: %s.", operation, dn, ex.getCause(), ex.getMessage()));
+       StringWriter sw = new StringWriter();
+       PrintWriter pw = new PrintWriter(sw);
+       ex.printStackTrace(pw);
+       LOGGER.error(sw.toString());
+   }
 }
 
