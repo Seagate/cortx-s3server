@@ -81,7 +81,7 @@ def main():
 
   # Get the machine id from confstore
   s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
-  s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
+  s3_provkeys_store = S3CortxConfStore(f'yaml://{args.config}', 'config_log_index')
 
   log_dir_path = s3_provkeys_store.get_config('cortx>common>storage>log')
   s3_logger_name = s3_confkeys_store.get_config('S3_DEPLOYMENT_LOGGER_NAME')

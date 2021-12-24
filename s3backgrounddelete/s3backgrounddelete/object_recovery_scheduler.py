@@ -105,7 +105,7 @@ class ObjectRecoveryScheduler(object):
                 sys.exit(0)
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
-                self.config, connectionType=CONNECTION_TYPE_PRODUCER, logger=Log).list(
+                self.config, connectionType=CONNECTION_TYPE_PRODUCER).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
             if result and not self.term_signal.shutdown_signal:
                 Log.info("Index listing result :" +
