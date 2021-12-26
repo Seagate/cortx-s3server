@@ -151,7 +151,6 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   void delete_new_object();
 
   // unit tests
-  friend class S3PutMultipartCopyActionTest;
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth, ConstructorTest);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               ValidateSourceBucketOrObjectEmpty);
