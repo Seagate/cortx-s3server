@@ -194,5 +194,13 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
               FetchPartInfoFailedMetadataMissing);
   FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
               FetchPartInfoValidationFailed);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              FetchPartInfoSuccessMetadataPresent);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              FetchPartInfoSuccessMetadataMissing);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              FetchPartInfoSuccessServiceUnavailable);
+  FRIEND_TEST(S3PutMultipartCopyActionTestNoMockAuth,
+              FetchPartInfoSuccessInternalError);
 };
 #endif  // __S3_SERVER_S3_PUT_MULTIPART_COPY_ACTION_H__
