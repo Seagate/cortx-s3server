@@ -562,11 +562,11 @@ class ConfigCmd(SetupCmd):
 
   def update_memory_limits(self):
     """ Update memory buffer sizes."""
-    self.logger.info("Update memory buffer sizes started")
+    Log.info("Update memory buffer sizes started")
     # validate config file exists - /etc/cortx/s3/conf/s3config.yaml
     configfile = self.get_confkey("S3_CONFIG_FILE").replace("/opt/seagate/cortx", self.base_config_file_path)
     if path.isfile(f'{configfile}') == False:
-      self.logger.error(f'{configfile} file is not present')
+      Log.error(f'{configfile} file is not present')
       raise S3PROVError(f'{configfile} file is not present')
 
     # load config file, read required keysand modify as per size
@@ -585,7 +585,7 @@ class ConfigCmd(SetupCmd):
     s3configfileconfstore.set_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_INITIAL_SIZE", libevent_pool_initial_size, True)
     s3configfileconfstore.set_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_MAX_THRESHOLD", libevent_pool_max_threshold, True)
 
-    self.logger.info("Update memory buffer sizes completed")
+    Log.info("Update memory buffer sizes completed")
 
   def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
     if isinstance(value_to_update, str):
