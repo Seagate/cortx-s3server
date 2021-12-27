@@ -182,12 +182,12 @@ def main():
       # os.system("sed -i -e \"s,leak_processing_delay_in_mins:.*,leak_processing_delay_in_mins:\ 2,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
 
       # Initialize Msg Bus
-      logger.info("Init Msg Bus started")
+      Log.info("Init Msg Bus started")
       endpoints_key = s3_confkeys_store.get_config("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
       endpoints_val = prov_confkeys_store.get_config(endpoints_key)
-      logger.info(f"Msg Bus end point value is {endpoints_val}")
+      Log.info(f"Msg Bus end point value is {endpoints_val}")
       S3CortxMsgBus.configure_endpoint(endpoints_val)
-      logger.info("Init Msg Bus completed")
+      Log.info("Init Msg Bus completed")
 
       # Start S3 Background Producer
       Log.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh {base_config_path} yaml://")

@@ -412,11 +412,11 @@ class ConfigCmd(SetupCmd):
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
     try:
-      self.logger.info("Init Msg Bus started")
+      Log.info("Init Msg Bus started")
       endpoints_val = self.get_confvalue_with_defaults("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
-      self.logger.info(f"Msg Bus end point value is {endpoints_val}")
+      Log.info(f"Msg Bus end point value is {endpoints_val}")
       S3CortxMsgBus.configure_endpoint(endpoints_val)
-      self.logger.info("Init Msg Bus completed")
+      Log.info("Init Msg Bus completed")
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
           S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
           Log.info("Topic Created")
