@@ -157,6 +157,7 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
       s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
       set_s3_error("InvalidRequest");
       send_response_to_s3_client();
+      return;
     } else {
       last_byte_offset_to_copy = source_object_size - 1;
     }
@@ -168,6 +169,7 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
     if (!validate_range_header(range_header_value)) {
       set_s3_error("InvalidRange");
       send_response_to_s3_client();
+      return;
     }
   }
   total_data_to_copy = last_byte_offset_to_copy - first_byte_offset_to_copy;
