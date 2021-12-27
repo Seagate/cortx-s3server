@@ -27,6 +27,7 @@ import urllib.parse
 from ast import literal_eval
 from setupcmd import S3PROVError
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from cortx.utils.log import Log
 
 class S3HaproxyConfig:
   """HAProxy configration for S3."""
@@ -37,31 +38,15 @@ class S3HaproxyConfig:
   def __init__(self, confstore: str):
     """Constructor."""
 
-    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-    self.logger = logging.getLogger(s3deployment_logger_name)
-    if self.logger.hasHandlers():
-      self.logger.info("Logger has valid handler")
-    else:
-      self.logger.setLevel(logging.DEBUG)
-      # create console handler with a higher log level
-      chandler = logging.StreamHandler(sys.stdout)
-      chandler.setLevel(logging.DEBUG)
-      s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-      formatter = logging.Formatter(s3deployment_log_format)
-      # create formatter and add it to the handlers
-      chandler.setFormatter(formatter)
-      # add the handlers to the logger
-      self.logger.addHandler(chandler)
-
     if not confstore.strip():
-      self.logger.error(f'config url:[{confstore}] must be a valid url path')
+      Log.error(f'config url:[{confstore}] must be a valid url path')
       raise Exception('empty config URL path')
 
     self.provisioner_confstore = S3CortxConfStore(confstore, 'haproxy_config_index')
 
     # Get machine-id of current node from constore
     self.machine_id = self.provisioner_confstore.get_machine_id()
-    self.logger.info(f'Machine id : {self.machine_id}')
+    Log.info(f'Machine id : {self.machine_id}')
 
   @staticmethod
   def parse_endpoint(endpoint_str):
@@ -179,7 +164,7 @@ class S3HaproxyConfig:
 
     setup_type = str(self.get_config_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))
 
-    self.logger.info(f'Setup type is {setup_type}')
+    Log.info(f'Setup type is {setup_type}')
 
     if ("K8" == setup_type) :
       self.configure_haproxy_k8()
@@ -194,16 +179,16 @@ class S3HaproxyConfig:
 
       # reload haproxy service
       #try:
-      #  self.logger.info("Reloading haproxy service...")
+      #  Log.info("Reloading haproxy service...")
       #  service_list = ["haproxy"]
       #  self.reload_services(service_list)
       #except Exception as e:
-      #  self.logger.error(f'Failed to reload haproxy service, error: {e}')
+      #  Log.error(f'Failed to reload haproxy service, error: {e}')
       #  raise e
-      #self.logger.info("Reloaded haproxy service...")
+      #Log.info("Reloaded haproxy service...")
 
   def configure_haproxy_k8(self):
-    self.logger.info("K8s HAPROXY configuration ...")
+    Log.info("K8s HAPROXY configuration ...")
 
     # Fetching base config path
     baseconfig_path = self.get_baseconfig_path()
@@ -393,7 +378,7 @@ backend s3-auth
 
   def configure_haproxy_legacy(self):
     """Main Processing function."""
-    self.logger.info("Legacy HAPROXY configuration ...")
+    Log.info("Legacy HAPROXY configuration ...")
 
     #Get necessary info from confstore
     localhost = '127.0.0.1'
@@ -496,9 +481,9 @@ backend s3-auth
 
     #Initialize port numbers
     s3backendport = self.get_s3server_backend_port()
-    self.logger.info(f'S3 server backend port: {s3backendport}')
+    Log.info(f'S3 server backend port: {s3backendport}')
     s3aubackendport = self.get_s3auth_backend_port()
-    self.logger.info(f'S3 auth server backend port: {s3aubackendport}')
+    Log.info(f'S3 auth server backend port: {s3aubackendport}')
 
     #Add complete information to haproxy.cfg file
     cfg_file = '/etc/haproxy/haproxy.cfg'

@@ -27,10 +27,7 @@ import os
 import socket
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
-
-#Logger details
-s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+from cortx.utils.log import Log
 
 def main():
 
@@ -82,119 +79,92 @@ def main():
 
   args = parser.parse_args()
 
-  logger_dir_path = create_logger_directory(args.config)
-  logger = create_logger(logger_dir_path)
+  # Get the machine id from confstore
+  s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
+  s3_provkeys_store = S3CortxConfStore(f'yaml://{args.config}', 'config_log_index')
+
+  log_dir_path = s3_provkeys_store.get_config('cortx>common>storage>log')
+  s3_logger_name = s3_confkeys_store.get_config('S3_DEPLOYMENT_LOGGER_NAME')
+  s3_logger_backup_count = s3_confkeys_store.get_config('S3_DEPLOYMENT_LOGGER_BACKUP_COUNT')
+  s3_logger_max_size_mb = s3_confkeys_store.get_config('S3_DEPLOYMENT_LOGGER_MAX_SIZE_MB')
+  s3deployment_log_directory = os.path.join(log_dir_path, "s3", s3_confkeys_store.get_machine_id(), s3_logger_name)
+
+  create_logger_directory(s3deployment_log_directory)
+  Log.init(s3_logger_name, s3deployment_log_directory, level='INFO',
+           backup_count=s3_logger_backup_count,
+           file_size_in_mb=s3_logger_max_size_mb,
+           syslog_server=None, syslog_port=None, console_output=True)
 
   try:
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
-      logger.info('post_install started.')
+      Log.info('post_install started.')
       PostInstallCmd(args.config, args.services).process()
-      logger.info('post_install successful.')
+      Log.info('post_install successful.')
     elif args.command == 'prepare':
       from preparecmd import PrepareCmd
-      logger.info('prepare started.')
+      Log.info('prepare started.')
       PrepareCmd(args.config, args.services).process()
-      logger.info('prepare successful.')
+      Log.info('prepare successful.')
     elif args.command == 'config':
       from configcmd import ConfigCmd
-      logger.info('config started.')
+      Log.info('config started.')
       ConfigCmd(args.config, args.services).process()
-      logger.info('config successful.')
+      Log.info('config successful.')
     elif args.command == 'init':
       from initcmd import InitCmd
-      logger.info('init started.')
+      Log.info('init started.')
       InitCmd(args.config, args.services).process()
-      logger.info('init successful.') 
+      Log.info('init successful.') 
     elif args.command == 'test':
       from testcmd import TestCmd
-      logger.info('test started.')
+      Log.info('test started.')
       test_plan = None
       if args.plan:
         test_plan = args.plan
       TestCmd(args.config, test_plan).process()
-      logger.info('PASS: S3-Sanity test passed.')
+      Log.info('PASS: S3-Sanity test passed.')
     elif args.command == 'reset':
       from resetcmd import ResetCmd
-      logger.info('reset started.')
+      Log.info('reset started.')
       ResetCmd(args.config, args.services).process()
-      logger.info('reset successful.')
+      Log.info('reset successful.')
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
-      logger.info('cleanup started.')
+      Log.info('cleanup started.')
       CleanupCmd(args.config, args.services).process(args.pre_factory)
-      logger.info('cleanup successful.')
+      Log.info('cleanup successful.')
     elif args.command == 'preupgrade':
       from preupgradecmd import PreUpgradeCmd
-      logger.info('pre-upgrade started.')
+      Log.info('pre-upgrade started.')
       PreUpgradeCmd(args.config, args.services).process()
-      logger.info('pre-upgrade successful.')
+      Log.info('pre-upgrade successful.')
     elif args.command == 'postupgrade':
       from postupgradecmd import PostUpgradeCmd
-      logger.info('post-upgrade started.')
+      Log.info('post-upgrade started.')
       PostUpgradeCmd(args.config, args.services).process()
-      logger.info('post-upgrade successful.')
+      Log.info('post-upgrade successful.')
     elif args.command == 'upgrade':
       from upgradecmd import UpgradeCmd
-      logger.info('upgrade started.')
+      Log.info('upgrade started.')
       # Uncomment following call to enable upgrade.
       # UpgradeCmd(args.config, args.services, args.commit).process()
-      logger.info('upgrade successful.')
+      Log.info('upgrade successful.')
   except Exception as e:
-    logger.error(f"{str(e)}")
-    logger.error(f"{traceback.format_exc()}")
+    Log.error(f"{str(e)}")
+    Log.error(f"{traceback.format_exc()}")
     return errno.EINVAL
 
   return 0
 
-def create_logger(log_dir_path):
-    """Create logger, file handler, console handler and formatter."""
-    # create logger with "S3 deployment logger"
-    logger = logging.getLogger(s3deployment_logger_name)
-    logger.setLevel(logging.DEBUG)
-
-    s3deployment_log_file = os.path.join(log_dir_path, "s3deployment.log")
-    #with maxBytes to 5242880, will allow base file s3deployment.log to rotate after every 5MB.
-    #with a backupCount of 5, will get s3deployment.log, s3deployment.log.1, s3deployment.log.2, up to s3deployment.log.5.
-    #The file being written to is always s3deployment.log.
-    fhandler = logging.handlers.RotatingFileHandler(s3deployment_log_file, mode='a',
-                                                    maxBytes = 5242880,
-                                                    backupCount = 5, encoding=None,
-                                                    delay=False )
-    fhandler.setLevel(logging.DEBUG)
-
-    # create console handler with a higher log level
-    chandler = logging.StreamHandler(sys.stdout)
-    chandler.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter(s3deployment_log_format)
-
-    # create formatter and add it to the handlers
-    fhandler.setFormatter(formatter)
-    chandler.setFormatter(formatter)
-
-    # add the handlers to the logger
-    logger.addHandler(fhandler)
-    logger.addHandler(chandler)
-
-    return logger
-
-def create_logger_directory(config_file):
-    """Create log directory if not exists."""
-    # Get the machine id from confstore
-    s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
-    s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
-
-    s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
-    s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment")
-
+def create_logger_directory(s3deployment_log_directory):
+  """Create log directory if not exists."""
+  _logger_directory = os.path.join(s3deployment_log_directory)
+  if not os.path.isdir(_logger_directory):
     try:
-        os.makedirs(s3deployment_log_directory, exist_ok=True)
+      os.makedirs(_logger_directory, exist_ok=True)
     except BaseException:
-        raise Exception(f"{s3deployment_log_directory} Could not be created")
-
-    #returning log_dir_path to be used by s3_deployment_log_file in create_logger function
-    return s3deployment_log_directory
+      raise Exception(f"{s3deployment_log_directory} Could not be created")
 
 if __name__ == '__main__':
   sys.exit(main())

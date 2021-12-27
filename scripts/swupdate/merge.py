@@ -25,7 +25,7 @@ import os.path
 import shutil
 import sys
 import socket
-import logging
+from cortx.utils.log import Log
 
 def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
     """
@@ -43,10 +43,10 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
 
     #If config file is not present then abort merging.
     if not os.path.isfile(configFile):
-        logger.error(f'config file {configFile} does not exist')
+        Log.error(f'config file {configFile} does not exist')
         raise Exception(f'ERROR: config file {configFile} does not exist')
 
-    logger.info(f'config file {str(configFile)} upgrade started.')
+    Log.info(f'config file {str(configFile)} upgrade started.')
 
     # old sample file
     conf_old_sample = filetype + oldSampleFile
@@ -87,7 +87,7 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
 
     cs_conf_file.merge_config(source_index=conf_new_sample, keys_to_include=keys_to_overwrite)
     cs_conf_file.save_config()
-    logger.info(f'config file {str(configFile)} upgrade completed')
+    Log.info(f'config file {str(configFile)} upgrade completed')
 
 def merge_configs(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
 
@@ -95,31 +95,7 @@ def merge_configs(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAt
     - This function will merge all S3 config files during upgrade
     - This function should be used outside this file to call configs upgrade
     """
-    # Use existing s3-deployment-logger or setup new console logger
-    setup_logger()
-
     upgrade_config(configFile, oldSampleFile, newSampleFile, unsafeAttributesFile, filetype)
-
-def setup_logger():
-    """
-    - This function will use as is s3-deployment-logger if it is available
-    - else it will log to console
-    """
-    global logger
-    logger = logging.getLogger("s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]")
-    if logger.hasHandlers():
-        logger.info("Logger has valid handler")
-    else:
-        logger.setLevel(logging.DEBUG)
-        # create console handler with a higher log level
-        chandler = logging.StreamHandler(sys.stdout)
-        chandler.setLevel(logging.DEBUG)
-        s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        formatter = logging.Formatter(s3deployment_log_format)
-        # create formatter and add it to the handlers
-        chandler.setFormatter(formatter)
-        # add the handlers to the logger
-        logger.addHandler(chandler)
 
 if __name__ == "__main__":
     print("merge_configs without parameters is not supported, please implement cli wrapper and parser")
