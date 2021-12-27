@@ -149,6 +149,11 @@ VALIDATION_PREREQ_FILE: "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
 TMP_DIR: "/etc/cortx/s3/tmp"
 CONFSTORE_SITE_COUNT_KEY: "cluster>cluster-id>site_count"
 
+# S3 deployment logger related keys
+S3_DEPLOYMENT_LOGGER_NAME: "s3deployment"
+S3_DEPLOYMENT_LOGGER_MAX_SIZE_MB: 5
+S3_DEPLOYMENT_LOGGER_BACKUP_COUNT: 5
+
 # S3 config files
 S3_CONFIG_FILE: "/opt/seagate/cortx/s3/conf/s3config.yaml"
 S3_AUTHSERVER_CONFIG_FILE: "/opt/seagate/cortx/auth/resources/authserver.properties"

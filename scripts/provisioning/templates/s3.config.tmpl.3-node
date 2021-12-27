@@ -71,8 +71,8 @@ node:
           - s3server
           - haproxy
           - authserver
-          - s3bgschedular
-          - s3bgworker
+          - bgscheduler
+          - bgworker
   TMPL_MACHINE_ID_2:
     name: "POD-2"
     hostname: "TMPL_HOSTNAME_2"
@@ -84,8 +84,8 @@ node:
           - s3server
           - haproxy
           - authserver
-          - s3bgschedular
-          - s3bgworker
+          - bgscheduler
+          - bgworker
   TMPL_MACHINE_ID_3:
     name: "POD-3"
     hostname: "TMPL_HOSTNAME_3"
@@ -97,6 +97,6 @@ node:
           - s3server
           - haproxy
           - authserver
-          - s3bgschedular
-          - s3bgworker
+          - bgscheduler
+          - bgworker
 
