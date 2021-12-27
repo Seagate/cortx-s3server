@@ -68,6 +68,6 @@ node:
           - s3server
           - haproxy
           - authserver
-          - s3bgschedular
-          - s3bgworker
+          - bgscheduler
+          - bgworker
 
