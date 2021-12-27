@@ -103,13 +103,13 @@ class ConfigCmd(SetupCmd):
         self.process_authserver()
         self.logger.info("authserver config completed")
       if self.service_bgscheduler in self.services:
-        self.logger.info("s3bgschedular config started")
-        self.process_s3bgschedular()
-        self.logger.info("s3bgschedular config completed")
+        self.logger.info("bgscheduler config started")
+        self.process_bgscheduler()
+        self.logger.info("bgscheduler config completed")
       if self.service_bgworker in self.services:
-        self.logger.info("s3bgworker config started")
-        self.process_s3bgworker()
-        self.logger.info("s3bgworker config completed")
+        self.logger.info("bgworker config started")
+        self.process_bgworker()
+        self.logger.info("bgworker config completed")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
@@ -216,8 +216,8 @@ class ConfigCmd(SetupCmd):
                                 self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE')])
     self.logger.info("Backing up auth server config sample file to temp dir complete")
 
-  def process_s3bgschedular(self):
-    """ Process mini provisioner for s3bgschedular."""
+  def process_bgscheduler(self):
+    """ Process mini provisioner for bgscheduler."""
     # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
     self.logger.info("copy bgdelete config file started")
     if os.path.exists(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)):
@@ -251,8 +251,8 @@ class ConfigCmd(SetupCmd):
     self.make_sample_old_files([self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE')])
     self.logger.info("Backing up s3 bgdelete config sample file to temp dir complete")
 
-  def process_s3bgworker(self):
-    """ Process mini provisioner for s3bgworker."""
+  def process_bgworker(self):
+    """ Process mini provisioner for bgworker."""
     # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
     self.logger.info("copy bgdelete config file started")
     if os.path.exists(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)):
