@@ -30,73 +30,8 @@ extern struct s3_motr_idx_layout data_usage_accounts_index_layout;
 
 std::unique_ptr<S3DataUsageCache> S3DataUsageCache::singleton;
 
-class DataUsageItem {
-  // A key to the Motr index that a cache writes into;
-  // currenly its "<account name>/<unique S3 server ID>".
-  std::string motr_key;
-  // Item's key in the data usage cache; currently "<account name>".
-  std::string cache_key;
-  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
-  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
-
-  int64_t objects_count;
-  int64_t bytes_count;
-
-  struct IncCallbackPair {
-    IncCallbackPair(const std::string &rid, std::function<void()> s,
-                    std::function<void()> f)
-        : request_id{rid}, on_success{s}, on_failure{f} {};
-    std::string request_id;
-    std::function<void()> on_success;
-    std::function<void()> on_failure;
-  };
-
-  // current_* attributes serve the request that is being read/written,
-  // i.e. Motr performs I/O operation for it right now.
-  std::shared_ptr<RequestObject> current_request;
-  int64_t current_objects_increment;
-  int64_t current_bytes_increment;
-  std::list<std::shared_ptr<struct IncCallbackPair> > current_callbacks;
-
-  // pending_* attributes serve the request that is to be executed.
-  std::shared_ptr<RequestObject> pending_request;
-  int64_t pending_objects_increment;
-  int64_t pending_bytes_increment;
-  std::list<std::shared_ptr<struct IncCallbackPair> > pending_callbacks;
-
-  using DataUsageStateNotifyCb = std::function<
-      void(DataUsageItem *, DataUsageItemState, DataUsageItemState)>;
-  // Calls back to the cache singleton when an item state is changed.
-  DataUsageStateNotifyCb state_cb;
-
-  DataUsageItemState state;
-  // Item's place in the list of inactive items that the cache maintains
-  std::list<DataUsageItem *>::iterator ptr_inactive;
-
-  std::string get_item_request_id();
-  void set_state(DataUsageItemState new_state);
-  void do_kvs_read();
-  void kvs_read_success();
-  void kvs_read_failure();
-  void do_kvs_write();
-  void kvs_write_success();
-  void kvs_write_failure();
-  void run_successful_callbacks();
-  void run_failure_callbacks();
-  void fail_all();
-  std::string to_json();
-  int from_json(std::string content);
-
- public:
-  DataUsageItem(std::shared_ptr<RequestObject> req,
-                const std::string &key_in_cache,
-                DataUsageStateNotifyCb subscriber);
-  void save(std::shared_ptr<RequestObject> req, int64_t objects_count_increment,
-            int64_t bytes_count_increment, std::function<void()> on_success,
-            std::function<void()> on_failure);
-
-  friend S3DataUsageCache;
-};
+S3DataUsageCache::S3DataUsageCache()
+    : item_factory(std::make_shared<DataUsageItemFactory>()) {}
 
 S3DataUsageCache *S3DataUsageCache::get_instance() {
   s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
@@ -115,31 +50,45 @@ void S3DataUsageCache::set_max_cache_size(size_t max_size) {
   s3_log(S3_LOG_DEBUG, "", "%s Exit\n", __func__);
 }
 
+void S3DataUsageCache::set_item_factory(
+    std::shared_ptr<DataUsageItemFactory> factory) {
+  item_factory = std::move(factory);
+}
+
 std::string S3DataUsageCache::generate_cache_key(
-    std::shared_ptr<RequestObject> req) {
+    std::shared_ptr<RequestObject> req, std::shared_ptr<S3BucketMetadata> src) {
   const std::string &req_id = req->get_stripped_request_id();
   s3_log(S3_LOG_DEBUG, req_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, req_id, "%s Exit\n", __func__);
-  return req->get_account_name();
+  std::string key = src->get_bucket_owner_account_id();
+  s3_log(S3_LOG_DEBUG, req_id, "%s Exit, ret %s\n", __func__, key.c_str());
+  return key;
 }
 
 std::string get_server_id() {
   s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   extern struct m0_config motr_conf;
+  static std::string s3server_ID;
   // static std::string s3server_ID = motr_conf.mc_process_fid;
   // FID is not properly integrated in dev env, so will be using Motr EP
   // address:
-  static std::string s3server_ID = motr_conf.mc_local_addr;
+  if (motr_conf.mc_local_addr) {
+    s3server_ID = motr_conf.mc_local_addr;
+  } else {
+    // Missing server ID is not supposed in production, but it's OK for tests.
+    s3_log(S3_LOG_WARN, "", "Server ID is missing!");
+    s3server_ID = "1";
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit, ret %s\n", __func__, s3server_ID.c_str());
   return s3server_ID;
 }
 
 std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
-    std::shared_ptr<RequestObject> req) {
+    std::shared_ptr<RequestObject> req,
+    std::shared_ptr<S3BucketMetadata> bkt_md) {
   const std::string &req_id = req->get_stripped_request_id();
   s3_log(S3_LOG_DEBUG, req_id, "%s Entry", __func__);
 
-  std::string key_in_cache = generate_cache_key(req);
+  std::string key_in_cache = generate_cache_key(req, bkt_md);
   const bool f_new = (items.end() == items.find(key_in_cache));
 
   if (items.size() + f_new > max_cache_size) {
@@ -162,8 +111,8 @@ std::shared_ptr<DataUsageItem> S3DataUsageCache::get_item(
   auto subscriber = std::bind(&S3DataUsageCache::item_state_changed, this,
                               std::placeholders::_1, std::placeholders::_2,
                               std::placeholders::_3);
-  std::shared_ptr<DataUsageItem> item(
-      new DataUsageItem(req, key_in_cache, subscriber));
+  std::shared_ptr<DataUsageItem> item =
+      item_factory->create_data_usage_item(req, key_in_cache, subscriber);
   items.emplace(key_in_cache, std::move(item));
 
   s3_log(S3_LOG_DEBUG, req_id, "%s Exit", __func__);
@@ -228,7 +177,7 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
                                ", bytes_count_increment=%" PRId64,
          __func__, objects_count_increment, bytes_count_increment);
   S3DataUsageCache *cache = S3DataUsageCache::get_instance();
-  std::shared_ptr<DataUsageItem> item(cache->get_item(req));
+  std::shared_ptr<DataUsageItem> item(cache->get_item(req, src));
   if (item) {
     item->save(req, objects_count_increment, bytes_count_increment, on_success,
                on_failure);
@@ -241,9 +190,12 @@ void S3DataUsageCache::update_data_usage(std::shared_ptr<RequestObject> req,
   s3_log(S3_LOG_DEBUG, req_id, "%s Exit", __func__);
 }
 
-DataUsageItem::DataUsageItem(std::shared_ptr<RequestObject> req,
-                             const std::string &key_in_cache,
-                             DataUsageStateNotifyCb subscriber) {
+DataUsageItem::DataUsageItem(
+    std::shared_ptr<RequestObject> req, const std::string &key_in_cache,
+    DataUsageStateNotifyCb subscriber,
+    std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> kvs_writer_factory,
+    std::shared_ptr<MotrAPI> motr_api) {
   s3_log(S3_LOG_DEBUG, "", "%s Entry with key_in_cache %s\n", __func__,
          key_in_cache.c_str());
   current_request = std::move(req);
@@ -252,10 +204,31 @@ DataUsageItem::DataUsageItem(std::shared_ptr<RequestObject> req,
   motr_key = cache_key + "/" + get_server_id();
   state_cb = subscriber;
   state = DataUsageItemState::empty;
+  objects_count = 0;
+  bytes_count = 0;
   current_objects_increment = 0;
   current_bytes_increment = 0;
   pending_objects_increment = 0;
   pending_bytes_increment = 0;
+
+  if (motr_api) {
+    motr_kv_api = std::move(motr_api);
+  } else {
+    motr_kv_api = std::make_shared<ConcreteMotrAPI>();
+  }
+  if (kvs_reader_factory) {
+    motr_kv_reader_factory = std::move(kvs_reader_factory);
+  } else {
+    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+  }
+  if (kvs_writer_factory) {
+    motr_kv_writer_factory = std::move(kvs_writer_factory);
+  } else {
+    motr_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
+  motr_kv_reader = nullptr;
+  motr_kv_writer = nullptr;
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit\n", __func__);
 }
 
@@ -293,21 +266,30 @@ void DataUsageItem::save(std::shared_ptr<RequestObject> req,
   // The first request that makes the cache item active is tracked by own id.
   // Pending requests are tracked by the id of the first pending request.
   if (state != DataUsageItemState::active) {
-    assert(current_request == nullptr);
     current_request = std::move(req);
     s3_log(S3_LOG_INFO, req_id, "The request can be tracked by its own ID");
   } else {
-    if (!pending_request) {
-      pending_request = std::move(req);
+    // If the current callbacks queue is empty, the item is reading counters
+    // from the KVS. It means that increments for the particular request will be
+    // written with the current ones when the read operation is done.
+    if (current_callbacks.size() == 0) {
       s3_log(S3_LOG_INFO, req_id,
-             "The request can be tracked by its own ID after request %s is "
-             "complete",
-             get_item_request_id().c_str());
-    } else {
-      s3_log(S3_LOG_INFO, req_id,
-             "The request can be tracked by ID %s after request %s is complete",
-             pending_request->get_stripped_request_id().c_str(),
+             "The request can be tracked by the current request ID %s",
              current_request->get_stripped_request_id().c_str());
+    } else {
+      if (!pending_request) {
+        pending_request = std::move(req);
+        s3_log(S3_LOG_INFO, req_id,
+               "The request can be tracked by its own ID after request %s is "
+               "complete",
+               get_item_request_id().c_str());
+      } else {
+        s3_log(
+            S3_LOG_INFO, req_id,
+            "The request can be tracked by ID %s after request %s is complete",
+            pending_request->get_stripped_request_id().c_str(),
+            current_request->get_stripped_request_id().c_str());
+      }
     }
   }
 
@@ -368,10 +350,9 @@ void DataUsageItem::do_kvs_read() {
   std::string req_id = get_item_request_id();
   s3_log(S3_LOG_DEBUG, req_id, "%s Entry\n", __func__);
   set_state(DataUsageItemState::active);
-  S3MotrKVSReaderFactory reader_factory;
   assert(current_request);
-  motr_kv_reader =
-      reader_factory.create_motr_kvs_reader(current_request, nullptr);
+  motr_kv_reader = motr_kv_reader_factory->create_motr_kvs_reader(
+      current_request, motr_kv_api);
   motr_kv_reader->get_keyval(data_usage_accounts_index_layout, motr_key,
                              std::bind(&DataUsageItem::kvs_read_success, this),
                              std::bind(&DataUsageItem::kvs_read_failure, this));
@@ -418,6 +399,7 @@ void DataUsageItem::kvs_read_failure() {
   } else {
     // Any other read error is fatal for this item, have to do the re-read.
     fail_all();
+    set_state(DataUsageItemState::failed);
   }
   s3_log(S3_LOG_DEBUG, req_id, "%s Exit\n", __func__);
 }
@@ -454,9 +436,8 @@ void DataUsageItem::do_kvs_write() {
          ", bytes_count_increment=%" PRId64,
          motr_key.c_str(), current_objects_increment, current_bytes_increment);
   set_state(DataUsageItemState::active);
-  S3MotrKVSWriterFactory writer_factory;
-  motr_kv_writer =
-      writer_factory.create_motr_kvs_writer(current_request, nullptr);
+  motr_kv_writer = motr_kv_writer_factory->create_motr_kvs_writer(
+      current_request, motr_kv_api);
   motr_kv_writer->put_keyval(
       data_usage_accounts_index_layout, motr_key, this->to_json(),
       std::bind(&DataUsageItem::kvs_write_success, this),
