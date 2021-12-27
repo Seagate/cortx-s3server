@@ -205,10 +205,13 @@ void S3GetObjectAction::validate_object_info() {
             total_blocks_in_object += obj_info.total_blocks_in_object;
             s3_log(S3_LOG_DEBUG, request_id,
                    "motr_unit_size = %zu for layout_id = %d in object (oid) ="
-                   "%" SCNx64 " : %" SCNx64 " with blocks in object = (%zu)\n",
+                   "%" SCNx64 " : %" SCNx64
+                   " with blocks in object = (%zu),"
+                   " starting object offset = (%zu)\n",
                    motr_unit_size, object_metadata->get_layout_id(),
                    obj_info.object_OID.u_hi, obj_info.object_OID.u_lo,
-                   obj_info.total_blocks_in_object);
+                   obj_info.total_blocks_in_object,
+                   obj_info.start_offset_in_object);
             extended_objects.push_back(obj_info);
           } else {
             obj_info.start_offset_in_object =
@@ -230,10 +233,13 @@ void S3GetObjectAction::validate_object_info() {
             total_blocks_in_object += obj_info.total_blocks_in_object;
             s3_log(S3_LOG_DEBUG, request_id,
                    "motr_unit_size = %zu for layout_id = %d in object (oid) ="
-                   "%" SCNx64 " : %" SCNx64 " with blocks in object = (%zu)\n",
+                   "%" SCNx64 " : %" SCNx64
+                   " with blocks in object = (%zu),"
+                   " starting object offset = (%zu)\n",
                    motr_unit_size, obj_info.object_layout,
                    obj_info.object_OID.u_hi, obj_info.object_OID.u_lo,
-                   obj_info.total_blocks_in_object);
+                   obj_info.total_blocks_in_object,
+                   obj_info.start_offset_in_object);
             extended_objects.push_back(obj_info);
             ++ext_entry_index;
           }
@@ -267,10 +273,13 @@ void S3GetObjectAction::validate_object_info() {
           total_blocks_in_object += obj_info.total_blocks_in_object;
           s3_log(S3_LOG_DEBUG, request_id,
                  "motr_unit_size = %zu for layout_id = %d in object (oid) ="
-                 "%" SCNx64 " : %" SCNx64 " with blocks in object = (%zu)\n",
+                 "%" SCNx64 " : %" SCNx64
+                 " with blocks in object = (%zu),"
+                 " starting object offset = (%zu)\n",
                  motr_unit_size, obj_info.object_layout,
                  obj_info.object_OID.u_hi, obj_info.object_OID.u_lo,
-                 obj_info.total_blocks_in_object);
+                 obj_info.total_blocks_in_object,
+                 obj_info.start_offset_in_object);
           extended_objects.push_back(obj_info);
         }
       }  // End of For loop
@@ -314,6 +323,8 @@ void S3GetObjectAction::set_total_blocks_to_read_from_fragmented_object() {
     for (unsigned int i = 0; i < total_objects; i++) {
       total_blocks_to_read_all_objects +=
           extended_objects[i].total_blocks_in_object;
+      extended_objects[i].total_readable_blocks =
+          extended_objects[i].total_blocks_in_object;
     }
     // In order to read complete object, total number of objects to read
     // is equal to total number of objects
@@ -356,11 +367,12 @@ void S3GetObjectAction::set_total_blocks_to_read_from_fragmented_object() {
       extended_objects[first_byte_object_index].requested_object_size =
           (extended_objects[first_byte_object_index].object_size -
            (first_byte_offset_to_read -
-            extended_objects[first_byte_object_index].start_offset_in_object));
+            extended_objects[first_byte_object_index].start_offset_in_object) +
+           1);
 
       extended_objects[last_byte_object_index].requested_object_size =
           last_byte_offset_to_read -
-          (extended_objects[last_byte_object_index].start_offset_in_object);
+          (extended_objects[last_byte_object_index].start_offset_in_object) + 1;
     }
 
     // Get the block of first_byte_offset_to_read from object at
@@ -398,13 +410,18 @@ void S3GetObjectAction::set_total_blocks_to_read_from_fragmented_object() {
          k++) {
       // Calculate blocks in each object in the valid object range with offsets
       if (k == first_byte_object_index) {
-        total_blocks_to_read_all_objects +=
+        extended_objects[k].total_readable_blocks =
             extended_objects[k].total_blocks_in_object -
             first_byte_offset_block + 1;
+        total_blocks_to_read_all_objects +=
+            extended_objects[k].total_readable_blocks;
       } else if (k == last_byte_object_index) {
+        extended_objects[k].total_readable_blocks = last_byte_offset_block;
         total_blocks_to_read_all_objects += last_byte_offset_block;
       } else {
         total_blocks_to_read_all_objects +=
+            extended_objects[k].total_blocks_in_object;
+        extended_objects[k].total_readable_blocks =
             extended_objects[k].total_blocks_in_object;
       }
     }
@@ -627,7 +644,7 @@ void S3GetObjectAction::set_total_blocks_to_read_from_next_object() {
   blocks_already_read = 0;
   data_sent_to_client_for_object = 0;
   total_blocks_to_read =
-      extended_objects[next_fragment_object].total_blocks_in_object;
+      extended_objects[next_fragment_object].total_readable_blocks;
 
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
@@ -760,6 +777,30 @@ void S3GetObjectAction::read_object_data() {
     } else {
       blocks_to_read = total_blocks_to_read - blocks_already_read;
     }
+    // Below is only for first block read op and non-zero block start offset.
+    // For the first block read op, if reading starts from non-zero offset
+    // adjust number of 'blocks_to_read', so that the read does not go
+    // beyond the object size.
+    if (blocks_already_read == 0 && (motr_reader->get_last_index() != 0)) {
+      /*
+        size_t unit_size_of_object_with_first_byte =
+          S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+              extended_objects[next_fragment_object].object_layout);
+      // Number of initial blocks skipped
+      size_t blocks_skipped =
+          motr_reader->get_last_index() / unit_size_of_object_with_first_byte;
+      // Make sure blocks_to_read is not going beyond the object size
+      size_t effective_blocks_in_object =
+          extended_objects[next_fragment_object].total_blocks_in_object -
+          blocks_skipped;
+      */
+      if (blocks_to_read >
+          extended_objects[next_fragment_object].total_readable_blocks) {
+        blocks_to_read =
+            extended_objects[next_fragment_object].total_readable_blocks;
+      }
+    }
+
     s3_log(S3_LOG_DEBUG, request_id, "blocks_to_read: (%zu)\n", blocks_to_read);
 
     if (blocks_to_read > 0) {

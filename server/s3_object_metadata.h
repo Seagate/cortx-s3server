@@ -58,6 +58,7 @@ struct S3ExtendedObjectInfo {
     total_blocks_in_object = 0;
     object_size = 0;
     requested_object_size = 0;
+    total_readable_blocks = 0;
   }
   size_t start_offset_in_object;
   size_t total_blocks_in_object;
@@ -67,6 +68,7 @@ struct S3ExtendedObjectInfo {
   struct m0_uint128 object_OID;
   int object_layout;
   struct m0_fid object_pvid;
+  size_t total_readable_blocks;
 };
 
 enum class S3ObjectMetadataType {
