@@ -36,14 +36,11 @@ public class AccessKeyParameterValidator extends AbstractParameterValidator {
      */
     @Override
     public Boolean isValidCreateParams(Map<String, String> requestBody) {
-      boolean isValid = true;
-        if (requestBody.containsKey("UserName")) {
-          isValid =
-              S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
-        } else {
-          isValid = false;
-        }
-
+      boolean isValid = false;
+      if (!requestBody.containsKey("UserName")) {
+        return isValid;
+      }
+      isValid = S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
         if (isValid) {
           isValid = isAccessKeySecretKeyCombinationValid(
               requestBody.get("AccessKey"), requestBody.get("SecretKey"));

@@ -47,7 +47,7 @@ public class AccessKeyParameterValidatorTest {
      */
     @Test
     public void Create_UserNameNull_True() {
-      assertFalse(accessKeyValidator.isValidCreateParams(requestBody));
+      assertTrue(accessKeyValidator.isValidCreateParams(requestBody));
     }
 
     /**
