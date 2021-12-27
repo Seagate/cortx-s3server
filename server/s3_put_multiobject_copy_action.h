@@ -41,6 +41,7 @@
 #include "s3_timer.h"
 
 const uint64_t MaxPartCopySourcePartSize = 5368709120UL;  // 5GB
+const uint64_t MinRangeCopyObjectSize = 5242880UL;        // 5MB
 
 const char InvalidRequestSourcePartSizeGreaterThan5GB[] =
     "The specified part in copy source is larger than the maximum allowable "
@@ -58,7 +59,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::unique_ptr<S3ObjectDataCopier> object_data_copier;
   std::shared_ptr<S3ObjectDataCopier> fragment_data_copier;
-  std::vector<std::shared_ptr<S3ObjectDataCopier>> fragment_data_copier_list;
+  std::vector<std::shared_ptr<S3ObjectDataCopier> > fragment_data_copier_list;
   std::shared_ptr<S3PartMetadata> part_metadata = NULL;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata = NULL;
   std::shared_ptr<S3MotrKVSWriterFactory> motr_kv_writer_factory;
@@ -79,6 +80,10 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   int part_number;
   std::string upload_id;
   size_t total_data_to_copy = 0;
+  size_t source_object_size = 0;
+
+  size_t first_byte_offset_to_copy = 0;
+  size_t last_byte_offset_to_copy = 0;
   unsigned motr_write_payload_size;
   bool if_source_and_destination_same();
   S3Timer s3_timer;
@@ -115,6 +120,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   void check_part_details();
   void fetch_multipart_metadata();
   void fetch_multipart_failed();
+  bool validate_range_header(const std::string &range_value);
   void validate_multipart_partcopy_request();
   void fetch_part_info();
   void fetch_part_info_success();

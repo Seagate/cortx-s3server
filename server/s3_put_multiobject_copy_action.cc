@@ -146,16 +146,125 @@ void S3PutMultipartCopyAction::validate_multipart_partcopy_request() {
     send_response_to_s3_client();
     return;
   }
-  if (MaxPartCopySourcePartSize <
-      additional_object_metadata->get_content_length()) {
-    s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
-    set_s3_error("InvalidRequest");
-    send_response_to_s3_client();
+  std::string range_header_value =
+      request->get_header_value("x-amz-copy-source-range");
+  source_object_size = additional_object_metadata->get_content_length();
+
+  if (range_header_value.empty()) {
+    // Range is not specified, read complete object
+    s3_log(S3_LOG_DEBUG, request_id, "Range is not specified\n");
+    if (MaxPartCopySourcePartSize < source_object_size) {
+      s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("InvalidRequest");
+      send_response_to_s3_client();
+      return;
+    } else {
+      last_byte_offset_to_copy = source_object_size - 1;
+    }
   } else {
-    total_data_to_copy = additional_object_metadata->get_content_length();
-    next();
+    // parse the Range header value
+    // eg: bytes=0-1024 value
+    s3_log(S3_LOG_DEBUG, request_id, "Range found(%s)\n",
+           range_header_value.c_str());
+    if (!validate_range_header(range_header_value)) {
+      set_s3_error("InvalidRange");
+      send_response_to_s3_client();
+      return;
+    }
+  }
+  total_data_to_copy = last_byte_offset_to_copy - first_byte_offset_to_copy;
+  s3_log(S3_LOG_DEBUG, request_id, "Validated range: %zu-%zu\n",
+         first_byte_offset_to_copy, last_byte_offset_to_copy);
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Total data to copy in part [%d]: %zu bytes\n", part_number,
+         total_data_to_copy);
+  next();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+bool S3PutMultipartCopyAction::validate_range_header(
+    const std::string& range_value) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // The header can consist of 'blank' character(s) only
+  if (std::find_if_not(range_value.begin(), range_value.end(), &::isspace) ==
+      range_value.end()) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Range header consists of blank symbol(s) only");
+    return true;
+  }
+  // parse the Range header value
+  // eg: bytes=0-1024 value
+  std::size_t pos = range_value.find('=');
+  // return false when '=' not found
+  if (pos == std::string::npos) {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+
+  std::string bytes_unit = S3CommonUtilities::trim(range_value.substr(0, pos));
+  std::string byte_range_set = range_value.substr(pos + 1);
+
+  // check bytes_unit has bytes string or not
+  if (bytes_unit != "bytes") {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+
+  if (byte_range_set.empty()) {
+    // found range as bytes=
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+  // byte_range_set has multi range
+  pos = byte_range_set.find(',');
+  if (pos != std::string::npos) {
+    // found ,
+    s3_log(S3_LOG_INFO, stripped_request_id, "unsupported multirange(%s)\n",
+           byte_range_set.c_str());
+    return false;
+  }
+  pos = byte_range_set.find('-');
+  if (pos == std::string::npos) {
+    // not found -
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+
+  std::string first_byte = byte_range_set.substr(0, pos);
+  std::string last_byte = byte_range_set.substr(pos + 1);
+
+  // trip leading and trailing space
+  first_byte = S3CommonUtilities::trim(first_byte);
+  last_byte = S3CommonUtilities::trim(last_byte);
+
+  // invalid pre-condition checks
+  // 1. first and last byte offsets are empty
+  // 2. first/last byte is not empty and it has invalid data like char
+  if ((first_byte.empty() && last_byte.empty()) ||
+      (!first_byte.empty() &&
+       !S3CommonUtilities::string_has_only_digits(first_byte)) ||
+      (!last_byte.empty() &&
+       !S3CommonUtilities::string_has_only_digits(last_byte))) {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
+  }
+
+  first_byte_offset_to_copy = strtol(first_byte.c_str(), 0, 10);
+  last_byte_offset_to_copy = strtol(last_byte.c_str(), 0, 10);
+
+  if ((first_byte_offset_to_copy >= source_object_size) ||
+      (first_byte_offset_to_copy > last_byte_offset_to_copy)) {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
+    return false;
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  return true;
 }
 
 // TODO: Add this function to a common class
@@ -371,7 +480,8 @@ void S3PutMultipartCopyAction::copy_part_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (!total_data_to_copy) {
-    s3_log(S3_LOG_DEBUG, stripped_request_id, "Source object is empty");
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "Source object/specified range is empty");
     next();
     return;
   }
@@ -386,10 +496,11 @@ void S3PutMultipartCopyAction::copy_part_object() {
         additional_object_metadata->get_pvid(),
         std::bind(&S3PutMultipartCopyAction::copy_part_object_cb, this),
         std::bind(&S3PutMultipartCopyAction::copy_part_object_success, this),
-        std::bind(&S3PutMultipartCopyAction::copy_part_object_failed, this));
+        std::bind(&S3PutMultipartCopyAction::copy_part_object_failed, this),
+        first_byte_offset_to_copy);
     f_success = true;
   }
-  catch (const std::exception &ex) {
+  catch (const std::exception& ex) {
     s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
   }
   catch (...) {
@@ -597,10 +708,9 @@ void S3PutMultipartCopyAction::send_response_to_s3_client() {
       if (if_source_and_destination_same()) {  // Source and Destination same
         error.set_auth_error_message(
             InvalidRequestPartCopySourceAndDestinationSame);
-      } else if (additional_object_metadata->get_content_length() >
+      } else if (source_object_size >
                  MaxPartCopySourcePartSize) {  // Source object size greater
-                                               // than
-                                               // 5GB
+                                               // than 5GB
         error.set_auth_error_message(
             InvalidRequestSourcePartSizeGreaterThan5GB);
       }

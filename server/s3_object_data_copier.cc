@@ -151,7 +151,7 @@ void S3ObjectDataCopier::read_data_block_success() {
     }
     return;
   }
-  // Calculating actial size of data that has just been read
+  // Calculating actual size of data that has just been read
 
   for (size_t i = 0, n = data_blocks_read.size(); i < n; ++i) {
     const auto motr_block_size = data_blocks_read[i].second;
@@ -329,8 +329,8 @@ void S3ObjectDataCopier::write_data_block_failed() {
 void S3ObjectDataCopier::copy(
     struct m0_uint128 src_obj_id, size_t object_size, int layout_id,
     struct m0_fid pvid, std::function<bool(void)> check_shutdown_and_rollback,
-    std::function<void(void)> on_success,
-    std::function<void(void)> on_failure) {
+    std::function<void(void)> on_success, std::function<void(void)> on_failure,
+    size_t first_byte_offset) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   assert(non_zero(src_obj_id));
@@ -349,7 +349,11 @@ void S3ObjectDataCopier::copy(
 
   motr_reader = motr_reader_factory->create_motr_reader(
       request_object, src_obj_id, layout_id, pvid, motr_api);
-  motr_reader->set_last_index(0);
+  // motr_reader->set_last_index(0);
+
+  size_t block_start_offset =
+      first_byte_offset - (first_byte_offset % motr_unit_size);
+  motr_reader->set_last_index(block_start_offset);
 
   bytes_left_to_read = object_size;
 
