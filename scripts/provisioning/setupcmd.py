@@ -35,7 +35,8 @@ from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
 from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
-import logging
+from cortx.utils.cortx.const import Const
+from cortx.utils.log import Log
 
 class S3PROVError(Exception):
   """Parent class for the s3 provisioner error classes."""
@@ -75,24 +76,31 @@ class SetupCmd(object):
     self.base_log_file_path = "/var/log/cortx"
     self.consul_confstore = None
 
-    # validate supported services
-    lookup_service = ["haproxy", "s3server", "authserver", "bgscheduler", "bgworker"]
-    if self.services is None:
-      self.services = "haproxy,s3server,authserver,bgscheduler,bgworker"
+    # Constant service names from utils.
+    self.service_haproxy = Const.SERVICE_S3_HAPROXY.value
+    self.service_s3server = Const.SERVICE_S3_SERVER.value
+    self.service_authserver = Const.SERVICE_S3_AUTHSERVER.value
+    self.service_bgscheduler = Const.SERVICE_S3_BGSCHEDULER.value
+    self.service_bgworker = Const.SERVICE_S3_BGWORKER.value
 
-    self.bg_delete_service = "bgworker"
+    # validate supported services
+    lookup_service = [self.service_haproxy, self.service_s3server, self.service_authserver, self.service_bgscheduler, self.service_bgworker]
+    if self.services is None:
+      self.services = str(f"{self.service_haproxy},{self.service_s3server},{self.service_authserver},{self.service_bgscheduler},{self.service_bgworker}")
+
+    self.bg_delete_service = self.service_bgworker
     if -1 != self.services.find("bg_"):
       self.bg_delete_service = "bg_consumer"
     # follwing mapping needs to be removed once the services names are changed in provisioner and solution framework
     ######### start
     services_map = {
-                "io": "s3server,haproxy",
-                "auth": "authserver",
-                "bg_producer": "bgscheduler",
-                "bg_consumer": "bgworker"}
+                "io": str(f"{self.service_s3server},{self.service_haproxy}"),
+                "auth": self.service_authserver,
+                "bg_producer": self.service_bgscheduler,
+                "bg_consumer": self.service_bgworker}
     for service in services_map:
         if -1 != self.services.find(service):
-          if (service == "auth") and (-1 != services.find("authserver")):
+          if (service == "auth") and (-1 != services.find(self.service_authserver)):
             continue
           self.services = self.services.replace(service, services_map[service])
     ######### End
@@ -109,9 +117,6 @@ class SetupCmd(object):
       if service not in lookup_service:
         raise Exception(f'ERROR: {service} service is not supported.')
 
-    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-    self.logger = logging.getLogger(s3deployment_logger_name)
-
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
     # get all the param from the s3_prov_config file
@@ -120,22 +125,22 @@ class SetupCmd(object):
 
     # Get machine-id of current node from constore
     self.machine_id = self._s3_confkeys_store.get_machine_id()
-    self.logger.info(f'Machine id : {self.machine_id}')
+    Log.info(f'Machine id : {self.machine_id}')
 
     if config is None:
-      self.logger.warning(f'Empty Config url')
+      Log.warn(f'Empty Config url')
       return
 
     if not config.strip():
-      self.logger.error(f'Config url:[{config}] must be a valid url path')
+      Log.error(f'Config url:[{config}] must be a valid url path')
       raise Exception('Empty config URL path')
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
     self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
-    self.logger.info(f'config file path : {self.base_config_file_path}')
+    Log.info(f'config file path : {self.base_config_file_path}')
     self.s3_tmp_dir = os.path.join(self.base_config_file_path, "s3/tmp")
-    self.logger.info(f'tmp dir : {self.s3_tmp_dir}')
+    Log.info(f'tmp dir : {self.s3_tmp_dir}')
 
     # Consul URL 
     try:
@@ -147,9 +152,9 @@ class SetupCmd(object):
     except S3PROVError:
         # endpoint entry is not found in confstore hence fetch endpoint url from default value.
         consul_url=self.get_confvalue_with_defaults("DEFAULT_CONFIG>CONFSTORE_CONSUL_ENDPOINTS")
-        self.logger.info(f'consul endpoint url entry (http://<consul-fqdn>:<port>) is missing for protocol type: http from confstore, hence using default value as {consul_url}')
+        Log.info(f'consul endpoint url entry (http://<consul-fqdn>:<port>) is missing for protocol type: http from confstore, hence using default value as {consul_url}')
 
-    self.logger.info(f'loading consul service with consul endpoint URL as:{consul_url}')
+    Log.info(f'loading consul service with consul endpoint URL as:{consul_url}')
     self.consul_confstore = S3CortxConfStore(config=f'{consul_url}', index=str(uuid.uuid1()))
 
   @property
@@ -224,7 +229,7 @@ class SetupCmd(object):
         self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
 
     except Exception as e:
-      self.logger.error(f'read ldap credentials failed, error: {e}')
+      Log.error(f'read ldap credentials failed, error: {e}')
       raise e
 
   def update_rootdn_credentials(self, s3_cluster_file : str):
@@ -255,7 +260,7 @@ class SetupCmd(object):
       opfileconfstore.set_config(f'{key}', f'{encrypted_rootdn_pass}', True)
 
     except Exception as e:
-      self.logger.error(f'update rootdn credentials failed, error: {e}')
+      Log.error(f'update rootdn credentials failed, error: {e}')
       raise e
 
   def update_cluster_id(self, op_file: str):
@@ -280,7 +285,7 @@ class SetupCmd(object):
                         services: list = None,
                         files: list = None):
     """Validate pre requisites using cortx-py-utils validator."""
-    self.logger.info(f'Validations running from {self._preqs_conf_file}')
+    Log.info(f'Validations running from {self._preqs_conf_file}')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if services:
@@ -390,12 +395,12 @@ class SetupCmd(object):
     phase_name = phase_name.upper()
     # Extract keys from yardstick file for current phase considering inheritance
     yardstick_list = self.extract_yardstick_list(phase_name)
-    self.logger.info(f"yardstick_list -> {yardstick_list}")
+    Log.info(f"yardstick_list -> {yardstick_list}")
     # Set argument file confstore
     argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
     # Extract keys from argument file
     arg_keys_list = argument_file_confstore.get_all_keys(key_index = False)
-    self.logger.info(f"template_list -> {arg_keys_list}")
+    Log.info(f"template_list -> {arg_keys_list}")
     # Below algorithm uses tokenization
     # of both yardstick and argument key
     # based on delimiter to generate
@@ -417,11 +422,11 @@ class SetupCmd(object):
         key_yard = key_yard.replace("node-id", self.machine_id)
       if "nodes" in key_yard:
         storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT')
-        self.logger.info(f"storage_set_count : {storage_set_count}")
+        Log.info(f"storage_set_count : {storage_set_count}")
         index = 0
         while index < int(storage_set_count):
           key_yard_server_nodes_key = key_yard.replace("storage_set_count", str(index))
-          self.logger.info(f"key_yard_server_nodes_key : {key_yard_server_nodes_key}")
+          Log.info(f"key_yard_server_nodes_key : {key_yard_server_nodes_key}")
           key_yard_server_nodes = self.get_confvalue(key_yard_server_nodes_key)
           if key_yard_server_nodes is None:
             raise Exception("Validation for server_nodes failed")
@@ -431,53 +436,53 @@ class SetupCmd(object):
           self.key_value_verify(key_yard)
         else:
           raise Exception(f'No match found for {key_yard}')
-    self.logger.info("Validation complete")
+    Log.info("Validation complete")
 
   def shutdown_services(self, s3services_list):
     """Stop services."""
     for service_name in s3services_list:
       cmd = ['/bin/systemctl', 'is-active',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"Check {service_name} service is active or not ")
+      Log.info(f"Check {service_name} service is active or not ")
       res_op, res_err, res_rc = handler.run()
       if res_rc == 0:
-        self.logger.info(f"Service {service_name} is active")
+        Log.info(f"Service {service_name} is active")
         try:
           # if service name not found in the ha_service_map then use systemctl
           service_name = self.ha_service_map[service_name]
           cmd = ['cortx', 'stop',  f'{service_name}']
         except KeyError:
           cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
-        self.logger.info(f"Command: {cmd}")
+        Log.info(f"Command: {cmd}")
         handler = SimpleProcess(cmd)
         res_op, res_err, res_rc = handler.run()
         if res_rc != 0:
           raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
       else:
-        self.logger.info(f"Service {service_name} is not active")
+        Log.info(f"Service {service_name} is not active")
 
   def start_services(self, s3services_list):
     """Start services specified as parameter."""
     for service_name in s3services_list:
       cmd = ['/bin/systemctl', 'is-active',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"Check {service_name} service is active or not ")
+      Log.info(f"Check {service_name} service is active or not ")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
-        self.logger.info(f"Service {service_name} is not active")
+        Log.info(f"Service {service_name} is not active")
         try:
           # if service name not found in the ha_service_map then use systemctl
           service_name = self.ha_service_map[service_name]
           cmd = ['cortx', 'start',  f'{service_name}']
         except KeyError:
           cmd = ['/bin/systemctl', 'start',  f'{service_name}']
-        self.logger.info(f"Command: {cmd}")
+        Log.info(f"Command: {cmd}")
         handler = SimpleProcess(cmd)
         res_op, res_err, res_rc = handler.run()
         if res_rc != 0:
           raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
       else:
-        self.logger.info(f"Service {service_name} is already active")
+        Log.info(f"Service {service_name} is already active")
 
   def restart_services(self, s3services_list):
     """Restart services specified as parameter."""
@@ -489,7 +494,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"restarting {service_name}")
+      Log.info(f"restarting {service_name}")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -504,7 +509,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'reload',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"reloading {service_name}")
+      Log.info(f"reloading {service_name}")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -514,7 +519,7 @@ class SetupCmd(object):
     for service_name in s3services_list:
       cmd = ['/bin/systemctl', 'disable', f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"Disabling {service_name}")
+      Log.info(f"Disabling {service_name}")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -524,7 +529,7 @@ class SetupCmd(object):
     Both files should have same keys.
     if keys mismatch then there is some issue in the config file."""
 
-    self.logger.info(f'validating S3 config files for {phase_name}.')
+    Log.info(f'validating S3 config files for {phase_name}.')
     upgrade_items = {
     's3' : {
           'configFile' : self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
@@ -563,7 +568,7 @@ class SetupCmd(object):
     Both files should have same keys.
     if keys mismatch then there is some issue in the config file."""
 
-    self.logger.info(f'validating config file {str(configFile)}.')
+    Log.info(f'validating config file {str(configFile)}.')
 
     # new sample file
     conf_sample = filetype + SampleFile
@@ -577,11 +582,11 @@ class SetupCmd(object):
 
     # compare the keys of sample file and config file
     if conf_sample_keys.sort() == conf_file_keys.sort():
-        self.logger.info(f'config file {str(configFile)} validated successfully.')
+        Log.info(f'config file {str(configFile)} validated successfully.')
     else:
-        self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
-        self.logger.error(f'sample file keys: {str(conf_sample_keys)}')
-        self.logger.error(f'config file keys: {str(conf_file_keys)}')
+        Log.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
+        Log.error(f'sample file keys: {str(conf_sample_keys)}')
+        Log.error(f'config file keys: {str(conf_file_keys)}')
         raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.')
 
   def DeleteDirContents(self, dirname: str,  skipdirs: list = []):
@@ -596,11 +601,11 @@ class SetupCmd(object):
             os.remove(filepath)
           elif os.path.isdir(filepath):
             if filepath in skipdirs:
-              self.logger.info(f'Skipping the dir {filepath}')
+              Log.info(f'Skipping the dir {filepath}')
             else:
               shutil.rmtree(filepath)
         except Exception as e:
-          self.logger.error(f'ERROR: DeleteDirContents(): Failed to delete: {filepath}, error: {str(e)}')
+          Log.error(f'ERROR: DeleteDirContents(): Failed to delete: {filepath}, error: {str(e)}')
           raise e
 
   def DeleteFile(self, filepath: str):
@@ -609,7 +614,7 @@ class SetupCmd(object):
       try:
         os.remove(filepath)
       except Exception as e:
-        self.logger.error(f'ERROR: DeleteFile(): Failed to delete file: {filepath}, error: {str(e)}')
+        Log.error(f'ERROR: DeleteFile(): Failed to delete file: {filepath}, error: {str(e)}')
         raise e
 
   def DeleteFileOrDirWithRegex(self, path: str, regex: str):
@@ -624,7 +629,7 @@ class SetupCmd(object):
           elif os.path.isdir(file):
             shutil.rmtree(file)
         except Exception as e:
-          self.logger.error(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}')
+          Log.error(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}')
           raise e
 
   def get_iam_admin_credentials(self):
@@ -681,24 +686,24 @@ class SetupCmd(object):
     """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
     # copy all the config files from the /opt/seagate/cortx to /etc/cortx
     for config_file in config_files:
-      self.logger.info(f"Source config file: {config_file}")
+      Log.info(f"Source config file: {config_file}")
       dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
-      self.logger.info(f"Dest config file: {dest_config_file}")
+      Log.info(f"Dest config file: {dest_config_file}")
       os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
       shutil.copy(config_file, dest_config_file)
-      self.logger.info("Config file copied successfully to /etc/cortx")
+      Log.info("Config file copied successfully to /etc/cortx")
 
   def make_sample_old_files(self, config_files: list):
     """ Copy from /opt/seagate/cortx to make '.old' files in /etc/cortx/s3/tmp."""
     # for given config files at /opt/seagate/cortx, make '.old' in /etc/cortx/s3/tmp
     for config_file in config_files:
-      self.logger.info(f"Source config file: {config_file}")
+      Log.info(f"Source config file: {config_file}")
       old_file_name = os.path.basename(config_file) + '.old'
       old_config_file = os.path.join(self.s3_tmp_dir, old_file_name)
-      self.logger.info(f"Dest config file: {old_config_file}")
+      Log.info(f"Dest config file: {old_config_file}")
       os.makedirs(os.path.dirname(old_config_file), exist_ok=True)
       shutil.copy(config_file, old_config_file)
-      self.logger.info("Config file copied successfully to /etc/cortx/s3/tmp")
+      Log.info("Config file copied successfully to /etc/cortx/s3/tmp")
 
   def modify_attribute(self, dn, attribute, value):
         # Open a connection
@@ -709,7 +714,7 @@ class SetupCmd(object):
         try:
             ldap_conn.modify_s(dn, mod_attrs)
         except:
-            self.logger.error('Error while modifying attribute- '+ attribute )
+            Log.error('Error while modifying attribute- '+ attribute )
             raise Exception('Error while modifying attribute' + attribute)
         ldap_conn.unbind_s()
 
