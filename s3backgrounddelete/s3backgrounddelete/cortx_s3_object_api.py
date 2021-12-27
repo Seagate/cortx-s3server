@@ -25,32 +25,28 @@ from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 from s3backgrounddelete.cortx_s3_success_response import CORTXS3SuccessResponse
 from s3backgrounddelete.cortx_s3_client import CORTXS3Client
 from s3backgrounddelete.cortx_s3_util import CORTXS3Util
+from cortx.utils.log import Log
 #from s3backgrounddelete.IEMutil import IEMutil
 
 # CORTXS3ObjectApi supports object REST-API's Put, Get & Delete
 class CORTXS3ObjectApi(CORTXS3Client):
     """CORTXS3ObjectApi provides object REST-API's Get, Put and Delete."""
-    _logger = None
 
-    def __init__(self, config, connectionType, logger=None, connection=None):
-        """Initialise logger and config."""
-        if (logger is None):
-            self._logger = logging.getLogger("CORTXS3ObjectApi")
-        else:
-            self._logger = logger
+    def __init__(self, config, connectionType, connection=None):
+        """Initialise config."""
         self.config = config
         self.s3_util = CORTXS3Util(self.config, connectionType)
 
         if (connection is None):
-            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType, logger = self._logger)
+            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType)
         else:
-            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType, logger=self._logger, connection=connection)
+            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType, connection=connection)
 
 
     def put(self, oid, value):
         """Perform PUT request and generate response."""
         if oid is None:
-            self._logger.error("Object Id is required.")
+            Log.error("Object Id is required.")
             return False, None
 
         query_params = ""
@@ -66,7 +62,7 @@ class CORTXS3ObjectApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
         if headers['Authorization'] is None:
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -78,24 +74,24 @@ class CORTXS3ObjectApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 201:
-            self._logger.info("Object added successfully.")
+            Log.info("Object added successfully.")
             return True, CORTXS3SuccessResponse(response['body'])
         else:
-            self._logger.info('Failed to add Object.')
+            Log.info('Failed to add Object.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def get(self, oid):
         """Perform GET request and generate response."""
         if oid is None:
-            self._logger.error("Object Id is required.")
+            Log.error("Object Id is required.")
             return False, None
         request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
 
@@ -110,7 +106,7 @@ class CORTXS3ObjectApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('GET', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -121,30 +117,30 @@ class CORTXS3ObjectApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
-            self._logger.info('Successfully fetched object details.')
+            Log.info('Successfully fetched object details.')
             return True, CORTXS3SuccessResponse(response['body'])
         else:
-            self._logger.info('Failed to fetch object details.')
+            Log.info('Failed to fetch object details.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def delete(self, oid, layout_id, pvid_str):
         """Perform DELETE request and generate response."""
         if oid is None:
-            self._logger.error("Object Id is required.")
+            Log.error("Object Id is required.")
             return False, None
         if layout_id is None:
-            self._logger.error("Layout Id is required.")
+            Log.error("Layout Id is required.")
             return False, None
         if pvid_str is None:
-            self._logger.error("pvid_str is required.")
+            Log.error("pvid_str is required.")
             return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
@@ -164,7 +160,7 @@ class CORTXS3ObjectApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -176,17 +172,17 @@ class CORTXS3ObjectApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
-            self._logger.info('Object deleted successfully.')
+            Log.info('Object deleted successfully.')
             return True, CORTXS3SuccessResponse(response['body'])
         else:
-            self._logger.info('Failed to delete Object.')
+            Log.info('Failed to delete Object.')
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
@@ -194,10 +190,10 @@ class CORTXS3ObjectApi(CORTXS3Client):
     def head(self, oid, layout_id):
         """Perform HEAD request and generate response."""
         if oid is None:
-            self._logger.error("Object Id is required.")
+            Log.error("Object Id is required.")
             return False, None
         if layout_id is None:
-            self._logger.error("Layout Id is required.")
+            Log.error("Layout Id is required.")
             return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
@@ -216,7 +212,7 @@ class CORTXS3ObjectApi(CORTXS3Client):
         headers = self.s3_util.prepare_signed_header('HEAD', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
-            self._logger.error("Failed to generate v4 signature")
+            Log.error("Failed to generate v4 signature")
             return False, None
 
         try:
@@ -228,18 +224,18 @@ class CORTXS3ObjectApi(CORTXS3Client):
                 headers=headers)
         except ConnectionRefusedError as ex:
             #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            self._logger.error(repr(ex))
+            Log.error(repr(ex))
             return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
-            self._logger.info("HEAD Object called successfully with status code: "\
+            Log.info("HEAD Object called successfully with status code: "\
                  + str(response['status']) + " response body: " + str(response['body']))
             return True, CORTXS3SuccessResponse(response['body'])
         else:
-            self._logger.info("Failed to do HEAD Object with status code: "\
+            Log.info("Failed to do HEAD Object with status code: "\
                  + str(response['status']) + " response body: " + str(response['body']))
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])

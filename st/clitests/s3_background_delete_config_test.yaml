@@ -47,12 +47,8 @@ logconfig:                                  # Section for scheduler & processor 
    scheduler_logger_name: "object_recovery_scheduler"                                         # Root logger name for scheduler
    processor_logger_name: "object_recovery_processor"                                         # Root logger name for processor
    logger_directory: "/var/log/cortx/s3/s3backgrounddelete"                                 # Log directory location for background delete
-   scheduler_log_file: "/var/log/cortx/s3/s3backgrounddelete/object_recovery_scheduler.log" # Log file path for background delete scheduler
-   processor_log_file: "/var/log/cortx/s3/s3backgrounddelete/object_recovery_processor.log" # Log file path for background delete processor
-   file_log_level: 10                                                                         # Sets the threshold for above file loggers to level specified. https://docs.python.org/3/library/logging.html#levels
-   console_log_level: 40                                                                      # Sets the threshold for console loggers to level specified. https://docs.python.org/3/library/logging.html#levels
-   log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"                         # Sets the specifed log format https://docs.python.org/3/library/logging.html#logging.Formatter
-   max_bytes: 5242880                                                                         # Max size of a log files is set to 5mb
+   file_log_level: "DEBUG"                                                                    # Sets the threshold for above file loggers to level specified. https://docs.python.org/3/library/logging.html#levels
+   max_log_size_mb: 5                                                                         # Max size of a log file in MB is set to 5
    backup_count: 5                                                                            # Max number of log files that can exist
 
 indexid:

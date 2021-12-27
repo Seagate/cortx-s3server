@@ -28,6 +28,7 @@ import uuid
 
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from cortx.utils.log import Log
 
 try:
     from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -41,12 +42,10 @@ class CORTXS3Config(object):
     _conf_file = None
     s3confstore = None
 
-    def __init__(self,base_cfg_path:str = "/etc/cortx",cfg_type:str = "yaml://"):
-        """Initialise logger and configuration."""
-        self.logger = logging.getLogger(__name__ + "CORTXS3Config")
+    def __init__(self,base_cfg_path:str = "/etc/cortx",cfg_type:str = "yaml://", log_init=True):
+        """Initialise configuration."""
         self.s3bdg_access_key = None
         self.s3bgd_secret_key = None
-        self.logger.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
         if os.path.isfile(os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")):
             # Load config.yaml file through confstore.
             bgdelete_conf_file = cfg_type + os.path.join(base_cfg_path,"s3/s3backgrounddelete/config.yaml")
@@ -54,6 +53,15 @@ class CORTXS3Config(object):
                 self.s3confstore = S3CortxConfStore(config=bgdelete_conf_file, index= str(uuid.uuid1()))
         else:
             self._load_and_fetch_config()
+        if log_init:
+          Log.init(self.get_scheduler_logger_name(),
+                   self.get_scheduler_logger_directory(),
+                   level=self.get_file_log_level(),
+                   backup_count=self.get_backup_count(),
+                   file_size_in_mb=self.get_max_log_size_mb(),
+                   syslog_server=None, syslog_port=None,
+                   console_output=True)
+          Log.info(f"Input Parameters - {base_cfg_path} {cfg_type}")
         self.cache_credentials()
 
     @staticmethod
@@ -78,7 +86,7 @@ class CORTXS3Config(object):
                 self._conf_file)
 
         if not os.access(self._conf_file, os.R_OK):
-            self.logger.error(
+            Log.error(
                 "Failed to read " +
                 self._conf_file +
                 " it doesn't have read access")
@@ -98,13 +106,13 @@ class CORTXS3Config(object):
             self.s3bdg_access_key = self.generate_key(None, True, 22, "s3backgroundaccesskey")
         except CipherInvalidToken as err:
             self.s3bdg_access_key = None
-            self.logger.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
+            Log.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
 
         try:
             self.s3bgd_secret_key = self.generate_key(None, False, 40, "s3backgroundsecretkey")
         except CipherInvalidToken as err:
             self.s3bgd_secret_key = None
-            self.logger.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
+            Log.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
 
     def get_config_version(self):
         """Return version of S3 background delete config file or KeyError."""
@@ -155,55 +163,14 @@ class CORTXS3Config(object):
                 "Could not parse processor loggername from config file " +
                 self._conf_file)
 
-    def get_scheduler_logger_file(self):
-        """Return logger file for scheduler from config file or KeyError."""
-        try:
-          scheduler_log_file = self.s3confstore.get_config('logconfig>scheduler_log_file')
-          return scheduler_log_file
-        except:
-            raise KeyError(
-                "Could not parse scheduler logfile from config file " +
-                self._conf_file)
-
-    def get_processor_logger_file(self):
-        """Return logger file for processor from config file or KeyError."""
-        try:
-          processor_log_file = self.s3confstore.get_config('logconfig>processor_log_file')
-          return processor_log_file
-        except:
-            raise KeyError(
-                "Could not parse processor loggerfile from config file " +
-                self._conf_file)
-
-
     def get_file_log_level(self):
         """Return file log level from config file or KeyError."""
         try:
           log_level = self.s3confstore.get_config('logconfig>file_log_level')
-          return int(log_level)
+          return log_level
         except:
             raise KeyError(
                 "Could not parse file loglevel from config file " +
-                self._conf_file)
-
-    def get_console_log_level(self):
-        """Return console log level from config file or KeyError."""
-        try:
-          console_log_level = self.s3confstore.get_config('logconfig>console_log_level')
-          return int(console_log_level)
-        except:
-            raise KeyError(
-                "Could not parse console loglevel from config file " +
-                self._conf_file)
-
-    def get_log_format(self):
-        """Return log format from config file or KeyError."""
-        try:
-          log_format = self.s3confstore.get_config('logconfig>log_format')
-          return log_format
-        except:
-            raise KeyError(
-                "Could not parse log format from config file " +
                 self._conf_file)
 
     def get_cortx_s3_endpoint(self):
@@ -333,14 +300,14 @@ class CORTXS3Config(object):
                 "Could not parse global instance index-id from config file " +
                 self._conf_file)
 
-    def get_max_bytes(self):
-        """Return maximum bytes for a log file"""
+    def get_max_log_size_mb(self):
+        """Return maximum log size in mb for a log file"""
         try:
-          max_bytes = self.s3confstore.get_config('logconfig>max_bytes')
-          return int(max_bytes)
+          max_log_size_mb = self.s3confstore.get_config('logconfig>max_log_size_mb')
+          return int(max_log_size_mb)
         except:
             raise KeyError(
-                "Could not parse maxBytes from config file " +
+                "Could not parse max log size in mb from config file " +
                 self._conf_file)
 
     def get_backup_count(self):
