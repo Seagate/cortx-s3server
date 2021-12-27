@@ -50,4 +50,10 @@ class S3DataUsageAction : public S3Action {
   void send_response_to_s3_client();
   void setup_steps();
   std::string create_json_response();
+
+  friend class S3DataUsageActionTest;
+  FRIEND_TEST(S3DataUsageActionTest, Constructor);
+  FRIEND_TEST(S3DataUsageActionTest, GetDataUsageCountersMissing);
+  FRIEND_TEST(S3DataUsageActionTest, GetDataUsageCountersFailed);
+  FRIEND_TEST(S3DataUsageActionTest, GetDataUsageCountersSuccess);
 };
