@@ -147,6 +147,7 @@ class S3DeleteObjectActionTest : public testing::Test {
   int call_count_one;
   int layout_id;
   std::string bucket_name, object_name;
+  bool is_object_delete_marker = false;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -422,7 +423,7 @@ TEST_F(S3DeleteObjectActionTest, DeleteObjectsDelayedEnabled) {
   action_under_test->delete_objects();
 }
 
-TEST_F(S3DeleteObjectActionTest, DeleteHandlerInEnabledState) {
+TEST_F(S3DeleteObjectActionTest, DeleteHandlerCreateDeleteMarker) {
   CREATE_OBJECT_METADATA;
 
   std::string version = "Enabled";
@@ -470,5 +471,45 @@ TEST_F(S3DeleteObjectActionTest, MetadataHandlerInEnabledState) {
 
   EXPECT_CALL(*(object_meta_factory->mock_delete_marker_metadata), save(_, _))
       .Times(1);
+  action_under_test->metadata_handler();
+}
+
+TEST_F(S3DeleteObjectActionTest, DeleteHandlerDeleteDeleteMarker) {
+  CREATE_OBJECT_METADATA;
+
+  std::string version = "Enabled";
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_bucket_versioning_status())
+      .WillRepeatedly(ReturnRef(version));
+
+  EXPECT_CALL(*(mock_request), has_query_param_key(_))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), is_delete_marker())
+      .WillRepeatedly(Return(true));
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteObjectActionTest::func_callback_one, this);
+
+  action_under_test->delete_handler();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3DeleteObjectActionTest, DeleteVersionMetadata) {
+  CREATE_OBJECT_METADATA;
+
+  std::string version = "Enabled";
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_bucket_versioning_status())
+      .WillRepeatedly(ReturnRef(version));
+
+  EXPECT_CALL(*(mock_request), has_query_param_key(_))
+      .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              remove_version_metadata(_, _)).Times(1);
+
   action_under_test->metadata_handler();
 }
