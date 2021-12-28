@@ -81,7 +81,8 @@ void S3ObjectAPIHandler::create_action() {
             //  Multipart UploadPartcopy
             request->set_object_size(request->get_data_length());
             request->set_action_str("PutMultiObjectCopy");
-            action = std::make_shared<S3PutMultipartCopyAction>(request);
+            action = std::make_shared<S3PutMultipartCopyAction>(
+              request, motr_api);
             s3_stats_inc("put_multipart_copy_part_request_count");
           } else {
             // Multipart part uploads

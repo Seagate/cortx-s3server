@@ -37,6 +37,7 @@ class S3APIHandler {
   std::shared_ptr<S3Action> action;
 
   S3OperationCode operation_code;
+  std::shared_ptr<MotrAPI> motr_api;
 
   // Only for Unit testing
   std::shared_ptr<S3APIHandler> _get_self_ref() { return self_ref; }
@@ -48,8 +49,9 @@ class S3APIHandler {
   std::shared_ptr<S3APIHandler> self_ref;
 
  public:
-  S3APIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code)
-      : request(req), operation_code(op_code) {
+  S3APIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code,
+    std::shared_ptr<MotrAPI> motr_api = nullptr)
+      : request(req), operation_code(op_code), motr_api(motr_api) {
     request_id = request->get_request_id();
     stripped_request_id = request->get_stripped_request_id();
   }
@@ -127,8 +129,9 @@ class S3BucketAPIHandler : public S3APIHandler {
 class S3ObjectAPIHandler : public S3APIHandler {
  public:
   S3ObjectAPIHandler(std::shared_ptr<S3RequestObject> req,
-                     S3OperationCode op_code)
-      : S3APIHandler(req, op_code) {}
+                     S3OperationCode op_code,
+                     std::shared_ptr<MotrAPI> motr_api = nullptr)
+      : S3APIHandler(req, op_code, std::move(motr_api)) {}
 
   virtual void create_action();
 

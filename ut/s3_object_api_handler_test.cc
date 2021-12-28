@@ -38,6 +38,7 @@
 #include "s3_put_object_acl_action.h"
 #include "s3_put_object_action.h"
 #include "s3_copy_object_action.h"
+#include "s3_ut_common.h"
 
 #include "mock_s3_async_buffer_opt_container.h"
 #include "mock_s3_factory.h"
@@ -47,6 +48,7 @@ using ::testing::Eq;
 using ::testing::StrEq;
 using ::testing::Return;
 using ::testing::ReturnRef;
+using ::testing::Invoke;
 using ::testing::_;
 
 class S3ObjectAPIHandlerTest : public testing::Test {
@@ -65,6 +67,8 @@ class S3ObjectAPIHandlerTest : public testing::Test {
 
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
+
     EXPECT_CALL(*mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*mock_request, get_object_name())
@@ -73,6 +77,7 @@ class S3ObjectAPIHandlerTest : public testing::Test {
 
   std::shared_ptr<MockS3RequestObject> mock_request;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
 
   std::shared_ptr<S3ObjectAPIHandler> handler_under_test;
   S3Option *instance = NULL;
@@ -197,7 +202,8 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectCopyAction) {
   EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
       ReturnRef(input_headers));
   handler_under_test.reset(
-      new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart));
+      new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart,
+        ptr_mock_s3_motr_api));
 
   EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::PUT));
   EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-copy-source")))
@@ -205,13 +211,14 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectCopyAction) {
   EXPECT_CALL(*(mock_request), get_query_string_value(_))
       .WillRepeatedly(Return("123"));
   EXPECT_CALL(*(mock_request), is_chunked()).WillRepeatedly(Return(true));
-  S3Option::get_instance()->enable_murmurhash_oid();
+  EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
   handler_under_test->create_action();
 
   EXPECT_FALSE((dynamic_cast<S3PutMultipartCopyAction *>(
                    handler_under_test->_get_action().get())) == nullptr);
   handler_under_test->_get_action()->i_am_done();
-  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction) {
