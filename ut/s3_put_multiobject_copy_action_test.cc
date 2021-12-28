@@ -37,16 +37,17 @@ using ::testing::AtLeast;
 
 class S3PutMultipartCopyActionTest : public testing::Test {
  protected:
-  S3PutMultipartCopyActionTest() {
-    mp_indx_oid = {0xffff, 0xffff};
-    oid = {0x1ffff, 0x1ffff};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_idx_oid = {0x1ffff, 0x11fff};
-    part_list_idx_oid = {0x1fff, 0x1fff};
-    upload_id = "upload_id";
-    call_count_one = 0;
-    destination_bucket_name = "destbkt";
-    destination_object_name = "destobj";
+  S3PutMultipartCopyActionTest() :
+    mp_indx_oid({0xffff, 0xffff}),
+    object_list_indx_oid({0x11ffff, 0x1ffff}),
+    objects_version_list_idx_oid({0x1ffff, 0x11fff}),
+    part_list_idx_oid({0x1fff, 0x1fff}),
+    oid({0x1ffff, 0x1ffff}),
+    upload_id("upload_id"),
+    destination_bucket_name("destbkt"),
+    destination_object_name("destobj"), 
+    call_count_one(0) {
+
     input_headers["Authorization"] = "1";
 
     layout_id =
@@ -120,8 +121,8 @@ class S3PutMultipartCopyActionTest : public testing::Test {
   struct m0_uint128 oid;
   int layout_id;
   std::string upload_id;
-  std::string destination_object_name;
   std::string destination_bucket_name;
+  std::string destination_object_name;
   int call_count_one;
   std::map<std::string, std::string> input_headers;
 
