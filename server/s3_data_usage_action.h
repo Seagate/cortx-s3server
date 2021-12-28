@@ -18,18 +18,42 @@
  *
  */
 
+#include <map>
 #include <string>
+
 #include "s3_request_object.h"
 #include "s3_action_base.h"
-class S3DataUsageAction : public S3Action {
-  std::string json_response;
-  std::shared_ptr<S3RequestObject> request;
+#include "s3_factory.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
 
-  void prepare_the_response();
+class S3DataUsageAction : public S3Action {
+  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReader> motr_kvs_reader;
+  std::shared_ptr<MotrAPI> motr_kvs_api;
+
+  std::string last_key;
+  unsigned max_records_per_request;
+  std::map<std::string, int64_t> counters;
+
+  void get_data_usage_counters();
+  void get_next_keyval_success();
+  void get_next_keyval_failure();
 
  public:
-  S3DataUsageAction(std::shared_ptr<S3RequestObject> req);
+  S3DataUsageAction(std::shared_ptr<S3RequestObject> req,
+                    std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory =
+                        nullptr,
+                    std::shared_ptr<MotrAPI> motr_api = nullptr);
   virtual ~S3DataUsageAction();
   void send_response_to_s3_client();
   void setup_steps();
+  std::string create_json_response();
+
+  friend class S3DataUsageActionTest;
+  FRIEND_TEST(S3DataUsageActionTest, Constructor);
+  FRIEND_TEST(S3DataUsageActionTest, GetDataUsageCountersMissing);
+  FRIEND_TEST(S3DataUsageActionTest, GetDataUsageCountersFailed);
+  FRIEND_TEST(S3DataUsageActionTest, GetDataUsageCountersSuccess);
 };

@@ -18,13 +18,12 @@
  *
  */
 
-#include <json/json.h>
-
 #include "s3_data_usage.h"
 #include "s3_log.h"
 
-#define JSON_OBJECTS_COUNT "objects_count"
-#define JSON_BYTES_COUNT "bytes_count"
+const char DataUsageItem::JSON_KEY_ACCOUNT_ID_DELIMITER = '/';
+const std::string DataUsageItem::JSON_OBJECTS_COUNT = "objects_count";
+const std::string DataUsageItem::JSON_BYTES_COUNT = "bytes_count";
 
 extern struct s3_motr_idx_layout data_usage_accounts_index_layout;
 
@@ -201,7 +200,7 @@ DataUsageItem::DataUsageItem(
   current_request = std::move(req);
   pending_request = nullptr;
   cache_key = std::move(key_in_cache);
-  motr_key = cache_key + "/" + get_server_id();
+  motr_key = cache_key + JSON_KEY_ACCOUNT_ID_DELIMITER + get_server_id();
   state_cb = subscriber;
   state = DataUsageItemState::empty;
   objects_count = 0;
@@ -364,7 +363,8 @@ void DataUsageItem::kvs_read_success() {
   std::string req_id = get_item_request_id();
   s3_log(S3_LOG_DEBUG, req_id, "%s Entry\n", __func__);
 
-  if (this->from_json(motr_kv_reader->get_value()) != 0) {
+  if (from_json(req_id, motr_kv_reader->get_value(), &objects_count,
+                &bytes_count) != 0) {
     s3_log(S3_LOG_ERROR, req_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 ":%" SCNx64 ", Key = %s, Value = %s\n",
@@ -438,8 +438,10 @@ void DataUsageItem::do_kvs_write() {
   set_state(DataUsageItemState::active);
   motr_kv_writer = motr_kv_writer_factory->create_motr_kvs_writer(
       current_request, motr_kv_api);
+  std::string json = to_json(req_id, objects_count + current_objects_increment,
+                             bytes_count + current_bytes_increment);
   motr_kv_writer->put_keyval(
-      data_usage_accounts_index_layout, motr_key, this->to_json(),
+      data_usage_accounts_index_layout, motr_key, json,
       std::bind(&DataUsageItem::kvs_write_success, this),
       std::bind(&DataUsageItem::kvs_write_failure, this));
 
@@ -477,26 +479,53 @@ void DataUsageItem::kvs_write_failure() {
   s3_log(S3_LOG_DEBUG, req_id, "%s Exit\n", __func__);
 }
 
-std::string DataUsageItem::to_json() {
-  std::string req_id = get_item_request_id();
+Json::Value DataUsageItem::to_json_value(const std::string &req_id,
+                                         int64_t *p_objects_count,
+                                         int64_t *p_bytes_count) {
   s3_log(S3_LOG_DEBUG, req_id, "%s Entry\n", __func__);
 
   Json::Value root;
-  root[JSON_OBJECTS_COUNT] = Json::Value(
-      (Json::Value::Int64)(objects_count + current_objects_increment));
-  root[JSON_BYTES_COUNT] =
-      Json::Value((Json::Value::Int64)(bytes_count + current_bytes_increment));
+  if (p_objects_count) {
+    root[JSON_OBJECTS_COUNT] =
+        Json::Value((Json::Value::Int64)(*p_objects_count));
+  }
+  if (p_bytes_count) {
+    root[JSON_BYTES_COUNT] = Json::Value((Json::Value::Int64)(*p_bytes_count));
+  }
+
+  s3_log(S3_LOG_DEBUG, req_id, "[%s] Exit\n", __func__);
+  return root;
+}
+
+std::string DataUsageItem::to_json(const std::string &req_id,
+                                   int64_t objects_count, int64_t bytes_count) {
+  s3_log(S3_LOG_DEBUG, req_id, "%s Entry\n", __func__);
 
   Json::FastWriter fastWriter;
+  Json::Value root = to_json_value(req_id, &objects_count, &bytes_count);
   std::string json = fastWriter.write(root);
+
   s3_log(S3_LOG_DEBUG, req_id, "[%s] Exit, ret %s\n", __func__, json.c_str());
   return json;
 }
 
-int DataUsageItem::from_json(std::string content) {
-  std::string req_id = get_item_request_id();
-  s3_log(S3_LOG_DEBUG, req_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, req_id, "Called with content [%s]\n", content.c_str());
+std::string DataUsageItem::extract_account_id_from_motr_key(
+    const std::string &req_id, const std::string &motr_key) {
+  s3_log(S3_LOG_DEBUG, req_id, "%s Entry with motr_key %s\n", __func__,
+         motr_key.c_str());
+  auto pos = motr_key.find(JSON_KEY_ACCOUNT_ID_DELIMITER);
+  std::string account_id =
+      pos != std::string::npos ? motr_key.substr(0, pos) : "";
+  s3_log(S3_LOG_DEBUG, req_id, "[%s] Exit, ret %s\n", __func__,
+         account_id.c_str());
+  return account_id;
+}
+
+int DataUsageItem::from_json(const std::string &req_id,
+                             const std::string &content,
+                             int64_t *p_objects_count, int64_t *p_bytes_count) {
+  s3_log(S3_LOG_DEBUG, req_id, "%s Entry with content %s\n", __func__,
+         content.c_str());
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
@@ -513,8 +542,12 @@ int DataUsageItem::from_json(std::string content) {
     return -1;
   }
 
-  objects_count = newroot[JSON_OBJECTS_COUNT].asUInt64();
-  bytes_count = newroot[JSON_BYTES_COUNT].asUInt64();
+  if (p_objects_count) {
+    *p_objects_count = newroot[JSON_OBJECTS_COUNT].asInt64();
+  }
+  if (p_bytes_count) {
+    *p_bytes_count = newroot[JSON_BYTES_COUNT].asInt64();
+  }
 
   s3_log(S3_LOG_DEBUG, req_id, "[%s] Exit\n", __func__);
   return 0;

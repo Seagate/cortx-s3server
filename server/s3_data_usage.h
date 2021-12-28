@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <json/json.h>
 #include <map>
 #include <string>
 #include <gtest/gtest_prod.h>
@@ -128,6 +129,10 @@ class DataUsageItem {
   // Item's place in the list of inactive items that the cache maintains
   std::list<DataUsageItem *>::iterator ptr_inactive;
 
+  static const char JSON_KEY_ACCOUNT_ID_DELIMITER;
+  static const std::string JSON_OBJECTS_COUNT;
+  static const std::string JSON_BYTES_COUNT;
+
   std::string get_item_request_id();
   void set_state(DataUsageItemState new_state);
   void do_kvs_read();
@@ -139,8 +144,6 @@ class DataUsageItem {
   void run_successful_callbacks();
   void run_failure_callbacks();
   void fail_all();
-  std::string to_json();
-  int from_json(std::string content);
 
  public:
   DataUsageItem(std::shared_ptr<RequestObject> req,
@@ -156,6 +159,15 @@ class DataUsageItem {
                     int64_t bytes_count_increment,
                     std::function<void()> on_success,
                     std::function<void()> on_failure);
+  static std::string extract_account_id_from_motr_key(
+      const std::string &req_id, const std::string &motr_key);
+  static int from_json(const std::string &req_id, const std::string &content,
+                       int64_t *p_objects_count, int64_t *p_bytes_count);
+  static std::string to_json(const std::string &req_id, int64_t objects_count,
+                             int64_t bytes_count);
+  static Json::Value to_json_value(const std::string &req_id,
+                                   int64_t *p_objects_count,
+                                   int64_t *p_bytes_count);
 
   friend S3DataUsageCache;
   friend class DataUsageItemTest;
