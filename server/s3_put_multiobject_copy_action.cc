@@ -126,7 +126,7 @@ void S3PutMultipartCopyAction::setup_steps() {
       S3PutMultipartCopyAction::set_source_bucket_authorization_metadata, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::check_source_bucket_authorization,
                   this);
-  ACTION_TASK_ADD(S3PutMultipartCopyAction::create_part_object, this);
+  ACTION_TASK_ADD(S3PutMultipartCopyAction::create_part, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::initiate_part_copy, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::save_metadata, this);
   ACTION_TASK_ADD(S3PutMultipartCopyAction::send_response_to_s3_client, this);
@@ -385,21 +385,6 @@ bool S3PutMultipartCopyAction::copy_part_object_cb() {
 }
 
 // TODO: Add this function to a common class
-void S3PutMultipartCopyAction::create_part_object() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (additional_object_metadata->get_number_of_fragments() == 0) {
-    create_part();
-  } else {
-    // Incase of fragments or multipart upload
-    // each part copy needs separate object creation
-    s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
-    set_s3_error("NotImplemented");
-    send_response_to_s3_client();
-  }
-  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
-}
-
-// TODO: Add this function to a common class
 void S3PutMultipartCopyAction::create_part() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_timer.start();
@@ -468,10 +453,59 @@ void S3PutMultipartCopyAction::initiate_part_copy() {
   if (additional_object_metadata->get_number_of_fragments() == 0) {
     copy_part_object();
   } else {
-    s3_copy_part_action_state = S3PutObjectActionState::validationFailed;
-    set_s3_error("NotImplemented");
-    send_response_to_s3_client();
+    copy_multipart_source_object();
   }
+}
+
+void S3PutMultipartCopyAction::copy_multipart_source_object() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (!total_data_to_copy) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id, "Source object is empty");
+    next();
+    return;
+  }
+  object_data_copier.reset(new S3ObjectDataCopier(
+      request, motr_writer, motr_reader_factory, s3_motr_api));
+
+  extended_obj = additional_object_metadata->get_extended_object_metadata();
+
+  total_objects = additional_object_metadata->get_number_of_fragments();
+
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Total fragements/parts to be copied : (%d)\n", total_objects);
+  extended_obj = additional_object_metadata->get_extended_object_metadata();
+  const std::map<int, std::vector<struct s3_part_frag_context>>& ext_entries =
+      extended_obj->get_raw_extended_entries();
+  for (int i = 0; i < total_objects; i++) {
+    int ext_entry_index = 0;
+
+    const struct s3_part_frag_context& frag_info =
+        (ext_entries.at(i + 1)).at(ext_entry_index);
+    part_fragment_context_list.push_back(frag_info);
+  }
+  bool f_success = false;
+  try {
+    object_data_copier->copy_part_fragment_in_single_source(
+        part_fragment_context_list,
+        std::bind(&S3PutMultipartCopyAction::copy_part_object_cb, this),
+        std::bind(&S3PutMultipartCopyAction::copy_part_object_success, this),
+        std::bind(&S3PutMultipartCopyAction::copy_part_object_failed, this));
+    f_success = true;
+  }
+  catch (const std::exception& ex) {
+    s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
+  }
+  catch (...) {
+    s3_log(S3_LOG_ERROR, stripped_request_id, "Non-standard C++ exception");
+  }
+  if (!f_success) {
+    object_data_copier.reset();
+
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+    return;
+  }
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit\n", __func__);
 }
 
 // Copy source part object to destination

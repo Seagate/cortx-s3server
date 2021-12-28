@@ -223,7 +223,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutMultiObjectAction::validate_multipart_request",
     "S3PutMultipartCopyAction::check_part_details",
     "S3PutMultipartCopyAction::check_source_bucket_authorization",
-    "S3PutMultipartCopyAction::create_part_object",
+    "S3PutMultipartCopyAction::create_part",
     "S3PutMultipartCopyAction::delete_new_object",
     "S3PutMultipartCopyAction::delete_old_object",
     "S3PutMultipartCopyAction::fetch_multipart_metadata",

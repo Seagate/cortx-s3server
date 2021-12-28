@@ -295,10 +295,19 @@ void S3ObjectDataCopier::write_data_block_success() {
     // did not start writing.
     // It means that the function did not find data ready for writing.
     // So all data has been written.
-    if (copy_parts_fragment) {
-      this->on_success_for_fragments(vector_index);
+
+    // read data from next parts
+    if (copy_parts_fragment_in_single_source &&
+        ((part_vector_index + 1) < part_fragment_context_list.size())) {
+      part_vector_index++;
+      set_next_part_context();
+      read_data_block();
     } else {
-      this->on_success();
+      if (copy_parts_fragment) {
+        this->on_success_for_fragments(vector_index);
+      } else {
+        this->on_success();
+      }
     }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -364,6 +373,47 @@ void S3ObjectDataCopier::copy(
   read_data_block();
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ObjectDataCopier::copy_part_fragment_in_single_source(
+    std::vector<struct s3_part_frag_context> fragment_context_list,
+    std::function<bool(void)> check_shutdown_and_rollback,
+    std::function<void(void)> on_success,
+    std::function<void(void)> on_failure) {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+  assert(check_shutdown_and_rollback);
+  assert(on_success);
+  assert(on_failure);
+  this->check_shutdown_and_rollback = std::move(check_shutdown_and_rollback);
+  this->on_success = std::move(on_success);
+  this->on_failure = std::move(on_failure);
+  part_fragment_context_list = fragment_context_list;
+  copy_parts_fragment_in_single_source = true;
+  set_next_part_context();
+  read_data_block();
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
+}
+
+void S3ObjectDataCopier::set_next_part_context() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+  assert(non_zero(part_fragment_context_list[part_vector_index].motr_OID));
+  assert(part_fragment_context_list[part_vector_index].item_size > 0);
+  assert(part_fragment_context_list[part_vector_index].layout_id > 0);
+  motr_unit_size = S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+      part_fragment_context_list[part_vector_index].layout_id);
+
+  motr_reader = motr_reader_factory->create_motr_reader(
+      request_object, part_fragment_context_list[part_vector_index].motr_OID,
+      part_fragment_context_list[part_vector_index].layout_id,
+      part_fragment_context_list[part_vector_index].PVID, motr_api);
+  motr_reader->set_last_index(0);
+
+  bytes_left_to_read = part_fragment_context_list[part_vector_index].item_size;
+
+  copy_failed = false;
+  read_in_progress = false;
+  write_in_progress = false;
+  s3_log(S3_LOG_INFO, request_id, "%s Exit\n", __func__);
 }
 
 void S3ObjectDataCopier::copy_part_fragment(
