@@ -48,10 +48,9 @@ S3PutMultipartCopyAction::S3PutMultipartCopyAction(
     std::shared_ptr<S3MotrReaderFactory> motr_s3_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory)
-    : S3PutObjectActionBase(std::move(req), std::move(bucket_meta_factory),
-                            std::move(object_meta_factory), std::move(motr_api),
-                            std::move(motr_s3_writer_factory),
-                            std::move(kv_writer_factory)) {
+    : S3PutObjectActionBase(std::move(req), nullptr,
+                            std::move(object_meta_factory), nullptr, nullptr,
+                            nullptr) {
   part_number = get_part_number();
   upload_id = request->get_query_string_value("uploadId");
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
@@ -749,7 +748,9 @@ void S3PutMultipartCopyAction::send_response_to_s3_client() {
 
     request->send_response(http_status_code, std::move(response_xml));
   }
+#ifndef S3_GOOGLE_TEST
   startcleanup();
+#endif  // S3_GOOGLE_TEST
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
