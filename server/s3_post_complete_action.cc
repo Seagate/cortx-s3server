@@ -999,8 +999,8 @@ void S3PostCompleteAction::revert_data_usage() {
     inc_obj_size = -(object_size);
   }
 
-  s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
-         inc_obj_size);
+  s3_log(S3_LOG_INFO, request_id, "%s increment in size = %" PRId64 "\n",
+         __func__, inc_obj_size);
 
   // Failure cb should call bg services.
   S3DataUsageCache::update_data_usage(

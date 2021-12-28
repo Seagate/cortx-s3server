@@ -650,8 +650,8 @@ void S3PutObjectAction::revert_data_usage() {
     inc_obj_size = -(request->get_content_length());
   }
 
-  s3_log(S3_LOG_INFO, request_id, "%s increment in size = %lu\n", __func__,
-         inc_obj_size);
+  s3_log(S3_LOG_INFO, request_id, "%s increment in size = %" PRId64 "\n",
+         __func__, inc_obj_size);
 
   // Failure cb should do bg work.
   // success to call next.
