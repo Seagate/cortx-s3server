@@ -240,23 +240,24 @@ class ObjectRecoveryMsgbus(object):
             self.__isproducersetupcomplete = False
             return False
             
-    def get_count(self):
-        """Get count of unread messages."""
-        Log.debug("In get_count")
-        
-        try:
-            consumer_group = self._config.get_msgbus_consumer_group()
-            if not self.__isproducersetupcomplete:
-                self.__setup_producer()
-                if not self.__isproducersetupcomplete:
-                    Log.debug("get_count producer connection issues")
-                    return 0
-            
-            unread_count = self.__msgbuslib.count(consumer_group)
-            if unread_count is None:
-                return 0
-            else:
-                return unread_count
-        except Exception as exception:
-            Log.error("Exception:{}".format(exception))
-            return 0
+#    def get_count(self):
+#        """Get count of unread messages."""
+#        self._logger.debug("In get_count")
+#        
+#        try:
+#            consumer_group = self._config.get_msgbus_consumer_group()
+#            if not self.__isproducersetupcomplete:
+#                self.__setup_producer()
+#                if not self.__isproducersetupcomplete:
+#                    self._logger.debug("get_count producer connection issues")
+#                    return 0
+#            
+#            unread_count = self.__msgbuslib.count(consumer_group)
+#            if unread_count is None:
+#                return 0
+#            else:
+#                return unread_count
+#        except Exception as exception:
+#            self._logger.error("Exception:{}".format(exception))
+#            return 0
+
