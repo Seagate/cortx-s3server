@@ -69,6 +69,8 @@ public class AccessKeyController extends AbstractController {
         } else {
             userName = requestor.getName();
         }
+        String userAccessKey = requestBody.get("AccessKey");
+        String userSecretKey = requestBody.get("SecretKey");
 
         User user;
         try {
@@ -96,8 +98,24 @@ public class AccessKeyController extends AbstractController {
 
         AccessKey accessKey = new AccessKey();
         accessKey.setUserId(user.getId());
-        accessKey.setId(KeyGenUtil.createUserAccessKeyId(true));
-        accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
+        if (userAccessKey != null) {
+          try {
+            AccessKey existingAccessKey = accessKeyDAO.find(userAccessKey);
+            if (existingAccessKey.exists()) {
+              return accessKeyResponseGenerator.entityAlreadyExists();
+            }
+          }
+          catch (DataAccessException e) {
+            LOGGER.error("Exception occurred while fetching accessKey for " +
+                         userSecretKey);
+            return accessKeyResponseGenerator.internalServerError();
+          }
+          accessKey.setId(userAccessKey);
+          accessKey.setSecretKey(userSecretKey);
+        } else {
+          accessKey.setId(KeyGenUtil.createUserAccessKeyId(true));
+          accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
+        }
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
         try {
