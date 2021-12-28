@@ -126,6 +126,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // holds base64 encoding value of rev_epoch_version_id_key, this is used
   // in S3 REST APIs as http header x-amz-version-id or query param "VersionId"
   std::string object_version_id;
+  // holds reference/version key to object with null version.
+  std::string null_object_version_id;
 
   std::string upload_id;
   // Maximum retry count for collision resolution.
@@ -156,6 +158,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   bool is_multipart = false;
   bool latest = false;
   bool is_delete_marker_ = false;
+  bool _null = false;
 
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -276,12 +279,18 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string const get_obj_version_id() { return object_version_id; }
   std::string const get_obj_version_key() { return rev_epoch_version_id_key; }
 
-  void set_version_id(std::string ver_id);
+  virtual void set_version_id(std::string ver_id);
+
+  void set_null_object_version_id(const std::string& null_version_key);
+  std::string const get_null_object_version_id();
 
   void set_latest(bool is_latest) { latest = is_latest; }
   bool is_latest() const {
     return latest;
   };
+
+  void set_null(bool is_null) { _null = is_null; }
+  bool is_null() const { return _null; }
 
   std::string get_old_obj_version_id() { return motr_old_object_version_id; }
   void set_old_version_id(std::string old_obj_ver_id);
@@ -367,7 +376,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // For object metadata in object listing
   std::string to_json();
   // For storing minimal version entry in version listing
-  std::string version_entry_to_json();
+  std::string version_entry_to_json(bool obj_index = false);
 
   // returns 0 on success, -1 on parsing error.
   virtual int from_json(std::string content);
