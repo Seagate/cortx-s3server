@@ -406,6 +406,14 @@ void S3ObjectMetadata::set_part_index_layout(
   motr_part_layout_str = S3M0Uint128Helper::to_string(part_index_layout);
 }
 
+void S3ObjectMetadata::set_null_object_version_id(
+    const std::string& null_version_id) {
+  null_object_version_id = null_version_id;
+}
+std::string const S3ObjectMetadata::get_null_object_version_id() {
+  return _null ? object_version_id : null_object_version_id;
+}
+
 void S3ObjectMetadata::add_system_attribute(std::string key, std::string val) {
   system_defined_attribute[key] = val;
 }
@@ -781,7 +789,7 @@ void S3ObjectMetadata::remove_version_metadata_failed() {
 }
 
 // Streaming to json
-std::string S3ObjectMetadata::to_json() {
+std::string S3ObjectMetadata::version_entry_to_json(bool obj_index) {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
@@ -819,6 +827,10 @@ std::string S3ObjectMetadata::to_json() {
     root["System-Defined"]["x-amz-delete-marker"] = "true";
   }
 
+  if (_null) {
+    root["is_null"] = "true";
+  }
+
   for (auto uit : user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
@@ -842,15 +854,19 @@ std::string S3ObjectMetadata::to_json() {
     root["System-Defined"]["Content-MD5"] = "d41d8cd98f00b204e9800998ecf8427e";
   }
 
+  if (obj_index) {
+    root["version_key_null_in_index"] = null_object_version_id;
+  }
+
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
   ;
 }
 
 // Streaming to json
-std::string S3ObjectMetadata::version_entry_to_json() {
+std::string S3ObjectMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
-  return to_json();
+  return version_entry_to_json(true);
 }
 
 /*
@@ -965,6 +981,8 @@ int S3ObjectMetadata::from_json(std::string content) {
     object_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
   }
   acl_from_json(newroot["ACL"].asString());
+  _null = newroot["is_null"].asString() == "true" ? true : false;
+  null_object_version_id = newroot["version_key_null_in_index"].asString();
 
   return 0;
 }
