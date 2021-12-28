@@ -41,10 +41,32 @@ S3HeadObjectAction::S3HeadObjectAction(
 
 void S3HeadObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
+  ACTION_TASK_ADD(S3HeadObjectAction::validate_object_info, this);
   ACTION_TASK_ADD(S3HeadObjectAction::send_response_to_s3_client, this);
   // ...
 }
 
+void S3HeadObjectAction::validate_object_info() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (object_metadata->is_delete_marker()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object is a delete marker.");
+
+    request->set_out_header_value("x-amz-delete-marker", "true");
+    request->set_out_header_value("x-amz-version-id",
+                                  object_metadata->get_obj_version_id());
+
+    if (request->has_query_param_key("versionId")) {
+      request->set_out_header_value("Allow", "DELETE");
+      set_s3_error("MethodNotAllowed");
+    } else {
+      set_s3_error("NoSuchKey");
+    }
+    send_response_to_s3_client();
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
+  }
+  next();
+}
 void S3HeadObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -74,6 +96,10 @@ void S3HeadObjectAction::fetch_object_info_failed() {
     // There is no object list index, hence object doesn't exist
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
+  } else if (!object_metadata || request->has_query_param_key("versionId")) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Version-id provided in the request is either invalid or empty\n");
+    set_s3_error("InvalidArgument");
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_WARN, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
@@ -127,6 +153,10 @@ void S3HeadObjectAction::send_response_to_s3_client() {
                                   object_metadata->get_content_length_str());
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
+    if (bucket_metadata->get_bucket_versioning_status() != "Unversioned") {
+      request->set_out_header_value("x-amz-version-id",
+                                    object_metadata->get_obj_version_id());
+    }
 
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
