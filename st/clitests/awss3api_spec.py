@@ -1813,6 +1813,65 @@ AwsTest('Aws can not get object with empty versionId')\
     .command_error_should_have("InvalidArgument")\
     .command_error_should_have("Version id cannot be the empty string")
 
+#************ Head object with version IDs *******
+AwsTest('Aws can head object without specifying versionId')\
+    .head_object(bucket, file).execute_test()\
+    .command_is_successful()\
+    .command_response_should_have(version_id)
+
+result = AwsTest('Aws can put another version to a versioned bucket')\
+    .put_object(bucket, file, 1024, output="json")\
+    .execute_test()\
+    .command_is_successful()
+version_id2 = json.loads(result.status.stdout).get("VersionId")
+assert version_id2, "No version ID was returned in PutObject response"
+assert re.match(r"[0-9A-Za-z]+", version_id2)
+
+result = AwsTest('Aws can delete latest version of the object')\
+    .delete_object(bucket, file)\
+    .execute_test()\
+    .command_is_successful()
+version_id3 = (result.status.stdout[4 : ])
+assert version_id3, "No version ID was returned in PutObject response"
+
+AwsTest('Aws can head object with specific versionId')\
+    .head_object(bucket, file, version_id=version_id)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_have(version_id)
+
+AwsTest('Aws can not head object with wrong versionId')\
+    .head_object(bucket, file, version_id="wrong-id")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("An error occurred (400) when calling the HeadObject operation")\
+    .command_error_should_have("Bad Request")
+
+AwsTest('Aws can not head object with empty versionId')\
+    .head_object(bucket, file, version_id="empty")\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("An error occurred (400) when calling the HeadObject operation")\
+    .command_error_should_have("Bad Request")
+
+AwsTest('Aws can not head object if latest is a delete marker')\
+    .head_object(bucket, file)\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("Not Found")
+
+AwsTest('Aws can head object if versionId is not a delete marker')\
+    .head_object(bucket, file, version_id=version_id2)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_have(version_id2)
+
+AwsTest('Aws can not head object if versionId is a delete marker')\
+    .head_object(bucket, file, version_id=version_id3)\
+    .execute_test(negative_case=True)\
+    .command_should_fail()\
+    .command_error_should_have("Method Not Allowed")
+
 #******** Suspend Versioning on Bucket ********
 # XXX: Temporarily disabled until suspension is supported
 # AwsTest('Aws can suspend versioning on bucket')\
