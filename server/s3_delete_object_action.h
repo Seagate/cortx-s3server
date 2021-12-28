@@ -39,6 +39,8 @@ enum class S3DeleteObjectActionState {
   validationFailed,  // Any validations failed for request, including missing
                      // metadata
   probableEntryRecordFailed,
+  saveDataUsageSuccess,  // Data Usage saving
+  saveDataUsageFailed,   // Data Usage saving
   metadataDeleted,
   metadataDeleteFailed,
 };
@@ -76,9 +78,10 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void delete_metadata();
   void delete_metadata_failed();
   void delete_metadata_successful();
-  void save_bucket_counters();
-  void save_bucket_counters_success();
-  void save_bucket_counters_failed();
+  void save_data_usage();
+  void save_data_usage_success();
+  void save_data_usage_failed();
+  void revert_data_usage();
   void set_authorization_meta();
 
   void populate_probable_dead_oid_list();

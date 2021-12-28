@@ -38,6 +38,8 @@ enum class S3PutObjectActionState {
   writeComplete,            // data write to object completed successfully
   writeFailed,              // data write to object failed
   md5ValidationFailed,      // md5 check failed
+  saveDataUsageSuccess,     // Data Usage saving
+  saveDataUsageFailed,      // Data Usage saving
   metadataSaved,            // metadata saved for new object
   metadataSaveFailed,       // metadata saved for new object
   completed,                // All stages done completely
