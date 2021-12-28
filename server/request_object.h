@@ -352,8 +352,6 @@ class RequestObject {
   }
   // See detailed comment in Action::addb_request_id.
   const uint64_t addb_request_id;
-  // Helper counter for assigning unique addb_request_id's for each request.
-  static uint64_t addb_request_id_gc;
 
   // Response Helpers
  private:

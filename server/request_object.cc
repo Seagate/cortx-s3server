@@ -37,8 +37,6 @@
 
 extern S3Option* g_option_instance;
 
-uint64_t RequestObject::addb_request_id_gc = S3_ADDB_FIRST_GENERIC_REQUESTS_ID;
-
 // evhttp Helpers
 /* evhtp_kvs_iterator */
 extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg) {
@@ -132,15 +130,7 @@ RequestObject::RequestObject(
       is_chunked_upload(false),
       in_headers_copied(false),
       in_query_params_copied(false),
-      // FIXME:
-      // For the time being, we are generating ADDB request IDs as a simple
-      // sequence starting from 1 and then simply increasing (1,2,3,...).   It
-      // works for now, while ADDB logs are only used for debugging (since
-      // we don't need to mix ADDB logs for different s3 server instances).  If
-      // and when ADDB will be used in production, we will need to generate
-      // proper globally unique IDs here.  Specifically, we'll need to address
-      // uniqueness across all instances of S3 Server.
-      addb_request_id(++addb_request_id_gc),
+      addb_request_id(m0_dummy_id_generate()),
       reply_buffer(NULL),
       used_mempool_buffer_count(0) {
 

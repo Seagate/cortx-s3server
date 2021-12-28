@@ -1116,6 +1116,7 @@ TEST_F(S3GetObjectActionTest, SetTotalBlocksToReadFromNextObject) {
   std::vector<struct S3ExtendedObjectInfo> extended_objects;
   struct S3ExtendedObjectInfo extendinfo;
   extendinfo.total_blocks_in_object = 10;
+  extendinfo.total_readable_blocks = extendinfo.total_blocks_in_object;
   action_under_test->extended_objects.push_back(extendinfo);
   action_under_test->next_fragment_object = 0;
   action_under_test->set_total_blocks_to_read_from_next_object();
