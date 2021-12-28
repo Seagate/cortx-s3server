@@ -103,13 +103,17 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedMissing);
   FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedToLaunch);
   FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedInternalError);
-  FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestInvalidArgument);
+  FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestInvalidMaxKeys);
+  FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestNegativeMaxKeys);
+  FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestInvalidEncodingType);
   FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsZeroMaxkeys);
   FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsZeroOid);
   FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersions);
   FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsFailed);
   FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsSuccessful);
   FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsSuccessfulJsonError);
+  FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsSuccessfulPrefix);
+  FRIEND_TEST(S3ListObjectVersionsTest, GetNextVersionsSuccessfulDelimiter);
   FRIEND_TEST(S3ListObjectVersionsTest, SendResponseToClientServiceUnavailable);
   FRIEND_TEST(S3ListObjectVersionsTest, SendResponseToClientNoSuchBucket);
   FRIEND_TEST(S3ListObjectVersionsTest, SendResponseToClientSuccess);

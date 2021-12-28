@@ -62,6 +62,9 @@ class S3ListObjectVersionsTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*request_mock, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*request_mock, get_content_length()).WillRepeatedly(Return(0));
+    EXPECT_CALL(*request_mock, has_query_param_key(_))
+        .WillRepeatedly(Return(false));
 
     s3_motr_api_mock = std::make_shared<MockS3Motr>();
     bucket_meta_factory =
@@ -160,7 +163,7 @@ TEST_F(S3ListObjectVersionsTest, FetchBucketInfoFailedInternalError) {
   EXPECT_EQ("InternalError", action_under_test_ptr->get_s3_error_code());
 }
 
-TEST_F(S3ListObjectVersionsTest, ValidateRequestInvalidArgument) {
+TEST_F(S3ListObjectVersionsTest, ValidateRequestInvalidMaxKeys) {
   EXPECT_CALL(*request_mock, get_query_string_value("prefix"))
       .Times(1)
       .WillOnce(Return(""));
@@ -171,6 +174,48 @@ TEST_F(S3ListObjectVersionsTest, ValidateRequestInvalidArgument) {
       .Times(1)
       .WillOnce(Return(""));
   EXPECT_CALL(*request_mock, get_query_string_value("max-keys"))
+      .Times(1)
+      .WillOnce(Return("ABC"));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
+  action_under_test_ptr->validate_request();
+}
+
+TEST_F(S3ListObjectVersionsTest, ValidateRequestNegativeMaxKeys) {
+  EXPECT_CALL(*request_mock, get_query_string_value("prefix"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("delimiter"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("key-marker"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("max-keys"))
+      .Times(1)
+      .WillOnce(Return("-10"));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
+  action_under_test_ptr->validate_request();
+}
+
+TEST_F(S3ListObjectVersionsTest, ValidateRequestInvalidEncodingType) {
+  EXPECT_CALL(*request_mock, get_query_string_value("prefix"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("delimiter"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("key-marker"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("max-keys"))
+      .Times(1)
+      .WillOnce(Return("10"));
+  EXPECT_CALL(*request_mock, has_query_param_key("encoding-type"))
+      .Times(1)
+      .WillOnce(Return(true));
+  EXPECT_CALL(*request_mock, get_query_string_value("encoding-type"))
       .Times(1)
       .WillOnce(Return("ABC"));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -292,6 +337,67 @@ TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessfulJsonError) {
   action_under_test_ptr->clear_tasks();
   action_under_test_ptr->get_next_versions_successful();
   EXPECT_EQ(0, action_under_test_ptr->versions_list.size());
+}
+
+TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessfulPrefix) {
+  CREATE_BUCKET_METADATA_OBJ;
+  CREATE_KVS_READER_OBJ;
+
+  action_under_test_ptr->request_prefix.assign("key");
+  action_under_test_ptr->request_delimiter.assign("");
+
+  return_keys_values.insert(
+      std::make_pair("testkey0", std::make_pair(10, "keyval")));
+  return_keys_values.insert(
+      std::make_pair("testkey1", std::make_pair(10, "keyval")));
+  return_keys_values.insert(
+      std::make_pair("key2", std::make_pair(10, "keyval")));
+
+  action_under_test_ptr->max_keys = 3;
+
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(return_keys_values));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), from_json(_))
+      .WillRepeatedly(Return(0));
+
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
+  action_under_test_ptr->clear_tasks();
+  action_under_test_ptr->get_next_versions_successful();
+  EXPECT_EQ(1, action_under_test_ptr->versions_list.size());
+}
+
+TEST_F(S3ListObjectVersionsTest, GetNextVersionsSuccessfulDelimiter) {
+  CREATE_BUCKET_METADATA_OBJ;
+  CREATE_KVS_READER_OBJ;
+
+  action_under_test_ptr->request_delimiter.assign("key2");
+  action_under_test_ptr->request_prefix.assign("");
+
+  return_keys_values.insert(
+      std::make_pair("testkey0", std::make_pair(10, "keyval")));
+  return_keys_values.insert(
+      std::make_pair("testkey1", std::make_pair(10, "keyval")));
+  return_keys_values.insert(
+      std::make_pair("testkey2", std::make_pair(10, "keyval")));
+
+  action_under_test_ptr->max_keys = 3;
+
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(return_keys_values));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), from_json(_))
+      .WillRepeatedly(Return(0));
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::empty));
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+              next_keyval(_, _, _, _, _, _)).Times(1);
+
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
+  action_under_test_ptr->clear_tasks();
+  action_under_test_ptr->get_next_versions_successful();
+  EXPECT_EQ(2, action_under_test_ptr->versions_list.size());
+  EXPECT_EQ(1, action_under_test_ptr->common_prefixes.size());
 }
 
 TEST_F(S3ListObjectVersionsTest, SendResponseToClientServiceUnavailable) {

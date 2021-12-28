@@ -778,9 +778,7 @@ std::string& S3ListObjectVersionsAction::get_response_xml() {
     } else {
       response_xml += "<DeleteMarker>";
       response_xml += S3CommonUtilities::format_xml_string(
-          "IsLatest",
-          (version->get_state() == S3ObjectMetadataState::invalid ? "true"
-                                                                  : "false"));
+          "IsLatest", (version->is_latest() ? "true" : "false"));
       response_xml += S3CommonUtilities::format_xml_string(
           "Key", get_encoded_key_value(version->get_object_name()));
       response_xml += S3CommonUtilities::format_xml_string(
