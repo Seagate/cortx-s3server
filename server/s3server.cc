@@ -193,7 +193,7 @@ static evhtp_res on_client_request_fini(evhtp_request_t *p_evhtp_req,
 
 extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
                                              evhtp_headers_t *hdrs, void *arg) {
-  s3_log(S3_LOG_INFO, "", "Req uri [%s]\n", req->uri->path->full);
+  s3_log(S3_LOG_DEBUG, "", "Req uri [%s]\n", req->uri->path->full);
 
   if (req->uri->query_raw) {
     s3_log(S3_LOG_DEBUG, "", "Received Request with query params [%s].\n",

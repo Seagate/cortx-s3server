@@ -33,7 +33,7 @@ where:
 --help|-h     display this help and exit" 1>&2; exit 1; }
 
 # max m0trace files count in each s3 instance log directory
-m0trace_files_max_count=5
+m0trace_files_max_count=2
 s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
 s3_daemon_working_dir=`cat $s3server_config | grep "S3_DAEMON_WORKING_DIR:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 

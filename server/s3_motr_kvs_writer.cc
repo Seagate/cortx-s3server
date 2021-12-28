@@ -722,6 +722,10 @@ void S3MotrKVSWriter::put_keyval(const struct s3_motr_idx_layout &idx_lo,
                                  std::function<void(void)> on_failed,
                                  S3MotrKVSWriter::CallbackType callback) {
   s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid = %" SCNx64 " : %" SCNx64 " key = %s\n", __func__,
+         oid.u_hi, oid.u_lo, key.c_str());
+
+  s3_log(S3_LOG_DEBUG, stripped_request_id,
          "%s Entry with oid = %" SCNx64 " : %" SCNx64
          " key = %s and value = %s\n",
          __func__, idx_lo.oid.u_hi, idx_lo.oid.u_lo, key.c_str(), val.c_str());
