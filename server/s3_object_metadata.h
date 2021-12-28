@@ -121,7 +121,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string requested_object_name;
   std::string requested_object_version_id;
 
-  // this is used in S3 REST APIs as http header x-amz-version-id or query param "VersionId"
+  // Used in S3 REST APIs as http header x-amz-version-id or query param
+  // "VersionId"
   std::string object_version_id;
   // holds reference/version key to object with null version.
   std::string null_object_version_id;
