@@ -30,6 +30,8 @@
 using ::testing::AtLeast;
 using ::testing::ReturnRef;
 using ::testing::Return;
+using ::testing::NotNull;
+using ::testing::IsEmpty;
 
 #define CREATE_BUCKET_METADATA_OBJ                      \
   do {                                                  \

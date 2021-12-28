@@ -35,7 +35,7 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<MotrAPI> s3_motr_api;
-  bool include_marker_in_result = false;
+  bool include_marker_in_result = true;
   // When we skip keys with same common prefix, we need a way to indicate
   // a state in which we'll make use of existing key fetch logic just to see if
   // any more keys are available in bucket after the keys with common prefix.

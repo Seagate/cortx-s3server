@@ -31,6 +31,7 @@
 #include "s3_list_object_versions_action.h"
 
 constexpr int kMaxRetryCount = 5;
+constexpr int kMaxKeys = 1000;
 
 S3ListObjectVersionsAction::S3ListObjectVersionsAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
@@ -48,9 +49,6 @@ S3ListObjectVersionsAction::S3ListObjectVersionsAction(
                            : std::make_shared<ConcreteMotrAPI>()},
       encoding_type{req->get_query_string_value("encoding-type")} {
 
-      bucket_metadata_factory = {
-          bucket_meta_factory ? std::move(bucket_meta_factory)
-                              : std::make_shared<S3BucketMetadataFactory>()};
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id, "S3 API: List Object Versions.\n");
 
@@ -102,20 +100,26 @@ void S3ListObjectVersionsAction::validate_request() {
   // Validate the input max-keys
   std::string max_k = request->get_query_string_value("max-keys");
   if (max_k.empty()) {
-    max_keys = 1000;
+    max_keys = kMaxKeys;
   } else {
     int max_keys_temp = 0;
-    if ((!S3CommonUtilities::stoi(max_k, max_keys_temp)) ||
-        (max_keys_temp < 0)) {
+    if (!S3CommonUtilities::stoi(max_k, max_keys_temp)) {
       s3_log(S3_LOG_DEBUG, request_id, "invalid max-keys = %s\n",
              max_k.c_str());
-      // TODO: Add invalid argument details to the response.
+      set_s3_error("InvalidArgument");
+      set_s3_error_message(
+          "Provided max-keys not an integer or within integer range");
+      set_invalid_argument("max-keys", max_k);
+      send_response = true;
+    } else if (max_keys_temp < 0) {
+      s3_log(S3_LOG_DEBUG, request_id, "invalid max-keys = %s\n",
+             max_k.c_str());
       set_s3_error("InvalidArgument");
       set_s3_error_message("max-keys cannot be negative");
-      set_invalid_argument("max-keys", max_k.c_str());
+      set_invalid_argument("max-keys", max_k);
       send_response = true;
     } else {
-      max_keys = max_keys_temp;
+      max_keys = max_keys_temp > kMaxKeys ? kMaxKeys : max_keys_temp;
     }
   }
 
@@ -126,8 +130,8 @@ void S3ListObjectVersionsAction::validate_request() {
     if (encoding_type != "url") {
       s3_log(S3_LOG_DEBUG, request_id, "invalid encoding-type = %s\n",
              encoding_type.c_str());
-      // TODO: Add invalid argument details to the response.
       set_s3_error("InvalidArgument");
+      set_invalid_argument("encoding-type", encoding_type);
       send_response = true;
     }
   }
@@ -627,7 +631,7 @@ void S3ListObjectVersionsAction::send_response_to_s3_client() {
     s3_log(S3_LOG_DEBUG, request_id, "Sending %s response...\n",
            get_s3_error_code().c_str());
     S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_bucket_name());
+                  request->get_bucket_name(), get_s3_error_message());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
@@ -704,16 +708,17 @@ void S3ListObjectVersionsAction::add_object_version(const std::string& key,
   m0_uint128 object_version_list_index_oid =
       bucket_metadata->get_objects_version_list_index_layout().oid;
   auto version = object_metadata_factory->create_object_metadata_obj(request);
-  if (version->from_json(value) == 0) {
-    versions_list.push_back(version);
+  if (version->from_json(value) != 0) {
+    json_error = true;
+    s3_log(S3_LOG_ERROR, request_id,
+           "Json Parsing failed. Index oid = "
+           "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
+           object_version_list_index_oid.u_hi,
+           object_version_list_index_oid.u_lo, key.c_str(), value.c_str());
     return;
   }
-  json_error = true;
-  s3_log(S3_LOG_ERROR, request_id,
-         "Json Parsing failed. Index oid = "
-         "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-         object_version_list_index_oid.u_hi, object_version_list_index_oid.u_lo,
-         key.c_str(), value.c_str());
+
+  versions_list.push_back(version);
 }
 
 void S3ListObjectVersionsAction::add_common_prefix(
@@ -830,8 +835,10 @@ std::string S3ListObjectVersionsAction::get_encoded_key_value(
     return key_value;
   }
   std::string encoded_key_value;
-  char* encoded_str = evhttp_uriencode(key_value.c_str(), -1, 0);
-  encoded_key_value = encoded_str;
-  free(encoded_str);
+  const std::unique_ptr<char, void (*)(void*)> encoded_str(
+      evhttp_uriencode(key_value.c_str(), -1, 0), &free);
+  if (encoded_str) {
+    encoded_key_value = encoded_str.get();
+  }
   return encoded_key_value;
 }

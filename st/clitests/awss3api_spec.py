@@ -1878,7 +1878,6 @@ AwsTest('Aws can not head object if versionId is a delete marker')\
 #     .put_bucket_versioning(bucket, "Suspended")\
 #     .execute_test()\
 #     .command_is_successful()
-<<<<<<< HEAD
 
 #******** Get Bucket Versioning Suspended status ********
 # XXX: Temporarily disabled until suspension is supported
@@ -2284,87 +2283,6 @@ AwsTest('Aws can delete bucket')\
     .delete_bucket("versionlistbucket")\
     .execute_test()\
     .command_is_successful()
-
-#******** PutObject with Bucket versioning enabled ********
-
-AwsTest('Aws can create bucket').create_bucket("versionedbucket").execute_test().command_is_successful()
-AwsTest('Aws can enable versioning on bucket').put_bucket_versioning("versionedbucket", "Enabled").execute_test().command_is_successful()
-result=AwsTest('Aws can put a versioned bucket').\
-    put_object("versionedbucket", "1kfile", 1024, output="json").\
-    execute_test().\
-    command_is_successful()
-put_response = json.loads(result.status.stdout)
-version_id = put_response.get("VersionId")
-assert version_id, "No version ID was returned in PutObject response"
-assert re.match(r"[0-9A-Za-z]+", version_id)
-
-#************ Get with version IDs *******
-AwsTest('Aws can get object without specifing versionId')\
-    .get_object(bucket, file).execute_test()\
-    .command_is_successful()\
-    .command_response_should_have(version_id)
-
-AwsTest('Aws can get object with specific versionId')\
-    .get_object(bucket, file, version_id=version_id)\
-    .execute_test()\
-    .command_is_successful()\
-    .command_response_should_have(version_id)
-
-AwsTest('Aws can not get object with wrong versionId')\
-    .get_object(bucket, file, version_id="wrong-id")\
-    .execute_test(negative_case=True)\
-    .command_should_fail()\
-    .command_error_should_have("InvalidArgument")\
-    .command_error_should_have("Invalid version id specified")
-
-AwsTest('Aws can not get object with empty versionId')\
-    .get_object(bucket, file, version_id="empty")\
-    .execute_test(negative_case=True)\
-    .command_should_fail()\
-    .command_error_should_have("InvalidArgument")\
-    .command_error_should_have("Version id cannot be the empty string")
-
-#******** Suspend Versioning on Bucket ********
-AwsTest('Aws can suspend versioning on bucket')\
-    .put_bucket_versioning(bucket, "Suspended")\
-    .execute_test()\
-    .command_is_successful()
-=======
->>>>>>> c6e78489 ([versioning] [EOS-26658] Preventing bucket to go in suspended state [temporary] (#1643))
-
-#******** Get Bucket Versioning Suspended status ********
-# XXX: Temporarily disabled until suspension is supported
-# AwsTest('Aws can get bucket versioning Suspended status')\
-#     .get_bucket_versioning(bucket)\
-#     .execute_test()\
-#     .command_response_should_have("Suspended")
-
-#******** Suspend Versioning on Bucket ********
-# XXX: Temporary until suspension is supported
-AwsTest('Can not suspend versioning on bucket')\
-    .put_bucket_versioning(bucket, "Suspended")\
-    .execute_test(negative_case=True)\
-    .command_should_fail()\
-    .command_error_should_have("OperationNotSupported")
-
-AwsTest('Aws can delete the latest version of the object (DeleteMarker)')\
-    .delete_object(bucket, file)\
-    .execute_test()\
-    .command_is_successful()
-
-#******** Test Cleanup ********
-# XXX: Temporarily disabled until deleting objects by version-id is supported
-# AwsTest('Aws can delete all the object versions')\
-#     .delete_object(bucket, file)\
-#     .execute_test()\
-#     .command_is_successful()
-
-# XXX: Temporarily disabled until deleting objects by version-id is supported
-# AwsTest('Aws can delete the bucket')\
-#     .delete_bucket(bucket)\
-#     .execute_test()\
-#     .command_is_successful()
-
 
 ################################################################################
 
