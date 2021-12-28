@@ -84,25 +84,25 @@ class ObjectRecoveryScheduler(object):
             if not self.producer:
                 self.producer = ObjectRecoveryMsgbus(
                     self.config)
-            threshold = self.config.get_threshold()
-            Log.debug("Threshold is : " + str(threshold))
+#            threshold = self.config.get_threshold()
+#            self.logger.debug("Threshold is : " + str(threshold))
             if self.term_signal.shutdown_signal == True:
                 Log.info("Shutting down s3backgroundproducer service.")
                 sys.exit(0)
-            count = self.producer.get_count()
-            Log.debug("Count of unread msgs is : " + str(count))
+#            count = self.producer.get_count()
+#            self.logger.debug("Count of unread msgs is : " + str(count))
 
-            if ((int(count) < threshold) or (threshold == 0)):
-                Log.debug("Count of unread messages is less than threshold value.Hence continuing...")
-            else:
+#            if ((int(count) < threshold) or (threshold == 0)):
+#                self.logger.debug("Count of unread messages is less than threshold value.Hence continuing...")
+#            else:
                 #do nothing
-                Log.info("Queue has more messages than threshold value. Hence skipping addition of further entries.")
-                return
+#                self.logger.info("Queue has more messages than threshold value. Hence skipping addition of further entries.")
+#                return
             # Cleanup all entries and enqueue only 1000 entries
             #PurgeAPI Here
-            if self.term_signal.shutdown_signal == True:
-                Log.info("Shutting down s3backgroundproducer service.")
-                sys.exit(0)
+#            if self.term_signal.shutdown_signal == True:
+#                self.logger.info("Shutting down s3backgroundproducer service.")
+#                sys.exit(0)
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
                 self.config, connectionType=CONNECTION_TYPE_PRODUCER).list(
