@@ -20,27 +20,23 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_OBJECT_VERSIONING_HELPER_H__
-#define __S3_SERVER_S3_OBJECT_VERSIONING_HELPER_H__
+#ifndef __S3_SERVER_BASE62_H__
+#define __S3_SERVER_BASE62_H__
 
-#include <chrono>
 #include <cstdint>
 #include <string>
 
-class S3ObjectVersioningHelper {
- public:
-  S3ObjectVersioningHelper() = delete;
-  S3ObjectVersioningHelper(const S3ObjectVersioningHelper&) = delete;
-  S3ObjectVersioningHelper& operator=(const S3ObjectVersioningHelper&) = delete;
+namespace base62 {
 
-  // Generate a Version ID timestamp from a point in time. The timestamp is
-  // a value in milliseconds based on the Unix timestamp. The values are
-  // sorted in reserve order, i.e. newer points in time generate smaller
-  // timestamp values.
-  static uint64_t generate_timestamp(
-      const std::chrono::system_clock::time_point& tp);
+// Returns the lexicographically-sorted Base62 string encoding of an
+// unsigned 64-bit integer. If `pad` is specified, the resulting string
+// will be padded with the "zero" Base62 characters, which preserves sorting.
+std::string base62_encode(uint64_t value, size_t pad = 0);
 
-  // Get a Version ID based on the version ID timestamp
-  static std::string get_versionid_from_timestamp(uint64_t ts);
-};
+// Returns the 64-bit unsigned integer decoded from a lexicographically-sorted
+// Base62 string.
+uint64_t base62_decode(std::string const& value);
+
+}  // namespace base62
+
 #endif

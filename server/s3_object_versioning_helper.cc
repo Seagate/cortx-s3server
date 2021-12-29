@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+ * Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,44 +19,42 @@
  */
 
 #include "s3_object_versioning_helper.h"
+
 #include <chrono>
+#include <cmath>
+#include <cstdint>
+
+#include "base62.h"
 #include "base64.h"
 #include "s3_common_utilities.h"
+#include "s3_uuid.h"
 
-unsigned long long S3ObjectVersioingHelper::get_epoch_time_in_ms() {
-  return std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::system_clock::now().time_since_epoch()).count();
+// Version ID timestamps are fixed to this number of characters
+constexpr size_t kVersionIdTsLen = 8;
+// As the version ID timestamp is encoded in Base62, the maximum value
+// for 8-characters is 62^8 - 1. This is the maximum time interval in ms.
+constexpr uint64_t kMaxTimeStampCount = 218340105584895;
+
+uint64_t S3ObjectVersioningHelper::generate_timestamp(
+    const std::chrono::system_clock::time_point& tp) {
+  using UnsignedMillis = std::chrono::duration<uint64_t, std::milli>;
+  const auto ms_since_epoch = std::chrono::time_point_cast<UnsignedMillis>(tp)
+                                  .time_since_epoch()
+                                  .count();
+  return kMaxTimeStampCount - ms_since_epoch;
 }
 
-std::string S3ObjectVersioingHelper::generate_new_epoch_time() {
-  std::string milliseconds_since_epoch_str;
-  // get current epoch time in ms
-  unsigned long long milliseconds_since_epoch = get_epoch_time_in_ms();
-  // flip bits
-  milliseconds_since_epoch = ~milliseconds_since_epoch;
-  // convert retrived current epoch time into string
-  milliseconds_since_epoch_str = std::to_string(milliseconds_since_epoch);
-  return milliseconds_since_epoch_str;
-}
+std::string S3ObjectVersioningHelper::get_versionid_from_timestamp(
+    uint64_t ts) {
+  auto version_ts = base62::base62_encode(ts, kVersionIdTsLen);
 
-std::string S3ObjectVersioingHelper::get_versionid_from_epoch_time(
-    const std::string& milliseconds_since_epoch) {
-  // encode the current epoch time
-  std::string versionid = base64_encode(
-      reinterpret_cast<const unsigned char*>(milliseconds_since_epoch.c_str()),
-      milliseconds_since_epoch.length());
-  // remove padding characters that is '='
-  // to make version id as url encoding format
-  S3CommonUtilities::find_and_replaceall(versionid, "=", "");
-  return versionid;
-}
+  // TODO: use 18-byte random data for more random bits, and no padding
+  S3Uuid uuid;
+  auto uuid_str = base64_encode(uuid.ptr(), sizeof(uuid_t));
+  S3CommonUtilities::find_and_replaceall(uuid_str, "=", "");
+  // TODO: URL-safe, use alternative alphabet to avoid replacement
+  S3CommonUtilities::find_and_replaceall(uuid_str, "+", "-");
+  S3CommonUtilities::find_and_replaceall(uuid_str, "/", "_");
 
-std::string S3ObjectVersioingHelper::generate_keyid_from_versionid(
-    std::string versionid) {
-  // add padding if required;
-  versionid = versionid.append((3 - versionid.size() % 3) % 3, '=');
-  // base64 decoding of versionid
-  // decoded versionid is the epoch time in milli seconds
-  std::string milliseconds_since_epoch = base64_decode(versionid);
-  return milliseconds_since_epoch;
+  return version_ts + uuid_str;
 }

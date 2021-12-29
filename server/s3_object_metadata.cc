@@ -291,19 +291,17 @@ S3ObjectMetadata::get_objects_version_list_index_layout() const {
 }
 
 void S3ObjectMetadata::regenerate_version_id() {
-  // generate new epoch time value for new object
-  rev_epoch_version_id_key = S3ObjectVersioingHelper::generate_new_epoch_time();
-  // set version id
-  object_version_id = S3ObjectVersioingHelper::get_versionid_from_epoch_time(
-      rev_epoch_version_id_key);
+  object_version_id = S3ObjectVersioningHelper::get_versionid_from_timestamp(
+      S3ObjectVersioningHelper::generate_timestamp(
+          std::chrono::system_clock::now()));
   system_defined_attribute["x-amz-version-id"] = object_version_id;
 }
 
 std::string S3ObjectMetadata::get_version_key_in_index() {
   assert(!object_name.empty());
-  assert(!rev_epoch_version_id_key.empty());
-  // sample objectname/revversionkey
-  return object_name + "/" + rev_epoch_version_id_key;
+  auto version_key = get_obj_version_key();
+  assert(!version_key.empty());
+  return object_name + "/" + version_key;
 }
 
 std::string S3ObjectMetadata::get_user_id() { return user_id; }
@@ -382,8 +380,6 @@ void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
 
 void S3ObjectMetadata::set_version_id(std::string ver_id) {
   object_version_id = ver_id;
-  rev_epoch_version_id_key =
-      S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 }
 
 void S3ObjectMetadata::set_delete_marker() {
@@ -965,8 +961,6 @@ int S3ObjectMetadata::from_json(std::string content) {
   account_name = system_defined_attribute["Owner-Account"];
   account_id = system_defined_attribute["Owner-Account-id"];
   object_version_id = system_defined_attribute["x-amz-version-id"];
-  rev_epoch_version_id_key =
-      S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 
   is_delete_marker_ = system_defined_attribute.find("x-amz-delete-marker") !=
                       system_defined_attribute.end();
