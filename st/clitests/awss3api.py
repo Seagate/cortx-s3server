@@ -395,10 +395,16 @@ class AwsTest(S3PyCliTest):
            self.command += " --debug"
         return self
 
-    def head_object(self, bucket_name, object_name):
+    def head_object(self, bucket_name, object_name, version_id=None):
         self.bucket_name = bucket_name
         self.object_name = object_name
-        self.with_cli("aws s3api " + "head-object " + "--bucket " + bucket_name + " --key " + object_name)
+        cmd = "aws s3api " + "head-object " + "--bucket " + bucket_name + " --key " + object_name
+        if version_id is not None:
+            if version_id == "empty":
+                cmd += " --version-id \"\""
+            else:
+                cmd += " --version-id " + version_id
+        self.with_cli(cmd)
         return self
 
     def head_bucket(self, bucket_name):

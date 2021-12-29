@@ -291,19 +291,17 @@ S3ObjectMetadata::get_objects_version_list_index_layout() const {
 }
 
 void S3ObjectMetadata::regenerate_version_id() {
-  // generate new epoch time value for new object
-  rev_epoch_version_id_key = S3ObjectVersioingHelper::generate_new_epoch_time();
-  // set version id
-  object_version_id = S3ObjectVersioingHelper::get_versionid_from_epoch_time(
-      rev_epoch_version_id_key);
+  object_version_id = S3ObjectVersioningHelper::get_versionid_from_timestamp(
+      S3ObjectVersioningHelper::generate_timestamp(
+          std::chrono::system_clock::now()));
   system_defined_attribute["x-amz-version-id"] = object_version_id;
 }
 
 std::string S3ObjectMetadata::get_version_key_in_index() {
   assert(!object_name.empty());
-  assert(!rev_epoch_version_id_key.empty());
-  // sample objectname/revversionkey
-  return object_name + "/" + rev_epoch_version_id_key;
+  auto version_key = get_obj_version_key();
+  assert(!version_key.empty());
+  return object_name + "/" + version_key;
 }
 
 std::string S3ObjectMetadata::get_user_id() { return user_id; }
@@ -382,8 +380,6 @@ void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
 
 void S3ObjectMetadata::set_version_id(std::string ver_id) {
   object_version_id = ver_id;
-  rev_epoch_version_id_key =
-      S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 }
 
 void S3ObjectMetadata::set_delete_marker() {
@@ -404,6 +400,14 @@ void S3ObjectMetadata::set_part_index_layout(
     const struct s3_motr_idx_layout& lo) {
   part_index_layout = lo;
   motr_part_layout_str = S3M0Uint128Helper::to_string(part_index_layout);
+}
+
+void S3ObjectMetadata::set_null_object_version_id(
+    const std::string& null_version_id) {
+  null_object_version_id = null_version_id;
+}
+std::string const S3ObjectMetadata::get_null_object_version_id() {
+  return _null ? object_version_id : null_object_version_id;
 }
 
 void S3ObjectMetadata::add_system_attribute(std::string key, std::string val) {
@@ -781,7 +785,7 @@ void S3ObjectMetadata::remove_version_metadata_failed() {
 }
 
 // Streaming to json
-std::string S3ObjectMetadata::to_json() {
+std::string S3ObjectMetadata::version_entry_to_json(bool obj_index) {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
@@ -819,6 +823,10 @@ std::string S3ObjectMetadata::to_json() {
     root["System-Defined"]["x-amz-delete-marker"] = "true";
   }
 
+  if (_null) {
+    root["is_null"] = "true";
+  }
+
   for (auto uit : user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
@@ -842,15 +850,19 @@ std::string S3ObjectMetadata::to_json() {
     root["System-Defined"]["Content-MD5"] = "d41d8cd98f00b204e9800998ecf8427e";
   }
 
+  if (obj_index) {
+    root["version_key_null_in_index"] = null_object_version_id;
+  }
+
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
   ;
 }
 
 // Streaming to json
-std::string S3ObjectMetadata::version_entry_to_json() {
+std::string S3ObjectMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
-  return to_json();
+  return version_entry_to_json(true);
 }
 
 /*
@@ -949,8 +961,6 @@ int S3ObjectMetadata::from_json(std::string content) {
   account_name = system_defined_attribute["Owner-Account"];
   account_id = system_defined_attribute["Owner-Account-id"];
   object_version_id = system_defined_attribute["x-amz-version-id"];
-  rev_epoch_version_id_key =
-      S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 
   is_delete_marker_ = system_defined_attribute.find("x-amz-delete-marker") !=
                       system_defined_attribute.end();
@@ -965,6 +975,8 @@ int S3ObjectMetadata::from_json(std::string content) {
     object_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
   }
   acl_from_json(newroot["ACL"].asString());
+  _null = newroot["is_null"].asString() == "true" ? true : false;
+  null_object_version_id = newroot["version_key_null_in_index"].asString();
 
   return 0;
 }

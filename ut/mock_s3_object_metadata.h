@@ -51,6 +51,7 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD0(get_content_length, size_t());
   MOCK_METHOD1(set_content_length, void(std::string length));
   MOCK_METHOD1(set_content_type, void(std::string length));
+  MOCK_METHOD1(set_version_id, void(std::string));
   MOCK_METHOD0(get_content_length_str, std::string());
   MOCK_METHOD0(get_last_modified_gmt, std::string());
   MOCK_METHOD0(get_user_id, std::string());
