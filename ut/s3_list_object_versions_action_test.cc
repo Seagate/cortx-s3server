@@ -163,6 +163,48 @@ TEST_F(S3ListObjectVersionsTest, FetchBucketInfoFailedInternalError) {
   EXPECT_EQ("InternalError", action_under_test_ptr->get_s3_error_code());
 }
 
+TEST_F(S3ListObjectVersionsTest, ValidateRequestEmptyVersionIdMarker) {
+  EXPECT_CALL(*request_mock, get_query_string_value("prefix"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("delimiter"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("key-marker"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, has_query_param_key("version-id-marker"))
+      .Times(1)
+      .WillOnce(Return(true));
+  EXPECT_CALL(*request_mock, get_query_string_value("version-id-marker"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
+  action_under_test_ptr->validate_request();
+}
+
+TEST_F(S3ListObjectVersionsTest, ValidateRequestEmptyKeyMarker) {
+  EXPECT_CALL(*request_mock, get_query_string_value("prefix"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("delimiter"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, get_query_string_value("key-marker"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*request_mock, has_query_param_key("version-id-marker"))
+      .Times(1)
+      .WillOnce(Return(true));
+  EXPECT_CALL(*request_mock, get_query_string_value("version-id-marker"))
+      .Times(1)
+      .WillOnce(Return("xyz"));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
+  action_under_test_ptr->validate_request();
+}
+
 TEST_F(S3ListObjectVersionsTest, ValidateRequestInvalidMaxKeys) {
   EXPECT_CALL(*request_mock, get_query_string_value("prefix"))
       .Times(1)

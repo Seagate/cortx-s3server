@@ -58,6 +58,7 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   std::string request_prefix;
   std::string request_delimiter;
   std::string request_key_marker;
+  std::string request_version_id_marker;
   size_t max_keys;
   std::string encoding_type;
 
@@ -103,6 +104,8 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedMissing);
   FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedToLaunch);
   FRIEND_TEST(S3ListObjectVersionsTest, FetchBucketInfoFailedInternalError);
+  FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestEmptyVersionIdMarker);
+  FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestEmptyKeyMarker);
   FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestInvalidMaxKeys);
   FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestNegativeMaxKeys);
   FRIEND_TEST(S3ListObjectVersionsTest, ValidateRequestInvalidEncodingType);

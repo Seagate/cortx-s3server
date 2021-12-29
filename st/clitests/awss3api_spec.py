@@ -2205,7 +2205,43 @@ for key in versions_dict:
 print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
 assert versions_keys == expected_versions_keys_part2, "Failed to match expected versions keys in the list"
 
-# Step 10: Test negative max-keys value
+# Step 10: Test version-id-marker
+# Step 10.1: Create additional version of some existing object
+AwsTest('Aws can create object versions').put_object("versionlistbucket", "fo0")\
+    .execute_test().command_is_successful()
+
+# Step 10.2: List object versions
+# Command:= aws s3api list-object-versions --bucket <bucket> --page-size 1
+# Expected output:
+#   asdf, bo0, boo#, boo+, boo/0...boo/1, fo0, fo0, foo#123, foo+123,
+#   foo/0...foo/2, qua0, quax#, quax+, quax/0...quax/3
+expected_versions_keys = ['asdf', 'bo0', 'boo#', 'boo+', 'boo/0', 'boo/1',
+    'fo0', 'fo0', 'foo#123', 'foo+123', 'foo/0', 'foo/1', 'foo/2', 'qua0',
+    'quax#', 'quax+','quax/0', 'quax/1', 'quax/2', 'quax/3']
+expected_versions_keys_latest = ["True", "True", "True", "True", "True",
+    "True", "True", "False", "True", "True", "True", "True", "True",
+    "True", "True", "True", "True", "True", "True", "True"]
+page_size = 1
+result = AwsTest(f"Aws list object versions with max-keys {page_size}")\
+    .list_object_versions("versionlistbucket", {"page-size":page_size})\
+    .execute_test()\
+    .command_is_successful()
+
+# Process result set
+list_versions_response = get_aws_cli_object(result.status.stdout)
+assert list_versions_response, "Failed to list object versions"
+# Get version keys from the response
+versions_dict = list_versions_response["versions"]
+versions_keys = []
+versions_keys_latest = []
+for key in versions_dict:
+    versions_keys.append(key)
+    versions_keys_latest.append(versions_dict[key])
+print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
+assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
+assert versions_keys_latest == expected_versions_keys_latest, "Failed to match expected versions latest flag"
+
+# Step 11: Test negative max-keys value
 # Command:= aws s3api list-object-versions --bucket <bucket> --max-keys -10
 # Expected output: Invalid parameter error is returned
 page_size = -10
@@ -2215,7 +2251,7 @@ result = AwsTest(f"Aws list object versions with max-keys {page_size}")\
     .command_should_fail()\
     .command_error_should_have("InvalidArgument")\
 
-# Step 11: Test invalid encoding-type value
+# Step 12: Test invalid encoding-type value
 # Command:= aws s3api list-object-versions --bucket <bucket> --encoding-type abcd
 # Expected output: Invalid parameter error is returned
 encoding = "abcd"
@@ -2225,21 +2261,21 @@ result = AwsTest(f"Aws list object versions with encoding_type {encoding}")\
     .command_should_fail()\
     .command_error_should_have("InvalidArgument")\
 
-# Step 12: Test delete marker and latest flag
-# Step 12.1: Create delete marker by deleting some object
+# Step 13: Test delete marker and latest flag
+# Step 13.1: Create delete marker by deleting some object
 AwsTest('Aws can delete object from source bucket')\
     .delete_object("versionlistbucket", "foo/1")\
     .execute_test()\
     .command_is_successful()
 
-# Step 12.2: Fetch object versions list and confirm the delete marker is present and is latest
+# Step 13.2: Fetch object versions list and confirm the delete marker is present and is latest
 expected_delete_markers = ['foo/1']
 expected_delete_markers_latest = ["True"]
 expected_versions_keys = ['asdf', 'bo0', 'boo#', 'boo+', 'boo/0', 'boo/1',
-    'fo0', 'foo#123', 'foo+123', 'foo/0', 'foo/1', 'foo/2',
+    'fo0', 'fo0', 'foo#123', 'foo+123', 'foo/0', 'foo/1', 'foo/2',
     'qua0', 'quax#', 'quax+','quax/0', 'quax/1', 'quax/2', 'quax/3']
 expected_versions_keys_latest = ["True", "True", "True", "True", "True",
-    "True", "True", "True", "True", "True", "False", "True",
+    "True", "True", "False", "True", "True", "True", "False", "True",
     "True", "True", "True", "True", "True", "True", "True"]
 result = AwsTest("Aws list object versions with no parameters")\
     .list_object_versions("versionlistbucket")\
@@ -2268,7 +2304,7 @@ assert delete_markers_latest == expected_delete_markers_latest, "Failed to match
 assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
 assert versions_keys_latest == expected_versions_keys_latest, "Failed to match expected versions latest flag"
 
-# Step 13: Delete all created objects in bucket 'versionlistbucket'
+# Step 14: Delete all created objects in bucket 'versionlistbucket'
 AwsTest('Aws delete objects')\
     .delete_multiple_objects("versionlistbucket", object_list_file)\
     .execute_test()\
