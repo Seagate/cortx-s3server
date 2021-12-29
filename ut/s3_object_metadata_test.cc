@@ -342,7 +342,8 @@ TEST_F(S3ObjectMetadataTest, LoadObjectInfoFromVersionListIdex) {
   std::string obj_ver_id = "MTg0NDY3NDI0MzcyNjA2NzM4Mj";
   metadata_obj_under_test->set_version_id(obj_ver_id);
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
-              get_keyval(_, "objectname/1844674243726067382", _, _)).Times(1);
+              get_keyval(_, "objectname/MTg0NDY3NDI0MzcyNjA2NzM4Mj", _, _))
+      .Times(1);
   metadata_obj_under_test->set_object_list_index_layout(
       object_list_index_layout);
   metadata_obj_under_test->set_objects_version_list_index_layout(

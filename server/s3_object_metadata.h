@@ -123,10 +123,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string requested_object_name;
   std::string requested_object_version_id;
 
-  // Reverse epoch time used as version id key in verion index
-  std::string rev_epoch_version_id_key;
-  // holds base64 encoding value of rev_epoch_version_id_key, this is used
-  // in S3 REST APIs as http header x-amz-version-id or query param "VersionId"
+  // Used in S3 REST APIs as http header x-amz-version-id or query param
+  // "VersionId"
   std::string object_version_id;
   // holds reference/version key to object with null version.
   std::string null_object_version_id;
@@ -278,8 +276,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   virtual void regenerate_version_id();
 
-  std::string const get_obj_version_id() { return object_version_id; }
-  std::string const get_obj_version_key() { return rev_epoch_version_id_key; }
+  std::string get_obj_version_id() const { return object_version_id; }
+  std::string get_obj_version_key() const { return get_obj_version_id(); }
 
   virtual void set_version_id(std::string ver_id);
 
