@@ -24,7 +24,7 @@ Requires=slapd.service
 
 [Service]
 Type=simple
-ExecStart=/opt/seagate/cortx/auth/startauth.sh
+ExecStart=/opt/seagate/cortx/auth/startauth.sh "/etc/cortx"
 ExecStop=/bin/kill -TERM $MAINPID
 TimeoutSec=300
 

@@ -21,25 +21,73 @@
 import sys
 
 from setupcmd import SetupCmd
+from cortx.utils.log import Log
 
 class InitCmd(SetupCmd):
   """Init Setup Cmd."""
   name = "init"
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(InitCmd, self).__init__(config)
-      self.read_ldap_credentials()
+      super(InitCmd, self).__init__(config, services)
+      self.setup_type = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')
+      Log.info(f'log file path : {self.setup_type}')
+      self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
+      Log.info(f'Cluster	id : {self.cluster_id}')
+      self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
+      Log.info(f'config file path : {self.base_config_file_path}')
+      self.base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
+      Log.info(f'log file path : {self.base_log_file_path}')
+
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
-    self.logger.info("validations started")
+    Log.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
+    Log.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
-    self.validate_config_files(self.name)
-    self.logger.info("validations completed")
+    # validate config files as per services.
+    Log.info("validate s3 cluster config file started")
+    self.validate_config_file(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                              self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                              'yaml://')
+    Log.info("validate s3 cluster config file completed")
 
+    if self.service_haproxy in self.services:
+      pass
+
+    if self.service_s3server in self.services:
+      Log.info("validate s3 config file started")
+      self.validate_config_file(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                'yaml://')
+      Log.info("validate s3 config files completed")
+
+    if self.service_authserver in self.services:
+      Log.info("validate auth config file started")
+      self.validate_config_file(self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                              self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                              'properties://')
+      self.validate_config_file(self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                              self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                              'properties://')
+      Log.info("validate auth config files completed")
+
+    if self.service_bgscheduler in self.services:
+      Log.info("validate s3 bgdelete scheduler config file started")
+      self.validate_config_file(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                'yaml://')
+    Log.info("validate s3 bgdelete scheduler config files completed")
+
+    if self.service_bgworker in self.services:
+      Log.info("validate s3 bgdelete worker config file started")
+      self.validate_config_file(self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                                'yaml://')
+    Log.info("validate s3 bgdelete worker config files completed")
+
+    Log.info("validations completed")

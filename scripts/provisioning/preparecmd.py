@@ -21,23 +21,24 @@
 import sys
 
 from setupcmd import SetupCmd
+from cortx.utils.log import Log
 
 class PrepareCmd(SetupCmd):
   """Prepare Setup Cmd."""
   name = "prepare"
 
-  def __init__(self,   config: str):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(PrepareCmd, self).__init__(config)
+      super(PrepareCmd, self).__init__(config, services)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
-    self.logger.info("validations started")
+    Log.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
+    Log.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
-    self.validate_config_files(self.name)
-    self.logger.info("validations completed")
+    #self.validate_config_files(self.name)
+    Log.info("validations completed")

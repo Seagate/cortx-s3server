@@ -29,9 +29,11 @@ DEFAULT_KEY_PASSWD="seagate"
 if [[ "$BASEDIR" == "$AUTH_INSTALL_PATH/scripts" ]];
 then
     # this is executed for cluster deployment
-    AUTH_KEYSTORE_PROPERTIES_FILE="$AUTH_INSTALL_PATH/resources/keystore.properties"
+    AUTH_CONF_BASE_DIR="$1/auth"
+    echo "Auth config base dir: $AUTH_CONF_BASE_DIR"
+    AUTH_KEYSTORE_PROPERTIES_FILE="$AUTH_CONF_BASE_DIR/resources/keystore.properties"
     AUTH_JKS_TEMPLATE_FILE="$AUTH_INSTALL_PATH/scripts/s3authserver.jks_template"
-    AUTH_JKS_FILE="$AUTH_INSTALL_PATH/resources/s3authserver.jks"
+    AUTH_JKS_FILE="$AUTH_CONF_BASE_DIR/resources/s3authserver.jks"
     cp -f $AUTH_JKS_TEMPLATE_FILE $AUTH_JKS_FILE
 else
     # this script executed for dev vm

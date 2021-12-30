@@ -17,52 +17,15 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+# IMP : for upgrade cmd,
+# merge_configs() is imported from the merge.py
 
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import os.path
 import shutil
 import sys
-import logging
-
-s3_tmp_dir = __import__('setupcmd').SetupCmd.s3_tmp_dir
-
-g_upgrade_items = {
-  's3' : {
-        'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
-        'oldSampleFile' : os.path.join(s3_tmp_dir, "s3config.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml",
-        'fileType' : 'yaml://'
-    },
-    'auth' : {
-        'configFile' : "/opt/seagate/cortx/auth/resources/authserver.properties",
-        'oldSampleFile' : os.path.join(s3_tmp_dir, "authserver.properties.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/auth/resources/authserver.properties.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties",
-        'fileType' : 'properties://'
-    },
-    'keystore' : {
-        'configFile' : "/opt/seagate/cortx/auth/resources/keystore.properties",
-        'oldSampleFile' : os.path.join(s3_tmp_dir,"keystore.properties.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties",
-        'fileType' : 'properties://'
-    },
-    'bgdelete' : {
-        'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-        'oldSampleFile' : os.path.join(s3_tmp_dir, "config.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml",
-        'fileType' : 'yaml://'
-    },
-    'cluster' : {
-        'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
-        'oldSampleFile' : os.path.join(s3_tmp_dir, "s3_cluster.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml",
-        'fileType' : 'yaml://'
-    }
-}
+import socket
+from cortx.utils.log import Log
 
 def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
     """
@@ -80,10 +43,10 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
 
     #If config file is not present then abort merging.
     if not os.path.isfile(configFile):
-        logger.error(f'config file {configFile} does not exist')
+        Log.error(f'config file {configFile} does not exist')
         raise Exception(f'ERROR: config file {configFile} does not exist')
 
-    logger.info(f'config file {str(configFile)} upgrade started.')
+    Log.info(f'config file {str(configFile)} upgrade started.')
 
     # old sample file
     conf_old_sample = filetype + oldSampleFile
@@ -124,43 +87,16 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
 
     cs_conf_file.merge_config(source_index=conf_new_sample, keys_to_include=keys_to_overwrite)
     cs_conf_file.save_config()
-    logger.info(f'config file {str(configFile)} upgrade completed')
+    Log.info(f'config file {str(configFile)} upgrade completed')
 
-def merge_configs():
+def merge_configs(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
+
     """
     - This function will merge all S3 config files during upgrade
     - This function should be used outside this file to call configs upgrade
     """
-    # Use existing s3-deployment-logger or setup new console logger
-    setup_logger()
-
-    for upgrade_item in g_upgrade_items:
-        upgrade_config(g_upgrade_items[upgrade_item]['configFile'],
-            g_upgrade_items[upgrade_item]['oldSampleFile'],
-            g_upgrade_items[upgrade_item]['newSampleFile'],
-            g_upgrade_items[upgrade_item]['unsafeAttributesFile'],
-            g_upgrade_items[upgrade_item]['fileType'])
-
-def setup_logger():
-    """
-    - This function will use as is s3-deployment-logger if it is available
-    - else it will log to console
-    """
-    global logger
-    logger = logging.getLogger("s3-deployment-logger")
-    if logger.hasHandlers():
-        logger.info("Logger has valid handler")
-    else:
-        logger.setLevel(logging.DEBUG)
-        # create console handler with a higher log level
-        chandler = logging.StreamHandler(sys.stdout)
-        chandler.setLevel(logging.DEBUG)
-        s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        formatter = logging.Formatter(s3deployment_log_format)
-        # create formatter and add it to the handlers
-        chandler.setFormatter(formatter)
-        # add the handlers to the logger
-        logger.addHandler(chandler)
+    upgrade_config(configFile, oldSampleFile, newSampleFile, unsafeAttributesFile, filetype)
 
 if __name__ == "__main__":
-    merge_configs()
+    print("merge_configs without parameters is not supported, please implement cli wrapper and parser")
+    #merge_configs()

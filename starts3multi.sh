@@ -35,7 +35,7 @@ motr_local_port=100
 
 for i in {8080..8099}
 do
-  cmd="s3server --motrlocal $LOCAL_EP:${motr_local_port} --motrha $HA_EP --motrconfd $CONFD_EP --s3port ${i} --authhost 127.0.0.1 --authport 28050 --log_dir /var/log/seagate/s3 --s3loglevel INFO"
+  cmd="s3server --motrlocal $LOCAL_EP:${motr_local_port} --motrha $HA_EP --motrconfd $CONFD_EP --s3port ${i} --authhost 127.0.0.1 --authport 28050 --log_dir /var/log/cortx/s3 --s3loglevel INFO"
   echo $cmd
   eval $cmd &
   ((motr_local_port++))

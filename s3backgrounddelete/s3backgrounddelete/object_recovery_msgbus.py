@@ -25,15 +25,15 @@ import time
 import traceback
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
+from cortx.utils.log import Log
 
 class ObjectRecoveryMsgbus(object):
 
     """This class is implementation of msgbus for object recovery."""
 
-    def __init__(self, config, logger):
+    def __init__(self, config):
         """Initialize MessageBus."""
         self._config = config
-        self._logger = logger
         self.__msgbuslib = S3CortxMsgBus()
         self.__isproducersetupcomplete = False
         self.__isconsumersetupcomplete = False
@@ -46,7 +46,7 @@ class ObjectRecoveryMsgbus(object):
 
     def __process_msg(self, msg):
         """Loads the json message and sends it to validation and processing."""
-        self._logger.info(
+        Log.info(
             "Processing following records in consumer: " + msg)
         try:
             # msg: {"Key": "egZPBQAAAAA=-ZQIAAAAAJKc=",
@@ -57,14 +57,14 @@ class ObjectRecoveryMsgbus(object):
 
             if probable_delete_records:
                 validator = ObjectRecoveryValidator(
-                    self._config, probable_delete_records, self._logger)
+                    self._config, probable_delete_records)
                 validator.process_results()
 
         except (KeyError, ValueError) as ex:    # Bad formatted message. Will discard it
-            self._logger.error("Failed to parse JSON data due to: " + str(ex))
+            Log.error("Failed to parse JSON data due to: " + str(ex))
             return True
         except Exception as ex:
-            self._logger.error(str(ex))
+            Log.error(str(ex))
             return False
         return True
 
@@ -76,7 +76,7 @@ class ObjectRecoveryMsgbus(object):
         """Setup steps required for consumer to start receiving."""
         try:
             if not self.__msgbuslib:
-                self._logger.error("__msgbuslib is not initialized")
+                Log.error("__msgbuslib is not initialized")
                 self.__isconsumersetupcomplete = False
                 return
 
@@ -93,33 +93,37 @@ class ObjectRecoveryMsgbus(object):
             if not offset:
                 offset = 'earliest'
 
-            self._logger.debug("Setting up S3MessageBus for consumer")
+            Log.debug("Setting up S3MessageBus for consumer")
             ret, msg = self.__msgbuslib.setup_consumer(consumer_id,
                 consumer_group, msg_topic, False, offset)
             if not ret:
-                self._logger.error("Failed to setup message bus for consumer: " + str(msg))
+                Log.error("Failed to setup message bus for consumer: " + str(msg))
                 self.__isconsumersetupcomplete = False
             else:
-                self._logger.debug("setup message bus for consumer success")
+                Log.debug("setup message bus for consumer success")
                 self.__isconsumersetupcomplete = True
         except Exception as exception:
-            self._logger.error("Exception:{}".format(exception))
+            Log.error("Exception:{}".format(exception))
             self.__isconsumersetupcomplete = False
 
     def receive_data(self,
+        term_signal,
         consumer_id = None,
         consumer_group = None,
         msg_topic = None,
         offset = None):
         """Initializes consumer, connects and receives messages from message bus."""
         while True:
+            if term_signal.shutdown_signal:
+                Log.info("Shutting down s3backgroundconsumer")
+                break
             try:
                 if not self.__isconsumersetupcomplete:
                     self.__setup_consumer(consumer_id,
                         consumer_group, msg_topic, offset)
                     if not self.__isconsumersetupcomplete:
                         if not self._daemon_mode:
-                            self._logger.debug("Not launched in daemon mode, so exitting.")
+                            Log.debug("Not launched in daemon mode, so exitting.")
                             break
                         time.sleep(self._sleep_time)
                         continue
@@ -130,26 +134,29 @@ class ObjectRecoveryMsgbus(object):
                     # for a specified duration and then try to receive again.
                     # In case of non-daemon mode we will exit once we encounter failure
                     # in receiving messages.
-                    self._logger.debug("Receiving msg from S3MessageBus")
-                    ret,message = self.__msgbuslib.receive(self._daemon_mode)
-                    if ret:
+                    if term_signal.shutdown_signal:
+                        Log.info("Shutting down s3backgroundconsumer")
+                        break
+                    Log.debug("Receiving msg from S3MessageBus")
+                    ret,message = self.__msgbuslib.receive(False)
+                    if ret and message is not None:
                         # Process message can fail, but we still acknowledge the message
                         # The last step in process message is to delete the entry from
                         # probable delete index. Even if we acknowledge a message that
                         # has failed being processed it would eventually come back as
                         # the entry has not been deleted from probable delete index.
-                        self._logger.debug("Msg {}".format(str(message)))
+                        Log.debug("Msg {}".format(str(message)))
                         self.__process_msg(message.decode('utf-8'))
                         self.__msgbuslib.ack()
                     else:
-                        self._logger.debug("Failed to receive msg from message bus : " + str(message))
+                        Log.debug("Failed to receive msg from message bus : " + str(message))
                         if not self._daemon_mode:
                             break
                         #It works with/without sleep time but
                         #In case of multiple exceptions, cpu utilization will be very high
                         time.sleep(self._sleep_time)
             except Exception as exception:
-                self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
+                Log.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
                 self.__isconsumersetupcomplete = False                
             finally:
                 time.sleep(self._sleep_time)
@@ -164,7 +171,7 @@ class ObjectRecoveryMsgbus(object):
         """Setup steps required for producer to start sending."""
         try:
             if not self.__msgbuslib:
-                self._logger.error("__msgbuslib is not initialized")
+                Log.error("__msgbuslib is not initialized")
                 self.__isproducersetupcomplete = False
                 return
 
@@ -177,16 +184,16 @@ class ObjectRecoveryMsgbus(object):
             if not delivery_mechanism:
                 delivery_mechanism = self._config.get_msgbus_producer_delivery_mechanism()
 
-            self._logger.debug("producer id : " + producer_id +  "msg_type : " + str(msg_type) +  "delivery_mechanism : "+ str(delivery_mechanism) )
+            Log.debug("producer id : " + producer_id +  "msg_type : " + str(msg_type) +  "delivery_mechanism : "+ str(delivery_mechanism) )
             ret,msg = self.__msgbuslib.setup_producer(producer_id, msg_type, delivery_mechanism)
             if not ret:
-                self._logger.error("setup_producer failed {}".format(str(msg)))
+                Log.error("setup_producer failed {}".format(str(msg)))
                 self.__isproducersetupcomplete = False
             else:
                 self.__isproducersetupcomplete = True
 
         except Exception as exception:
-            self._logger.error("Exception:{}".format(exception))
+            Log.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
 
     def send_data(self, data,
@@ -194,7 +201,7 @@ class ObjectRecoveryMsgbus(object):
         msg_type = None,
         delivery_mechanism = None):
         """Send message data."""
-        self._logger.debug("In send_data")
+        Log.debug("In send_data")
 
         try:
             if not self.__isproducersetupcomplete:
@@ -202,54 +209,55 @@ class ObjectRecoveryMsgbus(object):
                                       msg_type,
                                       delivery_mechanism)
                 if not self.__isproducersetupcomplete:
-                    self._logger.debug("send_data producer connection issues")
+                    Log.debug("send_data producer connection issues")
                     return False
 
             msgbody = json.dumps(data)
-            self._logger.debug("MsgBody : {}".format(msgbody))
+            Log.debug("MsgBody : {}".format(msgbody))
             return self.__msgbuslib.send([msgbody])
 
         except Exception as exception:
-            self._logger.error("Exception:{}".format(exception))
+            Log.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
             return False
 
     def purge(self):
         """Purge the messages."""
-        self._logger.debug("In Purge")
+        Log.debug("In Purge")
 
         try:
             if not self.__isproducersetupcomplete:
                 self.__setup_producer()
                 if not self.__isproducersetupcomplete:
-                    self._logger.debug("purge producer connection issues")
+                    Log.debug("purge producer connection issues")
                     return False
             self.__msgbuslib.purge()
             #Insert a delay of 1 min (default) after purge, so that the messages are deleted
             time.sleep(self._config.get_purge_sleep_time())
-            self._logger.debug("Purged Messages")
+            Log.debug("Purged Messages")
         except Exception as exception:
-            self._logger.error("Exception:{}".format(exception))
+            Log.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
             return False
             
-    def get_count(self):
-        """Get count of unread messages."""
-        self._logger.debug("In get_count")
-        
-        try:
-            consumer_group = self._config.get_msgbus_consumer_group()
-            if not self.__isproducersetupcomplete:
-                self.__setup_producer()
-                if not self.__isproducersetupcomplete:
-                    self._logger.debug("get_count producer connection issues")
-                    return 0
-            
-            unread_count = self.__msgbuslib.count(consumer_group)
-            if unread_count is None:
-                return 0
-            else:
-                return unread_count
-        except Exception as exception:
-            self._logger.error("Exception:{}".format(exception))
-            return 0
+#    def get_count(self):
+#        """Get count of unread messages."""
+#        self._logger.debug("In get_count")
+#        
+#        try:
+#            consumer_group = self._config.get_msgbus_consumer_group()
+#            if not self.__isproducersetupcomplete:
+#                self.__setup_producer()
+#                if not self.__isproducersetupcomplete:
+#                    self._logger.debug("get_count producer connection issues")
+#                    return 0
+#            
+#            unread_count = self.__msgbuslib.count(consumer_group)
+#            if unread_count is None:
+#                return 0
+#            else:
+#                return unread_count
+#        except Exception as exception:
+#            self._logger.error("Exception:{}".format(exception))
+#            return 0
+

@@ -17,12 +17,26 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+# Following python code needs to migrated to shell script and should be called
+# here before starting the s3 server service
+#
+#
+#    if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
+#      # Copy log rotation config files from install directory to cron directory.
+#      self.logger.info("copy log rotate config started")
+#      self.copy_logrotate_files()
+#      self.logger.info("copy log rotate config completed")
+#      # create symbolic link for this config file to be used by log rotation
+#      self.create_symbolic_link(self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+#                                self.get_confkey("S3_CONF_SYMLINK"))
+
+
 [Unit]
 Description=Motr-S3 Core instance Server
 
 [Service]
 Type=forking
-ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh -F  %i -P /etc/sysconfig/s3server-%i -C /opt/seagate/cortx/s3/conf/s3config.yaml
+ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh -F  %i -P /etc/sysconfig/s3server-%i -C /etc/cortx/s3/conf/s3config.yaml
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/opt/seagate/cortx/s3/s3stopsystem.sh %i
 TimeoutStopSec=7

@@ -25,7 +25,7 @@ import pytest
 
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 
-CONFIG_LOG_DIR = "/var/log/seagate/s3/s3backgrounddelete"
+CONFIG_LOG_DIR = "/var/log/cortx/s3/s3backgrounddelete"
 
 def test_get_config_dir():
     """Test get_config_dir() method """
@@ -67,48 +67,12 @@ def test_get_processor_logger_name_failure():
         assert config.s3confstore.get_config('logconfig>processor_logger_name') == ''
 
 
-def test_get_scheduler_logger_file_success():
-    """Test if scheduler logger file is returned or not"""
-    config = CORTXS3Config()
-    scheduler_logger_path = CONFIG_LOG_DIR + '/object_recovery_scheduler.log'
-    logger_file = config.get_scheduler_logger_file()
-    assert logger_file == scheduler_logger_path
-
-
-def test_get_scheduler_logger_file_failure():
-    """
-    Test if scheduler logger file is not returned then it should throw AssertionError.
-    """
-    with pytest.raises(AssertionError):
-        config = CORTXS3Config()
-        del config._config['logconfig']['scheduler_log_file']
-        assert config.s3confstore.get_config('logconfig>scheduler_log_file') == ''
-
-
-def test_get_processor_logger_file_success():
-    """Test the processor logger file is returned."""
-    config = CORTXS3Config()
-    processor_logger_path = CONFIG_LOG_DIR + '/object_recovery_processor.log'
-    logger_file = config.get_processor_logger_file()
-    assert logger_file == processor_logger_path
-
-
-def test_get_processor_logger_file_failure():
-    """
-    Test if processor logger file is not returned then it should throw AssertionError.
-    """
-    with pytest.raises(AssertionError):
-        config = CORTXS3Config()
-        del config._config['logconfig']['processor_log_file']
-        assert config.s3confstore.get_config('logconfig>processor_log_file') == ''
-
-
 def test_get_log_level_success():
     """Test file log level in logconfig."""
     config = CORTXS3Config()
-    config.s3confstore.set_config('logconfig>file_log_level', 20, False)
+    config.s3confstore.set_config('logconfig>file_log_level', "INFO", False)
     file_log_level = config.s3confstore.get_config('logconfig>file_log_level')
-    assert file_log_level == 20
+    assert file_log_level == "INFO"
 
 def test_get_log_level_failure():
     """
@@ -118,43 +82,6 @@ def test_get_log_level_failure():
         config = CORTXS3Config()
         del config._config['logconfig']['file_log_level']
         assert config.s3confstore.get_config('logconfig>file_log_level') == ''
-
-
-def test_get_console_log_level_success():
-    """Test console log level in logconfig."""
-    config = CORTXS3Config()
-    config.s3confstore.set_config('logconfig>console_log_level', 30, False)
-    console_log_level = config.s3confstore.get_config('logconfig>console_log_level')
-    assert console_log_level == 30
-
-
-def test_get_console_log_level_failure():
-    """
-    Test if console log level of file is not returned then
-    it should throw AssertionError.
-    """
-    with pytest.raises(AssertionError):
-        config = CORTXS3Config()
-        del config._config['logconfig']['console_log_level']
-        assert config.s3confstore.get_config('logconfig>console_log_level') == ''
-
-
-def test_get_log_format_success():
-    """Test log format in logconfig."""
-    config = CORTXS3Config()
-    config.s3confstore.set_config('logconfig>log_format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s', False)
-    log_format = config.s3confstore.get_config('logconfig>log_format')
-    assert log_format == "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-
-def test_get_log_format_failure():
-    """
-    Test if log format is not added then it should throw AssertionError.
-    """
-    with pytest.raises(AssertionError):
-        config = CORTXS3Config()
-        del config._config['logconfig']['log_format']
-        assert config.s3confstore.get_config('logconfig>log_format') == ''
 
 
 def test_get_cortx_s3_consumer_endpoint_success():

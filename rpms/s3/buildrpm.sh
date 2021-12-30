@@ -89,7 +89,7 @@ if ! [ -z "${GIT_VER}" ]; then
     if [ $ENABLE_DEBUG_LOG == 1 ]; then
         sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' auth/resources/authserver.properties.sample
         sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' s3config.release.yaml.sample
-        sed -i 's/file_log_level:.*$/file_log_level: 10/g' s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
+        sed -i 's/file_log_level:.*$/file_log_level: "DEBUG"/g' s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
     fi
     # For sake of test, attempt checkout of version
     git checkout ${GIT_VER}
@@ -100,11 +100,23 @@ elif ! [ -z "${PATH_SRC}" ]; then
     if [ $ENABLE_DEBUG_LOG == 1 ]; then
         sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/auth/resources/authserver.properties.sample
         sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/s3config.release.yaml.sample
-        sed -i 's/file_log_level:.*$/file_log_level: 10/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
+        sed -i 's/file_log_level:.*$/file_log_level: "DEBUG"/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 
     fi
     find ./cortx-s3server-${S3_VERSION}-git${GIT_VER} -type f -name CMakeCache.txt -delete;
 fi
+
+
+# Get all third party rpms from scripts/env/common/third-party-rpms.txt
+# to send to rpmspec for validation
+third_party_rpms=""
+echo "Get all third party rpms from scripts/env/common/third-party-rpms.txt"
+cd ~/rpmbuild/SOURCES/cortx-s3server-${S3_VERSION}-git${GIT_VER}
+while IFS= read -r third_party_rpm;
+do
+    third_party_rpms="$third_party_rpms $third_party_rpm"
+done < "scripts/env/common/third-party-rpms.txt"
+echo "Third party RPMS: $third_party_rpms"
 
 cd ~/rpmbuild/SOURCES/
 tar -zcvf cortx-s3server-${S3_VERSION}-git${GIT_VER}.tar.gz cortx-s3server-${S3_VERSION}-git${GIT_VER}
@@ -118,6 +130,7 @@ if [ -z "${DISABLE_MOTR}" ]; then
   rpmbuild -ba \
            --define "_s3_version ${S3_VERSION}" \
            --define "_s3_git_ver git${GIT_VER}" \
+           --define "_third_party_rpms ${third_party_rpms}" \
            ${BASEDIR}/s3rpm.spec --with python3
 
 else
@@ -126,6 +139,7 @@ else
   rpmbuild -ba \
            --define "_s3_version ${S3_VERSION}" \
            --define "_s3_git_ver git${GIT_VER}" \
+           --define "_third_party_rpms ${third_party_rpms}" \
            ${BASEDIR}/s3rpm.spec --with python3 \
            --define "$DISABLE_MOTR"
 fi
