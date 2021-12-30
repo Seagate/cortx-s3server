@@ -69,21 +69,16 @@ fi
 
 # Ensure default working dir is present
 # e.g. /var/log/cortx/motr/<machine-id>/s3server-<fid>
-s3_working_dir=`python -c '
-import yaml;
-print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
-' | tr -d '\r\n'
-`"/s3server-$fid"
+s3_working_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
+s3_working_dir="$s3_working_dir/s3server-$fid"
 
 mkdir -p $s3_working_dir
 
 # Log dir configured in s3config.yaml
 # e.g. /var/log/cortx/s3/<machine-id>/s3server-<fid>
-s3_log_dir=`python -c '
-import yaml;
-print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
-' | tr -d '\r\n'
-`"/s3server-$fid"
+s3_log_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONFIG>S3_LOG_DIR")
+s3_log_dir="$s3_log_dir/s3server-$fid"
+
 mkdir -p $s3_log_dir
 
 #set the maximum size of core file to unlimited
