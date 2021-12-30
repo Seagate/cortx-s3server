@@ -130,7 +130,8 @@ void S3ListObjectVersionsAction::validate_request() {
     } else if (request_key_marker.empty()) {
       s3_log(S3_LOG_DEBUG, request_id, "key-marker is empty\n");
       set_s3_error("InvalidArgument");
-      set_s3_error_message("A version-id marker cannot be specified without a key marker");
+      set_s3_error_message(
+          "A version-id marker cannot be specified without a key marker");
       set_invalid_argument("version-id-marker", request_version_id_marker);
       send_response_to_s3_client();
       return;
