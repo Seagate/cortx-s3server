@@ -1,5 +1,5 @@
 [releases_cortx]
-baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/github/main/centos-7.9.2009/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/github/main/centos-7.9.2009/716/prod/cortx_iso/
 gpgcheck = 0
 name = Yum repo for CORTX builds - OS Centos 7.9.2009
 priority = 1
