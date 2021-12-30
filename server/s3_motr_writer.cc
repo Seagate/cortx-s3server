@@ -349,6 +349,10 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
   // When M0_ENF_META flag is passed, Motr will not save pv id and other
   // attributes in its backend metadata; it passes them to the caller.
   obj_ctx->objs[0].ob_entity.en_flags |= M0_ENF_META;
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    obj_ctx->objs[0].ob_entity.en_flags |= M0_ENF_DI;
+  }
+
   int rc = s3_motr_api->motr_entity_create(&(obj_ctx->objs[0].ob_entity),
                                            &(ctx->ops[0]));
   if (rc != 0) {
@@ -437,7 +441,6 @@ void S3MotrWiter::write_content(std::function<void(void)> on_success,
 
   // We should already have an OID
   assert(oid_list.size() == 1);
-
   if (is_object_opened) {
     write_content();
   } else {
