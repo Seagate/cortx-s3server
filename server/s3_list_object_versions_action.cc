@@ -122,14 +122,16 @@ void S3ListObjectVersionsAction::validate_request() {
            request_version_id_marker.c_str());
     if (request_version_id_marker.empty()) {
       s3_log(S3_LOG_DEBUG, request_id, "version-id-marker is empty\n");
-      // TODO: Add invalid argument details to the response.
       set_s3_error("InvalidArgument");
+      set_s3_error_message("A version-id marker cannot be empty");
+      set_invalid_argument("version-id-marker", request_version_id_marker);
       send_response_to_s3_client();
       return;
     } else if (request_key_marker.empty()) {
       s3_log(S3_LOG_DEBUG, request_id, "key-marker is empty\n");
-      // TODO: Add invalid argument details to the response.
       set_s3_error("InvalidArgument");
+      set_s3_error_message("A version-id marker cannot be specified without a key marker");
+      set_invalid_argument("version-id-marker", request_version_id_marker);
       send_response_to_s3_client();
       return;
     }
@@ -675,7 +677,7 @@ void S3ListObjectVersionsAction::send_response_to_s3_client() {
     s3_log(S3_LOG_DEBUG, request_id, "Sending %s response...\n",
            get_s3_error_code().c_str());
     S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_bucket_name());
+                  request->get_bucket_name(), get_s3_error_message());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",

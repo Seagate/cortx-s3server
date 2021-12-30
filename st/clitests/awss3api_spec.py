@@ -49,8 +49,10 @@ def get_aws_cli_object(raw_aws_cli_output):
     raw_lines = raw_aws_cli_output.split('\n')
     common_prefixes = []
     content_keys = []
-    versions = {}
-    delete_markers = {}
+    versions_keys_recd = []
+    versions_latest_recd = []
+    delete_markers_keys_recd = []
+    delete_markers_latest_recd = []
     for _, item in enumerate(raw_lines):
         if (item.startswith("COMMONPREFIXES")):
             # E.g. COMMONPREFIXES  quax/
@@ -62,10 +64,12 @@ def get_aws_cli_object(raw_aws_cli_output):
             content_keys.append(line[2])
         elif (item.startswith("VERSIONS")):
             line = item.split('\t')
-            versions[line[3]] = line[2]
+            versions_keys_recd.append(line[3])
+            versions_latest_recd.append(line[2])
         elif (item.startswith("DELETEMARKERS")):
             line = item.split('\t')
-            delete_markers[line[2]] = line[1]
+            delete_markers_keys_recd.append(line[2])
+            delete_markers_latest_recd.append(line[1])
         elif (item.startswith("NEXTTOKEN")):
             # E.g. NEXTTOKEN       eyJDb250aW51YXRpb25Ub2tlbiI6IG51bGwsICJib3RvX3RydW5jYXRlX2Ftb3VudCI6IDN9
             line = item.split('\t')
@@ -77,10 +81,14 @@ def get_aws_cli_object(raw_aws_cli_output):
         cli_obj["prefix"] = common_prefixes
     if (content_keys is not None):
         cli_obj["keys"] = content_keys
-    if (versions is not None):
-        cli_obj["versions"] = versions
-    if (delete_markers is not None):
-        cli_obj["delete_markers"] = delete_markers
+    if (versions_keys_recd is not None):
+        cli_obj["versions_keys_recd"] = versions_keys_recd
+    if (versions_latest_recd is not None):
+        cli_obj["versions_latest_recd"] = versions_latest_recd
+    if (delete_markers_keys_recd is not None):
+        cli_obj["delete_markers_keys_recd"] = delete_markers_keys_recd
+    if (delete_markers_latest_recd is not None):
+        cli_obj["delete_markers_latest_recd"] = delete_markers_latest_recd
 
     return cli_obj
 
@@ -2004,10 +2012,7 @@ result = AwsTest("Aws list object versions with no parameters")\
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
 assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
 
@@ -2029,10 +2034,7 @@ result = AwsTest(f"Aws list object versions with max-keys {page_size}")\
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
 assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
 
@@ -2048,10 +2050,7 @@ result = AwsTest(f"Aws list object versions with prefix {prefix}")\
 # Process result set
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
 assert not versions_keys, "Failed: no versions expected in the list"
 
@@ -2070,10 +2069,7 @@ result = AwsTest(f"Aws list object versions with prefix {prefix}")\
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
 assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
 
@@ -2095,10 +2091,7 @@ result = AwsTest(f"Aws list object versions with delimiter {delimiter}")\
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
 assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
 
@@ -2119,10 +2112,7 @@ result = AwsTest(f"Aws list object versions with delimiter {delimiter}")\
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 common_prefixes = list_versions_response["prefix"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys} Common prefixes received: {common_prefixes}")
 assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
@@ -2146,10 +2136,7 @@ result = AwsTest(f"Aws list object versions with prefix {prefix} and delimiter {
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 common_prefixes = list_versions_response["prefix"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys} Common prefixes received: {common_prefixes}")
 assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
@@ -2173,10 +2160,7 @@ result = AwsTest(f"Aws list object versions with prefix {prefix}, delimiter {del
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 common_prefixes = list_versions_response["prefix"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys} Common prefixes received: {common_prefixes}")
 assert versions_keys == expected_versions_keys_part1, "Failed to match expected versions keys in the list"
@@ -2198,10 +2182,7 @@ result = AwsTest(f"Aws list object versions with prefix {prefix}, delimiter {del
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-for key in versions_dict:
-    versions_keys.append(key)
+versions_keys = list_versions_response["versions_keys_recd"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
 assert versions_keys == expected_versions_keys_part2, "Failed to match expected versions keys in the list"
 
@@ -2231,12 +2212,8 @@ result = AwsTest(f"Aws list object versions with max-keys {page_size}")\
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-versions_keys_latest = []
-for key in versions_dict:
-    versions_keys.append(key)
-    versions_keys_latest.append(versions_dict[key])
+versions_keys = list_versions_response["versions_keys_recd"]
+versions_keys_latest = list_versions_response["versions_latest_recd"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys}")
 assert versions_keys == expected_versions_keys, "Failed to match expected versions keys in the list"
 assert versions_keys_latest == expected_versions_keys_latest, "Failed to match expected versions latest flag"
@@ -2286,18 +2263,10 @@ result = AwsTest("Aws list object versions with no parameters")\
 list_versions_response = get_aws_cli_object(result.status.stdout)
 assert list_versions_response, "Failed to list object versions"
 # Get version keys from the response
-versions_dict = list_versions_response["versions"]
-versions_keys = []
-versions_keys_latest = []
-for key in versions_dict:
-    versions_keys.append(key)
-    versions_keys_latest.append(versions_dict[key])
-delete_markers_dict = list_versions_response["delete_markers"]
-delete_markers = []
-delete_markers_latest = []
-for key in delete_markers_dict:
-    delete_markers.append(key)
-    delete_markers_latest.append(delete_markers_dict[key])
+versions_keys = list_versions_response["versions_keys_recd"]
+versions_keys_latest = list_versions_response["versions_latest_recd"]
+delete_markers = list_versions_response["delete_markers_keys_recd"]
+delete_markers_latest = list_versions_response["delete_markers_latest_recd"]
 print(f"Response: {list_versions_response} Version keys received: {versions_keys} Delete markers: {delete_markers}")
 assert delete_markers == expected_delete_markers, "Failed to match expected delete markers in the list"
 assert delete_markers_latest == expected_delete_markers_latest, "Failed to match expected delete markers latest flag"

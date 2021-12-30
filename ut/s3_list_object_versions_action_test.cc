@@ -182,6 +182,10 @@ TEST_F(S3ListObjectVersionsTest, ValidateRequestEmptyVersionIdMarker) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
   action_under_test_ptr->validate_request();
+  EXPECT_STREQ("InvalidArgument",
+               action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_STREQ("A version-id marker cannot be empty",
+               action_under_test_ptr->get_s3_error_message().c_str());
 }
 
 TEST_F(S3ListObjectVersionsTest, ValidateRequestEmptyKeyMarker) {
@@ -203,6 +207,10 @@ TEST_F(S3ListObjectVersionsTest, ValidateRequestEmptyKeyMarker) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
   action_under_test_ptr->validate_request();
+  EXPECT_STREQ("InvalidArgument",
+               action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_STREQ("A version-id marker cannot be specified without a key marker",
+               action_under_test_ptr->get_s3_error_message().c_str());
 }
 
 TEST_F(S3ListObjectVersionsTest, ValidateRequestInvalidMaxKeys) {
