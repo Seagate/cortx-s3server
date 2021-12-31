@@ -35,17 +35,21 @@ class S3ListObjectVersionsAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<MotrAPI> s3_motr_api;
-  bool include_marker_in_result;
-  bool check_any_keys_after_prefix;
+  bool include_marker_in_result = true;
+  // When we skip keys with same common prefix, we need a way to indicate
+  // a state in which we'll make use of existing key fetch logic just to see if
+  // any more keys are available in bucket after the keys with common prefix.
+  // This is required to return correct truncation flag in the response.
+  bool check_any_keys_after_prefix = false;
   size_t max_record_count;
-  bool fetch_successful;
-  size_t key_count;
+  bool fetch_successful = false;
+  size_t key_count = 0;
   bool json_error = false;
   short retry_count = 0;
-  bool response_is_truncated;
+  bool response_is_truncated = false;
   std::string saved_last_key;
   // Identify total keys visited/touched in object versions listing
-  size_t total_keys_visited;
+  size_t total_keys_visited = 0;
   std::string last_key;  // last key during each iteration
   std::string last_object_checked;
   size_t version_list_offset = 0;
