@@ -21,6 +21,7 @@
 import sys
 
 from setupcmd import SetupCmd
+from cortx.utils.log import Log
 
 class PrepareCmd(SetupCmd):
   """Prepare Setup Cmd."""
@@ -35,9 +36,9 @@ class PrepareCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
-    self.logger.info("validations started")
+    Log.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
+    Log.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     #self.validate_config_files(self.name)
-    self.logger.info("validations completed")
+    Log.info("validations completed")
