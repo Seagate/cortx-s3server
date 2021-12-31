@@ -115,7 +115,32 @@ void S3ListObjectVersionsAction::validate_request() {
   request_key_marker = request->get_query_string_value("key-marker");
   s3_log(S3_LOG_DEBUG, request_id, "request_key_marker = %s\n",
          request_key_marker.c_str());
-  last_key = request_key_marker;  // As requested by user
+  if (request->has_query_param_key("version-id-marker")) {
+    request_version_id_marker =
+        request->get_query_string_value("version-id-marker");
+    s3_log(S3_LOG_INFO, request_id, "request_version_id_marker = %s\n",
+           request_version_id_marker.c_str());
+    if (request_version_id_marker.empty()) {
+      s3_log(S3_LOG_DEBUG, request_id, "version-id-marker is empty\n");
+      set_s3_error("InvalidArgument");
+      set_s3_error_message("A version-id marker cannot be empty");
+      set_invalid_argument("version-id-marker", request_version_id_marker);
+      send_response_to_s3_client();
+      return;
+    } else if (request_key_marker.empty()) {
+      s3_log(S3_LOG_DEBUG, request_id, "key-marker is empty\n");
+      set_s3_error("InvalidArgument");
+      set_s3_error_message(
+          "A version-id marker cannot be specified without a key marker");
+      set_invalid_argument("version-id-marker", request_version_id_marker);
+      send_response_to_s3_client();
+      return;
+    }
+    last_key = request_key_marker + "/" +
+               request_version_id_marker;  // key-marker + version-id-marker
+  } else {
+    last_key = request_key_marker;  // key-marker
+  }
 
   // Validate the input max-keys
   std::string max_k = request->get_query_string_value("max-keys");
@@ -204,6 +229,15 @@ void S3ListObjectVersionsAction::get_next_versions() {
         include_marker_in_result) {
       include_marker_in_result = false;
       last_key = request_prefix;
+      motr_kv_reader->next_keyval(
+          object_version_list_index_layout, last_key, max_record_count,
+          std::bind(&S3ListObjectVersionsAction::get_next_versions_successful,
+                    this),
+          std::bind(&S3ListObjectVersionsAction::get_next_versions_failed,
+                    this),
+          0);
+    } else if (include_marker_in_result) {
+      include_marker_in_result = false;
       motr_kv_reader->next_keyval(
           object_version_list_index_layout, last_key, max_record_count,
           std::bind(&S3ListObjectVersionsAction::get_next_versions_successful,
@@ -644,7 +678,7 @@ void S3ListObjectVersionsAction::send_response_to_s3_client() {
     s3_log(S3_LOG_DEBUG, request_id, "Sending %s response...\n",
            get_s3_error_code().c_str());
     S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_bucket_name());
+                  request->get_bucket_name(), get_s3_error_message());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
