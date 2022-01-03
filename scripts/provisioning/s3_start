@@ -143,12 +143,8 @@ def main():
 
       Log.info(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
       Log.info(f"Starting S3 Server with FID {Fid}...")
-      i = 0
-      while i < 10:
-        # Start S3 Server
-        os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
-        i += 1
-        time.sleep(60)
+      # Start S3 Server
+      os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
 
       # Read the log directory path from s3config file
       s3_log_dir = read_config_value("S3_CONFIG_FILE", "yaml", "S3_SERVER_CONFIG>S3_LOG_DIR")
