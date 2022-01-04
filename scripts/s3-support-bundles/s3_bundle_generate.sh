@@ -31,18 +31,32 @@ where:
 -c        Confstore URL.
 -s        services list."
 
+SHORT=b:,t:,c:,s:
+LONG=duration:,size_limit:,binlogs:,coredumps:,stacktrace:
+
 usage() {
   echo "$USAGE"
   exit 1
 }
 
-while getopts "b:t:c:s:" opt; do
-  case "${opt}" in
-    b) bundle_id=${OPTARG} ;;
-    t) bundle_path=${OPTARG} ;;
-    c) confstore_url=${OPTARG} ;;
-    s) services=${OPTARG} ;;
-    *) usage ;;
+OPTS=$(getopt --options $SHORT --long $LONG  --name "$0" -- "$@")
+
+eval set -- "$OPTS"
+
+# extract options and their arguments into variables.
+while true ; do
+  case "$1" in
+    -b) bundle_id="$2";shift 2;;
+    -t) bundle_path="$2";shift 2;;
+    -c) confstore_url="$2";shift 2;;
+    -s) services="$2";shift 2;;
+    --duration) duration="$2";shift 2;;
+    --size_limit) size_limit="$2";shift 2;;
+    --binlogs) binlogs="$2";shift 2;;
+    --coredumps) coredumps="$2";shift 2;;
+    --stacktrace) stacktrace="$2";shift 2;;
+    --) shift;break;;
+    *) usage;exit 1;;
   esac
 done
 
@@ -54,7 +68,11 @@ echo "Bundle_id: $bundle_id"
 echo "bundle_path: $bundle_path"
 echo "confstore_url: $confstore_url"
 echo "services: $services"
-
+echo "duration: $duration"
+echo "size_limit: $size_limit"
+echo "binlogs: $binlogs"
+echo "coredumps: $coredumps"
+echo "stacktrace: $stacktrace"
 
 s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
 s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
