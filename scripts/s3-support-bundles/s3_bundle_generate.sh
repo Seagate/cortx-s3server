@@ -24,12 +24,22 @@
 #######################################################
 
 USAGE="USAGE: bash $(basename "$0") -b <bundleid> -t <path> -c <confstore_url> -s <services>
+                                    --duration <duration> --size_limit <size>
+                                    --binlogs <true/false> --coredumps <true/false>
+                                    --stacktrace <true/false>
 Generate support bundle for s3server.
-where:
+where mandatory parameters are :
 -b        Unique bundle-id used to identify support bundles.
 -t        Location at which support bundle needs to be copied.
 -c        Confstore URL.
--s        services list."
+-s        services list.
+where optional parameters are :
+--duration      ISO 8061 format, the start date time and duration to be considered after that.
+--size_limit    Limit set on per component for its support bundle size.
+--binlogs       Bool value to include binary logs.
+--coredumps     Bool value to include/exclude core dumps.
+--stacktrace    Bool value to include/exclude stackTraces.
+"
 
 SHORT=b:,t:,c:,s:
 LONG=duration:,size_limit:,binlogs:,coredumps:,stacktrace:
