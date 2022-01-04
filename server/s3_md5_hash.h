@@ -26,8 +26,13 @@
 #include <string>
 #include <gtest/gtest_prod.h>
 #include <openssl/md5.h>
+#ifdef __cplusplus
+extern "C" {
 #include "motr/client.h"
 #include "lib/cksum.h"
+}
+#endif
+
 #include "s3_motr_wrapper.h"
 #include "s3_motr_context.h"
 
