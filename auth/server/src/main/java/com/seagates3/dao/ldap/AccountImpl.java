@@ -339,59 +339,65 @@ public class AccountImpl implements AccountDAO {
         }
 
         sleep();
-        
+
         int count = 0;
         int maxTries = 2;
-        while(true) {
-            try {
-            	createUserOU(account.getName());
-            	break;
-            } catch (Exception e) {
-            	sleep();
-                if (++count == maxTries) throw e;
-            }
+        while (true) {
+          try {
+            createUserOU(account.getName());
+            break;
+          }
+          catch (Exception e) {
+            sleep();
+            if (++count == maxTries) throw e;
+          }
         }
-        
+
         count = 0;
-        while(true) {
-            try {
-            	createRoleOU(account.getName());
-            	break;
-            } catch (Exception e) {
-            	sleep();
-                if (++count == maxTries) throw e;
-            }
+        while (true) {
+          try {
+            createRoleOU(account.getName());
+            break;
+          }
+          catch (Exception e) {
+            sleep();
+            if (++count == maxTries) throw e;
+          }
         }
-  
+
         count = 0;
-        while(true) {
-            try {
-            	createGroupsOU(account.getName());
-            	break;
-            } catch (Exception e) {
-            	sleep();
-                if (++count == maxTries) throw e;
-            }
+        while (true) {
+          try {
+            createGroupsOU(account.getName());
+            break;
+          }
+          catch (Exception e) {
+            sleep();
+            if (++count == maxTries) throw e;
+          }
         }
-  
+
         count = 0;
-        while(true) {
-            try {
-            	createPolicyOU(account.getName());
-            	break;
-            } catch (Exception e) {
-            	sleep();
-                if (++count == maxTries) throw e;
-            }
+        while (true) {
+          try {
+            createPolicyOU(account.getName());
+            break;
+          }
+          catch (Exception e) {
+            sleep();
+            if (++count == maxTries) throw e;
+          }
         }
     }
-    
-    private void sleep() {
-    	try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			LOGGER.error("Error waiting.");
-		}
+
+   private
+    void sleep() {
+      try {
+        Thread.sleep(2000);
+      }
+      catch (InterruptedException e) {
+        LOGGER.error("Error waiting.");
+      }
     }
 
     /**
@@ -432,17 +438,19 @@ public class AccountImpl implements AccountDAO {
 
         int count = 0;
         int maxTries = 2;
-        while(true) {
-            try {
-            	LDAPUtils.delete(dn);
-            	break;
-            } catch (LDAPException e) {
-            	sleep();
-                if (++count == maxTries) {
-                	LOGGER.error("Failed to delete dn: " + dn);
-                    throw new DataAccessException("Failed to delete " + ou + " ou.\n" + e);
-                }
+        while (true) {
+          try {
+            LDAPUtils.delete (dn);
+            break;
+          }
+          catch (LDAPException e) {
+            sleep();
+            if (++count == maxTries) {
+              LOGGER.error("Failed to delete dn: " + dn);
+              throw new DataAccessException("Failed to delete " + ou +
+                                            " ou.\n" + e);
             }
+          }
         }
     }
 
