@@ -41,6 +41,8 @@ where optional parameters are :
 --stacktrace    Bool value to include/exclude stackTraces.
 "
 
+set -xe
+
 SHORT=b:,t:,c:,s:
 LONG=duration:,size_limit:,binlogs:,coredumps:,stacktrace:
 
