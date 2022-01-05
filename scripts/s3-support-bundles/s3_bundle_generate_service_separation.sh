@@ -22,6 +22,12 @@
 # Following actions are pending to make this S3 support bundle with service sepration working
 # 1. remove existing s3_bundle_generate.sh
 # 2. rename this file with s3_bundle_generate.sh
+# 3. add support for below optional parameters -
+#      --duration
+#      --size_limit
+#      --binlogs
+#      --coredumps
+#      --stacktrace
 #############################################################################################
 
 #######################################################
