@@ -24,6 +24,12 @@
 #    - generate_bundle_authserver
 #    - generate_bundle_bgscheduler
 #    - generate_bundle_bgworker
+# 4. add support for below optional parameters -
+#      --duration
+#      --size_limit
+#      --binlogs
+#      --coredumps
+#      --stacktrace
 #############################################################################
 
 import sys
