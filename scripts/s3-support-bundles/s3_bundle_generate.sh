@@ -41,7 +41,7 @@ where optional parameters are :
 --stacktrace    Bool value to include/exclude stackTraces.
 "
 
-set -xe
+set -e
 
 SHORT=b:,t:,c:,s:
 LONG=duration:,size_limit:,binlogs:,coredumps:,stacktrace:
@@ -85,6 +85,8 @@ echo "size_limit: $size_limit"
 echo "binlogs: $binlogs"
 echo "coredumps: $coredumps"
 echo "stacktrace: $stacktrace"
+
+set +e
 
 s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
 s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
