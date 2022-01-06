@@ -168,7 +168,6 @@ s3tests_boto3.functional.test_s3:test_bucket_notexist
 s3tests_boto3.functional.test_s3:test_bucketv2_notexist 
 s3tests_boto3.functional.test_s3:test_bucket_delete_notexist 
 s3tests_boto3.functional.test_s3:test_bucket_delete_nonempty 
-s3tests_boto3.functional.test_s3:test_bucket_concurrent_set_canned_acl 
 s3tests_boto3.functional.test_s3:test_object_write_to_nonexist_bucket 
 s3tests_boto3.functional.test_s3:test_bucket_create_delete
 s3tests_boto3.functional.test_s3:test_object_read_not_exist
