@@ -418,6 +418,19 @@ void S3CopyObjectAction::save_metadata() {
     new_object_metadata->add_user_defined_attribute(it.first, it.second);
   }
 
+  // If replication is enabled on the destination bucket then
+  // enable replication state in the new object's metadata
+  if ((bucket_metadata->check_bucket_replication_exists())) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Replication policy exists for bucket :: %s.\n",
+           request->get_bucket_name().c_str());
+    std::string rep_config_json =
+        bucket_metadata->get_replication_config_as_json_string();
+
+    new_object_metadata->set_replication_status_and_dest_bucket(
+        true, additional_object_metadata->get_tags(), rep_config_json);
+  }
+
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   new_object_metadata->save(
