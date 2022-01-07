@@ -665,7 +665,7 @@ int S3MotrKVSWriter::put_keyval_impl(
   }
 
   s3_motr_api->motr_op_launch(
-      (is_async ? request->addb_request_id : S3_ADDB_STARTUP_REQUESTS_ID),
+      (is_async ? request->addb_request_id : m0_dummy_id_generate()),
       &(idx_op_ctx->ops[0]), 1, MotrOpType::putkv);
   global_motr_idx_ops_list.insert(idx_op_ctx);
   if (!is_async) {

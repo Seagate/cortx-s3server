@@ -24,25 +24,51 @@
 #######################################################
 
 USAGE="USAGE: bash $(basename "$0") -b <bundleid> -t <path> -c <confstore_url> -s <services>
+                                    --duration <duration> --size_limit <size>
+                                    --binlogs <true/false> --coredumps <true/false>
+                                    --stacktrace <true/false>
 Generate support bundle for s3server.
-where:
+where mandatory parameters are :
 -b        Unique bundle-id used to identify support bundles.
 -t        Location at which support bundle needs to be copied.
 -c        Confstore URL.
--s        services list."
+-s        services list.
+where optional parameters are :
+--duration      ISO 8061 format, the start date time and duration to be considered after that.
+--size_limit    Limit set on per component for its support bundle size.
+--binlogs       Bool value to include binary logs.
+--coredumps     Bool value to include/exclude core dumps.
+--stacktrace    Bool value to include/exclude stackTraces.
+"
+
+set -e
+
+SHORT=b:,t:,c:,s:
+LONG=duration:,size_limit:,binlogs:,coredumps:,stacktrace:
 
 usage() {
   echo "$USAGE"
   exit 1
 }
 
-while getopts "b:t:c:s:" opt; do
-  case "${opt}" in
-    b) bundle_id=${OPTARG} ;;
-    t) bundle_path=${OPTARG} ;;
-    c) confstore_url=${OPTARG} ;;
-    s) services=${OPTARG} ;;
-    *) usage ;;
+OPTS=$(getopt --options $SHORT --long $LONG  --name "$0" -- "$@")
+
+eval set -- "$OPTS"
+
+# extract options and their arguments into variables.
+while true ; do
+  case "$1" in
+    -b) bundle_id="$2";shift 2;;
+    -t) bundle_path="$2";shift 2;;
+    -c) confstore_url="$2";shift 2;;
+    -s) services="$2";shift 2;;
+    --duration) duration="$2";shift 2;;
+    --size_limit) size_limit="$2";shift 2;;
+    --binlogs) binlogs="$2";shift 2;;
+    --coredumps) coredumps="$2";shift 2;;
+    --stacktrace) stacktrace="$2";shift 2;;
+    --) shift;break;;
+    *) usage;exit 1;;
   esac
 done
 
@@ -54,7 +80,13 @@ echo "Bundle_id: $bundle_id"
 echo "bundle_path: $bundle_path"
 echo "confstore_url: $confstore_url"
 echo "services: $services"
+echo "duration: $duration"
+echo "size_limit: $size_limit"
+echo "binlogs: $binlogs"
+echo "coredumps: $coredumps"
+echo "stacktrace: $stacktrace"
 
+set +e
 
 s3server_base_log_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_LOG_PATH")
 s3server_base_config_key=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="CONFIG>CONFSTORE_BASE_CONFIG_PATH")
@@ -76,14 +108,15 @@ then
     sgiamadminpwd=$(s3cipher decrypt --data="$encryptedkey" --key="$ldapcipherkey")
 fi
 
-bundle_name="s3_$bundle_id.tar.xz"
+bundle_name="s3_$bundle_id.tar.gz"
 s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
 haproxy_log="$base_log_file_path/haproxy.log"
 haproxy_status_log="$base_log_file_path/haproxy-status.log"
-haproxy_log_k8s=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_LOG_SYMLINK")
+machine_id=$(cat /etc/machine-id)
+haproxy_log_k8s="$base_log_file_path/s3/$machine_id/haproxy/haproxy.log"
 
 s3server_config="$base_config_file_path/s3/conf/s3config.yaml"
 authserver_config="$base_config_file_path/auth/resources/authserver.properties"
@@ -567,7 +600,7 @@ echo "Generating tar..."
 #tar -cf - $args --warning=no-file-changed 2>/dev/null | xz -1e --thread=0 > $s3_bundle_location/$bundle_name 2>/dev/null
 
 echo $args
-tar -cvJf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-changed
+tar -czvf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-changed
 
 # Clean up temp files
 cleanup_tmp_files
