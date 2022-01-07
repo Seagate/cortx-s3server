@@ -121,6 +121,7 @@ enum class S3OperationCode {
   replication,
   accelerate,
   versions,
+  remoteBucketInfo,
 
   // Object Operations
   initupload,
@@ -200,6 +201,8 @@ inline std::string operation_code_to_str(S3OperationCode code) {
       return "S3OperationCode::selectcontent";
     case S3OperationCode::restore:
       return "S3OperationCode::restore";
+    case S3OperationCode::remoteBucketInfo:
+      return "S3OperationCode::remoteBucketInfo";
     default:
       return "S3OperationCode::Unknown";
   }
@@ -301,6 +304,8 @@ inline std::string operation_code_to_audit_str(S3OperationCode code) {
       return "COMPLETEUPLOAD";
     case S3OperationCode::abortupload:
       return "ABORTUPLOAD";
+    case S3OperationCode::remoteBucketInfo:
+      return "REMOTEBUCKETINFO";
     default:
       return "UNKNOWN";
   }
@@ -323,7 +328,10 @@ enum class S3AsyncOpStatus {
   connection_failed
 };
 
-enum class S3IOOpStatus { saved, failed };
+enum class S3IOOpStatus {
+  saved,
+  failed
+};
 
 enum class S3MotrEntityType {
   realm,
@@ -333,7 +341,7 @@ enum class S3MotrEntityType {
 
 // returns 'true' if numeric value of string 'x' is less than that of 'y'
 struct S3NumStrComparator {
-  bool operator()(const std::string &x, const std::string &y) const {
+  bool operator()(const std::string& x, const std::string& y) const {
     return strtoul(x.c_str(), NULL, 0) < strtoul(y.c_str(), NULL, 0);
   }
 };

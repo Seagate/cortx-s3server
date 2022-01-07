@@ -130,6 +130,30 @@ void S3BucketMetadata::set_bucket_replication_configuration(
   bucket_replication_configuration = bucket_replication_config;
 }
 
+void S3BucketMetadata::set_credentials_and_alias_name(
+    const std::string& creds, const std::string& alias_name) {
+  creds_str = creds;
+  alias_name_str = alias_name;
+  alias_name_map[alias_name] = creds;
+}
+
+const std::string& S3BucketMetadata::get_alias_name() { return alias_name_str; }
+
+const std::string& S3BucketMetadata::get_alias_name_list_as_xml() {
+  alias_name_response_xml += "<ListAllAliasNameResult>";
+
+  for (const auto& name : alias_name_map) {
+    alias_name_response_xml += "<Alias>";
+    alias_name_response_xml += name.first;
+    alias_name_response_xml += "</Alias>";
+    s3_log(S3_LOG_DEBUG, request_id, "alias_name_response_xml =%s \n",
+           alias_name_response_xml.c_str());
+  }
+
+  alias_name_response_xml += "</ListAllAliasNameResult>";
+
+  return alias_name_response_xml;
+}
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
@@ -169,6 +193,12 @@ std::string S3BucketMetadata::to_json() {
   if (!bucket_replication_configuration.empty()) {
     root["ReplicationConfiguration"] = bucket_replication_configuration;
   }
+
+  // TO DO::Encrypt credentials
+  for (const auto& name : alias_name_map) {
+    root["remote_bucket_credentials"][name.first] = name.second;
+  }
+
   S3DateTime current_time;
   current_time.init_current_time();
   root["create_timestamp"] = current_time.get_isoformat_string();
@@ -230,6 +260,12 @@ int S3BucketMetadata::from_json(std::string content) {
   bucket_replication_configuration =
       newroot["ReplicationConfiguration"].asString();
 
+  members = newroot["remote_bucket_credentials"].getMemberNames();
+  alias_name_map.clear();
+  for (const auto& name : members) {
+    alias_name_map[name] =
+        newroot["remote_bucket_credentials"][name].asString();
+  }
   return 0;
 }
 
@@ -364,6 +400,12 @@ void S3BucketMetadata::delete_bucket_replication_config() {
   bucket_replication_configuration = "";
 }
 
+// Delete remote bucket credentials and alias name
+void S3BucketMetadata::delete_bucket_remote_creds_and_alias_name(
+    std::string alias_name) {
+
+  alias_name_map.erase(alias_name);
+}
 void S3BucketMetadata::setacl(const std::string& acl_str) {
   encoded_acl = acl_str;
 }
@@ -451,6 +493,11 @@ bool S3BucketMetadata::check_bucket_tags_exists() const {
 // Check if repliaction configuration exists for a bucket
 bool S3BucketMetadata::check_bucket_replication_exists() {
   return !bucket_replication_configuration.empty();
+}
+
+// Check if remote credentials added for a bucket
+bool S3BucketMetadata::check_bucket_remote_alias_list_exists() {
+  return !alias_name_map.empty();
 }
 
 void S3BucketMetadata::load(std::function<void(void)>,

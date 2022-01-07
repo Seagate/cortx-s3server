@@ -37,6 +37,7 @@
 #include "s3_put_bucket_body.h"
 #include "s3_put_tag_body.h"
 #include "s3_put_replication_body.h"
+#include "s3_bucket_remote_add_body.h"
 
 class S3BucketMetadataV1;
 
@@ -251,6 +252,17 @@ class S3GlobalBucketIndexMetadataFactory {
            "metadata\n");
     return std::make_shared<S3GlobalBucketIndexMetadata>(
         std::move(req), str_bucket_name, account_id, account_name);
+  }
+};
+
+class S3BucketRemoteAddBodyFactory {
+ public:
+  virtual ~S3BucketRemoteAddBodyFactory() {}
+  virtual std::shared_ptr<S3BucketRemoteAddBody> create_bucket_remote_add_body(
+      std::string& xml, std::string& request_id) {
+    s3_log(S3_LOG_DEBUG, "",
+           "S3BucketRemoteAddBodyFactory::create_bucket_remote_add_body\n");
+    return std::make_shared<S3BucketRemoteAddBody>(xml, request_id);
   }
 };
 
