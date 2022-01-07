@@ -35,9 +35,7 @@
 #include "s3_object_metadata.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
-#include "s3_object_metadata.h"
 #include "s3_motr_writer.h"
-#include "s3_motr_reader.h"
 #include "s3_part_metadata.h"
 #include "s3_probable_delete_record.h"
 #include "s3_timer.h"
@@ -78,14 +76,20 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   bool motr_write_in_progress = false;
   bool motr_write_completed = false;  // full object write
   bool write_failed = false;
+  bool is_range_copy = false;
 
   int part_number;
   std::string upload_id;
   size_t total_data_to_copy = 0;
   size_t source_object_size = 0;
+  std::vector<struct S3ExtendedObjectInfo> extended_objects;
 
   size_t first_byte_offset_to_copy = 0;
+  size_t total_blocks_in_object = 0;
   size_t last_byte_offset_to_copy = 0;
+  size_t total_objects = 0;
+  size_t total_objects_to_copy = 0;
+  size_t total_blocks_to_copy_all_objects = 0;
   unsigned motr_write_payload_size;
   bool if_source_and_destination_same();
   S3Timer s3_timer;
@@ -134,6 +138,7 @@ class S3PutMultipartCopyAction : public S3PutObjectActionBase {
   void initiate_part_copy();
   void copy_part_object();
   void copy_multipart_source_object();
+  void set_range_read_from_source_multipart_object();
   bool copy_part_object_cb();
   void copy_part_object_success();
   void copy_part_object_failed();
