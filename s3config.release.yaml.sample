@@ -24,7 +24,7 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_DAEMON_WORKING_DIR: "/var/log/cortx/motr/"      # S3 Daemon will run in the specified directory
    S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
    S3_LOG_DIR: "/var/log/cortx/s3"                    # S3 Log directory, for output to stderr have value as "" and set S3_DAEMON_DO_REDIRECTION to 0
-   S3_LOG_MODE: INFO                                    # logging levels, levels can be DEBUG, INFO, WARN, ERROR, FATAL, default is INFO
+   S3_LOG_MODE: DEBUG                                    # logging levels, levels can be DEBUG, INFO, WARN, ERROR, FATAL, default is INFO
    S3_LOG_FILE_MAX_SIZE: 100                            # Maximum log file size in MB, default is 100 MB
    S3_LOG_ENABLE_BUFFERING: true                        # DEBUG, INFO & WARN logs are buffered if buffering is enabled. ERROR and FATAL logs are always flushed. Default is true.
    S3_ENABLE_AUTH_SSL: false                            # Enable ssl communication between s3 server and auth server

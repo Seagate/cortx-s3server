@@ -31,7 +31,7 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
-
+import java.util.Arrays;
 import com.seagates3.util.IEMUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -421,10 +421,13 @@ public class AWSV4Sign implements AWSSign {
        String headerValue = "";
         String canonicalHeader = "";
         Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
+        LOGGER.info("requestHeaders are :"+ Arrays.asList(requestHeaders));
+
 
         for (String s : clientRequestToken.getSignedHeaders().split(";")) {
 
             headerValue = requestHeaders.get(s);
+            LOGGER.info("Looking for header value for key:"+s+" and value is :"+headerValue);
             if (headerValue == null) {
 
               if (s.equalsIgnoreCase("connection")) {
