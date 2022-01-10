@@ -419,6 +419,11 @@ class ConfigCmd(SetupCmd):
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
     try:
+      Log.info("Init Msg Bus started")
+      endpoints_val = self.get_confvalue_with_defaults("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
+      Log.info(f"Msg Bus end point value is {endpoints_val}")
+      S3CortxMsgBus.configure_endpoint(endpoints_val)
+      Log.info("Init Msg Bus completed")
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
           S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
           Log.info("Topic Created")
@@ -526,7 +531,7 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f'{configfile} file is not present')
 
     # load config file (example: s3configfileconfstore = confstore object to /etc/cortx/s3/conf/s3config.yaml)
-    s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
+    s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', str(uuid.uuid1()))
 
     # get the value to be updated from provisioner config for given key
     # Fetchinng the incoming value from the provisioner config file
@@ -714,6 +719,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>scheduler_logger_directory", self.update_bgdelete_scheduler_log_dir)
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS", "message_bus>platform_url")
     Log.info("Update s3 bgdelete scheduler config file completed")
 
   def update_s3_bgdelete_worker_configs(self):
@@ -721,6 +727,7 @@ class ConfigCmd(SetupCmd):
     Log.info("Update s3 bgdelete worker config file started")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT", "cortx_s3>consumer_endpoint", self.update_bgdelete_consumer_endpoint)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_logger_directory", self.update_bgdelete_processor_log_dir)
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS", "message_bus>platform_url")
     Log.info("Update s3 bgdelete worker config file completed")
 
   def update_bgdelete_producer_endpoint(self, value_to_update, additional_param):

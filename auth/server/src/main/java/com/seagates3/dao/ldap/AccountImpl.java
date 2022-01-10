@@ -338,10 +338,22 @@ public class AccountImpl implements AccountDAO {
             throw new DataAccessException("failed to add new account.\n" + ex);
         }
 
+        sleep();
+
         createUserOU(account.getName());
         createRoleOU(account.getName());
         createGroupsOU(account.getName());
         createPolicyOU(account.getName());
+    }
+
+   private
+    void sleep() {
+      try {
+        Thread.sleep(2000);
+      }
+      catch (InterruptedException e) {
+        LOGGER.error("Error waiting.");
+      }
     }
 
     /**
@@ -380,12 +392,21 @@ public class AccountImpl implements AccountDAO {
 
         LOGGER.debug("Deleting account dn: " + dn);
 
-        try {
-            LDAPUtils.delete(dn);
-        } catch (LDAPException ex) {
-            LOGGER.error("Failed to delete dn: " + dn);
-            throw new DataAccessException("Failed to delete " + ou + " ou.\n" +
-                                          ex);
+        int count = 0;
+        int maxTries = 2;
+        while (true) {
+          try {
+            LDAPUtils.delete (dn);
+            break;
+          }
+          catch (LDAPException e) {
+            sleep();
+            if (++count == maxTries) {
+              LOGGER.error("Failed to delete dn: " + dn);
+              throw new DataAccessException("Failed to delete " + ou +
+                                            " ou.\n" + e);
+            }
+          }
         }
     }
 
@@ -409,11 +430,20 @@ public class AccountImpl implements AccountDAO {
 
         LOGGER.debug("Creating user dn: " + dn);
 
-        try {
+        int count = 0;
+        int maxTries = 2;
+        while (true) {
+          try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
-        } catch (LDAPException ex) {
-          LOGGER.error("Failed to create dn: " + dn);
-            throw new DataAccessException("failed to create user ou.\n" + ex);
+            break;
+          }
+          catch (LDAPException ex) {
+            sleep();
+            if (++count >= maxTries) {
+              LOGGER.error("Failed to create dn: " + dn);
+              throw new DataAccessException("failed to create user ou.\n" + ex);
+            }
+          }
         }
     }
 
@@ -436,11 +466,20 @@ public class AccountImpl implements AccountDAO {
 
         LOGGER.debug("Creating role dn: " + dn);
 
-        try {
+        int count = 0;
+        int maxTries = 2;
+        while (true) {
+          try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
-        } catch (LDAPException ex) {
-            LOGGER.error("Failed to create role dn: " + dn);
-            throw new DataAccessException("failed to create role ou.\n" + ex);
+            break;
+          }
+          catch (LDAPException ex) {
+            sleep();
+            if (++count >= maxTries) {
+              LOGGER.error("Failed to create role dn: " + dn);
+              throw new DataAccessException("failed to create role ou.\n" + ex);
+            }
+          }
         }
     }
 
@@ -465,11 +504,21 @@ public class AccountImpl implements AccountDAO {
 
         LOGGER.debug("Creating Policy dn: " + dn);
 
-        try {
+        int count = 0;
+        int maxTries = 2;
+        while (true) {
+          try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
-        } catch (LDAPException ex) {
-            LOGGER.error("Failed to create policy dn: " + dn);
-            throw new DataAccessException("failed to create policy ou.\n" + ex);
+            break;
+          }
+          catch (LDAPException ex) {
+            sleep();
+            if (++count >= maxTries) {
+              LOGGER.error("Failed to create policy dn: " + dn);
+              throw new DataAccessException("failed to create policy ou.\n" +
+                                            ex);
+            }
+          }
         }
     }
 
@@ -494,11 +543,21 @@ public class AccountImpl implements AccountDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
                 LDAPUtils.GROUP_OU));
 
-        try {
+        int count = 0;
+        int maxTries = 2;
+        while (true) {
+          try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
-        } catch (LDAPException ex) {
-            LOGGER.error("Failed to create groups dn: " + dn);
-            throw new DataAccessException("failed to create groups ou.\n" + ex);
+            break;
+          }
+          catch (LDAPException ex) {
+            sleep();
+            if (++count >= maxTries) {
+              LOGGER.error("Failed to create groups dn: " + dn);
+              throw new DataAccessException("failed to create groups ou.\n" +
+                                            ex);
+            }
+          }
         }
     }
 

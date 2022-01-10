@@ -29,8 +29,10 @@ import socket
 import time
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from cortx.utils.cortx.const import Const
 from cortx.utils.log import Log
+
 
 def main():
   """
@@ -143,12 +145,8 @@ def main():
 
       Log.info(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
       Log.info(f"Starting S3 Server with FID {Fid}...")
-      i = 0
-      while i < 10:
-        # Start S3 Server
-        os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
-        i += 1
-        time.sleep(60)
+      # Start S3 Server
+      os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
 
       # Read the log directory path from s3config file
       s3_log_dir = read_config_value("S3_CONFIG_FILE", "yaml", "S3_SERVER_CONFIG>S3_LOG_DIR")
@@ -178,6 +176,15 @@ def main():
       # Uncomment below two lines if you want return bgdelete schedule timings.
       # os.system("sed -i -e \"s,scheduler_schedule_interval:.*,scheduler_schedule_interval:\ 120,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # os.system("sed -i -e \"s,leak_processing_delay_in_mins:.*,leak_processing_delay_in_mins:\ 2,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
+
+      # Initialize Msg Bus
+      Log.info("Init Msg Bus started")
+      endpoints_key = s3_confkeys_store.get_config("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
+      endpoints_val = prov_confkeys_store.get_config(endpoints_key)
+      Log.info(f"Msg Bus end point value is {endpoints_val}")
+      S3CortxMsgBus.configure_endpoint(endpoints_val)
+      Log.info("Init Msg Bus completed")
+
       # Start S3 Background Producer
       Log.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh {base_config_path} yaml://")
       Log.info(f"Starting S3 Background delete Producer...")
@@ -193,6 +200,14 @@ def main():
       os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
 
     elif service == service_bgworker:
+      # Initialize Msg Bus
+      Log.info("Init Msg Bus started")
+      endpoints_key = s3_confkeys_store.get_config("CONFIG>CONFSTORE_S3_KAFKA_ENDPOINTS")
+      endpoints_val = prov_confkeys_store.get_config(endpoints_key)
+      Log.info(f"Msg Bus end point value is {endpoints_val}")
+      S3CortxMsgBus.configure_endpoint(endpoints_val)
+      Log.info("Init Msg Bus completed")
+
       # Start the Background Consumer
       Log.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh {base_config_path} yaml://")
       Log.info(f"Starting S3 Background delete Consumer...")

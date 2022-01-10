@@ -47,6 +47,8 @@ CONFIG:
   CONFSTORE_S3_OPENLDAP_SERVERS: "cortx>external>openldap>servers" #M (Usedby : s3_deployment)
   CONFSTORE_S3_OPENLDAP_BASE_DN: "cortx>external>openldap>base_dn" #O default - dc=seagate,dc=com (Usedby : s3_deployment)
 
+  CONFSTORE_S3_KAFKA_ENDPOINTS: "cortx>external>kafka>endpoints" #M (Usedby : s3_deployment)
+
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>s3>auth_admin" #O default - sgiamadmin (Usedby : s3_deployment, auth)
   CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>s3>auth_secret" #M default - encrypted string (Usedby : s3_deployment, auth)
   

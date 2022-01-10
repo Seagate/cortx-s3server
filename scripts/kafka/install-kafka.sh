@@ -266,7 +266,7 @@ start_services
 echo "Kafka setup completed successfully."
 
 #setup message bus config file 
-setup_message_bus_config
+#setup_message_bus_config
 
 #stop kafka and zookeeper services 
 #stop_services

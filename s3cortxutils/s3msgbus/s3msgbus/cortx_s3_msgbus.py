@@ -33,6 +33,11 @@ class S3CortxMsgBus:
         self._producer = None
         self._consumer = None
 
+    @staticmethod
+    def configure_endpoint(endpoint: list):
+        """Configure endpoints."""
+        MessageBus.init(endpoint)
+
     def setup_producer(self, prod_id, msg_type, method):
         """Setup producer."""
         try:
@@ -95,14 +100,6 @@ class S3CortxMsgBus:
             return False, msg
         return True, None
 
-    def count(self, consumer_group):
-        """Get the count of unread messages."""
-        unread_count = 0
-        try:
-            unread_count = self._producer.get_unread_count(consumer_group)
-        except:
-            return 0
-        return unread_count
 
     @staticmethod
     def create_topic(admin_id: str, message_types: list, partitions: int):
