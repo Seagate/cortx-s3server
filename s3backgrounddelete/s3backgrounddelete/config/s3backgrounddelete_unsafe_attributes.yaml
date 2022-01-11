@@ -24,6 +24,7 @@ message_bus:
    consumer_id_prefix: "dummy"
    producer_id: "dummy"
    admin_id: "dummy"
+   platform_url: "dummy"
 indexid:
    probable_delete_index_id: "dummy"
    global_instance_index_id: "dummy"

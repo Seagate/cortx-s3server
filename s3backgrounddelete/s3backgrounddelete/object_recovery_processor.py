@@ -25,7 +25,6 @@ the cortx message_bus message queue.
 
 import os
 import errno
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 import traceback
 import logging
 import datetime
@@ -35,6 +34,8 @@ from logging import handlers
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 from s3backgrounddelete.cortx_s3_signal import SigTermHandler
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from cortx.utils.log import Log
 
 class ObjectRecoveryProcessor(object):
@@ -54,6 +55,9 @@ class ObjectRecoveryProcessor(object):
                  console_output=True)
         self.signal = DynamicConfigHandler(self)
         Log.info("Initialising the Object Recovery Processor")
+        if self.config.get_messaging_platform() == MESSAGE_BUS:
+          endpoints_val = self.config.get_msgbus_platform_url()
+          S3CortxMsgBus.configure_endpoint(endpoints_val)
         self.term_signal = SigTermHandler()
 
     def consume(self):
