@@ -52,6 +52,7 @@ class S3ObjectDataCopier {
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::shared_ptr<MotrAPI> motr_api;
   std::shared_ptr<S3MotrReader> motr_reader;
+  std::vector<struct S3ExtendedObjectInfo> extended_objects_list;
   bool copy_parts_fragment = 0;
   int vector_index;
   unsigned int part_vector_index = 0;
@@ -63,6 +64,7 @@ class S3ObjectDataCopier {
   // All POD variables should be (re)initialized in This::copy()
   size_t bytes_left_to_read;
   size_t motr_unit_size;
+  size_t first_byte_offset;
   bool copy_failed;
   bool read_in_progress;
   bool write_in_progress;
@@ -94,8 +96,7 @@ class S3ObjectDataCopier {
             struct m0_fid pvid,
             std::function<bool(void)> check_shutdown_and_rollback,
             std::function<void(void)> on_success,
-            std::function<void(void)> on_failure,
-            size_t first_byte_offset = 0);
+            std::function<void(void)> on_failure, size_t first_byte_offset = 0);
 
   void copy_part_fragment(
       std::vector<struct s3_part_frag_context> fragment_context_list,
@@ -106,13 +107,15 @@ class S3ObjectDataCopier {
 
   void copy_part_fragment_in_single_source(
       std::vector<struct s3_part_frag_context> fragment_context_list,
+      std::vector<struct S3ExtendedObjectInfo> extended_objects,
+      size_t first_byte_offset_to_copy,
       std::function<bool(void)> check_shutdown_and_rollback,
       std::function<void(void)> on_success,
-      std::function<void(void)> on_failure);
+      std::function<void(void)> on_failure, bool is_range_copy = false);
 
-  void set_next_part_context();
+  void set_next_part_context(bool is_range_copy = false);
 
-  const std::string &get_s3_error() { return s3_error; }
+  const std::string& get_s3_error() { return s3_error; }
   // Trims input 'buffer' to the expected size
   // Used when we need specific portion of 'buffer', discarding the remianing
   // data.
