@@ -38,6 +38,7 @@ message_bus:
    consumer_sleep: 5
    purge_sleep: 0
    admin_id: "admin_s3_background_delete"
+   platform_url: ["tcp://127.0.0.1:9092"]
 
 logconfig:                                  # Section for scheduler & processor loggers.
 

@@ -449,6 +449,12 @@ public class AccountController extends AbstractController {
             accountDao.deleteOu(account, LDAPUtils.ROLE_OU);
             accountDao.deleteOu(account, LDAPUtils.GROUP_OU);
             accountDao.deleteOu(account, LDAPUtils.POLICY_OU);
+            try {
+              Thread.sleep(2000);
+            }
+            catch (InterruptedException e) {
+              LOGGER.error("Error waiting.");
+            }
             accountDao.delete(account);
         } catch (DataAccessException e) {
             if (e.getLocalizedMessage().contains("subordinate objects must be deleted first")) {
