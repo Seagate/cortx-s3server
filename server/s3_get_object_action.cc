@@ -796,10 +796,12 @@ void S3GetObjectAction::read_object_data() {
           extended_objects[next_fragment_object].total_blocks_in_object -
           blocks_skipped;
       */
-      if (blocks_to_read >
-          extended_objects[next_fragment_object].total_readable_blocks) {
-        blocks_to_read =
-            extended_objects[next_fragment_object].total_readable_blocks;
+      if (extended_objects.size() > next_fragment_object) {
+        if (blocks_to_read >
+            extended_objects[next_fragment_object].total_readable_blocks) {
+          blocks_to_read =
+              extended_objects[next_fragment_object].total_readable_blocks;
+        }
       }
     }
 
