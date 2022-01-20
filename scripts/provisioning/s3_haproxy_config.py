@@ -165,6 +165,8 @@ class S3HaproxyConfig:
     setup_type = str(self.get_config_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))
 
     Log.info(f'Setup type is {setup_type}')
+    self.setup_size =str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_SIZE'))
+    Log.info(f'Setup size is : {self.setup_size}')
 
     if ("K8" == setup_type) :
       self.configure_haproxy_k8()
@@ -212,6 +214,19 @@ class S3HaproxyConfig:
     s3backendport = self.get_s3server_backend_port()
     s3authbendport = self.get_s3auth_backend_port()
 
+    # update maxconn value and nbproc/nbthread value based on
+    # setup size value mentioned in solution.yaml
+    if self.setup_size == "large" :
+       maxconn_global_section_value = 1000
+       maxconn_default_section_value = 1000
+       nb_key = "nbthread"
+       nb_value = 16
+    else:
+       maxconn_global_section_value = 13
+       maxconn_default_section_value = 3000
+       nb_key = "nbproc"
+       nb_value = 2
+
     config_file = os.path.join(baseconfig_path, 's3/haproxy.cfg')
     errors_file = self.get_confkey("S3_HAPROXY_ERROR_CONFIG_FILE")
     global_text = '''global
@@ -244,10 +259,10 @@ class S3HaproxyConfig:
 
     chroot      /var/lib/haproxy
     pidfile     /var/run/haproxy.pid
-    maxconn     13
+    maxconn     %s
     user        haproxy
     group       haproxy
-    nbproc      2
+    %s          %s
     daemon
 
     # turn on stats unix socket and dynamic configuration reload
@@ -284,7 +299,7 @@ defaults
     timeout server          360s
     timeout http-keep-alive 10s
     timeout check           10s
-    maxconn                 3000
+    maxconn                 %s
 '''
     frontend_s3main_text = '''
 #----------------------------------------------------------------------
@@ -331,8 +346,8 @@ backend s3-auth
     default-server inter 2s fastinter 100 rise 1 fall 5 on-error fastinter
 '''
     config_handle = open(config_file, "w+")
-    config_handle.write(global_text)
-    config_handle.write(default_text % errors_file)
+    config_handle.write(global_text % (maxconn_global_section_value, nb_key, nb_value))
+    config_handle.write(default_text % (errors_file, maxconn_default_section_value))
     config_handle.write(frontend_s3main_text)
     config_handle.write(
          "   bind 0.0.0.0:%s\n"
