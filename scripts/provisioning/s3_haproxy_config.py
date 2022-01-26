@@ -217,15 +217,15 @@ class S3HaproxyConfig:
     # update maxconn value and nbproc/nbthread value based on
     # setup size value mentioned in solution.yaml
     if self.setup_size == "large" :
-       maxconn_global_section_value = 1000
-       maxconn_default_section_value = 1000
+       maxconn_global_section_value = "1000"
+       maxconn_default_section_value = "1000"
        nb_key = "nbthread"
-       nb_value = 16
+       nb_value = "16"
     else:
-       maxconn_global_section_value = 13
-       maxconn_default_section_value = 3000
+       maxconn_global_section_value = "13"
+       maxconn_default_section_value = "3000"
        nb_key = "nbproc"
-       nb_value = 2
+       nb_value = "2"
 
     config_file = os.path.join(baseconfig_path, 's3/haproxy.cfg')
     errors_file = self.get_confkey("S3_HAPROXY_ERROR_CONFIG_FILE")
