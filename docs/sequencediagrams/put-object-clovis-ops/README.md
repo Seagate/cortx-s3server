@@ -4,7 +4,7 @@ Here is the rendered view of the simple object upload:
 
 Here is the rendered view of the multipart object upload:
 
-![CORTX S3 Multipart Object Upload](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/Seagate/cortx-s3server/main/docs/sequencediagrams/multipart-upload.plantuml)
+![CORTX S3 Multipart Object Upload](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/Seagate/cortx-s3server/main/docs/sequencediagrams/put-object-clovis-ops/multipart-upload.plantuml)
 
 Here is the rendered view of the Initiate multipart upload:
 
