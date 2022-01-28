@@ -16,4 +16,4 @@ Here is the rendered view of the Part(s) upload:
 
 Here is the rendered view of the complete multipart upload:
 
-![CORTX S3 Multipart Object Upload](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/Seagate/cortx-s3server/main/docs/sequencediagrams/multipart-completemultipartupload.plantuml)
+![CORTX S3 Multipart Object Upload](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/Seagate/cortx-s3server/main/docs/sequencediagrams/put-object-clovis-ops/multipart-completemultipartupload.plantuml)
