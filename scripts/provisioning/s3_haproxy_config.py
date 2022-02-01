@@ -165,7 +165,7 @@ class S3HaproxyConfig:
     setup_type = str(self.get_config_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))
 
     Log.info(f'Setup type is {setup_type}')
-    self.setup_size =str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_SIZE'))
+    self.setup_size =str(self.get_config_with_defaults('CONFIG>CONFSTORE_SETUP_SIZE'))
     Log.info(f'Setup size is : {self.setup_size}')
 
     if ("K8" == setup_type) :
