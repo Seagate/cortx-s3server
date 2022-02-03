@@ -444,18 +444,53 @@ public class AccountController extends AbstractController {
                     deleteUser(users[0]);
                 }
             }
+        }
+        catch (DataAccessException e) {
+          LOGGER.error("Error while deleting subordinates");
+        }
+        try {
+          accountDao.deleteOu(account, LDAPUtils.USER_OU);
+        }
+        catch (DataAccessException e) {
+          if (e.getLocalizedMessage().contains(
+                  "subordinate objects must be deleted first")) {
+            return accountResponseGenerator.deleteConflict();
+          }
+          LOGGER.error("Error while deleting ou=users");
+        }
+        try {
+          accountDao.deleteOu(account, LDAPUtils.ROLE_OU);
+        }
+        catch (DataAccessException e) {
+          LOGGER.error("Error while deleting ou=roles");
+        }
+        try {
+          accountDao.deleteOu(account, LDAPUtils.GROUP_OU);
+        }
+        catch (DataAccessException e) {
+          LOGGER.error("Error while deleting ou=groups");
+        }
+        try {
+          accountDao.deleteOu(account, LDAPUtils.POLICY_OU);
+        }
+        catch (DataAccessException e) {
+          if (e.getLocalizedMessage().contains(
+                  "subordinate objects must be deleted first")) {
+            return accountResponseGenerator.deleteConflict();
+          }
+          LOGGER.error("Error while deleting ou=policies");
+        }
+        try {
+          accountDao.delete (account);
+        }
+        catch (DataAccessException e) {
+          LOGGER.error("Error while deleting account");
+          if (e.getLocalizedMessage().contains(
+                  "subordinate objects must be deleted first")) {
+            return accountResponseGenerator.deleteConflict();
+          }
 
-            accountDao.deleteOu(account, LDAPUtils.USER_OU);
-            accountDao.deleteOu(account, LDAPUtils.ROLE_OU);
-            accountDao.deleteOu(account, LDAPUtils.GROUP_OU);
-            accountDao.deleteOu(account, LDAPUtils.POLICY_OU);
-            accountDao.delete(account);
-        } catch (DataAccessException e) {
-            if (e.getLocalizedMessage().contains("subordinate objects must be deleted first")) {
-                return accountResponseGenerator.deleteConflict();
-            }
-
-            return accountResponseGenerator.internalServerError();
+          return accountResponseGenerator.internalServerError();
         }
 
         return accountResponseGenerator.generateDeleteResponse();
