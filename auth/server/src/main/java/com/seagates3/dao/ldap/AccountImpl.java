@@ -366,7 +366,7 @@ public class AccountImpl implements AccountDAO {
                 LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
                 LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.BASE_DN);
 
-        LOGGER.debug("Deleting account dn: " + dn);
+        LOGGER.info("Deleting account dn: " + dn);
 
         try {
             LDAPUtils.delete(dn);

@@ -373,14 +373,13 @@ public class AccountController extends AbstractController {
         }
 
         if (root == null || root.getId() == null) {
-          LOGGER.error("Root user not found for account :" + account.getName());
-          return accountResponseGenerator.internalServerError();
-        }
+          LOGGER.info("Root user not found for account :" + account.getName());
+        } else {
         if (requestor.getId() != null &&
             !(requestor.getId().equals(root.getId()))) {
             return accountResponseGenerator.unauthorizedOperation();
         }
-
+        }
         boolean force = false;
         if (requestBody.containsKey("force")) {
             force = Boolean.parseBoolean(requestBody.get("force"));
@@ -391,7 +390,8 @@ public class AccountController extends AbstractController {
           ServerResponse resp = null;
           // check if access key is ldap credentials or not
           if (requestor.getAccesskey().getId().equals(
-                  AuthServerConfig.getLdapLoginCN())) {
+                  AuthServerConfig.getLdapLoginCN()) &&
+              root != null && root.getId() != null) {
             AccessKey accountAccessKey;
             try {  // if ldap credentials are used then
                    // find access key of account using root userid.
@@ -444,24 +444,56 @@ public class AccountController extends AbstractController {
                     deleteUser(users[0]);
                 }
             }
-
-            accountDao.deleteOu(account, LDAPUtils.USER_OU);
-            accountDao.deleteOu(account, LDAPUtils.ROLE_OU);
-            accountDao.deleteOu(account, LDAPUtils.GROUP_OU);
-            accountDao.deleteOu(account, LDAPUtils.POLICY_OU);
-            try {
-              Thread.sleep(2000);
+        }
+        catch (DataAccessException e) {
+          LOGGER.error("Error while deleting subordinates");
+        }
+        try {
+          accountDao.deleteOu(account, LDAPUtils.USER_OU);
+        }
+        catch (DataAccessException e) {
+          if (e.getLocalizedMessage().contains(
+                  "subordinate objects must be deleted first")) {
+            return accountResponseGenerator.deleteConflict();
+          }
+          LOGGER.error("Error while deleting ou=users");
+        }
+        try {
+          accountDao.deleteOu(account, LDAPUtils.ROLE_OU);
+        }
+        catch (DataAccessException e) {
+          LOGGER.error("Error while deleting ou=roles");
+        }
+        try {
+          accountDao.deleteOu(account, LDAPUtils.GROUP_OU);
+        }
+        catch (DataAccessException e) {
+          LOGGER.error("Error while deleting ou=groups");
+        }
+        try {
+          accountDao.deleteOu(account, LDAPUtils.POLICY_OU);
+        }
+        catch (DataAccessException e) {
+          if (e.getLocalizedMessage().contains(
+                  "subordinate objects must be deleted first")) {
+            return accountResponseGenerator.deleteConflict();
+          }
+          LOGGER.error("Error while deleting ou=policies");
+        }
+        try {
+          accountDao.delete (account);
+        }
+        catch (DataAccessException e) {
+          try {
+            accountDao.delete (account);
+          }
+          catch (DataAccessException e1) {
+            if (e.getLocalizedMessage().contains(
+                    "subordinate objects must be deleted first")) {
+              return accountResponseGenerator.deleteConflict();
             }
-            catch (InterruptedException e) {
-              LOGGER.error("Error waiting.");
-            }
-            accountDao.delete(account);
-        } catch (DataAccessException e) {
-            if (e.getLocalizedMessage().contains("subordinate objects must be deleted first")) {
-                return accountResponseGenerator.deleteConflict();
-            }
-
             return accountResponseGenerator.internalServerError();
+          }
         }
 
         return accountResponseGenerator.generateDeleteResponse();
