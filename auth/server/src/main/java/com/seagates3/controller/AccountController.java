@@ -405,9 +405,9 @@ public class AccountController extends AbstractController {
             }
 
             if (accountAccessKey == null || accountAccessKey.getId() == null) {
-              LOGGER.error("Failed to find Access Key for account :" +
-                           account.getName());
-              return accountResponseGenerator.internalServerError();
+              LOGGER.info("Failed to find Access Key for account :" +
+                          account.getName());
+              accountAccessKey = requestor.getAccesskey();
             }
 
             LOGGER.debug("Sending delete account [" + account.getName() +
