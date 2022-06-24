@@ -2,6 +2,9 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e02de8d738bb4701b6345624ea2de66c)](https://www.codacy.com/gh/Seagate/cortx-s3server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Seagate/cortx-s3server&amp;utm_campaign=Badge_Grade)
 [![Slack](https://img.shields.io/badge/chat-on%20Slack-blue")](https://cortx.link/join-slack) [![YouTube](https://img.shields.io/badge/Video-YouTube-red)](https://cortx.link/videos) [![GitHub contributors](https://img.shields.io/github/contributors/Seagate/cortx-s3server)](https://github.com/Seagate/cortx-s3server/graphs/contributors/)
 
+## Disclaimer: This project is not maintained anymore
+
+
 # CORTX-S3 Server
 
 CORTX Simple Storage Service or CORTX-S3 Server is an object storage service with high data availability, durability, scalability, performance, and security. You can use CORTX-S3 Server to store any amount of data for varying business needs and implement it across industries of varying sizes.
