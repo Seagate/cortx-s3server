@@ -31,7 +31,9 @@ REMOTE_HOSTS:
 
 4. Change parameters in account.config appropriately.
 
-5. Run the test
+5. Add S3_CLOUD_URL & S3_SECRET_KEY as environment variables
+
+6. Run the test
 `./runner.sh`
 
-6. Console logs wil be collected in `tct-logs` directory.
+7. Console logs wil be collected in `tct-logs` directory.

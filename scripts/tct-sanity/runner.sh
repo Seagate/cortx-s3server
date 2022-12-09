@@ -33,6 +33,9 @@ SRC_TEST_SCRIPT="./tct-single-node-sanity-test.sh"
 TEST_SCRIPT="$TEST_DATA_DIR/sanity-test.sh"
 TCT_STDOUT_LOG_DIR="tct-logs"
 TCT_LOGS="$TCT_STDOUT_LOG_DIR/tct-sanity-runner.log"
+CLOUD_URL="$S3_CLOUD_URL"
+SECRET_KEY="$S3_SECRET_KEY"
+
 
 mkdir $TCT_STDOUT_LOG_DIR > /dev/null 2>&1
 touch $TCT_LOGS
