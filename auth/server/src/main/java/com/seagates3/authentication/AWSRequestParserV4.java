@@ -78,7 +78,7 @@ public class AWSRequestParserV4 extends AWSRequestParser {
      * Sample Authorization Header
      *
      * Authorization: AWS4-HMAC-SHA256
-     * Credential=AKIAJTYX36YCKQSAJT7Q/20150810/us-east-1/iam/aws4_request,
+     * Credential=v_accessKeyId/20150810/us-east-1/iam/aws4_request,
      * SignedHeaders=content-type;host;user-agent;x-amz-content-sha256;x-amz-date,
      * Signature=b751427a69f5bb76fb171fec45bdb1e8f664fac7f7c23c983f9c7361bb382d76
      *

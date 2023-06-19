@@ -159,7 +159,7 @@ import static org.mockito.Mockito.when;
     @Test(expected = InvalidTokenException.class)
     public void authHeaderParserTest_InvalidAuthorizationHeader_V4() throws InvalidTokenException {
         // Arrange
-        String authorizationHeaderValue = "AWS AKIAJTYX36YCKQSAJT7Q:uDWiVvxwCUR9YJ8EGJgbtW9tjFM=";
+        String authorizationHeaderValue = "AWS v_accessKeyId:uDWiVvxwCUR9YJ8EGJgbtW9tjFM=";
         ClientRequestToken clientRequestToken = new ClientRequestToken();
 
         // Act

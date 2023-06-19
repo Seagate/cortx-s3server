@@ -86,7 +86,7 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyNewAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        "v_accessKeyId", "v_secretAccessKey");
 
         assertEquals(HttpResponseStatus.OK, resp.getResponseStatus());
     }
@@ -111,7 +111,7 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyNewAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        "v_accessKeyId", "v_secretAccessKey");
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -137,7 +137,7 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyNewAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        "v_accessKeyId", "v_secretAccessKey");
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -163,7 +163,7 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyNewAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        "v_accessKeyId", "v_secretAccessKey");
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -189,7 +189,7 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyNewAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        "v_accessKeyId", "v_secretAccessKey");
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -216,7 +216,7 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyNewAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        "v_accessKeyId", "v_secretAccessKey");
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -242,8 +242,8 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
-            "12345", "AKIAJTYX36YCKQSAJT7Q",
-            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
+            "12345", "v_accessKeyId",
+            "v_secretAccessKey", null);
 
         assertEquals(HttpResponseStatus.OK, resp.getResponseStatus());
     }
@@ -268,8 +268,8 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
-            "12345", "AKIAJTYX36YCKQSAJT7Q",
-            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
+            "12345", "v_accessKeyId",
+            "v_secretAccessKey", null);
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                               resp.getResponseStatus());
@@ -295,8 +295,8 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
-            "12345", "AKIAJTYX36YCKQSAJT7Q",
-            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
+            "12345", "v_accessKeyId",
+            "v_secretAccessKey", null);
 
         assertEquals(HttpResponseStatus.CONFLICT, resp.getResponseStatus());
     }
@@ -321,8 +321,8 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
-            "12345", "AKIAJTYX36YCKQSAJT7Q",
-            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
+            "12345", "v_accessKeyId",
+            "v_secretAccessKey", null);
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -348,8 +348,8 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
-            "12345", "AKIAJTYX36YCKQSAJT7Q",
-            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
+            "12345", "v_accessKeyId",
+            "v_secretAccessKey", null);
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -376,8 +376,8 @@ public class S3AccountNotifierTest {
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
         ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
-            "12345", "AKIAJTYX36YCKQSAJT7Q",
-            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
+            "12345", "v_accessKeyId",
+            "v_secretAccessKey", null);
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());

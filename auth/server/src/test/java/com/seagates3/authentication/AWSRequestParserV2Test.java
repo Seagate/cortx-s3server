@@ -74,7 +74,7 @@ public class AWSRequestParserV2Test {
         FullHttpRequest fullHttpRequest = mock(FullHttpRequest.class);
         HttpHeaders httpHeaders = new DefaultHttpHeaders();
         httpHeaders.add("host", "s3.seagate.com");
-        httpHeaders.add("authorization", "AWS AKIAJTYX36YCKQSAJT7Q:uDWiVvxwCUR9YJ8EGJgbtW9tjFM=");
+        httpHeaders.add("authorization", "AWS v_accessKeyId:uDWiVvxwCUR9YJ8EGJgbtW9tjFM=");
 
         when(fullHttpRequest.headers()).thenReturn(httpHeaders);
         when(fullHttpRequest.method()).thenReturn(HttpMethod.GET);
@@ -109,14 +109,14 @@ public class AWSRequestParserV2Test {
     @Test
     public void authHeaderParserTest() throws InvalidTokenException {
         // Arrange
-        String authorizationHeaderValue = "AWS AKIAJTYX36YCKQSAJT7Q:uDWiVvxwCUR9YJ8EGJgbtW9tjFM=";
+        String authorizationHeaderValue = "AWS v_accessKeyId:uDWiVvxwCUR9YJ8EGJgbtW9tjFM=";
         ClientRequestToken clientRequestToken = new ClientRequestToken();
 
         // Act
         awsRequestParserV2.authHeaderParser(authorizationHeaderValue, clientRequestToken);
 
         // Verify
-        assertEquals("AKIAJTYX36YCKQSAJT7Q", clientRequestToken.accessKeyId);
+        assertEquals("v_accessKeyId", clientRequestToken.accessKeyId);
         assertEquals("uDWiVvxwCUR9YJ8EGJgbtW9tjFM=", clientRequestToken.getSignature());
     }
 

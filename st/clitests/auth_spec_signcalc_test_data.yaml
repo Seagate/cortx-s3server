@@ -22,7 +22,7 @@ test1:
     req-params:
         Action: AuthenticateUser
         Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-        Authorization: AWS AKIAJPINPFRBTPAYOGNA:GHDa6voSj9LfLhDNNCUrrkMSwgg=
+        Authorization: AWS v_accessKeyId:GHDa6voSj9LfLhDNNCUrrkMSwgg=
         Cache-Control: no-cache
         ClientAbsoluteUri: /
         ClientQueryParams: acl
@@ -43,7 +43,7 @@ test2:
     req-params:
         Action: AuthenticateUser
         Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-        Authorization: AWS AKIAJPINPFRBTPAYOGNA:GHDa6voSj9LfLhDNNCUrrkMSwgg=
+        Authorization: AWS v_accessKeyId:GHDa6voSj9LfLhDNNCUrrkMSwgg=
         Cache-Control: no-cache
         ClientAbsoluteUri: /
         ClientQueryParams: acl
@@ -65,7 +65,7 @@ test3:
     req-params:
         Action: AuthenticateUser
         Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-        Authorization: AWS AKIAJPINPFRBTPAYOGNA:GHDa6voSj9LfLhDNNCUrrkMSwgg=
+        Authorization: AWS v_accessKeyId:GHDa6voSj9LfLhDNNCUrrkMSwgg=
         Cache-Control: no-cache
         ClientAbsoluteUri: /
         ClientQueryParams: acl
@@ -87,7 +87,7 @@ test4:
     req-params:
         Action: AuthenticateUser
         Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-        Authorization: AWS AKIAJPINPFRBTPAYOGNA:GHDa6voSj9LfLhDNNCUrrkMSwgg=
+        Authorization: AWS v_accessKeyId:GHDa6voSj9LfLhDNNCUrrkMSwgg=
         Cache-Control: no-cache
         ClientAbsoluteUri: /
         ClientQueryParams: acl
@@ -108,7 +108,7 @@ test5:
     req-params:
         Action: AuthenticateUser
         Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-        Authorization: AWS AKIAJPINPFRBTPAYOGNA:GHDa6voSj9LfLhDNNCUrrkMSwgg=
+        Authorization: AWS v_accessKeyId:GHDa6voSj9LfLhDNNCUrrkMSwgg=
         Cache-Control: no-cache
         ClientAbsoluteUri: /
         ClientQueryParams: acl
@@ -130,7 +130,7 @@ test6:
     req-params:
         Action: AuthenticateUser
         Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-        Authorization: AWS AKIAJPINPFRBTPAYOGNA:GHDa6voSj9LfLhDNNCUrrkMSwgg=
+        Authorization: AWS v_accessKeyId:GHDa6voSj9LfLhDNNCUrrkMSwgg=
         Cache-Control: no-cache
         ClientAbsoluteUri: /
         ClientQueryParams: acl
@@ -153,7 +153,7 @@ test7:
     req-params:
         Action: AuthenticateUser
         Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-        Authorization: AWS AKIAJPINPFRBTPAYOGNA:GHDa6voSj9LfLhDNNCUrrkMSwgg=
+        Authorization: AWS v_accessKeyId:GHDa6voSj9LfLhDNNCUrrkMSwgg=
         Cache-Control: no-cache
         ClientAbsoluteUri: /
         ClientQueryParams: acl&versionId!=1
@@ -174,7 +174,7 @@ test8:
     req-params:
         Action: AuthenticateUser
         Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-        Authorization: AWS AKIAJPINPFRBTPAYOGNA:GHDa6voSj9LfLhDNNCUrrkMSwgg=
+        Authorization: AWS v_accessKeyId:GHDa6voSj9LfLhDNNCUrrkMSwgg=
         Cache-Control: no-cache
         ClientAbsoluteUri: /
         ClientQueryParams: acl
@@ -217,7 +217,7 @@ test10:
     test-title: Authenticate user using AWS Signature Version 4
     req-params:
         Action: AuthenticateUser
-        Authorization: AWS4-HMAC-SHA256 Credential=AKIAJPINPFRBTPAYOGNA/20161129/seagate/s3/aws4_request, SignedHeaders=amz-sdk-invocation-id;amz-sdk-retry;content-type;host;user-agent;x-amz-content-sha256;x-amz-date, Signature=36fc0a941ed4f92e6cd20b97fe4a7dd18ab4960fdcf4ca8266d01f1f4a2003bf
+        Authorization: AWS4-HMAC-SHA256 Credential=v_accessKeyId/20161129/seagate/s3/aws4_request, SignedHeaders=amz-sdk-invocation-id;amz-sdk-retry;content-type;host;user-agent;x-amz-content-sha256;x-amz-date, Signature=36fc0a941ed4f92e6cd20b97fe4a7dd18ab4960fdcf4ca8266d01f1f4a2003bf
         ClientAbsoluteUri: /nondnsbucket/
         Connection: close
         Content-Length: 151
@@ -239,7 +239,7 @@ test10:
 #    test-title: Authenticate user using AWS Signature Version 4 for chunked request
 #    req-params:
 #        Action: AuthenticateUser
-#        Authorization: AWS4-HMAC-SHA256 Credential=AKIAJPINPFRBTPAYOGNA/20161201/seagate/s3/aws4_request, SignedHeaders=amz-sdk-invocation-id;amz-sdk-retry;content-length;content-md5;content-type;host;user-agent;x-amz-content-sha256;x-amz-date;x-amz-decoded-content-length, Signature=442bf538c8c30dc4d67c07668580926b49a58f37fde579fb310d9650b733d3ac
+#        Authorization: AWS4-HMAC-SHA256 Credential=v_accessKeyId/20161201/seagate/s3/aws4_request, SignedHeaders=amz-sdk-invocation-id;amz-sdk-retry;content-length;content-md5;content-type;host;user-agent;x-amz-content-sha256;x-amz-date;x-amz-decoded-content-length, Signature=442bf538c8c30dc4d67c07668580926b49a58f37fde579fb310d9650b733d3ac
 #        ClientAbsoluteUri: /seagatebucket/3kfilec
 #        Connection: close
 #        Content-Length: 3174
@@ -262,7 +262,7 @@ test10:
 #    test-title: Authenticate user using AWS Signature Version 4 for chunked seed request
 #    req-params:
 #        Action: AuthenticateUser
-#        Authorization: AWS4-HMAC-SHA256 Credential=AKIAJPINPFRBTPAYOGNA/20161201/seagate/s3/aws4_request, SignedHeaders=amz-sdk-invocation-id;amz-sdk-retry;content-length;content-md5;content-type;host;user-agent;x-amz-content-sha256;x-amz-date;x-amz-decoded-content-length, Signature=442bf538c8c30dc4d67c07668580926b49a58f37fde579fb310d9650b733d3ac
+#        Authorization: AWS4-HMAC-SHA256 Credential=v_accessKeyId/20161201/seagate/s3/aws4_request, SignedHeaders=amz-sdk-invocation-id;amz-sdk-retry;content-length;content-md5;content-type;host;user-agent;x-amz-content-sha256;x-amz-date;x-amz-decoded-content-length, Signature=442bf538c8c30dc4d67c07668580926b49a58f37fde579fb310d9650b733d3ac
 #        ClientAbsoluteUri: /seagatebucket/3kfilec
 #            ClientQueryParams=
 #        Connection: close
@@ -288,7 +288,7 @@ test10:
 #    test-title: Authenticate user using AWS Signature Version 4 (with client query params)
 #    req-params:
 #        Action: AuthenticateUser
-#        Authorization: AWS4-HMAC-SHA256 Credential=AKIAJPINPFRBTPAYOGNA/20161201/seagate/s3/aws4_request, SignedHeaders=amz-sdk-invocation-id;amz-sdk-retry;content-type;host;user-agent;x-amz-content-sha256;x-amz-date, Signature=d41dd2347a03bb161176580372beb38de4c4dfd2f68590cf0104a4e1cb051e04
+#        Authorization: AWS4-HMAC-SHA256 Credential=v_accessKeyId/20161201/seagate/s3/aws4_request, SignedHeaders=amz-sdk-invocation-id;amz-sdk-retry;content-type;host;user-agent;x-amz-content-sha256;x-amz-date, Signature=d41dd2347a03bb161176580372beb38de4c4dfd2f68590cf0104a4e1cb051e04
 #        ClientAbsoluteUri: /seagatebucket/3kfile
 #        ClientQueryParams: acl
 #        Connection: close

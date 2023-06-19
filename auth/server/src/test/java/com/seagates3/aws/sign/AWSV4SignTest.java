@@ -141,8 +141,8 @@ public class AWSV4SignTest {
                 = AWSV4RequestHelper.getFullHttpRequestClientTokenHEAD();
 
         Requestor requestor1 =
-                AWSV4RequestHelper.getRequestorMock("AKIAJTYX36YCKQSAJT7Q",
-                                "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+                AWSV4RequestHelper.getRequestorMock("v_accessKeyId",
+                                "v_secretAccessKey");
         try {
             Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor1),
                     Boolean.TRUE);
@@ -159,8 +159,8 @@ public class AWSV4SignTest {
                 = AWSV4RequestHelper.getInvalidHttpRequestClientToken();
 
         Requestor requestor1 =
-                AWSV4RequestHelper.getRequestorMock("AKIAJTYX36YCKQSAJT7Q",
-                                "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+                AWSV4RequestHelper.getRequestorMock("v_accessKeyId",
+                                "v_secretAccessKey");
         try {
             awsv4Sign.authenticate(requestToken, requestor1);
             Assert.fail("Didn't throw BadRequest Exception");

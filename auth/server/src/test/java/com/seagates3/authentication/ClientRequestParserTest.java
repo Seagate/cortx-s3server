@@ -83,7 +83,7 @@ import io.netty.handler.codec.http.HttpVersion;
 
         // Verify
         assertNotNull(token);
-        assertEquals("AKIAJTYX36YCKQSAJT7Q", token.getAccessKeyId());
+        assertEquals("v_accessKeyId", token.getAccessKeyId());
     }
 
     @Test

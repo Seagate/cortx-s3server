@@ -20,7 +20,7 @@
 cloud-nodeclass     : tctNodeclass                                  # tct node class
 cloud-name          : seagate                                       # cloud name
 cloud-type          : SWIFT3                                        # cloud type
-username            : AKIAJTYX36YCKQSAJT7Q                          # access key
+username            : v_accessKeyId                          # access key
 pwd-file            : secret_key_file                               # secret key file name
 enable              : TRUE                                          # enable cloud gateway after account creation
 cloud-url           : http://s3.seagate.com                         # cloud endpoint url
@@ -29,7 +29,7 @@ mpu-parts-size      : 32                                            # chunk size
 server-cert-path    :                                               # certificate path for the self-signed certificates
 enc-enable          : False                                         # enable encryption
 etag-enable         : True                                          # enable data integrity check
-secret-key          : A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt      # secret key
+secret-key          : v_secretAccessKey      # secret key
 fs-root             : /gpfs/fs1                                     # canonical path of GPFS mount point
 fs-name             : fs1                                           # filesystem name
 test-dir            : ABRACADABRA                                   # tmp test-directory which shouldn't already exists

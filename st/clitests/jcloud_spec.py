@@ -51,8 +51,8 @@ Config.socket_timeout = 300 * 1000 * 240
 print("Configuring LDAP")
 S3PyCliTest('Before_all').before_all()
 
-S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-S3ClientConfig.secret_key = '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'
+S3ClientConfig.access_key_id = 'v_accessKeyId'
+S3ClientConfig.secret_key = 'v_secretAccessKey'
 
 # Create Account
 # Extract the response elements from response which has the following format
@@ -129,8 +129,8 @@ for i, val in enumerate(pathstyle_values):
         .list_buckets().execute_test().command_is_successful().command_response_should_have('seagate-bucket')
 
     # ************ List buckets of specific account************
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
+    S3ClientConfig.access_key_id = 'v_accessKeyId'
+    S3ClientConfig.secret_key = 'v_secretAccessKey'
     JCloudTest('JCloudTest can list buckets').list_buckets().execute_test()\
         .command_is_successful().command_response_should_have('seagatebucket')\
         .command_is_successful().command_response_should_not_have('seagate-bucket')
@@ -148,8 +148,8 @@ for i, val in enumerate(pathstyle_values):
         .create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
         .command_error_should_have("ResourceAlreadyExists")
 
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
+    S3ClientConfig.access_key_id = 'v_accessKeyId'
+    S3ClientConfig.secret_key = 'v_secretAccessKey'
     JCloudTest('JCloudTest can not create bucket with name exsting in other account').create_bucket("seagate-bucket")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("ResourceAlreadyExists")
 
@@ -160,8 +160,8 @@ for i, val in enumerate(pathstyle_values):
         .check_bucket_exists("seagatebucket").execute_test(negative_case=True).command_should_fail()\
         .command_error_should_have('AuthorizationException')
 
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
+    S3ClientConfig.access_key_id = 'v_accessKeyId'
+    S3ClientConfig.secret_key = 'v_secretAccessKey'
     JCloudTest('JCloudTest can not access bucket owned by another account')\
         .check_bucket_exists("seagate-bucket").execute_test(negative_case=True).command_should_fail()\
         .command_error_should_have('AuthorizationException')
@@ -173,8 +173,8 @@ for i, val in enumerate(pathstyle_values):
         .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
         .command_error_should_have("AuthorizationException")
 
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
+    S3ClientConfig.access_key_id = 'v_accessKeyId'
+    S3ClientConfig.secret_key = 'v_secretAccessKey'
     JCloudTest('JCloudTest can not deelte bucket owned by another account').delete_bucket("seagate-bucket")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("AuthorizationException")
 
@@ -185,8 +185,8 @@ for i, val in enumerate(pathstyle_values):
         .put_object("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
         .command_error_should_have("AuthorizationException")
 
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
+    S3ClientConfig.access_key_id = 'v_accessKeyId'
+    S3ClientConfig.secret_key = 'v_secretAccessKey'
     JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
         .put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True)\
         .command_should_fail().command_error_should_have("AuthorizationException")
@@ -209,8 +209,8 @@ for i, val in enumerate(pathstyle_values):
         .command_is_successful().command_response_should_have('')
 
     # restore default access key and secret key.
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
+    S3ClientConfig.access_key_id = 'v_accessKeyId'
+    S3ClientConfig.secret_key = 'v_secretAccessKey'
 
     # ACL Tests.
     # Bucket ACL Tests.
@@ -326,8 +326,8 @@ for i, val in enumerate(pathstyle_values):
         .command_response_should_have("Account deleted successfully")
 
     # restore default access key and secret key.
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
+    S3ClientConfig.access_key_id = 'v_accessKeyId'
+    S3ClientConfig.secret_key = 'v_secretAccessKey'
 
     # Current version of Jcloud does not report error in deleteContainer
     # JCloudTest('Jcloud cannot delete bucket which is not empty').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotEmpty")

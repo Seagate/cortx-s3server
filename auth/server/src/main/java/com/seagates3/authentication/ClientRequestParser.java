@@ -178,7 +178,7 @@ public class ClientRequestParser {
         String access_key="";
         String[] tokens, subTokens;
 
-        //AuthorizationHeader of v2 is of type AWS AKIAJTYX36YCKQSAJT7Q:6IaKnMXRsQcsblXItQnSNB3EJEo=
+        //AuthorizationHeader of v2 is of type AWS v_accessKeyId:6IaKnMXRsQcsblXItQnSNB3EJEo=
         //V2 Pattern to match "AWS "
         //AuthorizationHeader of v4 is of type AWS4-HMAC-SHA256 Credential=AK IAJTYX36YCKQSAJT7Q/20190314/US/s3/          aws4_request,SignedHeaders=host;x-amz-content-sha256;x-amz-date,Signature=310b0122f12459dfea171cac82bd          4930626d5a8db695fef6bc7bfd2a30a39ea3
 
