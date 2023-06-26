@@ -52,8 +52,8 @@ S3PyCliTest('Before_all').before_all()
 
 # Set pathstyle =false to run jclient for partial multipart upload
 S3ClientConfig.pathstyle = False
-S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-S3ClientConfig.secret_key = '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'
+S3ClientConfig.access_key_id = 'v_accessKeyId'
+S3ClientConfig.secret_key = 'v_secretAccessKey'
 
 config_types = ["pathstyle.s3cfg", "virtualhoststyle.s3cfg"]
 for i, type in enumerate(config_types):

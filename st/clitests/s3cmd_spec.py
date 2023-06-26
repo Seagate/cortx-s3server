@@ -54,8 +54,8 @@ S3PyCliTest('Before_all').before_all()
 
 # Set pathstyle =false to run jclient for partial multipart upload
 S3ClientConfig.pathstyle = False
-S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-S3ClientConfig.secret_key = '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'
+S3ClientConfig.access_key_id = 'v_accessKeyId'
+S3ClientConfig.secret_key = 'v_secretAccessKey'
 
 # Path style tests.
 Config.config_file = "pathstyle.s3cfg"
@@ -195,8 +195,8 @@ AuthTest(test_msg).delete_account(**account_args).execute_test()\
     .command_response_should_have("Account deleted successfully")
 
 # restore access key and secret key.
-S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-S3ClientConfig.secret_key = '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'
+S3ClientConfig.access_key_id = 'v_accessKeyId'
+S3ClientConfig.secret_key = 'v_secretAccessKey'
 
 # ************ List buckets ************
 S3cmdTest('s3cmd can list buckets').list_buckets().execute_test().command_is_successful().command_response_should_have('s3://seagatebucket')
@@ -701,5 +701,5 @@ AuthTest('s3cmd can delete s3secondaccount').delete_account(**account_args).exec
     .command_response_should_have("Account deleted successfully")
 
 # restore access key and secret key.
-S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-S3ClientConfig.secret_key = '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'
+S3ClientConfig.access_key_id = 'v_accessKeyId'
+S3ClientConfig.secret_key = 'v_secretAccessKey'

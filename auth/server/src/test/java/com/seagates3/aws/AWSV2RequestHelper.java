@@ -30,9 +30,9 @@ import java.util.TreeMap;
 
 public class AWSV2RequestHelper {
 
-    public final static String ACCESS_KEY_ID = "AKIAJTYX36YCKQSAJT7Q";
+    public final static String ACCESS_KEY_ID = "v_accessKeyId";
     public final static String SECRET_KEY
-            = "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";
+            = "v_secretAccessKey";
 
     /**
      * Create request headers for a regular request.
@@ -45,7 +45,7 @@ public class AWSV2RequestHelper {
 
         requestBody.put("Accept-Encoding", "identity");
         requestBody.put("Action", "AuthenticateUser");
-        requestBody.put("Authorization", "AWS AKIAJTYX36YCKQSAJT7Q:uDWiVvxwCUR"
+        requestBody.put("Authorization", "AWS v_accessKeyId:uDWiVvxwCUR"
                 + "9YJ8EGJgbtW9tjFM=");
         requestBody.put("ClientAbsoluteUri", "/seagatebucket/test.txt");
         requestBody.put("ClientQueryParams", "");
@@ -76,7 +76,7 @@ public class AWSV2RequestHelper {
 
         requestBody.put("Accept-Encoding", "identity");
         requestBody.put("Action", "AuthenticateUser");
-        requestBody.put("Authorization", "AWS AKIAJTYX36YCKQSAJT7Q:4dtRFT7O4a7nVZ"
+        requestBody.put("Authorization", "AWS v_accessKeyId:4dtRFT7O4a7nVZ"
                 + "ieelIicVLuGoE=");
         requestBody.put("ClientAbsoluteUri", "/test.txt");
         requestBody.put("ClientQueryParams", "");
@@ -141,7 +141,7 @@ public class AWSV2RequestHelper {
     public static HttpHeaders getHttpHeaders() {
         HttpHeaders httpHeaders = new DefaultHttpHeaders();
 
-        httpHeaders.add("Authorization", "AWS AKIAJTYX36YCKQSAJT7Q:4dtRFT7O4a7n"
+        httpHeaders.add("Authorization", "AWS v_accessKeyId:4dtRFT7O4a7n"
                 + "VZieelIicVLuGoE=");
         httpHeaders.add("Content-Length", "8");
         httpHeaders.add("Host", "seagatebucket123.s3.seagate.com");
@@ -163,7 +163,7 @@ public class AWSV2RequestHelper {
     public static ClientRequestToken getFullHttpRequestClientToken() {
         Map<String, String> requestBody
                 = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        requestBody.put("Authorization", "AWS AKIAJTYX36YCKQSAJT7Q:4dtRFT7O4a7n"
+        requestBody.put("Authorization", "AWS v_accessKeyId:4dtRFT7O4a7n"
                 + "VZieelIicVLuGoE=");
         requestBody.put("Content-Length", "8");
         requestBody.put("Host", "seagatebucket123.s3.seagate.com");
@@ -194,7 +194,7 @@ public class AWSV2RequestHelper {
                 = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         requestBody.put("Accept", "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
         requestBody.put("Action", "AuthenticateUser");
-        requestBody.put("Authorization", "AWS AKIAJTYX36YCKQSAJT7Q:g9ZXcuNXpaDDlP+j7B3vLfGE6Ow=");
+        requestBody.put("Authorization", "AWS v_accessKeyId:g9ZXcuNXpaDDlP+j7B3vLfGE6Ow=");
         requestBody.put("ClientAbsoluteUri", "/seagatebucket/1mbfile");
         requestBody.put("ClientQueryParams", "partNumber=1&uploadId=5e9bac46-8994-4bc9-87fd-3486af85314c");
         requestBody.put("Content-Length", "1048576");
@@ -206,7 +206,7 @@ public class AWSV2RequestHelper {
         requestBody.put("Version", "2010-05-08");
 
         ClientRequestToken requestToken = new ClientRequestToken();
-        requestToken.setAccessKeyId("AKIAJTYX36YCKQSAJT7Q");
+        requestToken.setAccessKeyId("v_accessKeyId");
         requestToken.setHttpMethod("PUT");
         requestToken.setQuery("partNumber=1&uploadId=5e9bac46-8994-4bc9-87fd-3486af85314c");
         requestToken.setSignature("g9ZXcuNXpaDDlP+j7B3vLfGE6Ow=");

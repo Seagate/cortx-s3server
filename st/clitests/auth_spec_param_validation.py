@@ -52,14 +52,14 @@ def before_all():
     S3PyCliTest('Before_all').before_all()
 
 def set_valid_credentials():
-    S3ClientConfig.access_key_id = "AKIAJTYX36YCKQSAJT7Q"
-    S3ClientConfig.secret_key = "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"
+    S3ClientConfig.access_key_id = "v_accessKeyId"
+    S3ClientConfig.secret_key = "v_secretAccessKey"
 
 def parameter_validation_tests():
     # Create user with wrong access key
     test_msg = "Create User s3user1 should fail if access key is invalid"
     S3ClientConfig.access_key_id = "INVALID-ACCESS-KEY-Z"
-    S3ClientConfig.secret_key = "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt"
+    S3ClientConfig.secret_key = "v_secretAccessKey"
     user_args = {}
     user_args['UserName'] = "s3user1"
     AuthTest(test_msg).create_user(**user_args).execute_test(negative_case=True)\
@@ -70,7 +70,7 @@ def parameter_validation_tests():
 
     # Create user with wrong secret key
     test_msg = "Create User s3user1 should fail if secret key is invalid"
-    S3ClientConfig.access_key_id = "AKIAJTYX36YCKQSAJT7Q"
+    S3ClientConfig.access_key_id = "v_accessKeyId"
     S3ClientConfig.secret_key = "INVALID-SECRET-KEY-2oWwM/tha7Wrd4Hc/8yRt"
     user_args = {}
     user_args['UserName'] = "s3user1"

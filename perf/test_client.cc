@@ -99,7 +99,7 @@ void setup_request_headers(evhtp_request_t* request, struct evbuffer* buf) {
   evhtp_headers_add_header(request->headers_out,
                            evhtp_header_new("Accept-Encoding", "identity", 0, 0));
   evhtp_headers_add_header(request->headers_out,
-                           evhtp_header_new("Authorization", "AWS4-HMAC-SHA256 Credential=AKIAJTYX36YCKQSAJT7Q/20160523/US/s3/aws4_request,SignedHeaders=content-length;content-type;host;x-amz-content-sha256;x-amz-date;x-amz-meta-s3cmd-attrs;x-amz-storage-class,Signature=329ba550642531735976b2c19b7d49d7e084877a199e78ffb98f08f4ce61a3ba", 0, 0));
+                           evhtp_header_new("Authorization", "AWS4-HMAC-SHA256 Credential=v_accessKeyId/20160523/US/s3/aws4_request,SignedHeaders=content-length;content-type;host;x-amz-content-sha256;x-amz-date;x-amz-meta-s3cmd-attrs;x-amz-storage-class,Signature=329ba550642531735976b2c19b7d49d7e084877a199e78ffb98f08f4ce61a3ba", 0, 0));
   evhtp_headers_add_header(request->headers_out,
                            evhtp_header_new("Connection", "close", 0, 0));
 

@@ -440,7 +440,7 @@ public class AWSV4RequestHelper {
      * @return
      */
     public static ClientRequestToken getFullHttpRequestClientTokenHEAD() {
-        String authHeader = "AWS4-HMAC-SHA256 Credential=AKIAJTYX36YCKQSAJT7Q/"
+        String authHeader = "AWS4-HMAC-SHA256 Credential=v_accessKeyId/"
                           + "20180719/us-east-1/s3/aws4_request,"
                           + "SignedHeaders=connection;date;host;"
                           + "x-amz-content-sha256;x-amz-date,"
@@ -463,7 +463,7 @@ public class AWSV4RequestHelper {
 
         ClientRequestToken requestToken = new ClientRequestToken();
         requestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
-        requestToken.setAccessKeyId("AKIAJTYX36YCKQSAJT7Q");
+        requestToken.setAccessKeyId("v_accessKeyId");
         requestToken.setCredentialScope("20180719/us-east-1/s3/aws4_request");
         requestToken.setDate("20180719");
         requestToken.setHttpMethod("HEAD");
@@ -491,7 +491,7 @@ public class AWSV4RequestHelper {
     public static ClientRequestToken getInvalidHttpRequestClientToken() {
        String authHeader =
            "AWS4-HMAC-SHA256 Credential=" +
-           "AKIAJTYX36YCKQSAJT7Q/20180719/us-east-1/s3/aws4_request," +
+           "v_accessKeyId/20180719/us-east-1/s3/aws4_request," +
            "SignedHeaders=connection1;date;" +
            "host;x-amz-content-sha256;x-amz-date," + "Signature=" +
            "aad057b69f74b68957f7d32c3c7c19b5a64d78749de4f5b328253629d9a55059";
@@ -513,7 +513,7 @@ public class AWSV4RequestHelper {
 
         ClientRequestToken requestToken = new ClientRequestToken();
         requestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
-        requestToken.setAccessKeyId("AKIAJTYX36YCKQSAJT7Q");
+        requestToken.setAccessKeyId("v_accessKeyId");
         requestToken.setCredentialScope("20180719/us-east-1/s3/aws4_request");
         requestToken.setDate("20180719");
         requestToken.setHttpMethod("HEAD");

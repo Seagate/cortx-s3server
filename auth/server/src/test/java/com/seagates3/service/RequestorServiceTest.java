@@ -86,7 +86,7 @@ import com.seagates3.response.generator.ResponseGenerator;
   ServerResponse serverResponse;
 
  private
-  final String accessKeyID = "AKIAJTYX36YCKQSAJT7Q";
+  final String accessKeyID = "v_accessKeyId";
 
   @Before public void setUp() throws Exception {
     accessKeyDAO = mock(AccessKeyDAO.class);
