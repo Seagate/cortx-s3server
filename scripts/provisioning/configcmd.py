@@ -52,6 +52,8 @@ class ConfigCmd(SetupCmd):
       super(ConfigCmd, self).__init__(config, services)
       self.setup_type = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')
       Log.info(f'Setup type : {self.setup_type}')
+      self.setup_size = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_SIZE')
+      Log.info(f'Setup type : {self.setup_size}')
       self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
       Log.info(f'Cluster  id : {self.cluster_id}')
       self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
@@ -156,6 +158,11 @@ class ConfigCmd(SetupCmd):
                                 self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
                                 'yaml://')
     Log.info("validate s3 config files completed")
+
+    # update memory limits
+    Log.info("updating memory limits started")
+    self.update_memory_limits()
+    Log.info("updating memory limits complete")
 
     Log.info("create symbolic link of FID config files started")
     self.create_symbolic_link_fid()
@@ -557,6 +564,33 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST", "S3_MOTR_CONFIG>S3_MOTR_MAX_UNITS_PER_REQUEST", self.update_motr_max_unit_per_request)
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_MAX_START_TIMEOUT", "S3_MOTR_CONFIG>S3_MOTR_INIT_MAX_TIMEOUT")
     Log.info("Update s3 server config file completed")
+
+  def update_memory_limits(self):
+    """ Update memory buffer sizes."""
+    Log.info("Update memory buffer sizes started")
+    # validate config file exists - /etc/cortx/s3/conf/s3config.yaml
+    configfile = self.get_confkey("S3_CONFIG_FILE").replace("/opt/seagate/cortx", self.base_config_file_path)
+    if path.isfile(f'{configfile}') == False:
+      Log.error(f'{configfile} file is not present')
+      raise S3PROVError(f'{configfile} file is not present')
+
+    # load config file, read required keysand modify as per size
+    s3configfileconfstore = S3CortxConfStore(f'yaml://{configfile}', 'update_limits')
+    libevent_pool_initial_size = int(s3configfileconfstore.get_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_INITIAL_SIZE"))
+    libevent_pool_max_threshold = int(s3configfileconfstore.get_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_MAX_THRESHOLD"))
+    if "small" == self.setup_size:
+      libevent_pool_initial_size = int(libevent_pool_initial_size / 2);
+      libevent_pool_max_threshold = int(libevent_pool_max_threshold / 2);
+    elif "medium" == self.setup_size:
+      libevent_pool_initial_size = int((libevent_pool_initial_size * 3) / 4);
+      libevent_pool_max_threshold = int((libevent_pool_max_threshold * 3) / 4);
+    else:
+      libevent_pool_initial_size = libevent_pool_initial_size
+      libevent_pool_max_threshold = libevent_pool_max_threshold
+    s3configfileconfstore.set_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_INITIAL_SIZE", libevent_pool_initial_size, True)
+    s3configfileconfstore.set_config("S3_THIRDPARTY_CONFIG>S3_LIBEVENT_POOL_MAX_THRESHOLD", libevent_pool_max_threshold, True)
+
+    Log.info("Update memory buffer sizes completed")
 
   def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
     if isinstance(value_to_update, str):
