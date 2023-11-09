@@ -26,12 +26,14 @@
 #include <gtest/gtest_prod.h>
 #include <functional>
 #include <memory>
+#include <deque>
 
 #include "s3_asyncop_context_base.h"
 #include "s3_motr_context.h"
 #include "s3_motr_wrapper.h"
 #include "s3_log.h"
 #include "s3_request_object.h"
+#define MAX_PARALLEL_KVS 30
 
 class S3SyncMotrKVSWriterContext {
   // Basic Operation context.
@@ -139,7 +141,18 @@ class S3MotrKVSWriter {
   std::unique_ptr<S3AsyncMotrKVSWriterContext> sync_context;
   std::string kvs_key;
   std::string kvs_value;
+
+  // Following are used for parallel KV operation
   unsigned int how_many_being_processed;
+  // Number of Keys/values in KV operation in flight (in parallel)
+  unsigned int kvop_keys_in_flight = 0;
+  bool parallel_run = false;
+  bool atleast_one_failed = false;
+  std::map<std::string, std::string> kv_list;
+  unsigned int next_key_offset = 0;
+  std::deque<std::unique_ptr<S3AsyncMotrKVSWriterContext>>
+      parallel_writer_contexts;
+  unsigned int max_parallel_kv = MAX_PARALLEL_KVS;
 
   std::string request_id;
   std::string stripped_request_id;
@@ -155,6 +168,9 @@ class S3MotrKVSWriter {
   struct s3_motr_idx_context* idx_ctx;
 
   void clean_up_contexts();
+  std::unique_ptr<S3AsyncMotrKVSWriterContext>& get_writer_context() {
+    return writer_context;
+  }
 
   void create_index_successful();
   void create_index_failed();
@@ -178,6 +194,12 @@ class S3MotrKVSWriter {
       bool is_partial_write = false, int offset = 0, unsigned int how_many = 0,
       S3MotrKVSWriter::CallbackType
           callback = S3MotrKVSWriter::CallbackType::STABLE);
+
+ protected:
+  void parallel_put_kv_successful(unsigned int);
+  void parallel_put_kv_failed(unsigned int);
+  std::function<void(unsigned int)> on_success_for_parallelkv;
+  std::function<void(unsigned int)> on_failure_for_parallelkv;
 
  public:
   S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
@@ -223,26 +245,30 @@ class S3MotrKVSWriter {
       std::function<void(void)> on_success,
       std::function<void(void)> on_failed);
 
-  virtual void put_keyval(const struct s3_motr_idx_layout& idx_lo,
-                          const std::map<std::string, std::string>& kv_list,
-                          std::function<void(void)> on_success,
-                          std::function<void(void)> on_failed,
-                          S3MotrKVSWriter::CallbackType
-                              callback = S3MotrKVSWriter::CallbackType::STABLE);
+  // When parallel_mode = true (default), the function will perform several
+  // single
+  // PUT kv for keys in the list in parallel. When all PUT kv are successfull,
+  // on_success would be called, else on_failed.
+  virtual void put_keyval(
+      const struct s3_motr_idx_layout& idx_lo,
+      const std::map<std::string, std::string>& kv_list,
+      std::function<void(void)> on_success, std::function<void(void)> on_failed,
+      CallbackType callback = S3MotrKVSWriter::CallbackType::STABLE,
+      bool parallel_mode = true);
 
   virtual void put_partial_keyval(
       const struct s3_motr_idx_layout& idx_lo,
       const std::map<std::string, std::string>& kv_list,
       std::function<void(unsigned int)> on_success,
       std::function<void(unsigned int)> on_failed, unsigned int offset = 0,
-      unsigned int how_many = 30);
+      unsigned int how_many = 30, bool parallel_mode = true);
 
   // Async save operation.
   virtual void put_keyval(
       const struct s3_motr_idx_layout& idx_lo, const std::string& key,
       const std::string& val, std::function<void(void)> on_success,
       std::function<void(void)> on_failed,
-      enum CallbackType callback = S3MotrKVSWriter::CallbackType::STABLE);
+      CallbackType callback = S3MotrKVSWriter::CallbackType::STABLE);
   // Sync save operation.
   virtual int put_keyval_sync(
       const struct s3_motr_idx_layout& idx_lo,
@@ -307,6 +333,8 @@ class S3MotrKVSWriter {
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata);
   FRIEND_TEST(S3NewAccountRegisterNotifyActionTest,
               CreateBucketListIndexSuccessful);
+  FRIEND_TEST(S3MotrKVSWritterTest, ParallelPutKeyValSuccessful);
+  FRIEND_TEST(S3MotrKVSWritterTest, ParallelPutKeyValFail);
 };
 
 #endif

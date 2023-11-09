@@ -28,15 +28,31 @@
 
 class S3CallBack {
  public:
-  S3CallBack() { success_called = fail_called = false; }
+  S3CallBack() {
+    success_called = fail_called = false;
+    callCounter = 0;
+  }
 
-  void on_success() { success_called = true; }
-  void on_success_with_arg(unsigned int) { success_called = true; }
-  void on_failed_with_arg(unsigned int) { fail_called = true; }
+  void on_success() {
+    success_called = true;
+    ++callCounter;
+  }
+  void on_success_with_arg(unsigned int) {
+    success_called = true;
+    ++callCounter;
+  }
+  void on_failed_with_arg(unsigned int) {
+    fail_called = true;
+    ++callCounter;
+  }
 
-  void on_failed() { fail_called = true; }
+  void on_failed() {
+    fail_called = true;
+    ++callCounter;
+  }
   bool success_called;
   bool fail_called;
+  int callCounter;
 };
 
 #endif

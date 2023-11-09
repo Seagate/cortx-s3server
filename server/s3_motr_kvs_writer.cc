@@ -46,6 +46,11 @@ S3MotrKVSWriter::S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
+  on_success_for_parallelkv =
+      std::bind(&S3MotrKVSWriter::parallel_put_kv_successful, this,
+                std::placeholders::_1);
+  on_failure_for_parallelkv = std::bind(
+      &S3MotrKVSWriter::parallel_put_kv_failed, this, std::placeholders::_1);
 }
 
 S3MotrKVSWriter::S3MotrKVSWriter(std::string req_id,
@@ -61,6 +66,11 @@ S3MotrKVSWriter::S3MotrKVSWriter(std::string req_id,
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
+  on_success_for_parallelkv =
+      std::bind(&S3MotrKVSWriter::parallel_put_kv_successful, this,
+                std::placeholders::_1);
+  on_failure_for_parallelkv = std::bind(
+      &S3MotrKVSWriter::parallel_put_kv_failed, this, std::placeholders::_1);
 }
 
 S3MotrKVSWriter::~S3MotrKVSWriter() {
@@ -479,11 +489,88 @@ void S3MotrKVSWriter::delete_indices_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3MotrKVSWriter::parallel_put_kv_successful(unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  next_key_offset += processed_count;
+  kvop_keys_in_flight -= 1;
+  unsigned int total_keys = kv_list.size();
+  s3_log(S3_LOG_DEBUG, request_id, "Total writer contexts = %zu",
+         parallel_writer_contexts.size());
+#if 0
+  // Early free of writer context
+  if ((next_key_offset - 1) < parallel_writer_contexts.size()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Freeing writer context at index = %d",
+           (next_key_offset - 1));
+    parallel_writer_contexts[next_key_offset - 1].reset(NULL);
+    s3_log(S3_LOG_DEBUG, request_id, "Outstanding writer contexts = %zu",
+           parallel_writer_contexts.size() - next_key_offset);
+  }
+#endif
+
+  if ((next_key_offset + kvop_keys_in_flight) < total_keys &&
+      !atleast_one_failed) {
+    // Still more to launch PUT KV
+    if (kvop_keys_in_flight < max_parallel_kv) {
+      // Current number of parallel KVs is less than max allowed.
+      // Launch next PUT KV operation
+      put_partial_keyval(idx_los[0], kv_list, on_success_for_parallelkv,
+                         on_failure_for_parallelkv,
+                         next_key_offset + kvop_keys_in_flight, 1, false);
+      ++kvop_keys_in_flight;
+      // Save writer context
+      parallel_writer_contexts.push_back(std::move(this->get_writer_context()));
+    }
+  } else {
+    // All PUT KVs done(all success or atleast one fail). Perform next step
+    if (atleast_one_failed && kvop_keys_in_flight == 0) {
+      // One of PUT KV failed previously, and there is no outstanding PUT KV
+      // that we need to wait from the batch of parallel PUT KV.
+      // Perform next step: Failure
+      // TODO: Need to rollback all successfull PUT KV
+      handler_on_failed();
+      return;
+    }
+    if (!atleast_one_failed && kvop_keys_in_flight == 0) {
+      // All keys are done, and all PUT KV in parallel
+      // operation are done. Perform next step: Success
+      handler_on_success();
+      return;
+    }
+    // Need to wait for reminaing PUT KV from the batch of parallel
+    // PUT KV
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3MotrKVSWriter::parallel_put_kv_failed(unsigned int processed_count) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  next_key_offset += processed_count;
+  atleast_one_failed = true;
+  kvop_keys_in_flight -= 1;
+  s3_log(S3_LOG_DEBUG, request_id, "Total writer contexts = %zu",
+         parallel_writer_contexts.size());
+#if 0
+  // Early free of writer context
+  if ((next_key_offset - 1) < parallel_writer_contexts.size()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Freeing writer context at index = %d",
+           (next_key_offset - 1));
+    parallel_writer_contexts[next_key_offset - 1].reset(NULL);
+    s3_log(S3_LOG_DEBUG, request_id, "Outstanding writer contexts = %zu",
+           parallel_writer_contexts.size() - next_key_offset);
+  }
+#endif
+  if (kvop_keys_in_flight == 0) {
+    // All the keys in parallel batch are done, perform next step
+    handler_on_failed();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3MotrKVSWriter::put_keyval(
     const struct s3_motr_idx_layout &idx_lo,
     const std::map<std::string, std::string> &kv_list,
     std::function<void(void)> on_success, std::function<void(void)> on_failed,
-    S3MotrKVSWriter::CallbackType callback) {
+    CallbackType callback, bool parallel_mode) {
 
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with oid = %" SCNx64 " : %" SCNx64
@@ -499,24 +586,47 @@ void S3MotrKVSWriter::put_keyval(
       s3_log(S3_LOG_ERROR, request_id, "Empty key in PUT KV\n");
     }
   }
-  idx_los.clear();
-  idx_los.push_back(idx_lo);
 
   this->handler_on_success = std::move(on_success);
   this->handler_on_failed = std::move(on_failed);
 
-  if (idx_ctx) {
-    // clean up any old allocations
-    clean_up_contexts();
-  }
-  idx_ctx = create_idx_context(1);
+  if (!this->parallel_run || parallel_mode) {
+    // Initialize once in parallel mode
+    idx_los.clear();
+    idx_los.push_back(idx_lo);
 
+    if (idx_ctx) {
+      // clean up any old allocations
+      clean_up_contexts();
+    }
+    idx_ctx = create_idx_context(1);
+  }
+  if (parallel_mode && kv_list.size() > 1) {
+    // Parallel mode PUT kv, provided list contains at least 2 keys
+    this->kv_list = kv_list;
+    next_key_offset = 0;
+    parallel_writer_contexts.clear();
+    const int parallel_kvs =
+        (kv_list.size() <= max_parallel_kv) ? kv_list.size() : max_parallel_kv;
+    this->parallel_run = parallel_mode;
+    s3_log(S3_LOG_DEBUG, request_id, "Parallel PUT kv, with %d kv in parallel",
+           parallel_kvs);
+    for (int i = 0; i < parallel_kvs; ++i) {
+      // Call below in non-parallel mode
+      put_partial_keyval(idx_lo, kv_list, on_success_for_parallelkv,
+                         on_failure_for_parallelkv, i, 1, false);
+      ++kvop_keys_in_flight;
+      // Save writer context
+      parallel_writer_contexts.push_back(std::move(this->get_writer_context()));
+    }
+    // End of Parallel mode
+    return;
+  }
   writer_context.reset(new S3AsyncMotrKVSWriterContext(
       request, std::bind(&S3MotrKVSWriter::put_keyval_successful, this),
       std::bind(&S3MotrKVSWriter::put_keyval_failed, this), 1, s3_motr_api));
 
   writer_context->init_kvs_write_op_ctx(kv_list.size());
-
   // Ret code can be ignored as its already handled in async case.
   put_keyval_impl(kv_list, true, false, 0, 0, callback);
 }
@@ -526,7 +636,7 @@ void S3MotrKVSWriter::put_partial_keyval(
     const std::map<std::string, std::string> &kv_list,
     std::function<void(unsigned int)> on_success,
     std::function<void(unsigned int)> on_failed, unsigned int offset,
-    unsigned int how_many) {
+    unsigned int how_many, bool parallel_mode) {
   std::map<std::string, std::string>::const_iterator it;
   unsigned int record_count = 0;
   assert(how_many != 0);
@@ -557,17 +667,41 @@ void S3MotrKVSWriter::put_partial_keyval(
       break;
     }
   }
-  idx_los.clear();
-  idx_los.push_back(idx_lo);
-
   this->on_success_for_extends = std::move(on_success);
   this->on_failure_for_extends = std::move(on_failed);
 
-  if (idx_ctx) {
-    // clean up any old allocations
-    clean_up_contexts();
+  if (!this->parallel_run || parallel_mode) {
+    // Initialize once in parallel mode
+    idx_los.clear();
+    idx_los.push_back(idx_lo);
+
+    if (idx_ctx) {
+      // clean up any old allocations
+      clean_up_contexts();
+    }
+    idx_ctx = create_idx_context(1);
   }
-  idx_ctx = create_idx_context(1);
+  if (parallel_mode && how_many > 1) {
+    // Parallel mode PUT partial kv, provided list contains at least 2 keys
+    this->kv_list = kv_list;
+    next_key_offset = 0;
+    parallel_writer_contexts.clear();
+    const int parallel_kvs =
+        (how_many <= max_parallel_kv) ? how_many : max_parallel_kv;
+    this->parallel_run = parallel_mode;
+    s3_log(S3_LOG_DEBUG, request_id, "Parallel PUT kv, with %d kv in parallel",
+           parallel_kvs);
+    for (int i = 0; i < parallel_kvs; ++i) {
+      // Call below in non-parallel mode
+      put_partial_keyval(idx_lo, kv_list, on_success_for_parallelkv,
+                         on_failure_for_parallelkv, i, 1, false);
+      ++kvop_keys_in_flight;
+      // Save writer context
+      parallel_writer_contexts.push_back(std::move(this->get_writer_context()));
+    }
+    // End of Parallel mode
+    return;
+  }
   writer_context.reset(new S3AsyncMotrKVSWriterContext(
       request, std::bind(&S3MotrKVSWriter::put_partial_keyval_successful, this),
       std::bind(&S3MotrKVSWriter::put_partial_keyval_failed, this), 1,
@@ -720,7 +854,7 @@ void S3MotrKVSWriter::put_keyval(const struct s3_motr_idx_layout &idx_lo,
                                  const std::string &key, const std::string &val,
                                  std::function<void(void)> on_success,
                                  std::function<void(void)> on_failed,
-                                 S3MotrKVSWriter::CallbackType callback) {
+                                 CallbackType callback) {
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with oid = %" SCNx64 " : %" SCNx64
          " key = %s and value = %s\n",

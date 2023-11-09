@@ -185,7 +185,7 @@ class S3PostCompleteActionTest : public testing::Test {
                         const std::map<std::string, std::string>&,
                         std::function<void(void)> on_success,
                         std::function<void(void)> on_failed,
-                        S3MotrKVSWriter::CallbackType) {
+                        S3MotrKVSWriter::CallbackType, bool parallel) {
     action_under_test_ptr->next();
   }
   void dummy_delete_object(std::function<void(void)> on_success,
@@ -809,8 +809,9 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
               get_part_count()).WillRepeatedly(Return(2));
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
+  bool parallel = true;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _))
+              put_keyval(_, _, _, _, _, parallel))
       .Times(1)
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));
@@ -998,8 +999,9 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
   action_under_test_ptr->set_abort_multipart(true);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_pvid())
       .WillRepeatedly(Return(pv_id));
+  bool parallel = true;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _))
+              put_keyval(_, _, _, _, _, parallel))
       .Times(1)
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));

@@ -37,6 +37,7 @@ using ::testing::_;
 using ::testing::ReturnRef;
 using ::testing::AtLeast;
 using ::testing::DefaultValue;
+using ::testing::Matcher;
 
 const char DEFAULT_ACL_STR[] =
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<AccessControlPolicy "
@@ -352,9 +353,9 @@ TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDPresent) {
   action_under_test->account_id = "12345";
 
   bucket_metadata_proxy->set_state(S3BucketMetadataState::present);
-
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _, _)).Times(1);
+              put_keyval(_, Matcher<const std::string&>(testing::_), _, _, _,
+                         _)).Times(1);
 
   action_under_test->update(*bucket_metadata_proxy, helper_functor);
 }
@@ -363,7 +364,8 @@ TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDMissing) {
   bucket_metadata_proxy->set_state(S3BucketMetadataState::missing);
 
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _, _)).Times(0);
+              put_keyval(_, Matcher<const std::string&>(testing::_), _, _, _,
+                         _)).Times(0);
 
   ASSERT_DEATH(
       action_under_test->update(*bucket_metadata_proxy, helper_functor), ".*");
@@ -609,7 +611,8 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfo) {
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _, _)).Times(1);
+              put_keyval(_, Matcher<const std::string&>(testing::_), _, _, _,
+                         _)).Times(1);
 
   action_under_test->save_bucket_info();
   EXPECT_STREQ(
