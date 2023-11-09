@@ -75,6 +75,7 @@
 #include "evhtp_wrapper.h"
 #include "s3_cli_options.h"
 #include "s3_audit_info.h"
+#include "s3_stats_option.h"
 #include "motr_helpers.h"
 
 #define DAY_IN_SECONDS 60 * 60 * 24
@@ -201,6 +202,7 @@ class S3Option {
   unsigned short s3_daemon_redirect;
 
   bool stats_enable;
+  StatsAggregatorBackendType stats_aggregator_backend;
   std::string statsd_ip_addr;
   unsigned short statsd_port;
   unsigned short statsd_max_send_retry;
@@ -510,6 +512,8 @@ class S3Option {
 
   bool is_stats_enabled();
   void set_stats_enable(bool enable);
+  StatsAggregatorBackendType get_stats_aggregator_backend_type() const;
+  void set_stats_aggregator_backend_type(StatsAggregatorBackendType type);
   std::string get_statsd_ip_addr();
   unsigned short get_statsd_port();
   unsigned short get_statsd_max_send_retry();

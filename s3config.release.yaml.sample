@@ -72,6 +72,7 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_RETRY_INTERVAL_MILLISEC: 500                      # Retry interval in milliseconds, total retry time = retry_count * retry_interval (RETRY1: 500, RETRY2: 1000, RETRY3: 1500)
    S3_CLIENT_REQ_READ_TIMEOUT_SECS: 20                  # Read timeout in seconds.
    S3_ENABLE_STATS: true                                # Enable the Stats feature. Default is false.
+   S3_STATS_AGGREGATOR_BACKEND_TYPE: "STATSD"           # Stats aggregator backend.  Supported options: "STATSD"
    S3_STATSD_IP_ADDR: 127.0.0.1                         # StatsD server IP address
    S3_STATSD_PORT: 8125                                 # StatsD server port
    S3_STATSD_MAX_SEND_RETRY: 3                          # Limit the user requested retry count. A retry is attempted in case message delivery to StatsD server fails.

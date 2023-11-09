@@ -98,7 +98,7 @@ static int _init_option_and_instance() {
 
   g_option_instance->set_stats_allowlist_filename(
       "s3stats-allowlist-test.yaml");
-  g_stats_instance = S3Stats::get_instance();
+  g_stats_instance = S3StatsManager::get_instance();
   g_option_instance->dump_options();
   S3MotrLayoutMap::get_instance()->load_layout_recommendations(
       g_option_instance->get_layout_recommendation_file());
@@ -108,7 +108,7 @@ static int _init_option_and_instance() {
 
 static void _cleanup_option_and_instance() {
   if (g_stats_instance) {
-    S3Stats::delete_instance();
+    S3StatsManager::delete_instance();
   }
   if (g_option_instance) {
     S3Option::destroy_instance();
