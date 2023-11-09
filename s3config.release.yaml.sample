@@ -19,8 +19,8 @@
 
 S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_MOTR_CONFIG, S3_THIRDPARTY_CONFIG, S3_VERSION_CONFIG]
 S3_SERVER_CONFIG:                                       # Section for S3 Server
-   S3_DI_DISABLE_DATA_CORRUPTION_IEM: false             # disable sending of IEM messages by s3server in case of data integrity checksum fails
-   S3_DI_DISABLE_METADATA_CORRUPTION_IEM: false         # disable sending of IEM messages by s3server in case of metadata corruption is detected
+   S3_DI_DISABLE_DATA_CORRUPTION_IEM: true             # disable sending of IEM messages by s3server in case of data integrity checksum fails
+   S3_DI_DISABLE_METADATA_CORRUPTION_IEM: true         # disable sending of IEM messages by s3server in case of metadata corruption is detected
    S3_DAEMON_WORKING_DIR: "/var/log/cortx/motr/"      # S3 Daemon will run in the specified directory
    S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
    S3_LOG_DIR: "/var/log/cortx/s3"                    # S3 Log directory, for output to stderr have value as "" and set S3_DAEMON_DO_REDIRECTION to 0
@@ -80,8 +80,8 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_SERVER_OBJECT_DELAYED_DELETE: true                # When true, skips deleting old object during PUT object overwrite and DEL object
    S3_REDIS_SERVER_ADDRESS: "127.0.0.1"                 # In case if redis is used for kvs contains redis server address
    S3_REDIS_SERVER_PORT: 6379                           # In case if redis is used for kvs contains redis server port
-   S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD: 5            # Number of ETIMEDOUT errors per monitoring window before s3server restart
-   S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC: 60              # Monitoring window for motr ETIMEDOUT errors in seconds
+   S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD: 15            # Number of ETIMEDOUT errors per monitoring window before s3server restart
+   S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC: 600              # Monitoring window for motr ETIMEDOUT errors in seconds
    S3_SERVER_ENABLE_ADDB_DUMP: true                     # If set to true, then addb dump will be collected
    S3_BUCKET_METADATA_CACHE_MAX_SIZE: 10000             # Max count of entries in bucket MD cache
    S3_BUCKET_METADATA_CACHE_EXPIRE_SEC: 5               # Expiration time for bucket metadata in cache
